@@ -211,3 +211,172 @@ tasks:
     tags: ["frontend", "social", "marketing"]
     created: "2026-02-02"
     updated: "2026-02-04"
+
+  # === MORE PENDING TASKS FOR SCROLLING ===
+  - id: "frontend-005"
+    title: "Implement wishlist functionality"
+    description: "Allow users to save products to a wishlist for later"
+    status: "pending"
+    priority: "medium"
+    tags: ["frontend", "wishlist", "ui"]
+    depends_on: ["frontend-001"]
+    acceptance_criteria:
+      - "Heart icon on product cards to add to wishlist"
+      - "Wishlist page showing saved products"
+      - "Remove from wishlist functionality"
+      - "Wishlist persists across sessions"
+    created: "2026-02-05"
+
+  - id: "backend-007"
+    title: "Add email notification system"
+    description: "Send transactional emails for orders, shipping, etc"
+    status: "pending"
+    priority: "medium"
+    tags: ["backend", "email", "notifications"]
+    depends_on: ["backend-002"]
+    acceptance_criteria:
+      - "Order confirmation email template"
+      - "Shipping notification email"
+      - "Password reset email"
+      - "Email queue system with retry logic"
+    created: "2026-02-05"
+
+  - id: "frontend-006"
+    title: "Build admin dashboard"
+    description: "Admin interface for managing products and orders"
+    status: "pending"
+    priority: "high"
+    tags: ["frontend", "admin", "dashboard"]
+    depends_on: ["backend-002"]
+    acceptance_criteria:
+      - "Product management CRUD interface"
+      - "Order list with status filters"
+      - "Sales analytics charts"
+      - "User management panel"
+    created: "2026-02-05"
+
+  - id: "backend-008"
+    title: "Implement shipping rate calculator"
+    description: "Calculate shipping costs based on weight and destination"
+    status: "pending"
+    priority: "medium"
+    tags: ["backend", "shipping", "logistics"]
+    depends_on: ["backend-002"]
+    acceptance_criteria:
+      - "Weight-based shipping calculation"
+      - "Multiple shipping carrier support"
+      - "Real-time rate quotes from carriers"
+      - "Free shipping threshold logic"
+    created: "2026-02-05"
+
+  - id: "frontend-007"
+    title: "Add product comparison feature"
+    description: "Allow users to compare multiple products side-by-side"
+    status: "pending"
+    priority: "low"
+    tags: ["frontend", "comparison", "ui"]
+    depends_on: ["frontend-001"]
+    acceptance_criteria:
+      - "Compare checkbox on product cards"
+      - "Comparison table showing product specs"
+      - "Max 4 products in comparison"
+      - "Clear comparison button"
+    created: "2026-02-05"
+
+  - id: "backend-009"
+    title: "Implement coupon and discount system"
+    description: "Apply promotional codes and discounts to orders"
+    status: "pending"
+    priority: "medium"
+    tags: ["backend", "promotions", "discounts"]
+    depends_on: ["backend-002"]
+    acceptance_criteria:
+      - "Coupon code validation endpoint"
+      - "Percentage and fixed amount discounts"
+      - "Expiration date checking"
+      - "Single-use and multi-use coupons"
+      - "Minimum order value requirements"
+    created: "2026-02-05"
+
+  - id: "frontend-008"
+    title: "Create mobile app navigation"
+    description: "Bottom tab navigation for mobile experience"
+    status: "pending"
+    priority: "medium"
+    tags: ["frontend", "mobile", "navigation"]
+    acceptance_criteria:
+      - "Bottom navigation bar with icons"
+      - "Home, Cart, Wishlist, Profile tabs"
+      - "Active tab highlighting"
+      - "Smooth transitions between tabs"
+    created: "2026-02-05"
+
+  - id: "backend-010"
+    title: "Add analytics and tracking"
+    description: "Track user behavior and conversion metrics"
+    status: "pending"
+    priority: "low"
+    tags: ["backend", "analytics", "metrics"]
+    acceptance_criteria:
+      - "Page view tracking"
+      - "Product view events"
+      - "Add to cart tracking"
+      - "Purchase conversion funnel"
+      - "Export data to analytics platform"
+    created: "2026-02-05"
+
+  - id: "testing-002"
+    title: "Write unit tests for payment logic"
+    description: "Comprehensive test coverage for payment processing"
+    status: "pending"
+    priority: "high"
+    tags: ["testing", "unit-tests", "payments"]
+    depends_on: ["backend-003"]
+    acceptance_criteria:
+      - "Test successful payment flow"
+      - "Test declined card handling"
+      - "Test webhook signature verification"
+      - "Test refund processing"
+      - "90% code coverage on payment module"
+    created: "2026-02-05"
+
+  - id: "frontend-009"
+    title: "Implement order tracking page"
+    description: "Show order status and shipping updates"
+    status: "pending"
+    priority: "medium"
+    tags: ["frontend", "orders", "tracking"]
+    depends_on: ["backend-005"]
+    acceptance_criteria:
+      - "Order timeline with status updates"
+      - "Shipping carrier tracking link"
+      - "Estimated delivery date"
+      - "Order details and items list"
+    created: "2026-02-05"
+
+  - id: "backend-011"
+    title: "Setup database backups"
+    description: "Automated daily backups with retention policy"
+    status: "pending"
+    priority: "critical"
+    tags: ["backend", "database", "backup"]
+    acceptance_criteria:
+      - "Daily automated backups at 2 AM"
+      - "30-day backup retention"
+      - "Backup verification script"
+      - "Disaster recovery documentation"
+    created: "2026-02-05"
+
+  - id: "security-001"
+    title: "Implement rate limiting"
+    description: "Prevent API abuse with request rate limits"
+    status: "pending"
+    priority: "high"
+    tags: ["backend", "security", "rate-limiting"]
+    depends_on: ["backend-002"]
+    acceptance_criteria:
+      - "Rate limit per IP address"
+      - "Different limits for authenticated users"
+      - "429 response with retry-after header"
+      - "Redis-based rate limiting"
+    created: "2026-02-05"
