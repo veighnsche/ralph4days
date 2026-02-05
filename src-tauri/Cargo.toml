@@ -29,6 +29,7 @@ chrono = "0.4"
 serde_yaml = "0.9"
 regex = "1.10"
 lazy_static = "1.4"
+rusqlite = { version = "0.32", features = ["bundled"] }
 
 [profile.dev]
 opt-level = 0

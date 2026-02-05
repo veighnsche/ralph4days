@@ -18,9 +18,9 @@ dev:
 dev-frontend:
     bun dev
 
-# Start development server with a fixture (skips project picker)
-dev-fixtures FIXTURE:
-    bun tauri dev -- -- --project {{justfile_directory()}}/fixtures/{{FIXTURE}}
+# Start development server with a mock project (skips project picker)
+dev-mock FIXTURE:
+    bun tauri dev -- -- --project {{justfile_directory()}}/mock/{{FIXTURE}}
 
 # Run cargo check (fast compilation check)
 check:
@@ -138,28 +138,21 @@ watch-test:
 types:
     @echo "TODO: Add ts-rs type generation"
 
-# === Fixtures ===
+# === Mock Test Data ===
 
-# Reset all fixtures to initial state
-reset-fixtures:
-    @echo "Resetting all fixtures..."
-    @for fixture in fixtures/*/reset.sh; do \
-        if [ -f "$$fixture" ]; then \
-            echo "  Resetting $$(dirname $$fixture)..."; \
-            bash "$$fixture" > /dev/null; \
-        fi; \
-    done
-    @echo "✓ All fixtures reset"
+# Reset mock directory from fixtures (copies fixtures → mock, makes .ralph visible)
+reset-mock:
+    @bash scripts/reset-mock.sh
 
-# Reset single-task fixture
-reset-single-task:
-    @bash fixtures/single-task/reset.sh
-
-# List available fixtures
-list-fixtures:
+# List available mock projects
+list-mock:
     #!/usr/bin/env bash
-    echo "Available fixtures:"
-    for f in fixtures/*/; do
+    if [ ! -d "mock" ]; then
+        echo "No mock directory found. Run 'just reset-mock' first."
+        exit 1
+    fi
+    echo "Available mock projects:"
+    for f in mock/*/; do
         name=$(basename "$f")
         prd="${f}.ralph/prd.yaml"
         if [ -f "$prd" ]; then
@@ -169,9 +162,18 @@ list-fixtures:
         fi
     done
 
-# Clean fixture generated files (but don't reset PRD status)
-clean-fixtures:
-    @echo "Cleaning fixture outputs..."
-    @rm -f fixtures/*/.ralph/progress.txt fixtures/*/.ralph/learnings.txt
-    @rm -f fixtures/*/CLAUDE.md fixtures/*/CLAUDE.md.ralph-backup
-    @echo "✓ Generated files removed"
+# === Fixtures (Read-only reference data) ===
+
+# List available fixtures (note: use mock/ for testing)
+list-fixtures:
+    #!/usr/bin/env bash
+    echo "Available fixtures (read-only, use 'just reset-mock' for testing):"
+    for f in fixtures/*/; do
+        name=$(basename "$f")
+        prd="${f}.undetect-ralph/prd.yaml"
+        if [ -f "$prd" ]; then
+            title=$(grep "^  title:" "$prd" | cut -d'"' -f2 || echo "N/A")
+            tasks=$(grep -c "^  - id:" "$prd" || echo "0")
+            echo "  $name: $tasks tasks - $title"
+        fi
+    done

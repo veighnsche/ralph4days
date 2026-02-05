@@ -1,5 +1,33 @@
 # Test Fixtures
 
+**Read-only reference data** for testing Ralph Loop. For actual testing, use the `mock/` directory (gitignored).
+
+## Quick Start
+
+```bash
+# Create mock test data from fixtures
+just reset-mock
+
+# List available mock projects
+just list-mock
+
+# Run Ralph with a mock project
+just dev-mock single-task
+
+# Or use the CLI directly
+ralph --project mock/single-task
+```
+
+## Fixtures vs Mock
+
+- **fixtures/** - Read-only reference data with `.undetect-ralph/` folders (won't be detected as Ralph projects)
+- **mock/** - Gitignored copy of fixtures with `.ralph/` folders (detected by Ralph for testing)
+
+The mock directory is regenerated from fixtures via `just reset-mock`, which:
+1. Copies all fixtures to `mock/`
+2. Renames `.undetect-ralph/` to `.ralph/` so Ralph can detect them
+3. Allows testing without polluting fixtures
+
 Development fixtures for testing Ralph Loop.
 
 ## Available Fixtures
@@ -60,45 +88,52 @@ CLAUDE.md.ralph-backup  # Backup of original CLAUDE.md (if existed)
 
 ## Usage
 
-### Running Ralph with a Fixture
+### Running Ralph with Mock Projects
+
+**Always use mock/ for testing, never modify fixtures directly:**
 
 ```bash
-# Option 1: Launch with CLI arg
-ralph --project fixtures/single-task
+# Reset mock directory from fixtures
+just reset-mock
 
-# Option 2: Launch and select via ProjectPicker
+# Run Ralph with a mock project (via justfile)
+just dev-mock single-task
+just dev-mock elaborate-prd
+just dev-mock 3-tier-tasks
+
+# Or launch with CLI directly
+ralph --project mock/single-task
+
+# Or launch interactive picker (will show mock projects)
 ralph
-# Then browse to fixtures/single-task
+# Then select from mock/
 ```
 
-### Resetting Fixtures
+### Resetting Test Data
 
-After running tests, reset fixtures to clean state:
+After testing, regenerate fresh mock data:
 
 ```bash
-# Reset all fixtures
-just reset-fixtures
+# Wipe mock/ and recreate from fixtures
+just reset-mock
 
-# Reset specific fixture
-just reset-single-task
-
-# Or run reset script directly
-./fixtures/single-task/reset.sh
+# List available mock projects
+just list-mock
 ```
 
-**What reset does**:
-- Restores `prd.yaml` to initial state (all tasks → pending)
-- Removes generated files (`progress.txt`, `learnings.txt`)
-- Removes injected `CLAUDE.md` and backups
-- Removes any files created by task execution
-- Preserves fixture structure and original files
+**What reset-mock does**:
+- Deletes entire `mock/` directory
+- Copies all fixtures to `mock/`
+- Renames `.undetect-ralph/` to `.ralph/` in mock copies
+- Makes projects detectable by Ralph for testing
 
-### Cleaning Without Resetting
+### Fixture Management (Advanced)
 
-To remove generated files without resetting task status:
+Fixtures are read-only reference data. Individual reset scripts still exist but are deprecated:
 
 ```bash
-just clean-fixtures
+# List fixtures (reference only, not for testing)
+just list-fixtures
 ```
 
 ## Fixture Development

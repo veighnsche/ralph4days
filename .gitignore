@@ -58,3 +58,6 @@ src-tauri/target/
 
 *storybook.log
 storybook-static
+
+# Mock test data (copied from fixtures)
+mock/

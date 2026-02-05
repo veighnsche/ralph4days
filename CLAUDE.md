@@ -14,6 +14,8 @@ Intel NUC12WSKi5 (i5-1240P, 64GB RAM, RTX 3090, Ultramarine Linux 43 Wayland/KDE
 
 Use `just --list` for all commands. Key ones: `just dev`, `just test`, `just build`, `just lint`, `just fmt`. Run built app: `ralph` (picker) or `ralph --project /path` (locked). Pre-commit hook runs oxlint and biome on staged files.
 
+**Testing workflow**: `just reset-mock` creates gitignored `mock/` from `fixtures/` (renames `.undetect-ralph/` to `.ralph/`). Use `just dev-mock <project>` or `ralph --project mock/<project>` for testing. Fixtures stay clean, mock is disposable.
+
 ## Architecture
 
 Frontend (React 19/Zustand) → IPC → Backend (Tauri/Rust: loop_engine, claude_client, prompt_builder) → subprocess → Claude CLI (--output-format stream-json, --max-turns 50)
