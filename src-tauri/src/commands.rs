@@ -62,14 +62,25 @@ pub fn validate_project_path(path: String) -> Result<(), String> {
 
     // Check .ralph/ directory exists
     let ralph_dir = path.join(".ralph");
-    if !ralph_dir.exists() || !ralph_dir.is_dir() {
-        return Err("No .ralph folder found. Is this a Ralph project?".to_string());
+    if !ralph_dir.exists() {
+        return Err(format!(
+            "No .ralph/ folder. Create one:\n  mkdir -p {}/.ralph\n  # Then add prd.yaml inside",
+            path.display()
+        ));
+    }
+    if !ralph_dir.is_dir() {
+        return Err(format!("{} exists but is not a directory", ralph_dir.display()));
     }
 
-    // Check .ralph/prd.md exists
-    let prd_path = ralph_dir.join("prd.md");
-    if !prd_path.exists() || !prd_path.is_file() {
-        return Err(".ralph/prd.md not found. Create PRD first.".to_string());
+    // Check .ralph/prd.yaml exists
+    let prd_path = ralph_dir.join("prd.yaml");
+    if !prd_path.exists() {
+        return Err(format!(
+            "No prd.yaml found. Create one:\n  # See: .specs/035_PRD_FORMAT.md\n  # Or copy from: fixtures/single-task/.ralph/prd.yaml"
+        ));
+    }
+    if !prd_path.is_file() {
+        return Err(format!("{} exists but is not a file", prd_path.display()));
     }
 
     Ok(())

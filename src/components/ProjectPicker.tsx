@@ -172,9 +172,17 @@ export function ProjectPicker({ onProjectLocked }: ProjectPickerProps) {
           )}
 
           {validationStatus === "error" && validationError && (
-            <div className="flex items-center gap-2 text-sm text-[hsl(var(--destructive))]">
-              <AlertCircle className="h-4 w-4" />
-              {validationError}
+            <div className="rounded-md border border-[hsl(var(--destructive))] bg-[hsl(var(--destructive))]/10 p-3">
+              <div className="flex items-start gap-2 text-sm text-[hsl(var(--destructive))]">
+                <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                <div className="space-y-2">
+                  <div className="font-medium">Not a valid Ralph project</div>
+                  <pre className="text-xs whitespace-pre-wrap font-mono">{validationError}</pre>
+                  <div className="text-xs opacity-80">
+                    Create the required structure, then try again.
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
