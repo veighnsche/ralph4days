@@ -1,0 +1,41 @@
+tasks:
+- id: 1
+  feature: authentication
+  discipline: backend
+  title: Implement login API
+  description: Create REST API endpoints for user authentication
+  status: pending
+  priority: high
+  tags:
+  - api
+  - security
+  created: 2026-02-05
+  acceptance_criteria:
+  - POST /login endpoint works
+  - Returns JWT token
+- id: 2
+  feature: authentication
+  discipline: frontend
+  title: Build login form
+  description: Create UI for user login
+  status: pending
+  priority: medium
+  tags:
+  - ui
+  depends_on:
+  - 1
+  created: 2026-02-05
+  acceptance_criteria:
+  - Form validates input
+- id: 3
+  feature: user-profile
+  discipline: frontend
+  title: Create profile page
+  description: User profile display and editing
+  status: pending
+  priority: low
+  tags:
+  - ui
+  created: 2026-02-05
+  acceptance_criteria:
+  - Shows user info

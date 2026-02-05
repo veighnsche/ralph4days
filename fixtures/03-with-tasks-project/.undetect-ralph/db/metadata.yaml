@@ -1,0 +1,11 @@
+schema_version: '1.0'
+project:
+  title: Tasks Project
+  description: Add project description here
+  created: 2026-02-05
+_counters:
+  authentication:
+    backend: 1
+    frontend: 2
+  user-profile:
+    frontend: 3
