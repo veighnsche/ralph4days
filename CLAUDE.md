@@ -145,7 +145,7 @@ Ralph expects projects to have a `.ralph/` directory:
 ```
 target-project/
 ├── .ralph/
-│   ├── prd.md              # Task list with [ ] / [x] checkboxes (REQUIRED)
+│   ├── prd.yaml            # Task list in structured YAML format (REQUIRED)
 │   ├── CLAUDE.RALPH.md     # Ralph-specific context for Claude (RECOMMENDED)
 │   ├── progress.txt        # Iteration log (appended after each)
 │   └── learnings.txt       # Patterns and gotchas (optional)

@@ -1,0 +1,14 @@
+schema_version: "1.0"
+project:
+  title: "Single Task Test Project"
+  description: "Minimal test fixture for Ralph Loop"
+  created: "2026-02-05"
+
+tasks:
+  - id: "task-001"
+    title: "Write a hello world script"
+    description: "Create a simple script that prints 'Hello, World!' to stdout"
+    status: "pending"
+    priority: "medium"
+    tags: ["testing", "simple"]
+    created: "2026-02-05"

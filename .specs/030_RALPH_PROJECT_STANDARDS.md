@@ -44,7 +44,7 @@ A valid Ralph project MUST have the following structure:
 ```
 target-project/
 ├── .ralph/
-│   └── prd.md              # REQUIRED: Product Requirements Document
+│   └── prd.yaml              # REQUIRED: Product Requirements Document
 └── ... (project files)
 ```
 
@@ -55,7 +55,7 @@ A fully-featured Ralph project SHOULD have:
 ```
 target-project/
 ├── .ralph/
-│   ├── prd.md              # REQUIRED: Task list with [ ] / [x] checkboxes
+│   ├── prd.yaml              # REQUIRED: Task list with [ ] / [x] checkboxes
 │   ├── CLAUDE.RALPH.md     # RECOMMENDED: Ralph-specific context for Claude
 │   ├── progress.txt        # AUTO-GENERATED: Iteration log (appended after each)
 │   └── learnings.txt       # OPTIONAL: Patterns, gotchas, accumulated wisdom
@@ -126,22 +126,27 @@ When Ralph Loop **completes** (success, abort, stop, or error), it MUST restore 
 
 ## 7. File Content Standards
 
-### 7.1 prd.md Format
+### 7.1 prd.yaml Format
 
-The `prd.md` file MUST:
+See [SPEC-035: PRD Format Standard](./035_PRD_FORMAT.md) for complete specification.
 
-- Use GitHub-flavored markdown task list syntax: `- [ ]` and `- [x]`
-- Have at least one unchecked task to start
-- Be parseable as plain text
+The `prd.yaml` file MUST:
 
-Example:
-```markdown
-# Project PRD
+- Use YAML 1.2 format
+- Include `schema_version: "1.0"`
+- Include at least one task with valid status
+- Be parseable by serde_yaml
 
-## Tasks
-- [ ] Implement user authentication
-- [ ] Add database schema
-- [x] Set up project structure
+Minimal example:
+```yaml
+schema_version: "1.0"
+project:
+  title: "My Project"
+
+tasks:
+  - id: "task-001"
+    title: "Implement user authentication"
+    status: "pending"
 ```
 
 ### 7.2 CLAUDE.RALPH.md Format
@@ -185,7 +190,7 @@ Freeform text. Teams can add notes about:
 Update `validate_project_path()` in `src-tauri/src/commands.rs`:
 
 - [x] Check `.ralph/` directory exists (already done)
-- [x] Check `.ralph/prd.md` exists (already done)
+- [x] Check `.ralph/prd.yaml` exists (already done)
 - [ ] Do NOT require `CLAUDE.RALPH.md` (optional file)
 
 ### 8.2 Loop Engine Changes
@@ -232,7 +237,7 @@ Update test fixtures:
 ```
 my-project/
 ├── .ralph/
-│   ├── prd.md
+│   ├── prd.yaml
 │   └── CLAUDE.RALPH.md
 └── src/
 ```
@@ -241,7 +246,7 @@ my-project/
 ```
 my-project/
 ├── .ralph/
-│   ├── prd.md
+│   ├── prd.yaml
 │   └── CLAUDE.RALPH.md
 ├── CLAUDE.md              # Created by Ralph (copy of CLAUDE.RALPH.md)
 └── src/
@@ -251,7 +256,7 @@ my-project/
 ```
 my-project/
 ├── .ralph/
-│   ├── prd.md
+│   ├── prd.yaml
 │   └── CLAUDE.RALPH.md
 └── src/                   # CLAUDE.md removed (Ralph created it)
 ```
@@ -262,7 +267,7 @@ my-project/
 ```
 my-project/
 ├── .ralph/
-│   ├── prd.md
+│   ├── prd.yaml
 │   └── CLAUDE.RALPH.md
 ├── CLAUDE.md              # Original project context
 └── src/
@@ -272,7 +277,7 @@ my-project/
 ```
 my-project/
 ├── .ralph/
-│   ├── prd.md
+│   ├── prd.yaml
 │   └── CLAUDE.RALPH.md
 ├── CLAUDE.md              # Overwritten with CLAUDE.RALPH.md content
 ├── CLAUDE.md.ralph-backup # Original backed up
@@ -283,7 +288,7 @@ my-project/
 ```
 my-project/
 ├── .ralph/
-│   ├── prd.md
+│   ├── prd.yaml
 │   └── CLAUDE.RALPH.md
 ├── CLAUDE.md              # Restored from backup
 └── src/                   # .ralph-backup removed after restore
