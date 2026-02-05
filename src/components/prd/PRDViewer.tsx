@@ -60,7 +60,9 @@ export function PRDViewer() {
         onClearFilters={clearFilters}
       />
 
-      <PRDBody filteredTasks={filteredTasks} onTaskClick={handleTaskClick} onClearFilters={clearFilters} />
+      <div className="flex-1 min-h-0 overflow-auto">
+        <PRDBody filteredTasks={filteredTasks} onTaskClick={handleTaskClick} onClearFilters={clearFilters} />
+      </div>
 
       <TaskDetailSidebar
         task={selectedTask}
