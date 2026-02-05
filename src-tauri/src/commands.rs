@@ -126,29 +126,12 @@ pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(
 
     let now = chrono::Utc::now().format("%Y-%m-%d").to_string();
 
-    // Create tasks.yaml with a starter task (numeric ID)
-    let mut tasks_file = TasksFile::new(db_path.join("tasks.yaml"));
-    tasks_file.add_task(crate::prd::Task {
-        id: 1,
-        feature: "setup".to_string(),
-        discipline: "frontend".to_string(),
-        title: "Replace this with your first task".to_string(),
-        description: Some("Add task details here".to_string()),
-        status: crate::prd::TaskStatus::Pending,
-        priority: Some(crate::prd::Priority::Medium),
-        tags: Vec::new(),
-        depends_on: Vec::new(),
-        blocked_by: None,
-        created: Some(now.clone()),
-        updated: None,
-        completed: None,
-        acceptance_criteria: Vec::new(),
-    });
+    // Create empty tasks.yaml (AI agents will add tasks)
+    let tasks_file = TasksFile::new(db_path.join("tasks.yaml"));
     tasks_file.save()?;
 
-    // Create features.yaml
-    let mut features_file = FeaturesFile::new(db_path.join("features.yaml"));
-    features_file.ensure_feature_exists("setup")?;
+    // Create empty features.yaml (AI agents will add features)
+    let features_file = FeaturesFile::new(db_path.join("features.yaml"));
     features_file.save()?;
 
     // Create disciplines.yaml with defaults
@@ -156,14 +139,14 @@ pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(
     disciplines.initialize_defaults();
     disciplines.save()?;
 
-    // Create metadata.yaml
+    // Create metadata.yaml (no counters - no tasks yet)
     let mut metadata = MetadataFile::new(db_path.join("metadata.yaml"));
     metadata.project = ProjectMetadata {
         title: project_title.clone(),
         description: Some("Add project description here".to_string()),
         created: Some(now),
     };
-    metadata.rebuild_counters(tasks_file.get_all());
+    // No need to rebuild counters - empty task list
     metadata.save()?;
 
     // Create optional CLAUDE.RALPH.md template

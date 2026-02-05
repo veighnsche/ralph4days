@@ -18,10 +18,10 @@ cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures -- --no
 ## What Gets Created
 
 When `initialize_ralph_project` is called on this directory:
-- `.undetect-ralph/db/tasks.yaml` (1 starter task)
-- `.undetect-ralph/db/features.yaml` ("setup" feature)
-- `.undetect-ralph/db/disciplines.yaml` (10 defaults)
-- `.undetect-ralph/db/metadata.yaml` (project info + counters)
+- `.undetect-ralph/db/tasks.yaml` (empty - AI agents will add tasks)
+- `.undetect-ralph/db/features.yaml` (empty - AI agents will add features)
+- `.undetect-ralph/db/disciplines.yaml` (10 defaults for reference)
+- `.undetect-ralph/db/metadata.yaml` (project info, no counters yet)
 - `.undetect-ralph/CLAUDE.RALPH.md` (template)
 
 See `initialized-project` fixture for the AFTER state.

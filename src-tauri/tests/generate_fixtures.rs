@@ -16,8 +16,7 @@ fn initialize_project_for_fixture(
     use_undetect: bool,
 ) -> Result<(), String> {
     use yaml_db::{
-        DisciplinesFile, FeaturesFile, MetadataFile, Priority, ProjectMetadata, Task, TaskStatus,
-        TasksFile,
+        DisciplinesFile, FeaturesFile, MetadataFile, ProjectMetadata, TasksFile,
     };
 
     if !path.exists() {
@@ -55,29 +54,12 @@ fn initialize_project_for_fixture(
 
     let now = chrono::Utc::now().format("%Y-%m-%d").to_string();
 
-    // Create tasks.yaml with starter task
-    let mut tasks_file = TasksFile::new(db_path.join("tasks.yaml"));
-    tasks_file.add_task(Task {
-        id: 1,
-        feature: "setup".to_string(),
-        discipline: "frontend".to_string(),
-        title: "Replace this with your first task".to_string(),
-        description: Some("Add task details here".to_string()),
-        status: TaskStatus::Pending,
-        priority: Some(Priority::Medium),
-        tags: Vec::new(),
-        depends_on: Vec::new(),
-        blocked_by: None,
-        created: Some(now.clone()),
-        updated: None,
-        completed: None,
-        acceptance_criteria: Vec::new(),
-    });
+    // Create empty tasks.yaml (AI agents will add tasks)
+    let tasks_file = TasksFile::new(db_path.join("tasks.yaml"));
     tasks_file.save()?;
 
-    // Create features.yaml
-    let mut features_file = FeaturesFile::new(db_path.join("features.yaml"));
-    features_file.ensure_feature_exists("setup")?;
+    // Create empty features.yaml (AI agents will add features)
+    let features_file = FeaturesFile::new(db_path.join("features.yaml"));
     features_file.save()?;
 
     // Create disciplines.yaml with defaults
@@ -85,14 +67,14 @@ fn initialize_project_for_fixture(
     disciplines.initialize_defaults();
     disciplines.save()?;
 
-    // Create metadata.yaml
+    // Create metadata.yaml (no counters - no tasks yet)
     let mut metadata = MetadataFile::new(db_path.join("metadata.yaml"));
     metadata.project = ProjectMetadata {
         title: project_title.clone(),
         description: Some("Add project description here".to_string()),
         created: Some(now),
     };
-    metadata.rebuild_counters(tasks_file.get_all());
+    // No need to rebuild counters - empty task list
     metadata.save()?;
 
     // Create CLAUDE.RALPH.md template
@@ -171,10 +153,10 @@ cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures -- --no
 ## What Gets Created
 
 When `initialize_ralph_project` is called on this directory:
-- `.undetect-ralph/db/tasks.yaml` (1 starter task)
-- `.undetect-ralph/db/features.yaml` ("setup" feature)
-- `.undetect-ralph/db/disciplines.yaml` (10 defaults)
-- `.undetect-ralph/db/metadata.yaml` (project info + counters)
+- `.undetect-ralph/db/tasks.yaml` (empty - AI agents will add tasks)
+- `.undetect-ralph/db/features.yaml` (empty - AI agents will add features)
+- `.undetect-ralph/db/disciplines.yaml` (10 defaults for reference)
+- `.undetect-ralph/db/metadata.yaml` (project info, no counters yet)
 - `.undetect-ralph/CLAUDE.RALPH.md` (template)
 
 See `initialized-project` fixture for the AFTER state.
@@ -209,10 +191,10 @@ fn generate_fixture_initialized_project() {
     // Add README
     let readme = r#"# Initialized Project
 
-**Purpose**: Freshly initialized Ralph project with starter task
+**Purpose**: Freshly initialized Ralph project (empty, ready for AI agents)
 
 This fixture shows the state immediately after running `initialize_ralph_project`.
-It has `.undetect-ralph/` structure with one starter task.
+It has `.undetect-ralph/` structure with empty tasks/features (AI agents will populate).
 
 ## Usage
 
@@ -231,17 +213,18 @@ ralph --project mock/initialized-project
 
 ## Contents
 
-- `.undetect-ralph/db/tasks.yaml` - 1 starter task (ID=1, "Replace this with your first task")
-- `.undetect-ralph/db/features.yaml` - "setup" feature
-- `.undetect-ralph/db/disciplines.yaml` - 10 default disciplines
-- `.undetect-ralph/db/metadata.yaml` - Project metadata + counters
+- `.undetect-ralph/db/tasks.yaml` - Empty (AI agents will add tasks)
+- `.undetect-ralph/db/features.yaml` - Empty (AI agents will add features)
+- `.undetect-ralph/db/disciplines.yaml` - 10 default disciplines (reference)
+- `.undetect-ralph/db/metadata.yaml` - Project metadata (no counters yet)
 - `.undetect-ralph/CLAUDE.RALPH.md` - Template for context
 
 ## Expected Behavior
 
-- Loop should start with 1 pending task
-- User can replace the starter task with their actual tasks
-- Ready for monkey testing and manual exploration
+- Loop starts with no tasks (clean slate)
+- AI agents will create tasks and features as needed
+- Disciplines provide defaults for common categories
+- Ready for AI-driven development workflow
 "#;
 
     fs::write(fixture_path.join("README.md"), readme).unwrap();
