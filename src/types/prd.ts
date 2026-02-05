@@ -1,19 +1,7 @@
-export type Discipline =
-  | "frontend"
-  | "backend"
-  | "database"
-  | "testing"
-  | "infra"
-  | "security"
-  | "docs"
-  | "design"
-  | "promo"
-  | "api";
-
 export interface PRDTask {
   id: number;
   feature: string;
-  discipline: Discipline;
+  discipline: string;
   title: string;
   description?: string;
   status: "pending" | "in_progress" | "done" | "blocked" | "skipped";

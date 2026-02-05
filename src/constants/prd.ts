@@ -1,20 +1,4 @@
-import {
-  Ban,
-  BookOpen,
-  CheckCircle2,
-  Circle,
-  Cloud,
-  Database,
-  FlaskConical,
-  Megaphone,
-  Monitor,
-  Palette,
-  Play,
-  Plug,
-  Server,
-  Shield,
-  Slash,
-} from "lucide-react";
+import { Ban, CheckCircle2, Circle, Play, Slash } from "lucide-react";
 import type { PRDTask } from "@/types/prd";
 
 export const STATUS_CONFIG = {
@@ -70,69 +54,6 @@ export const PRIORITY_CONFIG = {
     label: "Critical",
     color: "var(--priority-critical)",
     bgColor: "color-mix(in oklch, var(--priority-critical) 15%, transparent)",
-  },
-} as const;
-
-export const DISCIPLINE_CONFIG = {
-  frontend: {
-    label: "frontend",
-    icon: Monitor,
-    color: "var(--discipline-frontend)",
-    bgColor: "color-mix(in oklch, var(--discipline-frontend) 15%, transparent)",
-  },
-  backend: {
-    label: "backend ",
-    icon: Server,
-    color: "var(--discipline-backend)",
-    bgColor: "color-mix(in oklch, var(--discipline-backend) 15%, transparent)",
-  },
-  database: {
-    label: "database",
-    icon: Database,
-    color: "var(--discipline-database)",
-    bgColor: "color-mix(in oklch, var(--discipline-database) 15%, transparent)",
-  },
-  testing: {
-    label: "testing ",
-    icon: FlaskConical,
-    color: "var(--discipline-testing)",
-    bgColor: "color-mix(in oklch, var(--discipline-testing) 15%, transparent)",
-  },
-  infra: {
-    label: "infra   ",
-    icon: Cloud,
-    color: "var(--discipline-infrastructure)",
-    bgColor: "color-mix(in oklch, var(--discipline-infrastructure) 15%, transparent)",
-  },
-  security: {
-    label: "security",
-    icon: Shield,
-    color: "var(--discipline-security)",
-    bgColor: "color-mix(in oklch, var(--discipline-security) 15%, transparent)",
-  },
-  docs: {
-    label: "docs    ",
-    icon: BookOpen,
-    color: "var(--discipline-documentation)",
-    bgColor: "color-mix(in oklch, var(--discipline-documentation) 15%, transparent)",
-  },
-  design: {
-    label: "design  ",
-    icon: Palette,
-    color: "var(--discipline-design)",
-    bgColor: "color-mix(in oklch, var(--discipline-design) 15%, transparent)",
-  },
-  promo: {
-    label: "promo   ",
-    icon: Megaphone,
-    color: "var(--discipline-marketing)",
-    bgColor: "color-mix(in oklch, var(--discipline-marketing) 15%, transparent)",
-  },
-  api: {
-    label: "api     ",
-    icon: Plug,
-    color: "var(--discipline-api)",
-    bgColor: "color-mix(in oklch, var(--discipline-api) 15%, transparent)",
   },
 } as const;
 

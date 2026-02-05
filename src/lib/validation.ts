@@ -1,21 +1,4 @@
-import type { Discipline, PRDData, PRDTask } from "@/types/prd";
-
-const VALID_DISCIPLINES: readonly Discipline[] = [
-  "frontend",
-  "backend",
-  "database",
-  "testing",
-  "infra",
-  "security",
-  "docs",
-  "design",
-  "promo",
-  "api",
-] as const;
-
-function isDiscipline(value: unknown): value is Discipline {
-  return typeof value === "string" && VALID_DISCIPLINES.includes(value as Discipline);
-}
+import type { PRDData, PRDTask } from "@/types/prd";
 
 export function validateTask(task: unknown): task is PRDTask {
   if (!task || typeof task !== "object") {
@@ -33,8 +16,8 @@ export function validateTask(task: unknown): task is PRDTask {
     throw new Error(`Task feature must be a string, got: ${typeof t.feature}`);
   }
 
-  if (!isDiscipline(t.discipline)) {
-    throw new Error(`Task discipline must be one of ${VALID_DISCIPLINES.join(", ")}, got: ${t.discipline}`);
+  if (typeof t.discipline !== "string" || t.discipline.length === 0) {
+    throw new Error(`Task discipline must be a non-empty string, got: ${t.discipline}`);
   }
 
   if (typeof t.title !== "string") {
