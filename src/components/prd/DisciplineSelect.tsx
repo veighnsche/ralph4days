@@ -1,42 +1,17 @@
-import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DISCIPLINE_CONFIG } from "@/constants/prd";
+import { useDisciplines } from "@/hooks/useDisciplines";
 
 interface DisciplineSelectProps {
   value: string;
   onChange: (value: string) => void;
 }
 
-type DisciplineKey = keyof typeof DISCIPLINE_CONFIG;
-
 export function DisciplineSelect({ value, onChange }: DisciplineSelectProps) {
-  const [disciplines, setDisciplines] = useState<string[]>([]);
+  const { disciplines, configMap } = useDisciplines();
 
-  useEffect(() => {
-    invoke<string[]>("get_available_disciplines")
-      .then(setDisciplines)
-      .catch((err) => {
-        console.error("Failed to load disciplines:", err);
-        // Fallback to hardcoded list
-        setDisciplines([
-          "frontend",
-          "backend",
-          "database",
-          "testing",
-          "infrastructure",
-          "security",
-          "documentation",
-          "design",
-          "marketing",
-          "api",
-        ]);
-      });
-  }, []);
-
-  const selectedDisciplineConfig = value && DISCIPLINE_CONFIG[value as DisciplineKey];
-  const SelectedIcon = selectedDisciplineConfig?.icon;
+  const selectedConfig = value ? configMap[value] : undefined;
+  const SelectedIcon = selectedConfig?.icon;
 
   return (
     <div className="space-y-2">
@@ -46,23 +21,22 @@ export function DisciplineSelect({ value, onChange }: DisciplineSelectProps) {
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger id="discipline">
           <SelectValue placeholder="Select a discipline">
-            {selectedDisciplineConfig && SelectedIcon && (
+            {selectedConfig && SelectedIcon && (
               <div className="flex items-center gap-2">
-                <SelectedIcon size={16} style={{ color: selectedDisciplineConfig.color }} />
-                <span>{selectedDisciplineConfig.label}</span>
+                <SelectedIcon size={16} style={{ color: selectedConfig.color }} />
+                <span>{selectedConfig.displayName}</span>
               </div>
             )}
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {disciplines.map((d) => {
-            const config = DISCIPLINE_CONFIG[d as DisciplineKey];
-            const Icon = config?.icon;
+            const Icon = d.icon;
             return (
-              <SelectItem key={d} value={d}>
+              <SelectItem key={d.name} value={d.name}>
                 <div className="flex items-center gap-2">
-                  {Icon && <Icon size={16} style={{ color: config.color }} />}
-                  <span>{config?.label || d.charAt(0).toUpperCase() + d.slice(1)}</span>
+                  <Icon size={16} style={{ color: d.color }} />
+                  <span>{d.displayName}</span>
                 </div>
               </SelectItem>
             );
