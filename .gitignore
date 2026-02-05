@@ -61,3 +61,4 @@ storybook-static
 
 # Mock test data (copied from fixtures)
 mock/
+*.backup
