@@ -5,4 +5,5 @@ expression: features_yaml
 features:
 - name: user-management
   display_name: User Management
+  acronym: USRM
   created: 2026-02-05

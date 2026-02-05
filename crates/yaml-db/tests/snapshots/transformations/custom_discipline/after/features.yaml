@@ -1,4 +1,5 @@
 features:
 - name: ml-pipeline
   display_name: Ml Pipeline
+  acronym: MLPP
   created: 2026-02-05

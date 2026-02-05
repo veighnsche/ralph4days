@@ -1,4 +1,5 @@
 features:
 - name: search
   display_name: Search
+  acronym: TEST
   created: 2026-02-05

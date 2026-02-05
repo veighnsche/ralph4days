@@ -7,7 +7,9 @@ disciplines:
   display_name: ML/Ops
   icon: Brain
   color: violet
+  acronym: MLOP
 - name: data-eng
   display_name: Data Engineering
   icon: Database
   color: emerald
+  acronym: DENG

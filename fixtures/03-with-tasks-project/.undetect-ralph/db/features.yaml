@@ -2,6 +2,8 @@ features:
 - name: authentication
   display_name: Authentication
   created: 2026-02-05
+  acronym: THNT
 - name: user-profile
   display_name: User Profile
   created: 2026-02-05
+  acronym: USPR
