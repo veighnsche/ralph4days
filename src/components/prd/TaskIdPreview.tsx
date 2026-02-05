@@ -1,6 +1,6 @@
+import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { universalInvoke } from "@/services/mockBackend";
 import { TaskIdDisplay } from "./TaskIdDisplay";
 
 interface TaskIdPreviewProps {
@@ -23,7 +23,7 @@ export function TaskIdPreview({ feature, discipline }: TaskIdPreviewProps) {
     // Debounce: wait 300ms after user stops typing
     const timer = setTimeout(() => {
       setLoading(true);
-      universalInvoke<string>("get_next_task_id", {
+      invoke<string>("get_next_task_id", {
         feature: normalized,
         discipline,
       })

@@ -1,8 +1,8 @@
+import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DISCIPLINE_CONFIG } from "@/constants/prd";
-import { universalInvoke } from "@/services/mockBackend";
 
 interface DisciplineSelectProps {
   value: string;
@@ -15,7 +15,7 @@ export function DisciplineSelect({ value, onChange }: DisciplineSelectProps) {
   const [disciplines, setDisciplines] = useState<string[]>([]);
 
   useEffect(() => {
-    universalInvoke<string[]>("get_available_disciplines")
+    invoke<string[]>("get_available_disciplines")
       .then(setDisciplines)
       .catch((err) => {
         console.error("Failed to load disciplines:", err);

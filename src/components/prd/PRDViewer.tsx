@@ -9,7 +9,7 @@ import { PRDHeader } from "./PRDHeader";
 import { TaskDetailSidebar } from "./TaskDetailSidebar";
 
 export function PRDViewer() {
-  const { prdData, loading, error, refresh, usingMockData } = usePRDData();
+  const { prdData, loading, error, refresh } = usePRDData();
   const { filters, setters, filteredTasks, allTags, clearFilters } = usePRDFilters(prdData);
   const { selectedTask, sidebarOpen, handleTaskClick, handleNavigateNext, handleNavigatePrev, setSidebarOpen } =
     useSidebarNavigation(filteredTasks);
@@ -48,15 +48,6 @@ export function PRDViewer() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {usingMockData && (
-        <Alert variant="default" className="mb-2 rounded-none border-x-0 border-t-0 bg-amber-50 dark:bg-amber-950/20">
-          <AlertDescription className="text-xs">
-            ⚠️ <strong>Mock Mode:</strong> Using sample data. Tauri backend not detected. Start the backend with{" "}
-            <code className="px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-900">just dev</code> for live data.
-          </AlertDescription>
-        </Alert>
-      )}
-
       <PRDHeader
         project={prdData.project}
         totalTasks={totalTasks}

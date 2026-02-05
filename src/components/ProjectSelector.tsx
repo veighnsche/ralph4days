@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FolderOpen } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -7,7 +8,6 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { universalInvoke } from "@/services/mockBackend";
 
 interface RalphProject {
   name: string;
@@ -30,15 +30,19 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
 
   // Scan for projects on mount
   useEffect(() => {
-    universalInvoke<RalphProject[]>("scan_for_ralph_projects")
-      .then((found) => {
-        setProjects(found);
-        setScanning(false);
-      })
-      .catch((err) => {
-        console.error("Scan error:", err);
-        setScanning(false);
-      });
+    if (typeof window !== "undefined" && "__TAURI__" in window) {
+      invoke<RalphProject[]>("scan_for_ralph_projects")
+        .then((found) => {
+          setProjects(found);
+          setScanning(false);
+        })
+        .catch((err) => {
+          console.error("Scan error:", err);
+          setScanning(false);
+        });
+    } else {
+      setScanning(false);
+    }
   }, []);
 
   const handleBrowseInit = async () => {
@@ -62,8 +66,8 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
     setInitializing(true);
     try {
       const title = initPath.split("/").pop() || "Project";
-      await universalInvoke("initialize_ralph_project", { path: initPath, projectTitle: title });
-      await universalInvoke("set_locked_project", { path: initPath });
+      await invoke("initialize_ralph_project", { path: initPath, projectTitle: title });
+      await invoke("set_locked_project", { path: initPath });
       onProjectSelected(initPath);
     } catch (err) {
       alert(`Failed to initialize: ${err}`);
@@ -75,7 +79,7 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
     if (!selectedProject) return;
 
     try {
-      await universalInvoke("set_locked_project", { path: selectedProject });
+      await invoke("set_locked_project", { path: selectedProject });
       onProjectSelected(selectedProject);
     } catch (err) {
       alert(`Failed to open: ${err}`);
