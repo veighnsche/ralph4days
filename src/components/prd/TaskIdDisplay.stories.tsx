@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import type { PRDTask } from "@/types/prd";
 import { TaskIdDisplay } from "./TaskIdDisplay";
 
 const meta = {
@@ -13,59 +14,62 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+const createTask = (id: number, feature: string, discipline: PRDTask["discipline"]): PRDTask => ({
+  id,
+  feature,
+  discipline,
+  title: "Example task",
+  status: "pending",
+});
+
 export const Frontend: Story = {
   args: {
-    taskId: "ui/frontend/1",
+    task: createTask(1, "ui", "frontend"),
     variant: "default",
-    status: "pending",
   },
 };
 
 export const Backend: Story = {
   args: {
-    taskId: "api/backend/042",
+    task: createTask(42, "api", "backend"),
     variant: "default",
-    status: "in_progress",
   },
 };
 
 export const Database: Story = {
   args: {
-    taskId: "data/database/3",
+    task: createTask(3, "data", "database"),
     variant: "default",
-    status: "done",
   },
 };
 
 export const Testing: Story = {
   args: {
-    taskId: "tests/testing/015",
+    task: createTask(15, "tests", "testing"),
     variant: "default",
-    status: "blocked",
   },
 };
 
 export const BadgeVariant: Story = {
   args: {
-    taskId: "ui/frontend/1",
+    task: createTask(1, "ui", "frontend"),
     variant: "badge",
-    status: "in_progress",
   },
 };
 
 export const AllDisciplines: Story = {
   render: () => (
     <div className="flex flex-col gap-4">
-      <TaskIdDisplay taskId="ui/frontend/1" status="pending" />
-      <TaskIdDisplay taskId="api/backend/2" status="in_progress" />
-      <TaskIdDisplay taskId="data/database/3" status="done" />
-      <TaskIdDisplay taskId="tests/testing/4" status="blocked" />
-      <TaskIdDisplay taskId="infra/infrastructure/5" status="skipped" />
-      <TaskIdDisplay taskId="sec/security/6" status="in_progress" />
-      <TaskIdDisplay taskId="docs/documentation/7" status="pending" />
-      <TaskIdDisplay taskId="design/design/8" status="done" />
-      <TaskIdDisplay taskId="promo/marketing/9" status="pending" />
-      <TaskIdDisplay taskId="rest/api/010" status="in_progress" />
+      <TaskIdDisplay task={createTask(1, "ui", "frontend")} />
+      <TaskIdDisplay task={createTask(2, "api", "backend")} />
+      <TaskIdDisplay task={createTask(3, "data", "database")} />
+      <TaskIdDisplay task={createTask(4, "tests", "testing")} />
+      <TaskIdDisplay task={createTask(5, "deploy", "infra")} />
+      <TaskIdDisplay task={createTask(6, "sec", "security")} />
+      <TaskIdDisplay task={createTask(7, "docs", "docs")} />
+      <TaskIdDisplay task={createTask(8, "ui", "design")} />
+      <TaskIdDisplay task={createTask(9, "campaign", "promo")} />
+      <TaskIdDisplay task={createTask(10, "rest", "api")} />
     </div>
   ),
 };
