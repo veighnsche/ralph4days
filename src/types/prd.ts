@@ -1,11 +1,25 @@
+export type Discipline =
+  | "frontend"
+  | "backend"
+  | "database"
+  | "testing"
+  | "infra"
+  | "security"
+  | "docs"
+  | "design"
+  | "promo"
+  | "api";
+
 export interface PRDTask {
-  id: string;
+  id: number;
+  feature: string;
+  discipline: Discipline;
   title: string;
   description?: string;
   status: "pending" | "in_progress" | "done" | "blocked" | "skipped";
   priority?: "low" | "medium" | "high" | "critical";
   tags?: string[];
-  depends_on?: string[];
+  depends_on?: number[];
   blocked_by?: string;
   created?: string;
   updated?: string;

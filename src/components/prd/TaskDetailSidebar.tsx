@@ -89,7 +89,7 @@ export const TaskDetailSidebar = memo(function TaskDetailSidebar({
             </div>
           </div>
           <SheetDescription>
-            <TaskIdDisplay taskId={task.id} status={task.status} />
+            <TaskIdDisplay task={task} />
           </SheetDescription>
         </SheetHeader>
 
@@ -130,7 +130,7 @@ export const TaskDetailSidebar = memo(function TaskDetailSidebar({
               <div className="flex gap-2 flex-wrap">
                 {task.depends_on.map((depId) => (
                   <Badge key={depId} variant="outline" className="font-mono text-xs">
-                    {depId}
+                    Task #{depId}
                   </Badge>
                 ))}
               </div>

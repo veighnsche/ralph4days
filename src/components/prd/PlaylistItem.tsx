@@ -3,7 +3,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { DISCIPLINE_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from "@/constants/prd";
+import { PRIORITY_CONFIG, STATUS_CONFIG } from "@/constants/prd";
 import type { PRDTask } from "@/types/prd";
 import { TaskIdDisplay } from "./TaskIdDisplay";
 
@@ -14,53 +14,29 @@ interface PlaylistItemProps {
   onClick: () => void;
 }
 
-type DisciplineKey = keyof typeof DISCIPLINE_CONFIG;
-
-function getItemClassName(isNowPlaying: boolean, isIssue: boolean) {
-  return `
-    cursor-pointer transition-all duration-200
-    hover:bg-[hsl(var(--muted)/0.5)]
-    border-l-2
-    ${isNowPlaying ? "bg-[hsl(var(--status-in-progress)/0.1)] border-l-4" : ""}
-    ${isIssue ? "bg-[hsl(var(--status-blocked)/0.08)]" : ""}
-  `;
-}
-
-function getItemStyle(
-  isNowPlaying: boolean,
-  statusColor: string,
-  disciplineConfig: (typeof DISCIPLINE_CONFIG)[DisciplineKey] | null | undefined
-) {
+function getItemStyle(status: PRDTask["status"], statusConfig: (typeof STATUS_CONFIG)[keyof typeof STATUS_CONFIG]) {
   return {
-    borderLeftColor: isNowPlaying ? statusColor : disciplineConfig?.color || "transparent",
-    ...(disciplineConfig && !isNowPlaying ? { backgroundColor: disciplineConfig.bgColor } : {}),
+    borderLeftColor: statusConfig.color,
+    backgroundColor: statusConfig.bgColor,
+    opacity: status === "done" || status === "skipped" ? 0.5 : 1,
   };
 }
 
-export const PlaylistItem = memo(function PlaylistItem({
-  task,
-  isNowPlaying = false,
-  isIssue = false,
-  onClick,
-}: PlaylistItemProps) {
+export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = false, onClick }: PlaylistItemProps) {
   const statusConfig = STATUS_CONFIG[task.status];
   const priorityConfig = task.priority ? PRIORITY_CONFIG[task.priority] : null;
-
-  // Extract discipline from task ID (format: feature/discipline/number)
-  const disciplinePart = task.id.split("/")[1];
-  const disciplineConfig = disciplinePart && DISCIPLINE_CONFIG[disciplinePart as DisciplineKey];
 
   return (
     <Item
       size="sm"
       variant="default"
-      className={getItemClassName(isNowPlaying, isIssue)}
-      style={getItemStyle(isNowPlaying, statusConfig.color, disciplineConfig)}
+      className="cursor-pointer transition-all duration-200 hover:opacity-80 border-l-4"
+      style={getItemStyle(task.status, statusConfig)}
       onClick={onClick}
     >
       {/* Task ID with Icon */}
       <div className="flex-shrink-0 self-start">
-        <TaskIdDisplay taskId={task.id} status={task.status} />
+        <TaskIdDisplay task={task} />
       </div>
 
       {/* Main Content: Title + Description */}

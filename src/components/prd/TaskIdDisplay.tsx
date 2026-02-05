@@ -1,75 +1,77 @@
 import { Circle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { ItemMedia } from "@/components/ui/item";
-import { DISCIPLINE_CONFIG, STATUS_CONFIG } from "@/constants/prd";
+import { DISCIPLINE_CONFIG } from "@/constants/prd";
+import type { PRDTask } from "@/types/prd";
 
 interface TaskIdDisplayProps {
-  taskId: string;
+  task: PRDTask;
   variant?: "default" | "badge";
-  status?: "pending" | "in_progress" | "done" | "blocked" | "skipped";
   className?: string;
 }
 
-type DisciplineKey = keyof typeof DISCIPLINE_CONFIG;
-
-export function TaskIdDisplay({ taskId, variant = "default", status = "pending", className = "" }: TaskIdDisplayProps) {
-  const parts = taskId.split("/");
-  const [featurePart, disciplinePart, numberPart] = parts;
-  const disciplineConfig = disciplinePart && DISCIPLINE_CONFIG[disciplinePart as DisciplineKey];
+export function TaskIdDisplay({ task, variant = "default", className = "" }: TaskIdDisplayProps) {
+  const disciplineConfig = DISCIPLINE_CONFIG[task.discipline];
   const DisciplineIcon = disciplineConfig?.icon || Circle;
-  const statusConfig = STATUS_CONFIG[status];
 
   if (variant === "badge") {
     return (
       <div className={`flex items-center gap-2 ${className}`}>
-        <ItemMedia variant="icon" style={{ backgroundColor: statusConfig.bgColor }}>
-          <DisciplineIcon style={{ color: statusConfig.color, stroke: statusConfig.color }} />
-        </ItemMedia>
+        {/* Simple icon box */}
+        <div
+          className="w-8 h-8 flex items-center justify-center rounded border"
+          style={{
+            backgroundColor: disciplineConfig?.bgColor || "transparent",
+            borderColor: disciplineConfig?.color || "transparent",
+          }}
+        >
+          <DisciplineIcon className="w-4 h-4" style={{ color: disciplineConfig?.color }} />
+        </div>
+
+        {/* Badge variant */}
         <div className="flex flex-col items-start leading-tight">
           <Badge variant="outline" className="font-mono text-xs mb-0.5">
-            {featurePart}
+            {task.feature}
           </Badge>
-          {disciplinePart && (
-            <Badge
-              variant="outline"
-              className="font-mono text-xs mb-0.5"
-              style={{
-                borderColor: disciplineConfig?.color,
-                backgroundColor: disciplineConfig?.bgColor,
-                color: disciplineConfig?.color,
-              }}
-            >
-              {disciplinePart}
-            </Badge>
-          )}
-          {numberPart && (
-            <Badge variant="outline" className="font-mono text-xs mb-0.5">
-              {numberPart}
-            </Badge>
-          )}
+          <Badge
+            variant="outline"
+            className="font-mono text-xs mb-0.5"
+            style={{
+              borderColor: disciplineConfig?.color,
+              backgroundColor: disciplineConfig?.bgColor,
+              color: disciplineConfig?.color,
+            }}
+          >
+            {task.discipline}
+          </Badge>
+          <Badge variant="outline" className="font-mono text-xs mb-0.5">
+            {task.id}
+          </Badge>
         </div>
       </div>
     );
   }
 
+  // Default variant - SUPER SIMPLE
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <ItemMedia variant="icon" style={{ backgroundColor: statusConfig.bgColor }}>
-        <DisciplineIcon style={{ color: statusConfig.color, stroke: statusConfig.color }} />
-      </ItemMedia>
-      <div className="flex flex-col items-start leading-tight">
-        <span className="text-xs font-mono text-[hsl(var(--muted-foreground))]">{featurePart}</span>
-        {disciplinePart && (
-          <span
-            className="text-xs font-mono font-medium"
-            style={{
-              color: disciplineConfig?.color,
-            }}
-          >
-            {disciplinePart}
-          </span>
-        )}
-        {numberPart && <span className="text-xs font-mono text-[hsl(var(--muted-foreground))]">{numberPart}</span>}
+      {/* Simple icon box */}
+      <div
+        className="w-8 h-8 flex items-center justify-center rounded border"
+        style={{
+          backgroundColor: disciplineConfig?.bgColor || "transparent",
+          borderColor: disciplineConfig?.color || "transparent",
+        }}
+      >
+        <DisciplineIcon className="w-4 h-4" style={{ color: disciplineConfig?.color }} />
+      </div>
+
+      {/* Simple text */}
+      <div className="flex flex-col items-start leading-tight font-mono">
+        <span className="text-xs text-muted-foreground">{task.feature}</span>
+        <span className="text-xs font-medium" style={{ color: disciplineConfig?.color }}>
+          {task.discipline}
+        </span>
+        <span className="text-xs text-muted-foreground">{task.id}</span>
       </div>
     </div>
   );
