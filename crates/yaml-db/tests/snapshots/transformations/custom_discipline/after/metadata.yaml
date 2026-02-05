@@ -1,0 +1,6 @@
+schema_version: '1.0
+project:
+  title: Test Project
+_counters:
+  ml-pipeline:
+    machine-learning: 1

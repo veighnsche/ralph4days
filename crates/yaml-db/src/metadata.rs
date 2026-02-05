@@ -25,7 +25,11 @@ pub struct MetadataFile {
 
     /// Counters track highest task ID per feature+discipline
     /// Structure: { feature: { discipline: max_id } }
-    #[serde(rename = "_counters", skip_serializing_if = "BTreeMap::is_empty")]
+    #[serde(
+        rename = "_counters",
+        default,
+        skip_serializing_if = "BTreeMap::is_empty"
+    )]
     counters: BTreeMap<String, BTreeMap<String, u32>>,
 }
 

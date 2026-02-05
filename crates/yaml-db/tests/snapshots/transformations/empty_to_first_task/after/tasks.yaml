@@ -1,0 +1,15 @@
+tasks:
+- id: 1
+  feature: authentication
+  discipline: backend
+  title: Implement login API
+  description: Create REST API endpoints for user authentication
+  status: pending
+  priority: high
+  tags:
+  - api
+  - security
+  created: 2026-02-05
+  acceptance_criteria:
+  - POST /login endpoint works
+  - Returns JWT token

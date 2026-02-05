@@ -1,0 +1,8 @@
+schema_version: '1.0
+project:
+  title: Test Project
+  created: 2024-01-01
+_counters:
+  authentication:
+    backend: 1
+    frontend: 2

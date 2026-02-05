@@ -1,0 +1,5 @@
+features:
+- name: auth
+  display_name: Auth
+- name: payments
+  display_name: Payments

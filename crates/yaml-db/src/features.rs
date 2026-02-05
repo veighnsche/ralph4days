@@ -8,7 +8,8 @@ pub struct Feature {
     pub display_name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    pub created: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created: Option<String>,
 }
 
 // Implement YamlEntity trait for Feature
@@ -28,7 +29,7 @@ impl FeaturesFile {
                 name: name.to_string(),
                 display_name: Self::name_to_display_name(name),
                 description: None,
-                created: chrono::Utc::now().format("%Y-%m-%d").to_string(),
+                created: Some(chrono::Utc::now().format("%Y-%m-%d").to_string()),
             });
         }
         Ok(())

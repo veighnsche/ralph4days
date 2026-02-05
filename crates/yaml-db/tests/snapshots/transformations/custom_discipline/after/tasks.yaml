@@ -1,0 +1,12 @@
+tasks:
+- id: 1
+  feature: ml-pipeline
+  discipline: machine-learning
+  title: Train model
+  description: Train ML model on dataset
+  status: pending
+  priority: high
+  tags:
+  - ml
+  - training
+  created: 2026-02-05

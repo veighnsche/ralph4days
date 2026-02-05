@@ -1,0 +1,28 @@
+tasks:
+- id: 1
+  feature: authentication
+  discipline: backend
+  title: Implement login API
+  status: pending
+  created: 2024-01-01
+- id: 2
+  feature: authentication
+  discipline: backend
+  title: Add password reset
+  status: pending
+  priority: medium
+  created: 2026-02-05
+- id: 3
+  feature: user-profile
+  discipline: frontend
+  title: Create profile page
+  status: pending
+  priority: low
+  created: 2026-02-05
+- id: 4
+  feature: user-profile
+  discipline: backend
+  title: Profile API endpoints
+  status: pending
+  priority: medium
+  created: 2026-02-05

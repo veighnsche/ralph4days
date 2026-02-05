@@ -1,0 +1,8 @@
+schema_version: '1.0
+project:
+  title: Test Project
+  description: A test project for transformation tests
+  created: 2024-01-01
+_counters:
+  authentication:
+    backend: 1
