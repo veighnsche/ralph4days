@@ -2,10 +2,10 @@ schema_version: "1.0"
 _counters:
   database:
     backend: 1
-    infrastructure: 1
+    infra: 1
   api:
     backend: 1
-    documentation: 1
+    docs: 1
   catalog:
     frontend: 1
   payment:
@@ -14,7 +14,7 @@ _counters:
   cart:
     frontend: 1
   cicd:
-    infrastructure: 1
+    infra: 1
   inventory:
     backend: 1
   auth:
@@ -29,7 +29,7 @@ _counters:
   checkout:
     testing: 1
   social:
-    marketing: 1
+    promo: 1
   wishlist:
     frontend: 1
   notifications:
@@ -56,7 +56,9 @@ project:
 
 tasks:
   # === DONE TASKS ===
-  - id: "database/backend/1"
+  - id: 1
+    feature: "database"
+    discipline: "backend"
     title: "Set up database schema"
     description: "PostgreSQL schema with migrations for users, products, and orders tables"
     status: "done"
@@ -71,13 +73,15 @@ tasks:
     updated: "2026-02-01"
     completed: "2026-02-01T14:30:00Z"
 
-  - id: "api/backend/1"
+  - id: 2
+    feature: "api"
+    discipline: "backend"
     title: "Implement REST API endpoints"
     description: "Core CRUD endpoints for users, products, and orders"
     status: "done"
     priority: "high"
     tags: ["backend", "api", "rest"]
-    depends_on: ["database/backend/1"]
+    depends_on: [1]
     acceptance_criteria:
       - "GET /api/products returns product list with pagination"
       - "POST /api/orders creates new order with validation"
@@ -87,7 +91,9 @@ tasks:
     updated: "2026-02-02"
     completed: "2026-02-02T09:15:00Z"
 
-  - id: "catalog/frontend/1"
+  - id: 3
+    feature: "catalog"
+    discipline: "frontend"
     title: "Build product catalog UI"
     description: "React component showing product grid with filtering and search"
     status: "done"
@@ -103,13 +109,15 @@ tasks:
     completed: "2026-02-03T11:00:00Z"
 
   # === IN PROGRESS TASKS ===
-  - id: "payment/backend/1"
+  - id: 4
+    feature: "payment"
+    discipline: "backend"
     title: "Add Stripe payment processing"
     description: "Integrate Stripe SDK for payment handling with webhooks"
     status: "in_progress"
     priority: "critical"
     tags: ["backend", "payments", "stripe"]
-    depends_on: ["api/backend/1"]
+    depends_on: [2]
     acceptance_criteria:
       - "Stripe SDK integrated and configured with test keys"
       - "Payment intent creation endpoint implemented"
@@ -119,13 +127,15 @@ tasks:
     created: "2026-02-03"
     updated: "2026-02-05"
 
-  - id: "cart/frontend/1"
+  - id: 5
+    feature: "cart"
+    discipline: "frontend"
     title: "Implement shopping cart"
     description: "Cart component with add/remove items, quantity updates, and checkout flow"
     status: "in_progress"
     priority: "high"
     tags: ["frontend", "ui", "cart"]
-    depends_on: ["catalog/frontend/1", "api/backend/1"]
+    depends_on: [3, 2]
     acceptance_criteria:
       - "Add to cart button on product cards"
       - "Cart icon shows item count badge"
@@ -137,7 +147,9 @@ tasks:
     updated: "2026-02-05"
 
   # === BLOCKED TASKS ===
-  - id: "cicd/infrastructure/1"
+  - id: 6
+    feature: "cicd"
+    discipline: "infra"
     title: "Set up CI/CD pipeline"
     description: "GitHub Actions workflow for testing, building, and deploying"
     status: "blocked"
@@ -152,13 +164,15 @@ tasks:
     created: "2026-02-02"
     updated: "2026-02-04"
 
-  - id: "inventory/backend/1"
+  - id: 7
+    feature: "inventory"
+    discipline: "backend"
     title: "Implement inventory management"
     description: "Track stock levels and prevent overselling"
     status: "blocked"
     priority: "high"
     tags: ["backend", "inventory"]
-    depends_on: ["database/backend/1"]
+    depends_on: [1]
     blocked_by: "Need product team to finalize inventory rules and policies"
     acceptance_criteria:
       - "Stock level decremented on order placement"
@@ -169,13 +183,15 @@ tasks:
     updated: "2026-02-05"
 
   # === PENDING TASKS ===
-  - id: "auth/frontend/1"
+  - id: 8
+    feature: "auth"
+    discipline: "frontend"
     title: "Add user authentication UI"
     description: "Login/signup forms with email verification flow"
     status: "pending"
     priority: "high"
     tags: ["frontend", "auth", "security"]
-    depends_on: ["api/backend/1"]
+    depends_on: [2]
     acceptance_criteria:
       - "Login form with email and password validation"
       - "Signup form with password strength indicator"
@@ -184,13 +200,15 @@ tasks:
       - "Remember me checkbox works"
     created: "2026-02-04"
 
-  - id: "orders/backend/1"
+  - id: 9
+    feature: "orders"
+    discipline: "backend"
     title: "Add order history endpoint"
     description: "API endpoint to fetch user's past orders with pagination"
     status: "pending"
     priority: "medium"
     tags: ["backend", "api", "orders"]
-    depends_on: ["api/backend/1"]
+    depends_on: [2]
     acceptance_criteria:
       - "GET /api/users/{id}/orders returns paginated list"
       - "Includes order items and totals"
@@ -198,13 +216,15 @@ tasks:
       - "Sort by date descending by default"
     created: "2026-02-04"
 
-  - id: "search/backend/1"
+  - id: 10
+    feature: "search"
+    discipline: "backend"
     title: "Implement product search with Elasticsearch"
     description: "Replace basic SQL search with full-text Elasticsearch"
     status: "pending"
     priority: "low"
     tags: ["backend", "search", "elasticsearch"]
-    depends_on: ["database/backend/1"]
+    depends_on: [1]
     acceptance_criteria:
       - "Elasticsearch cluster running locally"
       - "Product data synced to ES on changes"
@@ -213,13 +233,15 @@ tasks:
       - "Search suggestions/autocomplete"
     created: "2026-02-04"
 
-  - id: "reviews/frontend/1"
+  - id: 11
+    feature: "reviews"
+    discipline: "frontend"
     title: "Add product reviews and ratings"
     description: "UI for customers to leave reviews and see ratings"
     status: "pending"
     priority: "low"
     tags: ["frontend", "reviews", "ui"]
-    depends_on: ["catalog/frontend/1"]
+    depends_on: [3]
     acceptance_criteria:
       - "Star rating display on product cards"
       - "Reviews section on product detail page"
@@ -228,13 +250,15 @@ tasks:
       - "Helpful vote buttons"
     created: "2026-02-04"
 
-  - id: "checkout/testing/1"
+  - id: 12
+    feature: "checkout"
+    discipline: "testing"
     title: "Write E2E tests for checkout flow"
     description: "Playwright tests covering full purchase journey"
     status: "pending"
     priority: "medium"
     tags: ["testing", "e2e", "quality"]
-    depends_on: ["cart/frontend/1", "payment/backend/1"]
+    depends_on: [5, 4]
     acceptance_criteria:
       - "Test: Browse products → Add to cart → Checkout → Payment"
       - "Test: Cart persistence across page reloads"
@@ -244,7 +268,9 @@ tasks:
     created: "2026-02-05"
 
   # === SKIPPED TASKS ===
-  - id: "api/documentation/1"
+  - id: 13
+    feature: "api"
+    discipline: "docs"
     title: "Write comprehensive API documentation"
     description: "Detailed API docs with examples for all endpoints"
     status: "skipped"
@@ -253,7 +279,9 @@ tasks:
     created: "2026-02-01"
     updated: "2026-02-03"
 
-  - id: "social/marketing/1"
+  - id: 14
+    feature: "social"
+    discipline: "promo"
     title: "Add social media sharing buttons"
     description: "Share product links on Facebook, Twitter, Pinterest"
     status: "skipped"
@@ -263,13 +291,15 @@ tasks:
     updated: "2026-02-04"
 
   # === MORE PENDING TASKS FOR SCROLLING ===
-  - id: "wishlist/frontend/1"
+  - id: 15
+    feature: "wishlist"
+    discipline: "frontend"
     title: "Implement wishlist functionality"
     description: "Allow users to save products to a wishlist for later"
     status: "pending"
     priority: "medium"
     tags: ["frontend", "wishlist", "ui"]
-    depends_on: ["catalog/frontend/1"]
+    depends_on: [3]
     acceptance_criteria:
       - "Heart icon on product cards to add to wishlist"
       - "Wishlist page showing saved products"
@@ -277,13 +307,15 @@ tasks:
       - "Wishlist persists across sessions"
     created: "2026-02-05"
 
-  - id: "notifications/backend/1"
+  - id: 16
+    feature: "notifications"
+    discipline: "backend"
     title: "Add email notification system"
     description: "Send transactional emails for orders, shipping, etc"
     status: "pending"
     priority: "medium"
     tags: ["backend", "email", "notifications"]
-    depends_on: ["api/backend/1"]
+    depends_on: [2]
     acceptance_criteria:
       - "Order confirmation email template"
       - "Shipping notification email"
@@ -291,13 +323,15 @@ tasks:
       - "Email queue system with retry logic"
     created: "2026-02-05"
 
-  - id: "admin/frontend/1"
+  - id: 17
+    feature: "admin"
+    discipline: "frontend"
     title: "Build admin dashboard"
     description: "Admin interface for managing products and orders"
     status: "pending"
     priority: "high"
     tags: ["frontend", "admin", "dashboard"]
-    depends_on: ["api/backend/1"]
+    depends_on: [2]
     acceptance_criteria:
       - "Product management CRUD interface"
       - "Order list with status filters"
@@ -305,13 +339,15 @@ tasks:
       - "User management panel"
     created: "2026-02-05"
 
-  - id: "shipping/backend/1"
+  - id: 18
+    feature: "shipping"
+    discipline: "backend"
     title: "Implement shipping rate calculator"
     description: "Calculate shipping costs based on weight and destination"
     status: "pending"
     priority: "medium"
     tags: ["backend", "shipping", "logistics"]
-    depends_on: ["api/backend/1"]
+    depends_on: [2]
     acceptance_criteria:
       - "Weight-based shipping calculation"
       - "Multiple shipping carrier support"
@@ -319,13 +355,15 @@ tasks:
       - "Free shipping threshold logic"
     created: "2026-02-05"
 
-  - id: "comparison/frontend/1"
+  - id: 19
+    feature: "comparison"
+    discipline: "frontend"
     title: "Add product comparison feature"
     description: "Allow users to compare multiple products side-by-side"
     status: "pending"
     priority: "low"
     tags: ["frontend", "comparison", "ui"]
-    depends_on: ["catalog/frontend/1"]
+    depends_on: [3]
     acceptance_criteria:
       - "Compare checkbox on product cards"
       - "Comparison table showing product specs"
@@ -333,13 +371,15 @@ tasks:
       - "Clear comparison button"
     created: "2026-02-05"
 
-  - id: "promotions/backend/1"
+  - id: 20
+    feature: "promotions"
+    discipline: "backend"
     title: "Implement coupon and discount system"
     description: "Apply promotional codes and discounts to orders"
     status: "pending"
     priority: "medium"
     tags: ["backend", "promotions", "discounts"]
-    depends_on: ["api/backend/1"]
+    depends_on: [2]
     acceptance_criteria:
       - "Coupon code validation endpoint"
       - "Percentage and fixed amount discounts"
@@ -348,7 +388,9 @@ tasks:
       - "Minimum order value requirements"
     created: "2026-02-05"
 
-  - id: "navigation/frontend/1"
+  - id: 21
+    feature: "navigation"
+    discipline: "frontend"
     title: "Create mobile app navigation"
     description: "Bottom tab navigation for mobile experience"
     status: "pending"
@@ -361,7 +403,9 @@ tasks:
       - "Smooth transitions between tabs"
     created: "2026-02-05"
 
-  - id: "analytics/backend/1"
+  - id: 22
+    feature: "analytics"
+    discipline: "backend"
     title: "Add analytics and tracking"
     description: "Track user behavior and conversion metrics"
     status: "pending"
@@ -375,13 +419,15 @@ tasks:
       - "Export data to analytics platform"
     created: "2026-02-05"
 
-  - id: "payment/testing/1"
+  - id: 23
+    feature: "payment"
+    discipline: "testing"
     title: "Write unit tests for payment logic"
     description: "Comprehensive test coverage for payment processing"
     status: "pending"
     priority: "high"
     tags: ["testing", "unit-tests", "payments"]
-    depends_on: ["payment/backend/1"]
+    depends_on: [4]
     acceptance_criteria:
       - "Test successful payment flow"
       - "Test declined card handling"
@@ -390,13 +436,15 @@ tasks:
       - "90% code coverage on payment module"
     created: "2026-02-05"
 
-  - id: "orders/frontend/1"
+  - id: 24
+    feature: "orders"
+    discipline: "frontend"
     title: "Implement order tracking page"
     description: "Show order status and shipping updates"
     status: "pending"
     priority: "medium"
     tags: ["frontend", "orders", "tracking"]
-    depends_on: ["orders/backend/1"]
+    depends_on: [9]
     acceptance_criteria:
       - "Order timeline with status updates"
       - "Shipping carrier tracking link"
@@ -404,7 +452,9 @@ tasks:
       - "Order details and items list"
     created: "2026-02-05"
 
-  - id: "database/infrastructure/1"
+  - id: 25
+    feature: "database"
+    discipline: "infra"
     title: "Setup database backups"
     description: "Automated daily backups with retention policy"
     status: "pending"
@@ -417,16 +467,19 @@ tasks:
       - "Disaster recovery documentation"
     created: "2026-02-05"
 
-  - id: "security/backend/1"
+  - id: 26
+    feature: "security"
+    discipline: "backend"
     title: "Implement rate limiting"
     description: "Prevent API abuse with request rate limits"
     status: "pending"
     priority: "high"
     tags: ["backend", "security", "rate-limiting"]
-    depends_on: ["api/backend/1"]
+    depends_on: [2]
     acceptance_criteria:
       - "Rate limit per IP address"
       - "Different limits for authenticated users"
       - "429 response with retry-after header"
       - "Redis-based rate limiting"
     created: "2026-02-05"
+

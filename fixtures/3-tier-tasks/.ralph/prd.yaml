@@ -11,24 +11,32 @@ project:
   created: "2026-02-05"
 
 tasks:
-  - id: "auth/frontend/1"
+  - id: 1
+    feature: "auth"
+    discipline: "frontend"
     title: "Add login form"
     status: "done"
     priority: "high"
     tags: ["frontend", "auth", "ui"]
 
-  - id: "auth/frontend/2"
+  - id: 2
+    feature: "auth"
+    discipline: "frontend"
     title: "Add registration form"
     status: "in_progress"
     priority: "high"
 
-  - id: "auth/backend/1"
+  - id: 3
+    feature: "auth"
+    discipline: "backend"
     title: "Implement JWT authentication"
     status: "pending"
     priority: "critical"
     tags: ["backend", "auth", "security"]
 
-  - id: "search/frontend/1"
+  - id: 4
+    feature: "search"
+    discipline: "frontend"
     title: "Add search bar component"
     status: "pending"
     priority: "medium"

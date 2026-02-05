@@ -9,7 +9,9 @@ project:
   created: "2026-02-05"
 
 tasks:
-  - id: "hello/backend/1"
+  - id: 1
+    feature: "hello"
+    discipline: "backend"
     title: "Write a hello world script"
     description: "Create a simple script that prints 'Hello, World!' to stdout"
     status: "pending"
