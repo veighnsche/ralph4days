@@ -38,8 +38,10 @@ impl FeaturesFile {
     /// Convert feature name to display name
     /// "auth" -> "Auth"
     /// "user-profile" -> "User Profile"
+    /// "user_profile" -> "User Profile"
+    /// "user-profile_settings" -> "User Profile Settings"
     fn name_to_display_name(name: &str) -> String {
-        name.split('-')
+        name.split(|c| c == '-' || c == '_')
             .map(|word| {
                 let mut chars = word.chars();
                 match chars.next() {

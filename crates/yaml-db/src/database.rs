@@ -185,6 +185,67 @@ impl YamlDatabase {
         Ok(())
     }
 
+    /// Validate dependencies including circular dependency detection
+    /// Used when updating tasks to prevent creating cycles
+    fn validate_dependencies_with_cycles(
+        &self,
+        task_id: u32,
+        task: &Task,
+    ) -> Result<(), String> {
+        // First validate dependencies exist
+        self.validate_dependencies(task)?;
+
+        // Check for self-referential dependency
+        if task.depends_on.contains(&task_id) {
+            return Err(format!(
+                "Task {} cannot depend on itself",
+                task_id
+            ));
+        }
+
+        // Check for circular dependencies using depth-first search
+        for dep_id in &task.depends_on {
+            if self.has_circular_dependency(task_id, *dep_id)? {
+                return Err(format!(
+                    "Circular dependency detected: task {} would create a cycle with task {}",
+                    task_id, dep_id
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Recursively check if adding a dependency would create a cycle
+    /// Returns true if dep_id eventually depends on task_id
+    fn has_circular_dependency(&self, task_id: u32, dep_id: u32) -> Result<bool, String> {
+        use std::collections::HashSet;
+
+        let mut visited = HashSet::new();
+        let mut stack = vec![dep_id];
+
+        while let Some(current_id) = stack.pop() {
+            // If we've reached the original task, we have a cycle
+            if current_id == task_id {
+                return Ok(true);
+            }
+
+            // Avoid infinite loops in case of existing cycles
+            if !visited.insert(current_id) {
+                continue;
+            }
+
+            // Find the current task and add its dependencies to the stack
+            if let Some(current_task) = self.tasks.get_all().iter().find(|t| t.id == current_id) {
+                for &next_dep in &current_task.depends_on {
+                    stack.push(next_dep);
+                }
+            }
+        }
+
+        Ok(false)
+    }
+
     /// Acquire exclusive file lock (blocks until available)
     fn acquire_lock(&self) -> Result<FileLock, String> {
         let lock_file = File::create(&self.lock_file)
@@ -196,6 +257,124 @@ impl YamlDatabase {
             .map_err(|e| format!("Failed to acquire lock: {}", e))?;
 
         Ok(FileLock(lock_file))
+    }
+
+    /// Get a task by ID
+    pub fn get_task_by_id(&self, id: u32) -> Option<&Task> {
+        self.tasks.get_all().iter().find(|t| t.id == id)
+    }
+
+    /// Update an existing task
+    /// Thread-safe: Uses exclusive file lock
+    ///
+    /// # Errors
+    /// - Returns error if task ID doesn't exist
+    /// - Returns error if validation fails (empty fields, invalid dependencies)
+    pub fn update_task(&mut self, id: u32, update: TaskInput) -> Result<(), String> {
+        // 0. Validate input
+        if update.feature.trim().is_empty() {
+            return Err("Feature name cannot be empty".to_string());
+        }
+        if update.discipline.trim().is_empty() {
+            return Err("Discipline name cannot be empty".to_string());
+        }
+        if update.title.trim().is_empty() {
+            return Err("Task title cannot be empty".to_string());
+        }
+
+        // 1. Acquire exclusive lock
+        let _lock = self.acquire_lock()?;
+
+        // 2. Reload all files from disk
+        self.load_all()?;
+
+        // 3. Find the task to update
+        let task_index = self
+            .tasks
+            .items_mut()
+            .iter()
+            .position(|t| t.id == id)
+            .ok_or_else(|| format!("Task {} does not exist", id))?;
+
+        // 4. Validate discipline exists (or auto-create if needed)
+        self.disciplines
+            .ensure_discipline_exists(&update.discipline)?;
+
+        // 5. Auto-create feature if needed
+        self.features.ensure_feature_exists(&update.feature)?;
+
+        // 6. Create updated task (preserve ID, status, and timestamps)
+        let old_task = &self.tasks.items_mut()[task_index];
+        let updated_task = Task {
+            id,
+            feature: update.feature,
+            discipline: update.discipline,
+            title: update.title,
+            description: update.description,
+            status: old_task.status, // Preserve status
+            priority: update.priority,
+            tags: update.tags,
+            depends_on: update.depends_on,
+            blocked_by: old_task.blocked_by.clone(), // Preserve blocked_by
+            created: old_task.created.clone(),       // Preserve created
+            updated: Some(chrono::Utc::now().format("%Y-%m-%d").to_string()),
+            completed: old_task.completed.clone(), // Preserve completed
+            acceptance_criteria: update.acceptance_criteria.unwrap_or_default(),
+        };
+
+        // 7. Validate dependencies exist (including checking for cycles)
+        self.validate_dependencies_with_cycles(id, &updated_task)?;
+
+        // 8. Update the task in place
+        self.tasks.items_mut()[task_index] = updated_task;
+
+        // 9. Update counters
+        self.metadata.rebuild_counters(self.tasks.get_all());
+
+        // 10. Write all files atomically
+        self.save_all()?;
+
+        Ok(())
+    }
+
+    /// Delete a task by ID
+    /// Thread-safe: Uses exclusive file lock
+    ///
+    /// # Errors
+    /// - Returns error if task ID doesn't exist
+    /// - Returns error if other tasks depend on this task
+    pub fn delete_task(&mut self, id: u32) -> Result<(), String> {
+        // 1. Acquire exclusive lock
+        let _lock = self.acquire_lock()?;
+
+        // 2. Reload all files from disk
+        self.load_all()?;
+
+        // 3. Check if any tasks depend on this one
+        for task in self.tasks.get_all() {
+            if task.depends_on.contains(&id) {
+                return Err(format!(
+                    "Cannot delete task {}: task {} depends on it",
+                    id, task.id
+                ));
+            }
+        }
+
+        // 4. Find and remove the task
+        let initial_len = self.tasks.items_mut().len();
+        self.tasks.items_mut().retain(|t| t.id != id);
+
+        if self.tasks.items_mut().len() == initial_len {
+            return Err(format!("Task {} does not exist", id));
+        }
+
+        // 5. Update counters
+        self.metadata.rebuild_counters(self.tasks.get_all());
+
+        // 6. Write all files atomically
+        self.save_all()?;
+
+        Ok(())
     }
 
     // Getter methods
