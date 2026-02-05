@@ -1,8 +1,7 @@
-import { Circle } from "lucide-react";
 import { memo } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { DISCIPLINE_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from "@/constants/prd";
 import type { PRDTask } from "@/types/prd";
@@ -50,7 +49,6 @@ export const PlaylistItem = memo(function PlaylistItem({
   // Extract discipline from task ID (format: feature/discipline/number)
   const disciplinePart = task.id.split("/")[1];
   const disciplineConfig = disciplinePart && DISCIPLINE_CONFIG[disciplinePart as DisciplineKey];
-  const DisciplineIcon = disciplineConfig?.icon || Circle;
 
   return (
     <Item
@@ -60,12 +58,9 @@ export const PlaylistItem = memo(function PlaylistItem({
       style={getItemStyle(isNowPlaying, statusConfig.color, disciplineConfig)}
       onClick={onClick}
     >
-      {/* Icon + Task ID Group */}
-      <div className="flex items-center gap-2 flex-shrink-0 self-start">
-        <ItemMedia variant="icon" style={{ backgroundColor: statusConfig.bgColor }}>
-          <DisciplineIcon style={{ color: statusConfig.color, stroke: statusConfig.color }} />
-        </ItemMedia>
-        <TaskIdDisplay taskId={task.id} />
+      {/* Task ID with Icon */}
+      <div className="flex-shrink-0 self-start">
+        <TaskIdDisplay taskId={task.id} status={task.status} />
       </div>
 
       {/* Main Content: Title + Description */}

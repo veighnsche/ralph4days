@@ -48,7 +48,7 @@ export function TaskIdPreview({ feature, discipline }: TaskIdPreviewProps) {
       {loading ? (
         <Skeleton className="h-12 w-24" />
       ) : previewId ? (
-        <TaskIdDisplay taskId={previewId} variant="badge" />
+        <TaskIdDisplay taskId={previewId} variant="badge" status="pending" />
       ) : (
         <span className="text-sm text-muted-foreground">—</span>
       )}

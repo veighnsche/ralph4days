@@ -89,7 +89,7 @@ export const TaskDetailSidebar = memo(function TaskDetailSidebar({
             </div>
           </div>
           <SheetDescription>
-            <TaskIdDisplay taskId={task.id} />
+            <TaskIdDisplay taskId={task.id} status={task.status} />
           </SheetDescription>
         </SheetHeader>
 
