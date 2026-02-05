@@ -4,8 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import { BottomBar } from "@/components/BottomBar";
 import { OutputPanel } from "@/components/OutputPanel";
 import { ProjectSelector } from "@/components/ProjectSelector";
-import { PRDViewer } from "@/components/prd/PRDViewer";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import type { Page } from "@/hooks/useNavigation";
+import { DisciplinesPage } from "@/pages/DisciplinesPage";
+import { FeaturesPage } from "@/pages/FeaturesPage";
+import { TasksPage } from "@/pages/TasksPage";
 import { useTauriEvent } from "@/hooks/useTauriEvent";
 import { type LoopState, useLoopStore } from "@/stores/useLoopStore";
 import "./index.css";
@@ -44,6 +47,7 @@ function App() {
   const { status, setStatus, addOutput, setRateLimitInfo } = useLoopStore();
   const [lockedProject, setLockedProject] = useState<string | null>(null);
   const [isLoadingProject, setIsLoadingProject] = useState(true);
+  const [currentPage, setCurrentPage] = useState<Page>("tasks");
 
   // Check for locked project on mount and set window title
   useEffect(() => {
@@ -182,20 +186,22 @@ function App() {
 
   return (
     <ResizablePanelGroup direction="horizontal" className="h-screen">
-      {/* Left: PRD */}
+      {/* Left: Pages */}
       <ResizablePanel defaultSize={50} minSize={40}>
         <div className="h-full flex flex-col overflow-hidden">
           <div className="flex-1 min-h-0 overflow-hidden">
-            <PRDViewer />
+            {currentPage === "tasks" && <TasksPage />}
+            {currentPage === "features" && <FeaturesPage />}
+            {currentPage === "disciplines" && <DisciplinesPage />}
           </div>
-          {/* Bottom Bar (PRD only) */}
-          <BottomBar lockedProject={lockedProject} />
+          {/* Bottom Bar */}
+          <BottomBar lockedProject={lockedProject} currentPage={currentPage} onPageChange={setCurrentPage} />
         </div>
       </ResizablePanel>
 
       <ResizableHandle withHandle />
 
-      {/* Right: Output */}
+      {/* Right: Output (always visible) */}
       <ResizablePanel defaultSize={50} minSize={20}>
         <div className="h-full p-4">
           <OutputPanel />
