@@ -87,7 +87,11 @@ export const TaskDetailSidebar = memo(function TaskDetailSidebar({
               )}
             </div>
           </div>
-          <SheetDescription className="text-xs text-[hsl(var(--muted-foreground))]">{task.id}</SheetDescription>
+          <SheetDescription className="flex flex-col items-start leading-tight text-xs text-[hsl(var(--muted-foreground))] font-mono">
+            {task.id.split("/").map((part, i) => (
+              <span key={i}>{part}</span>
+            ))}
+          </SheetDescription>
         </SheetHeader>
 
         <div className="mt-6 space-y-6">

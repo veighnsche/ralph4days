@@ -43,14 +43,18 @@ export function TaskIdPreview({ feature, discipline }: TaskIdPreviewProps) {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-start gap-2">
       <span className="text-sm font-medium">Task ID:</span>
       {loading ? (
-        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-12 w-24" />
       ) : previewId ? (
-        <Badge variant="outline" className="font-mono text-xs">
-          {previewId}
-        </Badge>
+        <div className="flex flex-col items-start leading-tight">
+          {previewId.split("/").map((part, i) => (
+            <Badge key={i} variant="outline" className="font-mono text-xs mb-0.5">
+              {part}
+            </Badge>
+          ))}
+        </div>
       ) : (
         <span className="text-sm text-muted-foreground">—</span>
       )}

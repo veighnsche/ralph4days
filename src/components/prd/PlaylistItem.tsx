@@ -41,8 +41,12 @@ export const PlaylistItem = memo(function PlaylistItem({
         <ItemMedia variant="icon" style={{ backgroundColor: statusConfig.bgColor }}>
           <StatusIcon style={{ color: statusConfig.color }} />
         </ItemMedia>
-        <div className="w-16">
-          <span className="text-xs font-mono text-[hsl(var(--muted-foreground))]">{task.id}</span>
+        <div className="flex flex-col items-start leading-tight">
+          {task.id.split("/").map((part, i) => (
+            <span key={i} className="text-xs font-mono text-[hsl(var(--muted-foreground))]">
+              {part}
+            </span>
+          ))}
         </div>
       </div>
 
