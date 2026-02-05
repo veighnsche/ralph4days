@@ -1,8 +1,8 @@
 import { memo, useMemo } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { KanbanColumn } from "./KanbanColumn";
 import { COLUMN_DEFINITIONS } from "@/constants/prd";
 import type { PRDTask } from "@/types/prd";
+import { KanbanColumn } from "./KanbanColumn";
 
 interface KanbanViewProps {
   tasks: PRDTask[];

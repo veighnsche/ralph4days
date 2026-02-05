@@ -1,4 +1,4 @@
-import { Circle, Play, CheckCircle2, Ban, Slash } from "lucide-react";
+import { Ban, CheckCircle2, Circle, Play, Slash } from "lucide-react";
 import type { PRDTask } from "@/types/prd";
 
 export const STATUS_CONFIG = {

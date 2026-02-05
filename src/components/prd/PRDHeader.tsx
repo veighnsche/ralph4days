@@ -1,13 +1,13 @@
-import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
+import { Filter, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Search, Filter } from "lucide-react";
+import type { FilterSetters, FilterState } from "@/hooks/usePRDFilters";
 import type { PRDProject } from "@/types/prd";
-import type { FilterState, FilterSetters } from "@/hooks/usePRDFilters";
 
 interface PRDHeaderProps {
   project: PRDProject;

@@ -1,9 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
+import { Pause, Play, RotateCcw, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { useLoopStore } from "@/stores/useLoopStore";
-import { Play, Pause, Square, RotateCcw } from "lucide-react";
 
 interface LoopControlsProps {
   lockedProject: string;
@@ -68,7 +68,7 @@ export function LoopControls({ lockedProject }: LoopControlsProps) {
         <Input
           type="number"
           value={maxIterations}
-          onChange={(e) => setMaxIterations(parseInt(e.target.value) || 100)}
+          onChange={(e) => setMaxIterations(parseInt(e.target.value, 10) || 100)}
           min={1}
           max={1000}
           disabled={!isIdle}

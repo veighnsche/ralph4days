@@ -1,10 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
+import { Pause, Play, Square } from "lucide-react";
+import { Settings } from "@/components/Settings";
+import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLoopStore } from "@/stores/useLoopStore";
-import { Play, Pause, Square } from "lucide-react";
-import { StatusBadge } from "@/components/StatusBadge";
-import { Settings } from "@/components/Settings";
 
 interface BottomBarProps {
   lockedProject: string;
@@ -122,7 +122,7 @@ export function BottomBar({ lockedProject }: BottomBarProps) {
               id="max-iterations"
               type="number"
               value={maxIterations}
-              onChange={(e) => setMaxIterations(parseInt(e.target.value) || 100)}
+              onChange={(e) => setMaxIterations(parseInt(e.target.value, 10) || 100)}
               min={1}
               max={1000}
               disabled={!isIdle}

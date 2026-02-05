@@ -1,8 +1,8 @@
-import { useEffect, useRef } from "react";
-import { Terminal, useTerminal } from "@/components/ui/terminal";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { useLoopStore } from "@/stores/useLoopStore";
 import type { Terminal as XTerm } from "@xterm/xterm";
+import { useEffect, useRef } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Terminal, useTerminal } from "@/components/ui/terminal";
+import { useLoopStore } from "@/stores/useLoopStore";
 
 export function OutputPanel() {
   const { output, rateLimitInfo } = useLoopStore();
@@ -118,7 +118,6 @@ function getColorCode(type: "output" | "error" | "info" | "success"): string {
       return "\x1b[34m"; // Blue
     case "success":
       return "\x1b[32m"; // Green
-    case "output":
     default:
       return ""; // Default color
   }

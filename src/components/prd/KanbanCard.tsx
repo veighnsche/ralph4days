@@ -1,16 +1,16 @@
+import { AlertCircle } from "lucide-react";
 import { memo } from "react";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
+  CardAction,
   CardContent,
-  CardHeader,
-  CardTitle,
   CardDescription,
   CardFooter,
-  CardAction,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlertCircle } from "lucide-react";
 import { PRIORITY_CONFIG } from "@/constants/prd";
 import type { PRDTask } from "@/types/prd";
 

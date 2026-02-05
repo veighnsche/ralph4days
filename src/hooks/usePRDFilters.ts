@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
-import type { PRDData, StatusFilter, PriorityFilter } from "@/types/prd";
+import { useCallback, useMemo, useState } from "react";
+import type { PRDData, PriorityFilter, StatusFilter } from "@/types/prd";
 
 export interface FilterState {
   searchQuery: string;
@@ -59,9 +59,13 @@ export function usePRDFilters(prdData: PRDData | null) {
   const allTags = useMemo(() => {
     if (!prdData) return [];
     const tags = new Set<string>();
-    prdData.tasks.forEach((task) => {
-      task.tags?.forEach((tag) => tags.add(tag));
-    });
+    for (const task of prdData.tasks) {
+      if (task.tags) {
+        for (const tag of task.tags) {
+          tags.add(tag);
+        }
+      }
+    }
     return Array.from(tags).sort();
   }, [prdData]);
 

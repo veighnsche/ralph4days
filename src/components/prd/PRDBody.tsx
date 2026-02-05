@@ -1,9 +1,9 @@
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import { Button } from "@/components/ui/button";
 import { FileX } from "lucide-react";
-import { KanbanView } from "./KanbanView";
+import { Button } from "@/components/ui/button";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { PRDTask } from "@/types/prd";
+import { KanbanView } from "./KanbanView";
 
 interface PRDBodyProps {
   filteredTasks: PRDTask[];

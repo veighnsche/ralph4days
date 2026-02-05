@@ -1,9 +1,9 @@
+import { AlertCircle, Ban, Calendar, CheckCircle2, Circle, Play, Slash, Tag } from "lucide-react";
 import { memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Calendar, Tag, AlertCircle, CheckCircle2, Circle, Play, Ban, Slash } from "lucide-react";
 import type { PRDTask } from "@/types/prd";
 
 interface TaskDetailSidebarProps {
@@ -139,8 +139,8 @@ export const TaskDetailSidebar = memo(function TaskDetailSidebar({
             <div>
               <h3 className="font-semibold mb-2">Acceptance Criteria</h3>
               <ul className="space-y-2">
-                {task.acceptance_criteria.map((criterion, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
+                {task.acceptance_criteria.map((criterion) => (
+                  <li key={criterion} className="flex items-start gap-2">
                     <CheckCircle2 className="h-4 w-4 mt-0.5 text-[hsl(var(--muted-foreground))]" />
                     <span className="text-sm">{criterion}</span>
                   </li>

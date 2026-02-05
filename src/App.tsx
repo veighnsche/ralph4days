@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { OutputPanel } from "@/components/OutputPanel";
-import { PRDViewer } from "@/components/prd/PRDViewer";
-import { ProjectSelector } from "@/components/ProjectSelector";
+import { useCallback, useEffect, useState } from "react";
 import { BottomBar } from "@/components/BottomBar";
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { useLoopStore, type LoopState } from "@/stores/useLoopStore";
+import { OutputPanel } from "@/components/OutputPanel";
+import { ProjectSelector } from "@/components/ProjectSelector";
+import { PRDViewer } from "@/components/prd/PRDViewer";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { useTauriEvent } from "@/hooks/useTauriEvent";
+import { type LoopState, useLoopStore } from "@/stores/useLoopStore";
 import "./index.css";
 
 interface StateChangedEvent {

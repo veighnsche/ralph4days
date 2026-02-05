@@ -1,7 +1,7 @@
-import { memo } from "react";
-import { KanbanCard } from "./KanbanCard";
-import type { PRDTask } from "@/types/prd";
 import type { LucideIcon } from "lucide-react";
+import { memo } from "react";
+import type { PRDTask } from "@/types/prd";
+import { KanbanCard } from "./KanbanCard";
 
 interface KanbanColumnProps {
   status: PRDTask["status"];

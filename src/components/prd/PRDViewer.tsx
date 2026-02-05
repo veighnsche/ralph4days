@@ -4,8 +4,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { usePRDData } from "@/hooks/usePRDData";
 import { usePRDFilters } from "@/hooks/usePRDFilters";
 import { useSidebarNavigation } from "@/hooks/useSidebarNavigation";
-import { PRDHeader } from "./PRDHeader";
 import { PRDBody } from "./PRDBody";
+import { PRDHeader } from "./PRDHeader";
 import { TaskDetailSidebar } from "./TaskDetailSidebar";
 
 export function PRDViewer() {

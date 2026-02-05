@@ -1,5 +1,5 @@
-import { useEffect } from "react";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { useEffect } from "react";
 
 export function useTauriEvent<T>(eventName: string, handler: (payload: T) => void) {
   useEffect(() => {
