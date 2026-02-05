@@ -2,24 +2,9 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  InputGroup,
-  InputGroupInput,
-  InputGroupAddon,
-  InputGroupButton,
-} from "@/components/ui/input-group";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { InputGroup, InputGroupInput, InputGroupAddon, InputGroupButton } from "@/components/ui/input-group";
 import { Field, FieldGroup, FieldLabel, FieldDescription } from "@/components/ui/field";
 import { Separator } from "@/components/ui/separator";
 import { FolderOpen } from "lucide-react";
@@ -45,7 +30,7 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
 
   // Scan for projects on mount
   useEffect(() => {
-    if (typeof window !== 'undefined' && '__TAURI__' in window) {
+    if (typeof window !== "undefined" && "__TAURI__" in window) {
       invoke<RalphProject[]>("scan_for_ralph_projects")
         .then((found) => {
           setProjects(found);
@@ -80,7 +65,7 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
 
     setInitializing(true);
     try {
-      const title = initPath.split('/').pop() || "Project";
+      const title = initPath.split("/").pop() || "Project";
       await invoke("initialize_ralph_project", { path: initPath, projectTitle: title });
       await invoke("set_locked_project", { path: initPath });
       onProjectSelected(initPath);
@@ -119,25 +104,16 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
                       placeholder="/path/to/your-project"
                     />
                     <InputGroupAddon align="inline-end">
-                      <InputGroupButton
-                        size="icon-xs"
-                        onClick={handleBrowseInit}
-                      >
+                      <InputGroupButton size="icon-xs" onClick={handleBrowseInit}>
                         <FolderOpen className="h-4 w-4" />
                       </InputGroupButton>
                     </InputGroupAddon>
                   </InputGroup>
-                  <FieldDescription>
-                    Creates .ralph/ folder with template files
-                  </FieldDescription>
+                  <FieldDescription>Creates .ralph/ folder with template files</FieldDescription>
                 </Field>
               </div>
 
-              <Button
-                onClick={handleInitialize}
-                disabled={!initPath || initializing}
-                className="w-full"
-              >
+              <Button onClick={handleInitialize} disabled={!initPath || initializing} className="w-full">
                 {initializing ? "Initializing..." : "Initialize Ralph"}
               </Button>
             </FieldGroup>
@@ -150,20 +126,13 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
             <DialogTitle>Open Existing Project</DialogTitle>
             <FieldGroup className="flex-1">
               {scanning ? (
-                <FieldDescription>
-                  Scanning for Ralph projects...
-                </FieldDescription>
+                <FieldDescription>Scanning for Ralph projects...</FieldDescription>
               ) : (
                 <>
                   <div className="flex-1">
                     <Field>
-                      <FieldLabel>
-                        Discovered Projects ({projects.length})
-                      </FieldLabel>
-                      <Select
-                        value={selectedProject}
-                        onValueChange={setSelectedProject}
-                      >
+                      <FieldLabel>Discovered Projects ({projects.length})</FieldLabel>
+                      <Select value={selectedProject} onValueChange={setSelectedProject}>
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="-- Select a project --" />
                         </SelectTrigger>
@@ -178,11 +147,7 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
                     </Field>
                   </div>
 
-                  <Button
-                    onClick={handleOpenProject}
-                    disabled={!selectedProject}
-                    className="w-full"
-                  >
+                  <Button onClick={handleOpenProject} disabled={!selectedProject} className="w-full">
                     Open Project
                   </Button>
                 </>

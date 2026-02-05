@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { LoopState } from "@/stores/useLoopStore";
+import type { LoopState } from "@/stores/useLoopStore";
 
 interface StatusBadgeProps {
   state: LoopState;
@@ -22,9 +22,7 @@ export function StatusBadge({ state }: StatusBadgeProps) {
 
   return (
     <Badge variant={config.variant} className="text-sm">
-      {state === "running" && (
-        <span className="mr-1.5 inline-block h-2 w-2 animate-pulse bg-white" />
-      )}
+      {state === "running" && <span className="mr-1.5 inline-block h-2 w-2 animate-pulse bg-white" />}
       {config.label}
     </Badge>
   );

@@ -1,12 +1,6 @@
 import { create } from "zustand";
 
-export type LoopState =
-  | "idle"
-  | "running"
-  | "paused"
-  | "rate_limited"
-  | "complete"
-  | "aborted";
+export type LoopState = "idle" | "running" | "paused" | "rate_limited" | "complete" | "aborted";
 
 interface LoopStatus {
   state: LoopState;

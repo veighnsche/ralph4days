@@ -1,25 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { FileText, Terminal } from "lucide-react";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import { StatusBadge } from "@/components/StatusBadge";
-import { LoopControls } from "@/components/LoopControls";
 import { OutputPanel } from "@/components/OutputPanel";
-import { PRDViewer } from "@/components/PRDViewer";
+import { PRDViewer } from "@/components/prd/PRDViewer";
 import { ProjectSelector } from "@/components/ProjectSelector";
-import { Settings } from "@/components/Settings";
-import { useLoopStore, LoopState } from "@/stores/useLoopStore";
+import { BottomBar } from "@/components/BottomBar";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { useLoopStore, type LoopState } from "@/stores/useLoopStore";
 import { useTauriEvent } from "@/hooks/useTauriEvent";
 import "./index.css";
 
@@ -53,27 +40,24 @@ interface ErrorEvent {
   message: string;
 }
 
-type ViewMode = "output" | "prd";
-
 function App() {
   const { status, setStatus, addOutput, setRateLimitInfo } = useLoopStore();
   const [lockedProject, setLockedProject] = useState<string | null>(null);
   const [isLoadingProject, setIsLoadingProject] = useState(true);
-  const [viewMode, setViewMode] = useState<ViewMode>("output");
 
   // Check for locked project on mount and set window title
   useEffect(() => {
-    if (typeof window !== 'undefined' && '__TAURI__' in window) {
+    if (typeof window !== "undefined" && "__TAURI__" in window) {
       invoke<string | null>("get_locked_project")
         .then(async (project) => {
           setLockedProject(project);
           if (project) {
-            const projectName = project.split('/').pop() || 'Unknown';
+            const projectName = project.split("/").pop() || "Unknown";
             try {
               await getCurrentWindow().setTitle(`Ralph4days - ${projectName}`);
-              console.log('Window title set to:', `Ralph4days - ${projectName}`);
+              console.log("Window title set to:", `Ralph4days - ${projectName}`);
             } catch (err) {
-              console.error('Failed to set window title:', err);
+              console.error("Failed to set window title:", err);
             }
           }
           setIsLoadingProject(false);
@@ -89,18 +73,20 @@ function App() {
 
   // Poll for initial state
   useEffect(() => {
-    if (typeof window !== 'undefined' && '__TAURI__' in window) {
+    if (typeof window !== "undefined" && "__TAURI__" in window) {
       invoke<typeof status>("get_loop_state").then(setStatus).catch(console.error);
     }
   }, [setStatus]);
 
   // Update window title when project changes
   useEffect(() => {
-    if (lockedProject && typeof window !== 'undefined' && '__TAURI__' in window) {
-      const projectName = lockedProject.split('/').pop() || 'Unknown';
-      getCurrentWindow().setTitle(`Ralph4days - ${projectName}`).catch(err => {
-        console.error('Failed to set window title:', err);
-      });
+    if (lockedProject && typeof window !== "undefined" && "__TAURI__" in window) {
+      const projectName = lockedProject.split("/").pop() || "Unknown";
+      getCurrentWindow()
+        .setTitle(`Ralph4days - ${projectName}`)
+        .catch((err) => {
+          console.error("Failed to set window title:", err);
+        });
     }
   }, [lockedProject]);
 
@@ -178,80 +164,44 @@ function App() {
   }
 
   if (!lockedProject) {
-    return <ProjectSelector onProjectSelected={async (project) => {
-      setLockedProject(project);
-      const projectName = project.split('/').pop() || 'Unknown';
-      try {
-        await getCurrentWindow().setTitle(`Ralph4days - ${projectName}`);
-        console.log('Window title set to:', `Ralph4days - ${projectName}`);
-      } catch (err) {
-        console.error('Failed to set window title:', err);
-      }
-    }} />;
+    return (
+      <ProjectSelector
+        onProjectSelected={async (project) => {
+          setLockedProject(project);
+          const projectName = project.split("/").pop() || "Unknown";
+          try {
+            await getCurrentWindow().setTitle(`Ralph4days - ${projectName}`);
+            console.log("Window title set to:", `Ralph4days - ${projectName}`);
+          } catch (err) {
+            console.error("Failed to set window title:", err);
+          }
+        }}
+      />
+    );
   }
 
-  const projectName = lockedProject.split('/').pop() || 'Unknown';
-
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader>
-          <div className="flex items-center justify-between px-4 py-2">
-            <div className="font-semibold">{projectName}</div>
-            <StatusBadge state={status.state} />
+    <ResizablePanelGroup direction="horizontal" className="h-screen">
+      {/* Left: PRD */}
+      <ResizablePanel defaultSize={66} minSize={40}>
+        <div className="h-full flex flex-col overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <PRDViewer />
           </div>
-          {status.state !== "idle" && (
-            <div className="px-4 text-sm text-[hsl(var(--muted-foreground))]">
-              Iteration {status.current_iteration} / {status.max_iterations}
-            </div>
-          )}
-        </SidebarHeader>
-        <Separator />
-        <SidebarContent>
-          <div className="p-4 space-y-4">
-            <div className="space-y-2">
-              <div className="text-sm font-medium text-[hsl(var(--muted-foreground))]">View</div>
-              <div className="flex flex-col gap-1">
-                <Button
-                  variant={viewMode === "output" ? "default" : "ghost"}
-                  className="justify-start"
-                  onClick={() => setViewMode("output")}
-                >
-                  <Terminal className="mr-2 h-4 w-4" />
-                  Output
-                </Button>
-                <Button
-                  variant={viewMode === "prd" ? "default" : "ghost"}
-                  className="justify-start"
-                  onClick={() => setViewMode("prd")}
-                >
-                  <FileText className="mr-2 h-4 w-4" />
-                  PRD
-                </Button>
-              </div>
-            </div>
-            <Separator />
-            <LoopControls lockedProject={lockedProject} />
-          </div>
-        </SidebarContent>
-        <SidebarFooter>
-          <div className="p-4">
-            <Settings />
-          </div>
-        </SidebarFooter>
-      </Sidebar>
-
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <h1 className="font-semibold">{viewMode === "output" ? "Output" : "PRD"}</h1>
-        </header>
-        <div className="flex flex-1 flex-col gap-4 p-4">
-          {viewMode === "output" ? <OutputPanel /> : <PRDViewer />}
+          {/* Bottom Bar (PRD only) */}
+          <BottomBar lockedProject={lockedProject} />
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </ResizablePanel>
+
+      <ResizableHandle withHandle />
+
+      {/* Right: Output */}
+      <ResizablePanel defaultSize={34} minSize={20}>
+        <div className="h-full p-4">
+          <OutputPanel />
+        </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 }
 

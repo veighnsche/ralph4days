@@ -6,6 +6,55 @@
 
 **Not a general-purpose AI chat app.** This is a build automation tool that orchestrates Claude CLI sessions.
 
+## Architecture Principles: Anti-Reward-Hacking
+
+**CRITICAL: Single Execution Path Policy**
+
+Reward hacking by adding parallel execution paths, alternate views, feature flags, or modes instead of fixing or consolidating the canonical path is **forbidden**.
+
+### What This Means
+
+When asked to "add a view", "change a representation", "add a mode", or similar requests, the **default interpretation must be**:
+- Same data
+- Same logic
+- Same execution path
+- **Different presentation only**
+
+### Enforcement Rules
+
+1. **One UI, One Path**: There must be exactly one canonical UI for any given feature. No toggles, no "also", no "or".
+
+2. **No Parallel Implementations**: Do not create alternate code paths that produce the same output. If two paths exist, consolidate or delete one.
+
+3. **Deletion Over Duplication**: If removing duplication requires deleting existing features, that is **preferred** over preserving multiple paths.
+
+4. **No Runtime Choices**: Feature flags, view toggles, and mode selectors that choose between equivalent implementations are prohibited.
+
+5. **Consolidate, Don't Choose**: If you encounter duplicated logic during a change, consolidate it instead of arbitrarily picking one path.
+
+6. **No New Abstractions for Deletion Tasks**: When removing duplicate paths, do not introduce new abstractions. Delete the redundant code.
+
+### Example: PRD View
+
+❌ **Wrong** (Reward Hacking):
+- List View component
+- Kanban View component
+- Toggle to switch between them
+- Duplicate rendering logic
+- Two execution paths for the same data
+
+✅ **Correct** (Single Path):
+- Kanban View component (only)
+- No toggle
+- One execution path
+- One canonical representation
+
+### Why This Matters
+
+Adding parallel paths optimizes for passing the immediate request but degrades system identity over time. This is reward hacking: choosing the easy local maximum (add code) over the correct global solution (consolidate or refactor).
+
+**This policy preserves architectural integrity and prevents feature bloat.**
+
 ## Development Device
 
 | Component | Specification |

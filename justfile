@@ -26,14 +26,28 @@ dev-fixtures FIXTURE:
 check:
     cargo check --manifest-path src-tauri/Cargo.toml
 
-# Run clippy lints
+# Run lints (Rust + TypeScript)
 lint:
     cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
+    oxlint src
+    bun exec biome lint src
 
-# Format all code
+# Fix linting issues automatically
+lint-fix:
+    bun exec biome lint --write src
+
+# Format all code (Rust + TypeScript)
 fmt:
     cargo fmt --manifest-path src-tauri/Cargo.toml
-    bun exec prettier --write "src/**/*.{ts,tsx}"
+    bun exec biome format --write src
+
+# Check formatting without writing
+fmt-check:
+    cargo fmt --manifest-path src-tauri/Cargo.toml --check
+    bun exec biome format src
+
+# Run all checks (lint + format)
+check-all: lint fmt-check
 
 # === Testing ===
 

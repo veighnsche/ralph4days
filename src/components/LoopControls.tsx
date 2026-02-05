@@ -10,13 +10,7 @@ interface LoopControlsProps {
 }
 
 export function LoopControls({ lockedProject }: LoopControlsProps) {
-  const {
-    status,
-    maxIterations,
-    setMaxIterations,
-    addOutput,
-    clearOutput,
-  } = useLoopStore();
+  const { status, maxIterations, setMaxIterations, addOutput, clearOutput } = useLoopStore();
 
   const isIdle = status.state === "idle";
   const isRunning = status.state === "running";
@@ -87,32 +81,17 @@ export function LoopControls({ lockedProject }: LoopControlsProps) {
           Start
         </Button>
 
-        <Button
-          onClick={handlePause}
-          disabled={!canPause}
-          variant="secondary"
-          className="gap-2"
-        >
+        <Button onClick={handlePause} disabled={!canPause} variant="secondary" className="gap-2">
           <Pause className="h-4 w-4" />
           Pause
         </Button>
 
-        <Button
-          onClick={handleResume}
-          disabled={!canResume}
-          variant="secondary"
-          className="gap-2"
-        >
+        <Button onClick={handleResume} disabled={!canResume} variant="secondary" className="gap-2">
           <RotateCcw className="h-4 w-4" />
           Resume
         </Button>
 
-        <Button
-          onClick={handleStop}
-          disabled={!canStop}
-          variant="destructive"
-          className="gap-2"
-        >
+        <Button onClick={handleStop} disabled={!canStop} variant="destructive" className="gap-2">
           <Square className="h-4 w-4" />
           Stop
         </Button>
