@@ -13,10 +13,15 @@
     "windows": [
       {
         "title": "Ralph Loop",
-        "width": 1200,
-        "height": 800,
-        "minWidth": 800,
-        "minHeight": 600
+        "width": 1400,
+        "height": 900,
+        "minWidth": 900,
+        "minHeight": 600,
+        "center": true,
+        "resizable": true,
+        "maximizable": true,
+        "decorations": true,
+        "transparent": false
       }
     ],
     "security": {
@@ -25,13 +30,27 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["deb", "rpm", "appimage"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "category": "Development",
+    "shortDescription": "Autonomous multi-agent build system",
+    "longDescription": "Ralph Loop runs Claude Haiku in a loop to complete tasks from a PRD, with periodic Opus reviews for quality control.",
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": false
+      },
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0"]
+      },
+      "rpm": {
+        "release": "1"
+      }
+    }
   }
 }

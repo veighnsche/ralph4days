@@ -1,0 +1,32 @@
+# Cargo configuration for Intel Alder Lake (i5-1240P)
+# Enables CPU-specific optimizations for the development machine
+
+[build]
+# Use all available cores for parallel compilation (16 threads on i5-1240P)
+jobs = 16
+
+[target.x86_64-unknown-linux-gnu]
+# Alder Lake optimizations (Golden Cove P-cores + Gracemont E-cores)
+# Enables AVX2, AVX-VNNI, and other Alder Lake-specific features
+rustflags = ["-C", "target-cpu=alderlake"]
+
+# Uncomment below if mold linker is installed (faster linking):
+# sudo dnf install mold
+# rustflags = ["-C", "target-cpu=alderlake", "-C", "link-arg=-fuse-ld=mold"]
+
+[env]
+# Ensure Wayland is used for GTK-based file dialogs
+GDK_BACKEND = "wayland"
+
+[alias]
+# Quick commands
+b = "build"
+r = "run"
+t = "test"
+c = "check"
+br = "build --release"
+rr = "run --release"
+
+[net]
+# Use git CLI for fetching (better for large repos)
+git-fetch-with-cli = true
