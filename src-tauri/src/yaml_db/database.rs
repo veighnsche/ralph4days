@@ -116,7 +116,8 @@ impl YamlDatabase {
         self.load_all()?;
 
         // 3. Validate discipline exists (or auto-create if needed)
-        self.disciplines.ensure_discipline_exists(&task.discipline)?;
+        self.disciplines
+            .ensure_discipline_exists(&task.discipline)?;
 
         // 4. Auto-create feature if needed
         self.features.ensure_feature_exists(&task.feature)?;
@@ -200,7 +201,11 @@ impl YamlDatabase {
     }
 
     pub fn get_existing_feature_names(&self) -> Vec<String> {
-        self.features.get_all().iter().map(|f| f.name.clone()).collect()
+        self.features
+            .get_all()
+            .iter()
+            .map(|f| f.name.clone())
+            .collect()
     }
 
     pub fn rebuild_counters(&mut self) {

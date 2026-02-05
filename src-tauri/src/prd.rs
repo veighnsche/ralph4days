@@ -98,9 +98,7 @@ impl PRD {
                 .entry(task.feature.clone())
                 .or_insert_with(HashMap::new);
 
-            let counter = feature_counters
-                .entry(task.discipline.clone())
-                .or_insert(0);
+            let counter = feature_counters.entry(task.discipline.clone()).or_insert(0);
             *counter = (*counter).max(task.id);
         }
     }
@@ -108,7 +106,6 @@ impl PRD {
     pub fn get_next_id(&self) -> u32 {
         self.tasks.iter().map(|t| t.id).max().unwrap_or(0) + 1
     }
-
 }
 
 #[cfg(test)]
@@ -284,5 +281,4 @@ tasks:
         // Cleanup
         std::fs::remove_file(&test_file).ok();
     }
-
 }

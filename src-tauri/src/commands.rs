@@ -447,7 +447,11 @@ fn parse_priority(priority: Option<&str>) -> Option<Priority> {
 pub fn get_available_disciplines(state: State<'_, AppState>) -> Result<Vec<String>, String> {
     let db_path = get_db_path(&state)?;
     let db = YamlDatabase::from_path(db_path)?;
-    Ok(db.get_disciplines().iter().map(|d| d.name.clone()).collect())
+    Ok(db
+        .get_disciplines()
+        .iter()
+        .map(|d| d.name.clone())
+        .collect())
 }
 
 #[derive(Debug, Clone, serde::Serialize)]

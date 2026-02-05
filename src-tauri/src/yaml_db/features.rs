@@ -56,8 +56,7 @@ impl FeaturesFile {
         let yaml = serde_yaml::to_string(&data)
             .map_err(|e| format!("Failed to serialize features: {}", e))?;
 
-        fs::write(&self.path, yaml)
-            .map_err(|e| format!("Failed to write features file: {}", e))?;
+        fs::write(&self.path, yaml).map_err(|e| format!("Failed to write features file: {}", e))?;
 
         Ok(())
     }

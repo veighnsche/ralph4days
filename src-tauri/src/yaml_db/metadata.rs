@@ -67,8 +67,7 @@ impl MetadataFile {
         let yaml = serde_yaml::to_string(self)
             .map_err(|e| format!("Failed to serialize metadata: {}", e))?;
 
-        fs::write(&self.path, yaml)
-            .map_err(|e| format!("Failed to write metadata file: {}", e))?;
+        fs::write(&self.path, yaml).map_err(|e| format!("Failed to write metadata file: {}", e))?;
 
         Ok(())
     }
@@ -106,7 +105,8 @@ impl MetadataFile {
         self.counters.clear();
 
         for task in tasks {
-            let feature_counters = self.counters
+            let feature_counters = self
+                .counters
                 .entry(task.feature.clone())
                 .or_insert_with(HashMap::new);
 

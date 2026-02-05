@@ -178,7 +178,7 @@ impl DisciplinesFile {
             self.disciplines.push(Discipline {
                 name: name.to_string(),
                 display_name: name.to_string(),
-                icon: "Circle".to_string(), // Generic icon
+                icon: "Circle".to_string(),   // Generic icon
                 color: "#94a3b8".to_string(), // Gray default
             });
         }

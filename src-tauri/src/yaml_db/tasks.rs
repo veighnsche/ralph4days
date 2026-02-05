@@ -47,8 +47,7 @@ impl TasksFile {
         let yaml = serde_yaml::to_string(&data)
             .map_err(|e| format!("Failed to serialize tasks: {}", e))?;
 
-        fs::write(&self.path, yaml)
-            .map_err(|e| format!("Failed to write tasks file: {}", e))?;
+        fs::write(&self.path, yaml).map_err(|e| format!("Failed to write tasks file: {}", e))?;
 
         Ok(())
     }

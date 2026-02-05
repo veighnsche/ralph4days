@@ -13,7 +13,7 @@ mod metadata;
 mod tasks;
 
 // Re-export public types
-pub use database::{YamlDatabase, TaskInput};
+pub use database::{TaskInput, YamlDatabase};
 pub use disciplines::{Discipline, DisciplinesFile};
 pub use features::{Feature, FeaturesFile};
 pub use metadata::{MetadataFile, ProjectMetadata};
