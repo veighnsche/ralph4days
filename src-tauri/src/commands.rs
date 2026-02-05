@@ -467,3 +467,27 @@ pub fn get_existing_features(state: State<'_, AppState>) -> Result<Vec<String>, 
     let db = YamlDatabase::from_path(db_path)?;
     Ok(db.get_existing_feature_names())
 }
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct FeatureData {
+    pub name: String,
+    pub display_name: String,
+    pub description: Option<String>,
+    pub created: Option<String>,
+}
+
+#[tauri::command]
+pub fn get_features(state: State<'_, AppState>) -> Result<Vec<FeatureData>, String> {
+    let db_path = get_db_path(&state)?;
+    let db = YamlDatabase::from_path(db_path)?;
+    Ok(db
+        .get_features()
+        .iter()
+        .map(|f| FeatureData {
+            name: f.name.clone(),
+            display_name: f.display_name.clone(),
+            description: f.description.clone(),
+            created: f.created.clone(),
+        })
+        .collect())
+}
