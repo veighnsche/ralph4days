@@ -443,6 +443,7 @@ pub struct DisciplineConfig {
     pub display_name: String,
     pub icon: String,
     pub color: String,
+    pub acronym: String,
 }
 
 #[tauri::command]
@@ -457,6 +458,29 @@ pub fn get_disciplines_config(state: State<'_, AppState>) -> Result<Vec<Discipli
             display_name: d.display_name.clone(),
             icon: d.icon.clone(),
             color: d.color.clone(),
+            acronym: d.acronym.clone(),
+        })
+        .collect())
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct FeatureConfig {
+    pub name: String,
+    pub display_name: String,
+    pub acronym: String,
+}
+
+#[tauri::command]
+pub fn get_features_config(state: State<'_, AppState>) -> Result<Vec<FeatureConfig>, String> {
+    let db_path = get_db_path(&state)?;
+    let db = YamlDatabase::from_path(db_path)?;
+    Ok(db
+        .get_features()
+        .iter()
+        .map(|f| FeatureConfig {
+            name: f.name.clone(),
+            display_name: f.display_name.clone(),
+            acronym: f.acronym.clone(),
         })
         .collect())
 }

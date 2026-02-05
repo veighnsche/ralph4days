@@ -9,12 +9,14 @@ interface DisciplineConfigRaw {
   display_name: string;
   icon: string;
   color: string;
+  acronym: string;
 }
 
 /** Resolved discipline config with Lucide icon component */
 export interface DisciplineConfig {
   name: string;
   displayName: string;
+  acronym: string;
   icon: LucideIcon;
   color: string;
   bgColor: string;
@@ -31,6 +33,7 @@ export function useDisciplines() {
         const resolved = raw.map((d) => ({
           name: d.name,
           displayName: d.display_name,
+          acronym: d.acronym,
           icon: resolveIcon(d.icon),
           color: d.color,
           bgColor: `color-mix(in oklch, ${d.color} 15%, transparent)`,

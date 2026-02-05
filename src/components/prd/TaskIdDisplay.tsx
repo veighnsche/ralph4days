@@ -1,6 +1,7 @@
 import { Circle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useDisciplines } from "@/hooks/useDisciplines";
+import { useFeatures } from "@/hooks/useFeatures";
 import type { PRDTask } from "@/types/prd";
 
 interface TaskIdDisplayProps {
@@ -9,10 +10,23 @@ interface TaskIdDisplayProps {
   className?: string;
 }
 
+function formatTaskId(id: number): string {
+  if (id > 999) {
+    return id.toString();
+  }
+  return `#${id.toString().padStart(3, "0")}`;
+}
+
 export function TaskIdDisplay({ task, variant = "default", className = "" }: TaskIdDisplayProps) {
-  const { configMap } = useDisciplines();
-  const disciplineConfig = configMap[task.discipline];
+  const { configMap: disciplineMap } = useDisciplines();
+  const { configMap: featureMap } = useFeatures();
+  const disciplineConfig = disciplineMap[task.discipline];
+  const featureConfig = featureMap.get(task.feature);
   const DisciplineIcon = disciplineConfig?.icon || Circle;
+
+  const featureAcronym = featureConfig?.acronym || task.feature;
+  const disciplineAcronym = disciplineConfig?.acronym || task.discipline;
+  const formattedId = formatTaskId(task.id);
 
   if (variant === "badge") {
     return (
@@ -31,7 +45,7 @@ export function TaskIdDisplay({ task, variant = "default", className = "" }: Tas
         {/* Badge variant */}
         <div className="flex flex-col items-start leading-tight">
           <Badge variant="outline" className="font-mono text-xs mb-0.5">
-            {task.feature}
+            {featureAcronym}
           </Badge>
           <Badge
             variant="outline"
@@ -42,10 +56,10 @@ export function TaskIdDisplay({ task, variant = "default", className = "" }: Tas
               color: disciplineConfig?.color,
             }}
           >
-            {task.discipline}
+            {disciplineAcronym}
           </Badge>
           <Badge variant="outline" className="font-mono text-xs mb-0.5">
-            {task.id}
+            {formattedId}
           </Badge>
         </div>
       </div>
@@ -68,11 +82,11 @@ export function TaskIdDisplay({ task, variant = "default", className = "" }: Tas
 
       {/* Simple text */}
       <div className="flex flex-col items-start leading-tight font-mono">
-        <span className="text-xs text-muted-foreground">{task.feature}</span>
+        <span className="text-xs text-muted-foreground">{featureAcronym}</span>
         <span className="text-xs font-medium" style={{ color: disciplineConfig?.color }}>
-          {task.discipline}
+          {disciplineAcronym}
         </span>
-        <span className="text-xs text-muted-foreground">{task.id}</span>
+        <span className="text-xs text-muted-foreground">{formattedId}</span>
       </div>
     </div>
   );
