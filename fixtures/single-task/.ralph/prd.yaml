@@ -8,7 +8,7 @@ tasks:
   - id: "task-001"
     title: "Write a hello world script"
     description: "Create a simple script that prints 'Hello, World!' to stdout"
-    status: "pending"
+    status: "complete"
     priority: "medium"
     tags: ["testing", "simple"]
     created: "2026-02-05"
