@@ -87,7 +87,15 @@ impl LoopEngine {
         let current_pid = Arc::clone(&self.current_pid);
 
         thread::spawn(move || {
-            Self::run_loop(app, status, config_arc, pause_flag, stop_flag, current_pid, config);
+            Self::run_loop(
+                app,
+                status,
+                config_arc,
+                pause_flag,
+                stop_flag,
+                current_pid,
+                config,
+            );
         });
 
         Ok(())
@@ -159,10 +167,13 @@ impl LoopEngine {
             if *stop_flag.lock().unwrap() {
                 let mut s = status.lock().unwrap();
                 s.state = LoopState::Aborted;
-                Self::emit_event(&app, RalphEvent::StateChanged {
-                    state: s.state,
-                    iteration: s.current_iteration,
-                });
+                Self::emit_event(
+                    &app,
+                    RalphEvent::StateChanged {
+                        state: s.state,
+                        iteration: s.current_iteration,
+                    },
+                );
                 break;
             }
 
@@ -170,10 +181,13 @@ impl LoopEngine {
             if *pause_flag.lock().unwrap() {
                 let mut s = status.lock().unwrap();
                 s.state = LoopState::Paused;
-                Self::emit_event(&app, RalphEvent::StateChanged {
-                    state: s.state,
-                    iteration: s.current_iteration,
-                });
+                Self::emit_event(
+                    &app,
+                    RalphEvent::StateChanged {
+                        state: s.state,
+                        iteration: s.current_iteration,
+                    },
+                );
 
                 // Wait for unpause
                 while *pause_flag.lock().unwrap() && !*stop_flag.lock().unwrap() {
@@ -189,10 +203,13 @@ impl LoopEngine {
                     drop(s);
                     let mut s = status.lock().unwrap();
                     s.state = LoopState::Complete;
-                    Self::emit_event(&app, RalphEvent::StateChanged {
-                        state: s.state,
-                        iteration: s.current_iteration,
-                    });
+                    Self::emit_event(
+                        &app,
+                        RalphEvent::StateChanged {
+                            state: s.state,
+                            iteration: s.current_iteration,
+                        },
+                    );
                     break;
                 }
             }
@@ -202,18 +219,24 @@ impl LoopEngine {
                 let s = status.lock().unwrap();
                 if s.stagnant_count >= config.max_stagnant_iterations {
                     drop(s);
-                    Self::emit_event(&app, RalphEvent::Error {
-                        message: format!(
-                            "Stagnation detected after {} iterations with no progress",
-                            config.max_stagnant_iterations
-                        ),
-                    });
+                    Self::emit_event(
+                        &app,
+                        RalphEvent::Error {
+                            message: format!(
+                                "Stagnation detected after {} iterations with no progress",
+                                config.max_stagnant_iterations
+                            ),
+                        },
+                    );
                     let mut s = status.lock().unwrap();
                     s.state = LoopState::Aborted;
-                    Self::emit_event(&app, RalphEvent::StateChanged {
-                        state: s.state,
-                        iteration: s.current_iteration,
-                    });
+                    Self::emit_event(
+                        &app,
+                        RalphEvent::StateChanged {
+                            state: s.state,
+                            iteration: s.current_iteration,
+                        },
+                    );
                     break;
                 }
             }
@@ -232,15 +255,21 @@ impl LoopEngine {
             let prompt = match prompt_result {
                 Ok(p) => p,
                 Err(e) => {
-                    Self::emit_event(&app, RalphEvent::Error {
-                        message: format!("Failed to build prompt: {}", e),
-                    });
+                    Self::emit_event(
+                        &app,
+                        RalphEvent::Error {
+                            message: format!("Failed to build prompt: {}", e),
+                        },
+                    );
                     let mut s = status.lock().unwrap();
                     s.state = LoopState::Aborted;
-                    Self::emit_event(&app, RalphEvent::StateChanged {
-                        state: s.state,
-                        iteration: s.current_iteration,
-                    });
+                    Self::emit_event(
+                        &app,
+                        RalphEvent::StateChanged {
+                            state: s.state,
+                            iteration: s.current_iteration,
+                        },
+                    );
                     break;
                 }
             };
@@ -277,22 +306,30 @@ impl LoopEngine {
             )));
 
             // Handle rate limiting
-            if rate_limited || matches!(result, Err(ref e) if e.to_string().contains("Rate limited")) {
+            if rate_limited
+                || matches!(result, Err(ref e) if e.to_string().contains("Rate limited"))
+            {
                 let mut s = status.lock().unwrap();
                 s.rate_limit_retries += 1;
 
                 if s.rate_limit_retries > config.max_rate_limit_retries {
-                    Self::emit_event(&app, RalphEvent::Error {
-                        message: format!(
-                            "Rate limit exceeded after {} retries",
-                            config.max_rate_limit_retries
-                        ),
-                    });
+                    Self::emit_event(
+                        &app,
+                        RalphEvent::Error {
+                            message: format!(
+                                "Rate limit exceeded after {} retries",
+                                config.max_rate_limit_retries
+                            ),
+                        },
+                    );
                     s.state = LoopState::Aborted;
-                    Self::emit_event(&app, RalphEvent::StateChanged {
-                        state: s.state,
-                        iteration: s.current_iteration,
-                    });
+                    Self::emit_event(
+                        &app,
+                        RalphEvent::StateChanged {
+                            state: s.state,
+                            iteration: s.current_iteration,
+                        },
+                    );
                     break;
                 }
 
@@ -300,11 +337,14 @@ impl LoopEngine {
                 let attempt = s.rate_limit_retries;
                 drop(s);
 
-                Self::emit_event(&app, RalphEvent::RateLimited {
-                    retry_in_secs: config.rate_limit_retry_secs,
-                    attempt,
-                    max_attempts: config.max_rate_limit_retries,
-                });
+                Self::emit_event(
+                    &app,
+                    RalphEvent::RateLimited {
+                        retry_in_secs: config.rate_limit_retry_secs,
+                        attempt,
+                        max_attempts: config.max_rate_limit_retries,
+                    },
+                );
 
                 // Wait before retry
                 thread::sleep(Duration::from_secs(config.rate_limit_retry_secs));
@@ -313,10 +353,13 @@ impl LoopEngine {
                     let mut s = status.lock().unwrap();
                     s.state = LoopState::Running;
                 }
-                Self::emit_event(&app, RalphEvent::StateChanged {
-                    state: LoopState::Running,
-                    iteration: status.lock().unwrap().current_iteration,
-                });
+                Self::emit_event(
+                    &app,
+                    RalphEvent::StateChanged {
+                        state: LoopState::Running,
+                        iteration: status.lock().unwrap().current_iteration,
+                    },
+                );
                 continue;
             }
 
@@ -333,15 +376,21 @@ impl LoopEngine {
                     if PromptBuilder::check_completion(&output) {
                         let mut s = status.lock().unwrap();
                         s.state = LoopState::Complete;
-                        Self::emit_event(&app, RalphEvent::IterationComplete {
-                            iteration: s.current_iteration,
-                            success: true,
-                            message: Some("All tasks complete!".to_string()),
-                        });
-                        Self::emit_event(&app, RalphEvent::StateChanged {
-                            state: s.state,
-                            iteration: s.current_iteration,
-                        });
+                        Self::emit_event(
+                            &app,
+                            RalphEvent::IterationComplete {
+                                iteration: s.current_iteration,
+                                success: true,
+                                message: Some("All tasks complete!".to_string()),
+                            },
+                        );
+                        Self::emit_event(
+                            &app,
+                            RalphEvent::StateChanged {
+                                state: s.state,
+                                iteration: s.current_iteration,
+                            },
+                        );
                         break;
                     }
 
@@ -357,11 +406,14 @@ impl LoopEngine {
                         }
 
                         s.current_iteration += 1;
-                        Self::emit_event(&app, RalphEvent::IterationComplete {
-                            iteration: s.current_iteration,
-                            success: true,
-                            message: None,
-                        });
+                        Self::emit_event(
+                            &app,
+                            RalphEvent::IterationComplete {
+                                iteration: s.current_iteration,
+                                success: true,
+                                message: None,
+                            },
+                        );
                     }
 
                     // Update Opus counter
@@ -372,16 +424,22 @@ impl LoopEngine {
                     }
                 }
                 Err(e) => {
-                    Self::emit_event(&app, RalphEvent::Error {
-                        message: format!("Iteration failed: {}", e),
-                    });
+                    Self::emit_event(
+                        &app,
+                        RalphEvent::Error {
+                            message: format!("Iteration failed: {}", e),
+                        },
+                    );
 
                     let mut s = status.lock().unwrap();
-                    Self::emit_event(&app, RalphEvent::IterationComplete {
-                        iteration: s.current_iteration,
-                        success: false,
-                        message: Some(e.to_string()),
-                    });
+                    Self::emit_event(
+                        &app,
+                        RalphEvent::IterationComplete {
+                            iteration: s.current_iteration,
+                            success: false,
+                            message: Some(e.to_string()),
+                        },
+                    );
 
                     // Continue to next iteration on non-fatal errors
                     s.current_iteration += 1;
@@ -402,10 +460,13 @@ impl LoopEngine {
 
     fn emit_state_changed(&self, app: &AppHandle) {
         let status = self.status.lock().unwrap();
-        Self::emit_event(app, RalphEvent::StateChanged {
-            state: status.state,
-            iteration: status.current_iteration,
-        });
+        Self::emit_event(
+            app,
+            RalphEvent::StateChanged {
+                state: status.state,
+                iteration: status.current_iteration,
+            },
+        );
     }
 
     fn emit_event(app: &AppHandle, event: RalphEvent) {

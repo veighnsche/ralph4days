@@ -41,10 +41,13 @@ impl ClaudeClient {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .map_err(|e| RalphError::ClaudeProcessError(format!("Failed to spawn claude: {}", e)))?;
+            .map_err(|e| {
+                RalphError::ClaudeProcessError(format!("Failed to spawn claude: {}", e))
+            })?;
 
-        let stdout = child.stdout.take()
-            .ok_or_else(|| RalphError::ClaudeProcessError("Failed to capture stdout".to_string()))?;
+        let stdout = child.stdout.take().ok_or_else(|| {
+            RalphError::ClaudeProcessError("Failed to capture stdout".to_string())
+        })?;
 
         let reader = BufReader::new(stdout);
 
@@ -99,7 +102,8 @@ impl ClaudeClient {
             }
         }
 
-        let status = child.wait()
+        let status = child
+            .wait()
             .map_err(|e| RalphError::ClaudeProcessError(format!("Wait failed: {}", e)))?;
 
         if rate_limited {
@@ -109,9 +113,14 @@ impl ClaudeClient {
         if !status.success() {
             let code = status.code().unwrap_or(-1);
             if code == 124 {
-                return Err(RalphError::ClaudeProcessError("Iteration timed out".to_string()));
+                return Err(RalphError::ClaudeProcessError(
+                    "Iteration timed out".to_string(),
+                ));
             }
-            return Err(RalphError::ClaudeProcessError(format!("Claude exited with code {}", code)));
+            return Err(RalphError::ClaudeProcessError(format!(
+                "Claude exited with code {}",
+                code
+            )));
         }
 
         let _ = output_tx.send(ClaudeOutput::Complete);
@@ -124,7 +133,10 @@ impl ClaudeClient {
         model: String,
         timeout_secs: u64,
         current_pid: Arc<Mutex<Option<u32>>>,
-    ) -> (mpsc::Receiver<ClaudeOutput>, thread::JoinHandle<Result<String, RalphError>>) {
+    ) -> (
+        mpsc::Receiver<ClaudeOutput>,
+        thread::JoinHandle<Result<String, RalphError>>,
+    ) {
         let (tx, rx) = mpsc::channel();
         let path = project_path.to_path_buf();
 
@@ -162,13 +174,16 @@ impl ClaudeClient {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .map_err(|e| RalphError::ClaudeProcessError(format!("Failed to spawn claude: {}", e)))?;
+            .map_err(|e| {
+                RalphError::ClaudeProcessError(format!("Failed to spawn claude: {}", e))
+            })?;
 
         // Store the PID so it can be killed if needed
         *current_pid.lock().unwrap() = Some(child.id());
 
-        let stdout = child.stdout.take()
-            .ok_or_else(|| RalphError::ClaudeProcessError("Failed to capture stdout".to_string()))?;
+        let stdout = child.stdout.take().ok_or_else(|| {
+            RalphError::ClaudeProcessError("Failed to capture stdout".to_string())
+        })?;
 
         let reader = BufReader::new(stdout);
 
@@ -183,7 +198,9 @@ impl ClaudeClient {
                     }
                     "error" => {
                         if let Some(err) = &event.error {
-                            if err.error_type == "overloaded_error" || err.error_type == "rate_limit_error" {
+                            if err.error_type == "overloaded_error"
+                                || err.error_type == "rate_limit_error"
+                            {
                                 rate_limited = true;
                                 let _ = output_tx.send(ClaudeOutput::RateLimited);
                             }
@@ -198,7 +215,8 @@ impl ClaudeClient {
             }
         }
 
-        let status = child.wait()
+        let status = child
+            .wait()
             .map_err(|e| RalphError::ClaudeProcessError(format!("Wait failed: {}", e)))?;
 
         // Clear the stored PID
@@ -211,13 +229,20 @@ impl ClaudeClient {
         if !status.success() {
             let code = status.code().unwrap_or(-1);
             if code == 124 {
-                return Err(RalphError::ClaudeProcessError("Iteration timed out".to_string()));
+                return Err(RalphError::ClaudeProcessError(
+                    "Iteration timed out".to_string(),
+                ));
             }
             if code == 143 || code == -15 {
                 // SIGTERM - process was killed
-                return Err(RalphError::ClaudeProcessError("Iteration stopped".to_string()));
+                return Err(RalphError::ClaudeProcessError(
+                    "Iteration stopped".to_string(),
+                ));
             }
-            return Err(RalphError::ClaudeProcessError(format!("Claude exited with code {}", code)));
+            return Err(RalphError::ClaudeProcessError(format!(
+                "Claude exited with code {}",
+                code
+            )));
         }
 
         let _ = output_tx.send(ClaudeOutput::Complete);

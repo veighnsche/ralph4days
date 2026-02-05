@@ -10,21 +10,21 @@ const MAX_PROJECTS: usize = 100; // Max 100 projects returned
 const EXCLUDED_DIRS: &[&str] = &[
     "node_modules",
     ".git",
-    "target",       // Rust builds
+    "target", // Rust builds
     "build",
     "dist",
-    ".next",        // Next.js
-    ".venv",        // Python venv
+    ".next", // Next.js
+    ".venv", // Python venv
     "venv",
     "__pycache__",
     ".cache",
     "tmp",
     "temp",
     ".tmp",
-    "vendor",       // Go/PHP dependencies
-    ".idea",        // IDEs
+    "vendor", // Go/PHP dependencies
+    ".idea",  // IDEs
     ".vscode",
-    "Library",      // macOS system
+    "Library", // macOS system
     "Applications",
 ];
 
@@ -69,7 +69,10 @@ pub fn validate_project_path(path: String) -> Result<(), String> {
         ));
     }
     if !ralph_dir.is_dir() {
-        return Err(format!("{} exists but is not a directory", ralph_dir.display()));
+        return Err(format!(
+            "{} exists but is not a directory",
+            ralph_dir.display()
+        ));
     }
 
     // Check .ralph/prd.yaml exists
@@ -173,8 +176,8 @@ pub fn set_locked_project(state: State<'_, AppState>, path: String) -> Result<()
     validate_project_path(path.clone())?;
 
     // Canonicalize path (resolve symlinks)
-    let canonical_path = std::fs::canonicalize(&path)
-        .map_err(|e| format!("Failed to resolve path: {}", e))?;
+    let canonical_path =
+        std::fs::canonicalize(&path).map_err(|e| format!("Failed to resolve path: {}", e))?;
 
     // Check if already locked
     let mut locked = state.locked_project.lock().map_err(|e| e.to_string())?;
@@ -200,7 +203,8 @@ pub fn start_loop(
 ) -> Result<(), String> {
     // Get locked project from state
     let locked = state.locked_project.lock().map_err(|e| e.to_string())?;
-    let project_path = locked.as_ref()
+    let project_path = locked
+        .as_ref()
         .ok_or("No project locked (bug, restart app)")?
         .clone();
     drop(locked);
@@ -296,7 +300,13 @@ pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProj
                             }
                         }
 
-                        let _ = scan_recursive(&entry_path, projects, depth + 1, max_depth, max_projects);
+                        let _ = scan_recursive(
+                            &entry_path,
+                            projects,
+                            depth + 1,
+                            max_depth,
+                            max_projects,
+                        );
 
                         // Early return if we hit max projects
                         if projects.len() >= max_projects {
@@ -328,17 +338,14 @@ pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProj
 #[tauri::command]
 pub fn get_current_dir() -> Result<String, String> {
     // Return the default scan location (home directory)
-    let path = dirs::home_dir()
-        .ok_or("Failed to get home directory")?;
+    let path = dirs::home_dir().ok_or("Failed to get home directory")?;
     Ok(path.to_string_lossy().to_string())
 }
 
 #[tauri::command]
 pub fn get_prd_content(state: State<'_, AppState>) -> Result<String, String> {
     let locked = state.locked_project.lock().map_err(|e| e.to_string())?;
-    let project_path = locked.as_ref()
-        .ok_or("No project locked")?;
+    let project_path = locked.as_ref().ok_or("No project locked")?;
     let prd_path = project_path.join(".ralph/prd.yaml");
-    std::fs::read_to_string(prd_path)
-        .map_err(|e| format!("Failed to read prd.yaml: {}", e))
+    std::fs::read_to_string(prd_path).map_err(|e| format!("Failed to read prd.yaml: {}", e))
 }

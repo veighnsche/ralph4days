@@ -51,7 +51,9 @@ impl PromptBuilder {
         prompt.push_str("3. Append a brief summary to progress.txt\n\n");
         prompt.push_str("If ALL tasks are complete, output exactly: ");
         prompt.push_str(COMPLETION_MARKER);
-        prompt.push_str("\n\nIMPORTANT: Only work on ONE task per iteration. Be thorough but focused.");
+        prompt.push_str(
+            "\n\nIMPORTANT: Only work on ONE task per iteration. Be thorough but focused.",
+        );
 
         Ok(prompt)
     }
@@ -102,8 +104,7 @@ impl PromptBuilder {
     }
 
     fn read_file(path: &Path, name: &str) -> Result<String, RalphError> {
-        std::fs::read_to_string(path)
-            .map_err(|_| RalphError::MissingFile(name.to_string()))
+        std::fs::read_to_string(path).map_err(|_| RalphError::MissingFile(name.to_string()))
     }
 
     fn read_file_optional(path: &Path) -> Option<String> {
@@ -112,7 +113,7 @@ impl PromptBuilder {
 }
 
 pub fn hash_content(content: &str) -> String {
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
     let mut hasher = Sha256::new();
     hasher.update(content.as_bytes());
     hex::encode(hasher.finalize())
