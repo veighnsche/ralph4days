@@ -22,7 +22,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const baseTask: PRDTask = {
-  id: "ui/frontend/001",
+  id: "ui/frontend/1",
   title: "Design main dashboard layout",
   description: "Create responsive dashboard with sidebar and main content area",
   status: "pending",
@@ -44,7 +44,7 @@ export const InProgress: Story = {
   args: {
     task: {
       ...baseTask,
-      id: "api/backend/002",
+      id: "api/backend/2",
       title: "Implement task list component",
       status: "in_progress",
     },
@@ -57,7 +57,7 @@ export const Done: Story = {
   args: {
     task: {
       ...baseTask,
-      id: "data/database/003",
+      id: "data/database/3",
       title: "Setup REST API endpoints",
       status: "done",
       completed: "2026-02-03",
@@ -70,7 +70,7 @@ export const Blocked: Story = {
   args: {
     task: {
       ...baseTask,
-      id: "tests/testing/004",
+      id: "tests/testing/4",
       title: "Add authentication middleware",
       status: "blocked",
       blocked_by: "Waiting for security review",
@@ -84,7 +84,7 @@ export const Skipped: Story = {
   args: {
     task: {
       ...baseTask,
-      id: "infra/infrastructure/005",
+      id: "infra/infrastructure/5",
       title: "Deploy to staging environment",
       status: "skipped",
     },
@@ -107,7 +107,7 @@ export const CriticalPriority: Story = {
   args: {
     task: {
       ...baseTask,
-      id: "sec/security/006",
+      id: "sec/security/6",
       title: "Fix critical security vulnerability",
       priority: "critical",
       status: "in_progress",
@@ -122,7 +122,7 @@ export const WithDependencies: Story = {
     task: {
       ...baseTask,
       title: "Add task detail sidebar",
-      depends_on: ["ui/frontend/002", "ui/frontend/003"],
+      depends_on: ["ui/frontend/2", "ui/frontend/3"],
       tags: ["component", "ui", "depends-on-others"],
     },
     onClick: () => console.log("Task clicked"),
@@ -132,7 +132,7 @@ export const WithDependencies: Story = {
 export const NoDescription: Story = {
   args: {
     task: {
-      id: "docs/documentation/007",
+      id: "docs/documentation/7",
       title: "Write API documentation",
       status: "pending",
       priority: "medium",
@@ -144,21 +144,21 @@ export const NoDescription: Story = {
 export const AllDisciplines: Story = {
   render: () => (
     <div className="flex flex-col gap-2">
-      <PlaylistItem task={{ ...baseTask, id: "ui/frontend/001", title: "Frontend Task" }} onClick={() => {}} />
-      <PlaylistItem task={{ ...baseTask, id: "api/backend/002", title: "Backend Task" }} onClick={() => {}} />
-      <PlaylistItem task={{ ...baseTask, id: "data/database/003", title: "Database Task" }} onClick={() => {}} />
-      <PlaylistItem task={{ ...baseTask, id: "tests/testing/004", title: "Testing Task" }} onClick={() => {}} />
+      <PlaylistItem task={{ ...baseTask, id: "ui/frontend/1", title: "Frontend Task" }} onClick={() => {}} />
+      <PlaylistItem task={{ ...baseTask, id: "api/backend/2", title: "Backend Task" }} onClick={() => {}} />
+      <PlaylistItem task={{ ...baseTask, id: "data/database/3", title: "Database Task" }} onClick={() => {}} />
+      <PlaylistItem task={{ ...baseTask, id: "tests/testing/4", title: "Testing Task" }} onClick={() => {}} />
       <PlaylistItem
-        task={{ ...baseTask, id: "infra/infrastructure/005", title: "Infrastructure Task" }}
+        task={{ ...baseTask, id: "infra/infrastructure/5", title: "Infrastructure Task" }}
         onClick={() => {}}
       />
-      <PlaylistItem task={{ ...baseTask, id: "sec/security/006", title: "Security Task" }} onClick={() => {}} />
+      <PlaylistItem task={{ ...baseTask, id: "sec/security/6", title: "Security Task" }} onClick={() => {}} />
       <PlaylistItem
-        task={{ ...baseTask, id: "docs/documentation/007", title: "Documentation Task" }}
+        task={{ ...baseTask, id: "docs/documentation/7", title: "Documentation Task" }}
         onClick={() => {}}
       />
-      <PlaylistItem task={{ ...baseTask, id: "design/design/008", title: "Design Task" }} onClick={() => {}} />
-      <PlaylistItem task={{ ...baseTask, id: "promo/marketing/009", title: "Marketing Task" }} onClick={() => {}} />
+      <PlaylistItem task={{ ...baseTask, id: "design/design/8", title: "Design Task" }} onClick={() => {}} />
+      <PlaylistItem task={{ ...baseTask, id: "promo/marketing/9", title: "Marketing Task" }} onClick={() => {}} />
       <PlaylistItem task={{ ...baseTask, id: "rest/api/010", title: "API Task" }} onClick={() => {}} />
     </div>
   ),
