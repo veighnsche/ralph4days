@@ -155,6 +155,10 @@ export const NoDescription: Story = {
 };
 
 export const AllDisciplines: Story = {
+  args: {
+    task: baseTask,
+    onClick: () => {},
+  },
   render: () => (
     <div className="flex flex-col gap-2">
       <PlaylistItem

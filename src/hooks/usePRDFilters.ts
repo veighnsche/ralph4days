@@ -33,7 +33,9 @@ export function usePRDFilters(prdData: PRDData | null) {
         (task) =>
           task.title.toLowerCase().includes(query) ||
           task.description?.toLowerCase().includes(query) ||
-          task.id.toLowerCase().includes(query) ||
+          task.id.toString().includes(query) ||
+          task.feature.toLowerCase().includes(query) ||
+          task.discipline.toLowerCase().includes(query) ||
           task.tags?.some((tag) => tag.toLowerCase().includes(query))
       );
     }

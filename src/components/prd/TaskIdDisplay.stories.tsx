@@ -58,6 +58,9 @@ export const BadgeVariant: Story = {
 };
 
 export const AllDisciplines: Story = {
+  args: {
+    task: createTask(1, "ui", "frontend"),
+  },
   render: () => (
     <div className="flex flex-col gap-4">
       <TaskIdDisplay task={createTask(1, "ui", "frontend")} />

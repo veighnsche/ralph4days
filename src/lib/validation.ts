@@ -64,5 +64,6 @@ export function validatePRDData(data: unknown): PRDData {
     }
   }
 
-  return d as PRDData;
+  // Type assertion is safe here because we've validated all required fields
+  return data as PRDData;
 }

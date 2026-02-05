@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { PRDTask } from "@/types/prd";
 import { TaskIdDisplay } from "./TaskIdDisplay";
 
 interface TaskIdPreviewProps {
@@ -9,12 +10,12 @@ interface TaskIdPreviewProps {
 }
 
 export function TaskIdPreview({ feature, discipline }: TaskIdPreviewProps) {
-  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [previewTask, setPreviewTask] = useState<PRDTask | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!feature || !discipline) {
-      setPreviewId(null);
+      setPreviewTask(null);
       return;
     }
 
@@ -27,10 +28,20 @@ export function TaskIdPreview({ feature, discipline }: TaskIdPreviewProps) {
         feature: normalized,
         discipline,
       })
-        .then(setPreviewId)
+        .then((id) => {
+          // Create a minimal task object for preview
+          const task: PRDTask = {
+            id: parseInt(id, 10),
+            feature: normalized,
+            discipline: discipline as PRDTask["discipline"],
+            title: "Preview task",
+            status: "pending",
+          };
+          setPreviewTask(task);
+        })
         .catch((err) => {
           console.error("Failed to get preview ID:", err);
-          setPreviewId(`${normalized}/${discipline}/?`);
+          setPreviewTask(null);
         })
         .finally(() => setLoading(false));
     }, 300);
@@ -47,8 +58,8 @@ export function TaskIdPreview({ feature, discipline }: TaskIdPreviewProps) {
       <span className="text-sm font-medium">Task ID:</span>
       {loading ? (
         <Skeleton className="h-12 w-24" />
-      ) : previewId ? (
-        <TaskIdDisplay taskId={previewId} variant="badge" status="pending" />
+      ) : previewTask ? (
+        <TaskIdDisplay task={previewTask} variant="badge" />
       ) : (
         <span className="text-sm text-muted-foreground">—</span>
       )}
