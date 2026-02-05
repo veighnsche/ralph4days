@@ -73,9 +73,11 @@ fn test_features_yaml_output() {
     let mut features_file = FeaturesFile::new(db_path.join("features.yaml"));
 
     features_file
-        .ensure_feature_exists("authentication")
+        .ensure_feature_exists("authentication", "AUTH")
         .unwrap();
-    features_file.ensure_feature_exists("user-profile").unwrap();
+    features_file
+        .ensure_feature_exists("user-profile", "USPR")
+        .unwrap();
 
     features_file.save().unwrap();
     let yaml_content = fs::read_to_string(db_path.join("features.yaml")).unwrap();
@@ -104,6 +106,7 @@ fn test_disciplines_yaml_custom() {
     disciplines_file.add(Discipline {
         name: "ml-ops".to_string(),
         display_name: "ML/Ops".to_string(),
+        acronym: "MLOP".to_string(),
         icon: "Brain".to_string(),
         color: "violet".to_string(),
     });
@@ -111,6 +114,7 @@ fn test_disciplines_yaml_custom() {
     disciplines_file.add(Discipline {
         name: "data-eng".to_string(),
         display_name: "Data Engineering".to_string(),
+        acronym: "DENG".to_string(),
         icon: "Database".to_string(),
         color: "emerald".to_string(),
     });
@@ -193,6 +197,8 @@ fn test_full_database_creation() {
                 "POST /users creates a user".to_string(),
                 "GET /users/:id returns user".to_string(),
             ]),
+            feature_acronym: "USRM".to_string(),
+            discipline_acronym: "BACK".to_string(),
         })
         .unwrap();
 
@@ -206,6 +212,8 @@ fn test_full_database_creation() {
             tags: vec![],
             depends_on: vec![task_id_1],
             acceptance_criteria: None,
+            feature_acronym: "USRM".to_string(),
+            discipline_acronym: "FRNT".to_string(),
         })
         .unwrap();
 

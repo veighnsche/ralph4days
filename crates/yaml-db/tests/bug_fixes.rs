@@ -32,6 +32,8 @@ fn test_self_referential_dependency() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -46,6 +48,8 @@ fn test_self_referential_dependency() {
         tags: vec![],
         depends_on: vec![999], // Future ID that will fail
         acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_err());
@@ -68,6 +72,8 @@ fn test_circular_dependency_chain() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -82,6 +88,8 @@ fn test_circular_dependency_chain() {
             tags: vec![],
             depends_on: vec![task_a],
             acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -96,6 +104,8 @@ fn test_circular_dependency_chain() {
             tags: vec![],
             depends_on: vec![task_b],
             acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -120,6 +130,8 @@ fn test_whitespace_only_feature_name() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_err());
@@ -140,6 +152,8 @@ fn test_whitespace_only_discipline_name() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_err());
@@ -162,6 +176,8 @@ fn test_whitespace_only_title() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_err());
@@ -184,6 +200,8 @@ fn test_feature_name_with_underscores() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
     })
     .unwrap();
 
@@ -208,6 +226,8 @@ fn test_feature_name_with_mixed_separators() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
     })
     .unwrap();
 
@@ -238,6 +258,8 @@ fn test_get_task_by_id() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -265,6 +287,8 @@ fn test_duplicate_dependency() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -278,6 +302,8 @@ fn test_duplicate_dependency() {
         tags: vec![],
         depends_on: vec![task1_id, task1_id, task1_id], // Duplicates
         acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
     });
 
     // Should succeed (duplicates are allowed for now, could be cleaned up)

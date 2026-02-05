@@ -29,6 +29,8 @@ fn test_create_task_with_invalid_dependency() {
         tags: vec![],
         depends_on: vec![999], // Non-existent task ID
         acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_err());
@@ -53,6 +55,8 @@ fn test_create_task_with_circular_dependency() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -69,6 +73,8 @@ fn test_create_task_with_circular_dependency() {
             tags: vec![],
             depends_on: vec![task1_id],
             acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -95,6 +101,8 @@ fn test_concurrent_task_creation() {
                 tags: vec![],
                 depends_on: vec![],
                 acceptance_criteria: None,
+            feature_acronym: format!("FT{:02}", i),
+            discipline_acronym: "BACK".to_string(),
             })
             .unwrap()
         });
@@ -125,6 +133,8 @@ fn test_reload_database_after_external_modification() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -142,6 +152,8 @@ fn test_reload_database_after_external_modification() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -171,6 +183,8 @@ fn test_task_id_sequence_after_reload() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
     }
@@ -191,6 +205,8 @@ fn test_task_id_sequence_after_reload() {
                 tags: vec![],
                 depends_on: vec![],
                 acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
             })
             .unwrap();
 
@@ -213,6 +229,8 @@ fn test_empty_feature_name() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_err());
@@ -233,6 +251,8 @@ fn test_empty_discipline_name() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_err());
@@ -255,6 +275,8 @@ fn test_empty_title() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_err());
@@ -276,6 +298,8 @@ fn test_very_long_title() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_ok());
@@ -299,6 +323,8 @@ fn test_many_tags() {
         tags: tags.clone(),
         depends_on: vec![],
         acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_ok());
@@ -323,6 +349,8 @@ fn test_special_characters_in_fields() {
         ],
         depends_on: vec![],
         acceptance_criteria: Some(vec!["Criteria with: special chars!".to_string()]),
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_ok());
@@ -359,6 +387,8 @@ fn test_discipline_auto_creation() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
+            feature_acronym: "TSTT".to_string(),
+            discipline_acronym: "CSTM".to_string(),
     });
 
     assert!(result.is_ok());

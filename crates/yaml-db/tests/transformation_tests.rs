@@ -80,6 +80,8 @@ fn test_transform_empty_db_to_first_task() {
                 "POST /login endpoint works".to_string(),
                 "Returns JWT token".to_string(),
             ]),
+            feature_acronym: "AUTH".to_string(),
+            discipline_acronym: "BACK".to_string(),
         })
         .unwrap();
 
@@ -107,6 +109,8 @@ fn test_transform_add_task_with_dependency() {
             tags: vec!["ui".to_string()],
             depends_on: vec![1], // Depends on existing task 1
             acceptance_criteria: Some(vec!["Form validates input".to_string()]),
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -132,6 +136,8 @@ fn test_transform_multiple_tasks_multiple_features() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
+            feature_acronym: "AUTH".to_string(),
+            discipline_acronym: "BCKN".to_string(),
     })
     .unwrap();
 
@@ -144,6 +150,8 @@ fn test_transform_multiple_tasks_multiple_features() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
+            feature_acronym: "USPR".to_string(),
+            discipline_acronym: "FRNT".to_string(),
     })
     .unwrap();
 
@@ -156,6 +164,8 @@ fn test_transform_multiple_tasks_multiple_features() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
+            feature_acronym: "USPR".to_string(),
+            discipline_acronym: "BCKN".to_string(),
     })
     .unwrap();
 
@@ -194,6 +204,8 @@ fn test_transform_custom_discipline_addition() {
         tags: vec!["ml".to_string(), "training".to_string()],
         depends_on: vec![],
         acceptance_criteria: None,
+            feature_acronym: "MLPP".to_string(),
+            discipline_acronym: "MLRN".to_string(),
     })
     .unwrap();
 
@@ -217,6 +229,8 @@ fn test_transform_reload_and_modify() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
     }
@@ -233,6 +247,8 @@ fn test_transform_reload_and_modify() {
             tags: vec![],
             depends_on: vec![1],
             acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
     }

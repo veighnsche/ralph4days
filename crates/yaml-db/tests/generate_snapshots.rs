@@ -35,6 +35,8 @@ fn generate_empty_to_first_task_after() {
             "POST /login endpoint works".to_string(),
             "Returns JWT token".to_string(),
         ]),
+        feature_acronym: "AUTH".to_string(),
+        discipline_acronym: "BACK".to_string(),
     })
     .unwrap();
 
@@ -84,12 +86,14 @@ fn generate_all_transformation_snapshots() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            feature_acronym: "AUTH".to_string(),
+            discipline_acronym: "BACK".to_string(),
         })
         .unwrap();
 
         // Save before state
         let before_dir = "tests/snapshots/transformations/add_dependent_task/before";
-        for file in &["tasks.yaml", "features.yaml", "metadata.yaml"] {
+        for file in &["tasks.yaml", "features.yaml", "disciplines.yaml", "metadata.yaml"] {
             fs::copy(db_path.join(file), format!("{}/{}", before_dir, file)).unwrap();
         }
 
@@ -103,12 +107,14 @@ fn generate_all_transformation_snapshots() {
             tags: vec!["ui".to_string()],
             depends_on: vec![1],
             acceptance_criteria: Some(vec!["Form validates input".to_string()]),
+            feature_acronym: "AUTH".to_string(),
+            discipline_acronym: "BACK".to_string(),
         })
         .unwrap();
 
         // Save after state
         let after_dir = "tests/snapshots/transformations/add_dependent_task/after";
-        for file in &["tasks.yaml", "features.yaml", "metadata.yaml"] {
+        for file in &["tasks.yaml", "features.yaml", "disciplines.yaml", "metadata.yaml"] {
             fs::copy(db_path.join(file), format!("{}/{}", after_dir, file)).unwrap();
         }
 
@@ -133,11 +139,13 @@ fn generate_all_transformation_snapshots() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            feature_acronym: "AUTH".to_string(),
+            discipline_acronym: "BACK".to_string(),
         }).unwrap();
 
         // Save before state
         let before_dir = "tests/snapshots/transformations/multi_feature_expansion/before";
-        for file in &["tasks.yaml", "features.yaml", "metadata.yaml"] {
+        for file in &["tasks.yaml", "features.yaml", "disciplines.yaml", "metadata.yaml"] {
             fs::copy(db_path.join(file), format!("{}/{}", before_dir, file)).unwrap();
         }
 
@@ -151,6 +159,8 @@ fn generate_all_transformation_snapshots() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            feature_acronym: "AUTH".to_string(),
+            discipline_acronym: "BACK".to_string(),
         }).unwrap();
 
         db.create_task(TaskInput {
@@ -162,6 +172,8 @@ fn generate_all_transformation_snapshots() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            feature_acronym: "USPR".to_string(),
+            discipline_acronym: "FRNT".to_string(),
         }).unwrap();
 
         db.create_task(TaskInput {
@@ -173,11 +185,13 @@ fn generate_all_transformation_snapshots() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            feature_acronym: "USPR".to_string(),
+            discipline_acronym: "BACK".to_string(),
         }).unwrap();
 
         // Save after state
         let after_dir = "tests/snapshots/transformations/multi_feature_expansion/after";
-        for file in &["tasks.yaml", "features.yaml", "metadata.yaml"] {
+        for file in &["tasks.yaml", "features.yaml", "disciplines.yaml", "metadata.yaml"] {
             fs::copy(db_path.join(file), format!("{}/{}", after_dir, file)).unwrap();
         }
 
@@ -206,6 +220,8 @@ fn generate_all_transformation_snapshots() {
                 tags: vec![],
                 depends_on: vec![],
                 acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "TEST".to_string(),
             }).unwrap();
         }
 
@@ -311,6 +327,8 @@ project:
             tags: vec!["ml".to_string(), "training".to_string()],
             depends_on: vec![],
             acceptance_criteria: None,
+            feature_acronym: "MLPP".to_string(),
+            discipline_acronym: "MLRN".to_string(),
         }).unwrap();
 
         // Save after state (including new discipline)
@@ -356,6 +374,8 @@ project:
                 tags: vec![],
                 depends_on: vec![],
                 acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "BACK".to_string(),
             }).unwrap();
         }
 
@@ -371,12 +391,14 @@ project:
                 tags: vec![],
                 depends_on: vec![1],
                 acceptance_criteria: None,
+            feature_acronym: "TEST".to_string(),
+            discipline_acronym: "BACK".to_string(),
             }).unwrap();
         }
 
         // Save after state
         let after_dir = "tests/snapshots/transformations/reload_modify/after";
-        for file in &["tasks.yaml", "features.yaml", "metadata.yaml"] {
+        for file in &["tasks.yaml", "features.yaml", "disciplines.yaml", "metadata.yaml"] {
             fs::copy(db_path.join(file), format!("{}/{}", after_dir, file)).unwrap();
         }
 
