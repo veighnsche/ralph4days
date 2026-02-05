@@ -1,12 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/StatusBadge";
 import { LoopControls } from "@/components/LoopControls";
 import { OutputPanel } from "@/components/OutputPanel";
 import { ProjectSelector } from "@/components/ProjectSelector";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { Settings } from "@/components/Settings";
 import { useLoopStore, LoopState } from "@/stores/useLoopStore";
 import { useTauriEvent } from "@/hooks/useTauriEvent";
 import "./index.css";
@@ -50,11 +59,16 @@ function App() {
   useEffect(() => {
     if (typeof window !== 'undefined' && '__TAURI__' in window) {
       invoke<string | null>("get_locked_project")
-        .then((project) => {
+        .then(async (project) => {
           setLockedProject(project);
           if (project) {
             const projectName = project.split('/').pop() || 'Unknown';
-            getCurrentWindow().setTitle(`Ralph4days - ${projectName}`);
+            try {
+              await getCurrentWindow().setTitle(`Ralph4days - ${projectName}`);
+              console.log('Window title set to:', `Ralph4days - ${projectName}`);
+            } catch (err) {
+              console.error('Failed to set window title:', err);
+            }
           }
           setIsLoadingProject(false);
         })
@@ -73,6 +87,16 @@ function App() {
       invoke<typeof status>("get_loop_state").then(setStatus).catch(console.error);
     }
   }, [setStatus]);
+
+  // Update window title when project changes
+  useEffect(() => {
+    if (lockedProject && typeof window !== 'undefined' && '__TAURI__' in window) {
+      const projectName = lockedProject.split('/').pop() || 'Unknown';
+      getCurrentWindow().setTitle(`Ralph4days - ${projectName}`).catch(err => {
+        console.error('Failed to set window title:', err);
+      });
+    }
+  }, [lockedProject]);
 
   // Event handlers
   const handleStateChanged = useCallback(
@@ -148,48 +172,58 @@ function App() {
   }
 
   if (!lockedProject) {
-    return <ProjectSelector onProjectSelected={(project) => {
+    return <ProjectSelector onProjectSelected={async (project) => {
       setLockedProject(project);
       const projectName = project.split('/').pop() || 'Unknown';
-      getCurrentWindow().setTitle(`Ralph4days - ${projectName}`);
+      try {
+        await getCurrentWindow().setTitle(`Ralph4days - ${projectName}`);
+        console.log('Window title set to:', `Ralph4days - ${projectName}`);
+      } catch (err) {
+        console.error('Failed to set window title:', err);
+      }
     }} />;
   }
 
   const projectName = lockedProject.split('/').pop() || 'Unknown';
 
   return (
-    <div className="flex h-screen gap-4 p-4">
-      {/* Left Panel - Controls */}
-      <Card className="w-80 shrink-0">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">{projectName}</CardTitle>
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <StatusBadge state={status.state} />
-            </div>
+    <SidebarProvider>
+      <Sidebar>
+        <SidebarHeader>
+          <div className="flex items-center justify-between px-4 py-2">
+            <div className="font-semibold">{projectName}</div>
+            <StatusBadge state={status.state} />
           </div>
           {status.state !== "idle" && (
-            <div className="text-sm text-[hsl(var(--muted-foreground))]">
+            <div className="px-4 text-sm text-[hsl(var(--muted-foreground))]">
               Iteration {status.current_iteration} / {status.max_iterations}
             </div>
           )}
-        </CardHeader>
-        <CardContent>
-          <LoopControls lockedProject={lockedProject} />
-        </CardContent>
-      </Card>
+        </SidebarHeader>
+        <Separator />
+        <SidebarContent>
+          <div className="p-4">
+            <LoopControls lockedProject={lockedProject} />
+          </div>
+        </SidebarContent>
+        <SidebarFooter>
+          <div className="p-4">
+            <Settings />
+          </div>
+        </SidebarFooter>
+      </Sidebar>
 
-      {/* Right Panel - Output */}
-      <Card className="flex-1 flex flex-col min-w-0">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg">Output</CardTitle>
-        </CardHeader>
-        <CardContent className="flex-1 pb-4 min-h-0">
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <h1 className="font-semibold">Output</h1>
+        </header>
+        <div className="flex flex-1 flex-col gap-4 p-4">
           <OutputPanel />
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
 

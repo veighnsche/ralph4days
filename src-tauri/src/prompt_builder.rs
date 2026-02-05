@@ -13,7 +13,7 @@ impl PromptBuilder {
             return Err(RalphError::MissingRalphDir);
         }
 
-        let prd = Self::read_file(&ralph_dir.join("prd.md"), "prd.md")?;
+        let prd = Self::read_file(&ralph_dir.join("prd.yaml"), "prd.yaml")?;
         let progress = Self::read_file_optional(&ralph_dir.join("progress.txt"));
         let learnings = Self::read_file_optional(&ralph_dir.join("learnings.txt"));
         let claude_md = Self::read_file_optional(&ralph_dir.join("CLAUDE.md"));
@@ -46,7 +46,7 @@ impl PromptBuilder {
         prompt.push_str("You are working on tasks from the PRD above. ");
         prompt.push_str("Pick ONE incomplete task (marked with [ ]) and complete it.\n\n");
         prompt.push_str("After completing the task:\n");
-        prompt.push_str("1. Mark it as done by changing [ ] to [x] in prd.md\n");
+        prompt.push_str("1. Mark it as done by changing [ ] to [x] in prd.yaml\n");
         prompt.push_str("2. Commit your changes with a descriptive message\n");
         prompt.push_str("3. Append a brief summary to progress.txt\n\n");
         prompt.push_str("If ALL tasks are complete, output exactly: ");
@@ -63,7 +63,7 @@ impl PromptBuilder {
             return Err(RalphError::MissingRalphDir);
         }
 
-        let prd = Self::read_file(&ralph_dir.join("prd.md"), "prd.md")?;
+        let prd = Self::read_file(&ralph_dir.join("prd.yaml"), "prd.yaml")?;
         let progress = Self::read_file_optional(&ralph_dir.join("progress.txt"));
         let learnings = Self::read_file_optional(&ralph_dir.join("learnings.txt"));
 

@@ -12,6 +12,7 @@ pub struct LoopEngine {
     config: Arc<Mutex<Option<LoopConfig>>>,
     pause_flag: Arc<Mutex<bool>>,
     stop_flag: Arc<Mutex<bool>>,
+    current_pid: Arc<Mutex<Option<u32>>>,
 }
 
 impl Default for LoopEngine {
@@ -27,6 +28,7 @@ impl LoopEngine {
             config: Arc::new(Mutex::new(None)),
             pause_flag: Arc::new(Mutex::new(false)),
             stop_flag: Arc::new(Mutex::new(false)),
+            current_pid: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -82,9 +84,10 @@ impl LoopEngine {
         let config_arc = Arc::clone(&self.config);
         let pause_flag = Arc::clone(&self.pause_flag);
         let stop_flag = Arc::clone(&self.stop_flag);
+        let current_pid = Arc::clone(&self.current_pid);
 
         thread::spawn(move || {
-            Self::run_loop(app, status, config_arc, pause_flag, stop_flag, config);
+            Self::run_loop(app, status, config_arc, pause_flag, stop_flag, current_pid, config);
         });
 
         Ok(())
@@ -118,6 +121,19 @@ impl LoopEngine {
     pub fn stop(&self, app: &AppHandle) -> Result<(), RalphError> {
         *self.stop_flag.lock().unwrap() = true;
 
+        // Kill the current subprocess if running
+        if let Some(pid) = *self.current_pid.lock().unwrap() {
+            #[cfg(unix)]
+            {
+                use std::process::Command;
+                let _ = Command::new("kill")
+                    .arg("-TERM")
+                    .arg(pid.to_string())
+                    .spawn();
+            }
+            *self.current_pid.lock().unwrap() = None;
+        }
+
         {
             let mut status = self.status.lock().unwrap();
             status.state = LoopState::Aborted;
@@ -133,6 +149,7 @@ impl LoopEngine {
         _config_arc: Arc<Mutex<Option<LoopConfig>>>,
         pause_flag: Arc<Mutex<bool>>,
         stop_flag: Arc<Mutex<bool>>,
+        current_pid: Arc<Mutex<Option<u32>>>,
         config: LoopConfig,
     ) {
         let mut iterations_since_opus = 0;
@@ -234,6 +251,7 @@ impl LoopEngine {
                 prompt,
                 model.to_string(),
                 config.iteration_timeout_secs,
+                Arc::clone(&current_pid),
             );
 
             // Stream output to frontend
@@ -374,7 +392,7 @@ impl LoopEngine {
 
     fn get_progress_hash(project_path: &PathBuf) -> String {
         let progress_path = project_path.join(".ralph/progress.txt");
-        let prd_path = project_path.join(".ralph/prd.md");
+        let prd_path = project_path.join(".ralph/prd.yaml");
 
         let progress = std::fs::read_to_string(&progress_path).unwrap_or_default();
         let prd = std::fs::read_to_string(&prd_path).unwrap_or_default();
