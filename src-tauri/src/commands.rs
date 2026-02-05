@@ -332,3 +332,13 @@ pub fn get_current_dir() -> Result<String, String> {
         .ok_or("Failed to get home directory")?;
     Ok(path.to_string_lossy().to_string())
 }
+
+#[tauri::command]
+pub fn get_prd_content(state: State<'_, AppState>) -> Result<String, String> {
+    let locked = state.locked_project.lock().map_err(|e| e.to_string())?;
+    let project_path = locked.as_ref()
+        .ok_or("No project locked")?;
+    let prd_path = project_path.join(".ralph/prd.yaml");
+    std::fs::read_to_string(prd_path)
+        .map_err(|e| format!("Failed to read prd.yaml: {}", e))
+}

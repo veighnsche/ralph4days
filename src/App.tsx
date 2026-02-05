@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { FileText, Terminal } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -11,9 +12,11 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { LoopControls } from "@/components/LoopControls";
 import { OutputPanel } from "@/components/OutputPanel";
+import { PRDViewer } from "@/components/PRDViewer";
 import { ProjectSelector } from "@/components/ProjectSelector";
 import { Settings } from "@/components/Settings";
 import { useLoopStore, LoopState } from "@/stores/useLoopStore";
@@ -50,10 +53,13 @@ interface ErrorEvent {
   message: string;
 }
 
+type ViewMode = "output" | "prd";
+
 function App() {
   const { status, setStatus, addOutput, setRateLimitInfo } = useLoopStore();
   const [lockedProject, setLockedProject] = useState<string | null>(null);
   const [isLoadingProject, setIsLoadingProject] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>("output");
 
   // Check for locked project on mount and set window title
   useEffect(() => {
@@ -202,7 +208,29 @@ function App() {
         </SidebarHeader>
         <Separator />
         <SidebarContent>
-          <div className="p-4">
+          <div className="p-4 space-y-4">
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-[hsl(var(--muted-foreground))]">View</div>
+              <div className="flex flex-col gap-1">
+                <Button
+                  variant={viewMode === "output" ? "default" : "ghost"}
+                  className="justify-start"
+                  onClick={() => setViewMode("output")}
+                >
+                  <Terminal className="mr-2 h-4 w-4" />
+                  Output
+                </Button>
+                <Button
+                  variant={viewMode === "prd" ? "default" : "ghost"}
+                  className="justify-start"
+                  onClick={() => setViewMode("prd")}
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  PRD
+                </Button>
+              </div>
+            </div>
+            <Separator />
             <LoopControls lockedProject={lockedProject} />
           </div>
         </SidebarContent>
@@ -217,10 +245,10 @@ function App() {
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
-          <h1 className="font-semibold">Output</h1>
+          <h1 className="font-semibold">{viewMode === "output" ? "Output" : "PRD"}</h1>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4">
-          <OutputPanel />
+          {viewMode === "output" ? <OutputPanel /> : <PRDViewer />}
         </div>
       </SidebarInset>
     </SidebarProvider>

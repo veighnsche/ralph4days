@@ -67,6 +67,10 @@ tasks:
     status: "pending"      # pending | in_progress | done | blocked | skipped
     priority: "high"       # low | medium | high | critical
     tags: ["backend", "security"]
+    acceptance_criteria:
+      - "User can register with email and password"
+      - "User can log in and receive JWT token"
+      - "Token refresh endpoint works correctly"
     created: "2026-02-05"
     updated: "2026-02-05"
 
@@ -114,6 +118,7 @@ tasks:
 | `tags` | array[string] | no | Categorization tags |
 | `depends_on` | array[string] | no | Task IDs this task depends on |
 | `blocked_by` | string | no | Reason for blocked status |
+| `acceptance_criteria` | array[string] | no | List of criteria that define task completion |
 | `created` | date | no | When task was created |
 | `updated` | date | no | Last update timestamp |
 | `completed` | datetime | no | When status changed to "done" (ISO 8601) |
@@ -210,6 +215,8 @@ pub struct Task {
     pub depends_on: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub blocked_by: Option<String>,
+    #[serde(default)]
+    pub acceptance_criteria: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -515,6 +522,11 @@ tasks:
     priority: "critical"
     tags: ["backend", "payments"]
     depends_on: ["backend-002"]
+    acceptance_criteria:
+      - "Stripe SDK integrated and configured"
+      - "Payment intent creation endpoint works"
+      - "Webhook handlers for payment events implemented"
+      - "Error handling for failed payments"
 
   - id: "frontend-001"
     title: "Build product catalog UI"

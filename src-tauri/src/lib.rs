@@ -57,6 +57,7 @@ pub fn run() {
             commands::initialize_ralph_project,
             commands::set_locked_project,
             commands::get_locked_project,
+            commands::get_prd_content,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
