@@ -134,10 +134,15 @@ Describe the architecture, tech stack, and key components.
 fn generate_fixture_empty_project() {
     println!("\n=== Generating fixture: empty-project ===");
 
-    let fixture_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+    let fixtures_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .unwrap()
-        .join("fixtures/empty-project");
+        .join("fixtures");
+
+    // Ensure fixtures/ directory exists
+    fs::create_dir_all(&fixtures_dir).unwrap();
+
+    let fixture_path = fixtures_dir.join("empty-project");
 
     // Clean and recreate
     if fixture_path.exists() {
@@ -185,10 +190,15 @@ See `initialized-project` fixture for the AFTER state.
 fn generate_fixture_initialized_project() {
     println!("\n=== Generating fixture: initialized-project ===");
 
-    let fixture_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+    let fixtures_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .unwrap()
-        .join("fixtures/initialized-project");
+        .join("fixtures");
+
+    // Ensure fixtures/ directory exists
+    fs::create_dir_all(&fixtures_dir).unwrap();
+
+    let fixture_path = fixtures_dir.join("initialized-project");
 
     // Clean and recreate
     if fixture_path.exists() {
@@ -259,11 +269,19 @@ ralph --project mock/initialized-project
 }
 
 /// Generate all fixtures
+/// Note: Calls test functions directly, so run with --test-threads=1 to avoid conflicts
 #[test]
 fn generate_all_fixtures() {
     println!("\n========================================");
     println!("GENERATING ALL FIXTURES");
     println!("========================================");
+
+    // Ensure fixtures directory exists before generating any fixtures
+    let fixtures_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .join("fixtures");
+    fs::create_dir_all(&fixtures_dir).unwrap();
 
     generate_fixture_empty_project();
     generate_fixture_initialized_project();
