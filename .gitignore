@@ -55,3 +55,6 @@ src-tauri/target/
 *.tmp
 *.temp
 .cache/
+
+*storybook.log
+storybook-static
