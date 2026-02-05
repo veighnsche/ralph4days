@@ -87,6 +87,87 @@ pub fn validate_project_path(path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(), String> {
+    let path = PathBuf::from(&path);
+
+    // Check path exists and is directory
+    if !path.exists() {
+        return Err(format!("Directory not found: {}", path.display()));
+    }
+    if !path.is_dir() {
+        return Err(format!("Not a directory: {}", path.display()));
+    }
+
+    // Create .ralph/ directory
+    let ralph_dir = path.join(".ralph");
+    if ralph_dir.exists() {
+        return Err(format!(".ralph/ already exists at {}", path.display()));
+    }
+
+    std::fs::create_dir(&ralph_dir)
+        .map_err(|e| format!("Failed to create .ralph/ directory: {}", e))?;
+
+    // Create template prd.yaml
+    let prd_path = ralph_dir.join("prd.yaml");
+    let prd_template = format!(
+        r#"schema_version: "1.0"
+project:
+  title: "{}"
+  description: "Add project description here"
+  created: "{}"
+
+tasks:
+  - id: "task-001"
+    title: "Replace this with your first task"
+    description: "Add task details here"
+    status: "pending"
+    priority: "medium"
+    tags: []
+    created: "{}"
+"#,
+        project_title,
+        chrono::Utc::now().format("%Y-%m-%d"),
+        chrono::Utc::now().format("%Y-%m-%d")
+    );
+
+    std::fs::write(&prd_path, prd_template)
+        .map_err(|e| format!("Failed to create prd.yaml: {}", e))?;
+
+    // Create optional CLAUDE.RALPH.md template
+    let claude_path = ralph_dir.join("CLAUDE.RALPH.md");
+    let claude_template = format!(
+        r#"# {} - Ralph Context
+
+## Project Overview
+
+Add context about this project that Claude should know when working on it.
+
+## Architecture
+
+Describe the architecture, tech stack, and key components.
+
+## Coding Standards
+
+- List any coding conventions
+- Style guides
+- Best practices
+
+## Important Notes
+
+- Any gotchas or things to watch out for
+- Known issues or limitations
+- Dependencies or external services
+"#,
+        project_title
+    );
+
+    std::fs::write(&claude_path, claude_template)
+        .map_err(|e| format!("Failed to create CLAUDE.RALPH.md: {}", e))?;
+
+    Ok(())
+}
+
+#[tauri::command]
 pub fn set_locked_project(state: State<'_, AppState>, path: String) -> Result<(), String> {
     // Validate the project path first
     validate_project_path(path.clone())?;

@@ -22,6 +22,8 @@ export function ProjectPicker({ onProjectLocked }: ProjectPickerProps) {
   const [validationStatus, setValidationStatus] = useState<"idle" | "validating" | "valid" | "error">("idle");
   const [validationError, setValidationError] = useState<string | null>(null);
   const [lockingProject, setLockingProject] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
+  const [projectTitle, setProjectTitle] = useState("");
 
   // Scan for projects on mount
   useEffect(() => {
@@ -83,6 +85,24 @@ export function ProjectPicker({ onProjectLocked }: ProjectPickerProps) {
     }
   };
 
+  const handleInitializeProject = useCallback(async () => {
+    if (!selectedPath) return;
+
+    setIsInitializing(true);
+    try {
+      const title = projectTitle || selectedPath.split('/').pop() || "My Project";
+      await invoke("initialize_ralph_project", { path: selectedPath, projectTitle: title });
+
+      // After initialization, lock the project
+      await invoke("set_locked_project", { path: selectedPath });
+      onProjectLocked(selectedPath);
+    } catch (err) {
+      setValidationError(`Failed to initialize project: ${err}`);
+      setValidationStatus("error");
+      setIsInitializing(false);
+    }
+  }, [selectedPath, projectTitle, onProjectLocked]);
+
   const handleLockProject = useCallback(async () => {
     if (validationStatus !== "valid") return;
 
@@ -96,6 +116,10 @@ export function ProjectPicker({ onProjectLocked }: ProjectPickerProps) {
       setLockingProject(false);
     }
   }, [selectedPath, validationStatus, onProjectLocked]);
+
+  // Check if directory exists but is not a Ralph project
+  const canInitialize = selectedPath && validationStatus === "error" &&
+    validationError?.includes("No .ralph/");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -172,27 +196,54 @@ export function ProjectPicker({ onProjectLocked }: ProjectPickerProps) {
           )}
 
           {validationStatus === "error" && validationError && (
-            <div className="rounded-md border border-[hsl(var(--destructive))] bg-[hsl(var(--destructive))]/10 p-3">
-              <div className="flex items-start gap-2 text-sm text-[hsl(var(--destructive))]">
+            <div className="rounded-md border border-yellow-500 bg-yellow-500/10 p-3">
+              <div className="flex items-start gap-2 text-sm text-yellow-700 dark:text-yellow-400">
                 <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                <div className="space-y-2">
-                  <div className="font-medium">Not a valid Ralph project</div>
-                  <pre className="text-xs whitespace-pre-wrap font-mono">{validationError}</pre>
-                  <div className="text-xs opacity-80">
-                    Create the required structure, then try again.
-                  </div>
+                <div className="space-y-2 flex-1">
+                  <div className="font-medium">Not a Ralph project yet</div>
+                  {canInitialize ? (
+                    <>
+                      <p className="text-xs">
+                        This directory doesn't have a .ralph/ folder. Would you like to initialize it as a Ralph project?
+                      </p>
+                      <div className="space-y-2 pt-2">
+                        <label className="text-xs font-medium">Project Title (optional)</label>
+                        <Input
+                          value={projectTitle}
+                          onChange={(e) => setProjectTitle(e.target.value)}
+                          placeholder={selectedPath.split('/').pop() || "My Project"}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <pre className="text-xs whitespace-pre-wrap font-mono">{validationError}</pre>
+                  )}
                 </div>
               </div>
             </div>
           )}
 
-          <Button
-            onClick={handleLockProject}
-            disabled={validationStatus !== "valid" || lockingProject}
-            className="w-full"
-          >
-            {lockingProject ? "Locking..." : "Lock Project"}
-          </Button>
+          <div className="flex gap-2">
+            {canInitialize && (
+              <Button
+                onClick={handleInitializeProject}
+                disabled={isInitializing}
+                variant="default"
+                className="flex-1"
+              >
+                {isInitializing ? "Initializing..." : "Initialize Project"}
+              </Button>
+            )}
+            <Button
+              onClick={handleLockProject}
+              disabled={validationStatus !== "valid" || lockingProject}
+              className="flex-1"
+              variant={canInitialize ? "outline" : "default"}
+            >
+              {lockingProject ? "Locking..." : "Lock Existing Project"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

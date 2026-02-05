@@ -54,6 +54,7 @@ pub fn run() {
             commands::scan_for_ralph_projects,
             commands::get_current_dir,
             commands::validate_project_path,
+            commands::initialize_ralph_project,
             commands::set_locked_project,
             commands::get_locked_project,
         ])
