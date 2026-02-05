@@ -20,6 +20,11 @@ dev-frontend:
 
 # Start development server with a mock project (skips project picker)
 dev-mock FIXTURE:
+    #!/usr/bin/env bash
+    if [ ! -d "mock/{{FIXTURE}}" ]; then
+        echo "Mock directory not found. Creating from fixtures..."
+        just reset-mock
+    fi
     bun tauri dev -- -- --project {{justfile_directory()}}/mock/{{FIXTURE}}
 
 # Run cargo check (fast compilation check)
@@ -155,10 +160,16 @@ list-mock:
     for f in mock/*/; do
         name=$(basename "$f")
         prd="${f}.ralph/prd.yaml"
-        if [ -f "$prd" ]; then
+        metadata="${f}.ralph/db/metadata.yaml"
+        tasks_file="${f}.ralph/db/tasks.yaml"
+        if [ -f "$metadata" ]; then
+            title=$(grep "^  title:" "$metadata" | cut -d'"' -f2 || echo "N/A")
+            tasks=$(grep -c "^  - id:" "$tasks_file" 2>/dev/null || echo "0")
+            echo "  $name: $tasks tasks - $title [db format]"
+        elif [ -f "$prd" ]; then
             title=$(grep "^  title:" "$prd" | cut -d'"' -f2 || echo "N/A")
             tasks=$(grep -c "^  - id:" "$prd" || echo "0")
-            echo "  $name: $tasks tasks - $title"
+            echo "  $name: $tasks tasks - $title [prd.yaml]"
         fi
     done
 
@@ -171,9 +182,15 @@ list-fixtures:
     for f in fixtures/*/; do
         name=$(basename "$f")
         prd="${f}.undetect-ralph/prd.yaml"
-        if [ -f "$prd" ]; then
+        metadata="${f}.undetect-ralph/db/metadata.yaml"
+        tasks_file="${f}.undetect-ralph/db/tasks.yaml"
+        if [ -f "$metadata" ]; then
+            title=$(grep "^  title:" "$metadata" | cut -d'"' -f2 || echo "N/A")
+            tasks=$(grep -c "^  - id:" "$tasks_file" 2>/dev/null || echo "0")
+            echo "  $name: $tasks tasks - $title [db format]"
+        elif [ -f "$prd" ]; then
             title=$(grep "^  title:" "$prd" | cut -d'"' -f2 || echo "N/A")
             tasks=$(grep -c "^  - id:" "$prd" || echo "0")
-            echo "  $name: $tasks tasks - $title"
+            echo "  $name: $tasks tasks - $title [prd.yaml]"
         fi
     done
