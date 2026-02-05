@@ -1,15 +1,19 @@
 import { invoke } from "@tauri-apps/api/core";
 import { Pause, Play, Square } from "lucide-react";
 import { LoopCountBadge } from "@/components/LoopCountBadge";
+import { NavigationMenu } from "@/components/NavigationMenu";
 import { Settings } from "@/components/Settings";
 import { Button } from "@/components/ui/button";
+import type { Page } from "@/hooks/useNavigation";
 import { useLoopStore } from "@/stores/useLoopStore";
 
 interface BottomBarProps {
   lockedProject: string;
+  currentPage: Page;
+  onPageChange: (page: Page) => void;
 }
 
-export function BottomBar({ lockedProject }: BottomBarProps) {
+export function BottomBar({ lockedProject, currentPage, onPageChange }: BottomBarProps) {
   const { status, maxIterations, setMaxIterations, addOutput, clearOutput } = useLoopStore();
 
   // State detection
@@ -76,8 +80,10 @@ export function BottomBar({ lockedProject }: BottomBarProps) {
   return (
     <div className="border-t bg-[hsl(var(--background))] px-4 py-3">
       <div className="flex items-center justify-between gap-4">
-        {/* Left: Empty */}
-        <div className="flex-1" />
+        {/* Left: Navigation Menu */}
+        <div className="flex-1">
+          <NavigationMenu currentPage={currentPage} onPageChange={onPageChange} />
+        </div>
 
         {/* Center: Transport Controls and Iterations */}
         <div className="flex items-center gap-3">

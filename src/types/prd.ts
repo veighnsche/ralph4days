@@ -30,3 +30,10 @@ export interface PRDData {
 
 export type StatusFilter = "all" | "pending" | "in_progress" | "done" | "blocked" | "skipped";
 export type PriorityFilter = "all" | "low" | "medium" | "high" | "critical";
+
+export interface Feature {
+  name: string;
+  display_name: string;
+  description?: string;
+  created?: string;
+}

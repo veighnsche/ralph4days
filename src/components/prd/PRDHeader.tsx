@@ -1,12 +1,12 @@
-import { Filter, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import type { FilterSetters, FilterState } from "@/hooks/usePRDFilters";
 import type { PRDProject } from "@/types/prd";
+import { ActiveFilters } from "./ActiveFilters";
+import { FiltersModal } from "./FiltersModal";
 import { TaskCreateDialog } from "./TaskCreateDialog";
 import { TaskStatsBar } from "./TaskStatsBar";
 
@@ -81,64 +81,20 @@ export function PRDHeader({
               </div>
             </div>
 
-            {/* Status Filter */}
-            <Select value={filters.statusFilter} onValueChange={setters.setStatusFilter}>
-              <SelectTrigger className="w-[130px] h-8 text-xs">
-                <Filter className="h-3.5 w-3.5 mr-1.5" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="blocked">Blocked</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="done">Done</SelectItem>
-                <SelectItem value="skipped">Skipped</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Priority Filter */}
-            <Select value={filters.priorityFilter} onValueChange={setters.setPriorityFilter}>
-              <SelectTrigger className="w-[130px] h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Priority</SelectItem>
-                <SelectItem value="critical">Critical</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Tag Filter */}
-            {allTags.length > 0 && (
-              <Select value={filters.tagFilter} onValueChange={setters.setTagFilter}>
-                <SelectTrigger className="w-[130px] h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Tags</SelectItem>
-                  {allTags.map((tag) => (
-                    <SelectItem key={tag} value={tag}>
-                      {tag}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
-            {/* Clear Filters Button */}
-            {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={onClearFilters} className="h-8 text-xs">
-                Clear filters
-              </Button>
-            )}
+            {/* Filters Modal */}
+            <FiltersModal filters={filters} setters={setters} allTags={allTags} onClearFilters={onClearFilters} />
 
             <div className="text-[10px] text-[hsl(var(--muted-foreground))] ml-auto whitespace-nowrap">
               Showing {filteredCount} of {totalTasks}
             </div>
           </div>
+
+          {/* Active Filters */}
+          {hasActiveFilters && (
+            <div className="flex items-center gap-2 pt-1">
+              <ActiveFilters filters={filters} setters={setters} />
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

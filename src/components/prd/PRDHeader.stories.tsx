@@ -21,17 +21,17 @@ const mockProject: PRDProject = {
 };
 
 const mockFilters = {
-  status: "all" as const,
-  priority: "all" as const,
-  search: "",
-  selectedTags: [] as string[],
+  searchQuery: "",
+  statusFilter: "all" as const,
+  priorityFilter: "all" as const,
+  tagFilter: "all" as const,
 };
 
 const mockSetters = {
-  setStatus: () => {},
-  setPriority: () => {},
-  setSearch: () => {},
-  toggleTag: () => {},
+  setSearchQuery: () => {},
+  setStatusFilter: () => {},
+  setPriorityFilter: () => {},
+  setTagFilter: () => {},
 };
 
 export const NewProject: Story = {
@@ -117,10 +117,10 @@ export const WithFiltersActive: Story = {
     progressPercent: 40,
     filteredCount: 8,
     filters: {
-      status: "in_progress" as const,
-      priority: "high" as const,
-      search: "api",
-      selectedTags: ["backend"],
+      searchQuery: "api",
+      statusFilter: "in_progress" as const,
+      priorityFilter: "high" as const,
+      tagFilter: "backend",
     },
     setters: mockSetters,
     allTags: ["frontend", "backend", "database", "testing", "api"],
