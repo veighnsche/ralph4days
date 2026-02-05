@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import yaml from "js-yaml";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { PRDData } from "@/types/prd";
 
 export function usePRDData() {
@@ -8,8 +8,9 @@ export function usePRDData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadPRD = useCallback(() => {
     if (typeof window !== "undefined" && "__TAURI__" in window) {
+      setLoading(true);
       invoke<string>("get_prd_content")
         .then((content) => {
           try {
@@ -28,5 +29,9 @@ export function usePRDData() {
     }
   }, []);
 
-  return { prdData, loading, error };
+  useEffect(() => {
+    loadPRD();
+  }, [loadPRD]);
+
+  return { prdData, loading, error, refresh: loadPRD };
 }

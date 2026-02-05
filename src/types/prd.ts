@@ -23,6 +23,7 @@ export interface PRDData {
   schema_version: string;
   project: PRDProject;
   tasks: PRDTask[];
+  _counters?: Record<string, Record<string, number>>;
 }
 
 export type StatusFilter = "all" | "pending" | "in_progress" | "done" | "blocked" | "skipped";

@@ -1,6 +1,7 @@
 mod claude_client;
 mod commands;
 mod loop_engine;
+pub mod prd;
 mod prompt_builder;
 mod types;
 
@@ -58,6 +59,10 @@ pub fn run() {
             commands::set_locked_project,
             commands::get_locked_project,
             commands::get_prd_content,
+            commands::create_task,
+            commands::get_next_task_id,
+            commands::get_available_disciplines,
+            commands::get_existing_features,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

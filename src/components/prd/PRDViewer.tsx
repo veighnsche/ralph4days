@@ -9,7 +9,7 @@ import { PRDHeader } from "./PRDHeader";
 import { TaskDetailSidebar } from "./TaskDetailSidebar";
 
 export function PRDViewer() {
-  const { prdData, loading, error } = usePRDData();
+  const { prdData, loading, error, refresh } = usePRDData();
   const { filters, setters, filteredTasks, allTags, clearFilters } = usePRDFilters(prdData);
   const { selectedTask, sidebarOpen, handleTaskClick, handleNavigateNext, handleNavigatePrev, setSidebarOpen } =
     useSidebarNavigation(filteredTasks);
@@ -58,6 +58,7 @@ export function PRDViewer() {
         setters={setters}
         allTags={allTags}
         onClearFilters={clearFilters}
+        onRefresh={refresh}
       />
 
       <div className="flex-1 min-h-0 overflow-auto">

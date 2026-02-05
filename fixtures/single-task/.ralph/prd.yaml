@@ -1,11 +1,15 @@
 schema_version: "1.0"
+_counters:
+  hello:
+    backend: 1
+
 project:
   title: "Single Task Test Project"
   description: "Minimal test fixture for Ralph Loop"
   created: "2026-02-05"
 
 tasks:
-  - id: "task-001"
+  - id: "hello/backend/1"
     title: "Write a hello world script"
     description: "Create a simple script that prints 'Hello, World!' to stdout"
     status: "pending"

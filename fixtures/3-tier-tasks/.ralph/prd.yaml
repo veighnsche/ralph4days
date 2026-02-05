@@ -1,0 +1,34 @@
+schema_version: "1.0"
+_counters:
+  auth:
+    frontend: 2
+    backend: 1
+  search:
+    frontend: 1
+
+project:
+  title: "3-Tier Task ID Demo"
+  created: "2026-02-05"
+
+tasks:
+  - id: "auth/frontend/1"
+    title: "Add login form"
+    status: "done"
+    priority: "high"
+    tags: ["frontend", "auth", "ui"]
+
+  - id: "auth/frontend/2"
+    title: "Add registration form"
+    status: "in_progress"
+    priority: "high"
+
+  - id: "auth/backend/1"
+    title: "Implement JWT authentication"
+    status: "pending"
+    priority: "critical"
+    tags: ["backend", "auth", "security"]
+
+  - id: "search/frontend/1"
+    title: "Add search bar component"
+    status: "pending"
+    priority: "medium"

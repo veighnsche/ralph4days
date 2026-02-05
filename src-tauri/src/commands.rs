@@ -1,5 +1,7 @@
 use crate::loop_engine::LoopEngine;
+use crate::prd::{Priority, Task, TaskStatus, PRD};
 use crate::types::LoopStatus;
+use chrono::Utc;
 use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::{AppHandle, State};
@@ -348,4 +350,116 @@ pub fn get_prd_content(state: State<'_, AppState>) -> Result<String, String> {
     let project_path = locked.as_ref().ok_or("No project locked")?;
     let prd_path = project_path.join(".ralph/prd.yaml");
     std::fs::read_to_string(prd_path).map_err(|e| format!("Failed to read prd.yaml: {}", e))
+}
+
+#[tauri::command]
+pub fn create_task(
+    state: State<'_, AppState>,
+    feature: String,
+    discipline: String,
+    title: String,
+    description: Option<String>,
+    priority: Option<String>,
+    tags: Vec<String>,
+) -> Result<String, String> {
+    let locked = state.locked_project.lock().map_err(|e| e.to_string())?;
+    let project_path = locked.as_ref().ok_or("No project locked")?;
+    let prd_path = project_path.join(".ralph/prd.yaml");
+
+    // Load PRD and rebuild counters
+    let mut prd = PRD::from_file(&prd_path)?;
+
+    // Normalize feature name
+    let normalized_feature = feature.to_lowercase().replace(char::is_whitespace, "-");
+
+    // Generate ID (includes validation and duplicate check)
+    let task_id = prd.generate_task_id(&normalized_feature, &discipline)?;
+
+    // Parse priority
+    let priority_enum = priority.as_deref().and_then(|p| match p {
+        "low" => Some(Priority::Low),
+        "medium" => Some(Priority::Medium),
+        "high" => Some(Priority::High),
+        "critical" => Some(Priority::Critical),
+        _ => None,
+    });
+
+    // Create new task
+    let now = Utc::now().format("%Y-%m-%d").to_string();
+    let new_task = Task {
+        id: task_id.clone(),
+        title,
+        description,
+        status: TaskStatus::Pending,
+        priority: priority_enum,
+        tags,
+        depends_on: Vec::new(),
+        blocked_by: None,
+        created: Some(now.clone()),
+        updated: Some(now),
+        completed: None,
+        acceptance_criteria: Vec::new(),
+    };
+
+    // Add task and save
+    prd.tasks.push(new_task);
+    prd.to_file(&prd_path)?;
+
+    Ok(task_id)
+}
+
+#[tauri::command]
+pub fn get_next_task_id(
+    state: State<'_, AppState>,
+    feature: String,
+    discipline: String,
+) -> Result<String, String> {
+    let locked = state.locked_project.lock().map_err(|e| e.to_string())?;
+    let project_path = locked.as_ref().ok_or("No project locked")?;
+    let prd_path = project_path.join(".ralph/prd.yaml");
+
+    let mut prd = PRD::from_file(&prd_path)?;
+
+    // Normalize feature
+    let normalized_feature = feature.to_lowercase().replace(char::is_whitespace, "-");
+
+    // Generate preview (but don't save)
+    prd.generate_task_id(&normalized_feature, &discipline)
+}
+
+#[tauri::command]
+pub fn get_available_disciplines() -> Vec<String> {
+    vec![
+        "frontend".to_string(),
+        "backend".to_string(),
+        "database".to_string(),
+        "testing".to_string(),
+        "infrastructure".to_string(),
+        "security".to_string(),
+        "documentation".to_string(),
+        "design".to_string(),
+        "marketing".to_string(),
+        "api".to_string(),
+    ]
+}
+
+#[tauri::command]
+pub fn get_existing_features(state: State<'_, AppState>) -> Result<Vec<String>, String> {
+    let locked = state.locked_project.lock().map_err(|e| e.to_string())?;
+    let project_path = locked.as_ref().ok_or("No project locked")?;
+    let prd_path = project_path.join(".ralph/prd.yaml");
+
+    let prd = PRD::from_file(&prd_path)?;
+
+    // Extract unique features from task IDs
+    let features: std::collections::HashSet<String> = prd
+        .tasks
+        .iter()
+        .filter_map(|t| t.id.split('/').next().map(String::from))
+        .collect();
+
+    let mut feature_list: Vec<String> = features.into_iter().collect();
+    feature_list.sort();
+
+    Ok(feature_list)
 }
