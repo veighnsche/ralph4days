@@ -1,7 +1,7 @@
 features:
 - name: authentication
   display_name: Authentication
-  created: 2024-01-01
+  created: 2026-02-05
 - name: user-profile
   display_name: User Profile
   created: 2026-02-05

@@ -50,12 +50,13 @@ fn assert_matches_snapshot(db_path: &PathBuf, snapshot_name: &str) {
             let expected = fs::read_to_string(&expected_path)
                 .unwrap_or_else(|_| panic!("Failed to read {}", expected_path.display()));
 
-            assert_eq!(
-                actual.trim(),
-                expected.trim(),
-                "File {} doesn't match snapshot",
-                file_name
-            );
+            if actual.trim() != expected.trim() {
+                eprintln!("=== ACTUAL {} ===", file_name);
+                eprintln!("{}", actual);
+                eprintln!("=== EXPECTED {} ===", file_name);
+                eprintln!("{}", expected);
+                panic!("File {} doesn't match snapshot", file_name);
+            }
         }
     }
 }
