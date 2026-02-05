@@ -1,6 +1,6 @@
 import { Circle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { DISCIPLINE_CONFIG } from "@/constants/prd";
+import { useDisciplines } from "@/hooks/useDisciplines";
 import type { PRDTask } from "@/types/prd";
 
 interface TaskIdDisplayProps {
@@ -10,7 +10,8 @@ interface TaskIdDisplayProps {
 }
 
 export function TaskIdDisplay({ task, variant = "default", className = "" }: TaskIdDisplayProps) {
-  const disciplineConfig = DISCIPLINE_CONFIG[task.discipline];
+  const { configMap } = useDisciplines();
+  const disciplineConfig = configMap[task.discipline];
   const DisciplineIcon = disciplineConfig?.icon || Circle;
 
   if (variant === "badge") {

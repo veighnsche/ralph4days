@@ -17,7 +17,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DisciplineSelect } from "./DisciplineSelect";
-import { TaskIdPreview } from "./TaskIdPreview";
 
 interface TaskCreateDialogProps {
   onTaskCreated: () => void;
@@ -31,6 +30,8 @@ export function TaskCreateDialog({ onTaskCreated }: TaskCreateDialogProps) {
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<"low" | "medium" | "high" | "critical">("medium");
   const [tags, setTags] = useState("");
+  const [dependsOn, setDependsOn] = useState("");
+  const [acceptanceCriteria, setAcceptanceCriteria] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,6 +42,8 @@ export function TaskCreateDialog({ onTaskCreated }: TaskCreateDialogProps) {
     setDescription("");
     setPriority("medium");
     setTags("");
+    setDependsOn("");
+    setAcceptanceCriteria("");
     setError(null);
   };
 
@@ -69,11 +72,25 @@ export function TaskCreateDialog({ onTaskCreated }: TaskCreateDialogProps) {
     setError(null);
 
     try {
-      // BUG FIX: Proper tag parsing
+      // Parse tags
       const tagArray = tags
         .split(",")
         .map((t) => t.trim())
         .filter((t) => t.length > 0);
+
+      // Parse depends_on (task IDs)
+      const dependsOnArray = dependsOn
+        .split(",")
+        .map((id) => id.trim())
+        .filter((id) => id.length > 0)
+        .map((id) => Number.parseInt(id, 10))
+        .filter((id) => !Number.isNaN(id));
+
+      // Parse acceptance criteria (newline-separated)
+      const criteriaArray = acceptanceCriteria
+        .split("\n")
+        .map((c) => c.trim())
+        .filter((c) => c.length > 0);
 
       const taskId = await invoke<string>("create_task", {
         feature: feature.trim(),
@@ -82,6 +99,8 @@ export function TaskCreateDialog({ onTaskCreated }: TaskCreateDialogProps) {
         description: description.trim() || null,
         priority,
         tags: tagArray,
+        dependsOn: dependsOnArray.length > 0 ? dependsOnArray : null,
+        acceptanceCriteria: criteriaArray.length > 0 ? criteriaArray : null,
       });
 
       console.log("Task created:", taskId);
@@ -116,9 +135,6 @@ export function TaskCreateDialog({ onTaskCreated }: TaskCreateDialogProps) {
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Task ID Preview */}
-          <TaskIdPreview feature={feature} discipline={discipline} />
-
           {/* Feature Input */}
           <div className="space-y-2">
             <Label htmlFor="feature">
@@ -187,6 +203,31 @@ export function TaskCreateDialog({ onTaskCreated }: TaskCreateDialogProps) {
               value={tags}
               onChange={(e) => setTags(e.target.value)}
             />
+          </div>
+
+          {/* Dependencies Input */}
+          <div className="space-y-2">
+            <Label htmlFor="dependsOn">Dependencies</Label>
+            <Input
+              id="dependsOn"
+              placeholder="e.g., 1, 2, 5 (task IDs this depends on)"
+              value={dependsOn}
+              onChange={(e) => setDependsOn(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">Comma-separated task IDs that must be completed first</p>
+          </div>
+
+          {/* Acceptance Criteria Textarea */}
+          <div className="space-y-2">
+            <Label htmlFor="acceptanceCriteria">Acceptance Criteria</Label>
+            <Textarea
+              id="acceptanceCriteria"
+              placeholder="One criterion per line..."
+              value={acceptanceCriteria}
+              onChange={(e) => setAcceptanceCriteria(e.target.value)}
+              rows={3}
+            />
+            <p className="text-xs text-muted-foreground">Enter each criterion on a new line</p>
           </div>
 
           {/* Error Display */}
