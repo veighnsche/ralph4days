@@ -1,7 +1,6 @@
-import { invoke } from "@tauri-apps/api/core";
 import type { LucideIcon } from "lucide-react";
-import { useEffect, useState } from "react";
 import { resolveIcon } from "@/lib/iconRegistry";
+import { useInvoke } from "./useInvoke";
 
 /** Discipline config as returned by the backend */
 interface DisciplineConfigRaw {
@@ -22,34 +21,38 @@ export interface DisciplineConfig {
   bgColor: string;
 }
 
+function resolveDisciplines(raw: DisciplineConfigRaw[]): DisciplineConfig[] {
+  return raw.map((d) => ({
+    name: d.name,
+    displayName: d.display_name,
+    acronym: d.acronym,
+    icon: resolveIcon(d.icon),
+    color: d.color,
+    bgColor: `color-mix(in oklch, ${d.color} 15%, transparent)`,
+  }));
+}
+
+function buildConfigMap(disciplines: DisciplineConfig[]): Record<string, DisciplineConfig> {
+  const map: Record<string, DisciplineConfig> = {};
+  for (const d of disciplines) {
+    map[d.name] = d;
+  }
+  return map;
+}
+
 /** Fetch discipline configs from the backend, resolve icons, and provide a lookup map */
 export function useDisciplines() {
-  const [disciplines, setDisciplines] = useState<DisciplineConfig[]>([]);
-  const [configMap, setConfigMap] = useState<Record<string, DisciplineConfig>>({});
+  const { data, error } = useInvoke<DisciplineConfigRaw[], DisciplineConfig[]>("get_disciplines_config", undefined, {
+    staleTime: Number.POSITIVE_INFINITY,
+    select: resolveDisciplines,
+  });
 
-  useEffect(() => {
-    invoke<DisciplineConfigRaw[]>("get_disciplines_config")
-      .then((raw) => {
-        const resolved = raw.map((d) => ({
-          name: d.name,
-          displayName: d.display_name,
-          acronym: d.acronym,
-          icon: resolveIcon(d.icon),
-          color: d.color,
-          bgColor: `color-mix(in oklch, ${d.color} 15%, transparent)`,
-        }));
-        setDisciplines(resolved);
+  const disciplines = data ?? [];
+  const configMap = buildConfigMap(disciplines);
 
-        const map: Record<string, DisciplineConfig> = {};
-        for (const d of resolved) {
-          map[d.name] = d;
-        }
-        setConfigMap(map);
-      })
-      .catch((err) => {
-        console.error("Failed to load discipline config:", err);
-      });
-  }, []);
-
-  return { disciplines, configMap };
+  return {
+    disciplines,
+    configMap,
+    error: error ? String(error) : null,
+  };
 }

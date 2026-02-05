@@ -1,5 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useState } from "react";
+import { useInvoke } from "./useInvoke";
 
 /** Feature config as returned by the backend */
 interface FeatureConfigRaw {
@@ -15,31 +14,30 @@ export interface FeatureConfig {
   acronym: string;
 }
 
+function resolveFeatures(raw: FeatureConfigRaw[]): FeatureConfig[] {
+  return raw.map((f) => ({
+    name: f.name,
+    displayName: f.display_name,
+    acronym: f.acronym,
+  }));
+}
+
 /** Fetch feature configs from the backend and provide a lookup map */
 export function useFeatures() {
-  const [features, setFeatures] = useState<FeatureConfig[]>([]);
-  const [configMap, setConfigMap] = useState<Map<string, FeatureConfig>>(new Map());
+  const { data, error } = useInvoke<FeatureConfigRaw[], FeatureConfig[]>("get_features_config", undefined, {
+    staleTime: Number.POSITIVE_INFINITY,
+    select: resolveFeatures,
+  });
 
-  useEffect(() => {
-    invoke<FeatureConfigRaw[]>("get_features_config")
-      .then((raw) => {
-        const resolved = raw.map((f) => ({
-          name: f.name,
-          displayName: f.display_name,
-          acronym: f.acronym,
-        }));
-        setFeatures(resolved);
+  const features = data ?? [];
+  const configMap = new Map<string, FeatureConfig>();
+  for (const f of features) {
+    configMap.set(f.name, f);
+  }
 
-        const map = new Map<string, FeatureConfig>();
-        for (const f of resolved) {
-          map.set(f.name, f);
-        }
-        setConfigMap(map);
-      })
-      .catch((err) => {
-        console.error("Failed to load feature config:", err);
-      });
-  }, []);
-
-  return { features, configMap };
+  return {
+    features,
+    configMap,
+    error: error ? String(error) : null,
+  };
 }
