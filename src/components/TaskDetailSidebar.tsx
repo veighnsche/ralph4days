@@ -33,7 +33,7 @@ interface TaskDetailSidebarProps {
   onNavigatePrev?: () => void;
 }
 
-export function TaskDetailSidebar({
+export const TaskDetailSidebar = memo(function TaskDetailSidebar({
   task,
   open,
   onClose,
