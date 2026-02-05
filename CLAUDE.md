@@ -18,28 +18,39 @@ Use `just --list` for all commands. Key ones: `just dev`, `just test`, `just bui
 
 ## Architecture
 
-Frontend (React 19/Zustand) → IPC → Backend (Tauri/Rust: loop_engine, claude_client, prompt_builder) → subprocess → Claude CLI (--output-format stream-json, --max-turns 50)
+Frontend (React 19/Zustand) → IPC → Backend (Tauri/Rust: yaml_db, loop_engine, claude_client, prompt_builder) → subprocess → Claude CLI (--output-format stream-json, --max-turns 50)
 
-Key files: `src-tauri/src/{loop_engine,claude_client,prompt_builder,commands}.rs`, `src/{components,stores}/`, `.specs/`
+Key files:
+- Backend: `src-tauri/src/{yaml_db/,loop_engine,claude_client,prompt_builder,commands}.rs`
+- Frontend: `src/{components,stores}/`
+- Specs: `.specs/`
 
 ## Loop States
 
-Idle → Running ↔ Paused. Running → RateLimited (5min retry) → Running/Aborted. Running → Complete (all tasks done) or Aborted (stop/stagnation). Stagnation = 3 iterations with no progress.txt/prd.yaml changes.
+Idle → Running ↔ Paused. Running → RateLimited (5min retry) → Running/Aborted. Running → Complete (all tasks done) or Aborted (stop/stagnation). Stagnation = 3 iterations with no changes to: tasks.yaml, features.yaml, disciplines.yaml, metadata.yaml, progress.txt, learnings.txt.
 
 ## Target Project Structure
 
-Projects need `.ralph/` with `prd.yaml` (REQUIRED), `CLAUDE.RALPH.md` (recommended), `progress.txt`, `learnings.txt`. On loop start: backup `CLAUDE.md`, copy `CLAUDE.RALPH.md` to `CLAUDE.md`. On stop: restore backup. See SPEC-030 for details.
+Projects need `.ralph/` with either:
+- **New format (preferred):** `.ralph/db/` containing `tasks.yaml`, `features.yaml`, `disciplines.yaml`, `metadata.yaml`
+- **Legacy format:** `.ralph/prd.yaml` (auto-migrates to new format on first use)
+
+Additional files: `CLAUDE.RALPH.md` (recommended), `progress.txt`, `learnings.txt`.
+
+On loop start: backup `CLAUDE.md`, copy `CLAUDE.RALPH.md` to `CLAUDE.md`. On stop: restore backup. See SPEC-030 for details.
 
 ## Project Locking
 
-ONE project per session, chosen at startup. CLI mode (`ralph --project /path`) validates and locks immediately. Interactive mode (`ralph`) shows ProjectPicker modal (scans home for `.ralph/` folders, 5 levels, max 100). Validation: path exists, has `.ralph/prd.yaml`. Commands: `validate_project_path`, `set_locked_project`, `get_locked_project`, `start_loop` (no path param).
+ONE project per session, chosen at startup. CLI mode (`ralph --project /path`) validates and locks immediately. Interactive mode (`ralph`) shows ProjectPicker modal (scans home for `.ralph/` folders, 5 levels, max 100). Validation: path exists, has `.ralph/db/` or `.ralph/prd.yaml` (auto-migrates). Commands: `validate_project_path`, `set_locked_project`, `get_locked_project`, `start_loop` (no path param).
 
 ## Implementation Notes
 
+- **Database**: Multi-file YAML database in `.ralph/db/` (tasks, features, disciplines, metadata). Old `prd.yaml` auto-migrates on first use.
+- **Concurrency**: File locking via fs2 crate prevents race conditions during bulk task creation
 - **Timeout**: Uses system `timeout` command (900s default) wrapping Claude CLI subprocess
 - **Rate Limits**: Parses JSON stream for `overloaded_error`/`rate_limit_error` event types
-- **Prompts**: Inline file contents (no @file syntax): `PRD:\n{prd}\n\nProgress:\n{progress}\n\nLearnings:\n{learnings}`
-- **Stagnation**: SHA256 hash of progress.txt + prd.yaml before/after iteration; abort after 3 unchanged iterations
+- **Prompts**: Inline file contents (no @file syntax): aggregates 4 YAML files into PRD section
+- **Stagnation**: SHA256 hash of 6 files (tasks.yaml, features.yaml, disciplines.yaml, metadata.yaml, progress.txt, learnings.txt) before/after iteration; abort after 3 unchanged iterations
 
 ## Tech Stack
 
@@ -57,4 +68,19 @@ Specs in `.specs/` (read `000_SPECIFICATION_FORMAT.md` first). Tests: `just test
 
 ## Environment
 
-Claude CLI required (`claude --version`). Projects need `.ralph/prd.yaml`. Loop runs in project dir. Commits happen in Claude CLI sessions (not managed by Ralph).
+Claude CLI required (`claude --version`). Projects need `.ralph/db/` (new format) or `.ralph/prd.yaml` (legacy, auto-migrates). Loop runs in project dir. Commits happen in Claude CLI sessions (not managed by Ralph).
+
+## Database Schema
+
+**New multi-file YAML format** (`.ralph/db/`):
+- `tasks.yaml`: Task records (id, feature, discipline, title, description, status, priority, tags, depends_on, acceptance_criteria, etc.)
+- `features.yaml`: Feature definitions (name, display_name, description, created) - auto-populated when creating tasks
+- `disciplines.yaml`: Discipline definitions (name, display_name, icon, color) - 10 defaults, user-customizable
+- `metadata.yaml`: Project metadata (title, description, created) and counters (highest task ID per feature+discipline)
+
+**Features:**
+- Thread-safe task creation with file locking (prevents race conditions)
+- Auto-migration from old `prd.yaml` format
+- Atomic writes (temp files + rename pattern)
+- Dependency validation (ensures depends_on references exist)
+- Auto-populate features and disciplines on task creation
