@@ -1,4 +1,20 @@
-import { Ban, CheckCircle2, Circle, Play, Slash } from "lucide-react";
+import {
+  Ban,
+  BookOpen,
+  CheckCircle2,
+  Circle,
+  Cloud,
+  Database,
+  FlaskConical,
+  Megaphone,
+  Monitor,
+  Palette,
+  Play,
+  Plug,
+  Server,
+  Shield,
+  Slash,
+} from "lucide-react";
 import type { PRDTask } from "@/types/prd";
 
 export const STATUS_CONFIG = {
@@ -54,6 +70,69 @@ export const PRIORITY_CONFIG = {
     label: "Critical",
     color: "hsl(var(--priority-critical))",
     bgColor: "hsl(var(--priority-critical) / 0.15)",
+  },
+} as const;
+
+export const DISCIPLINE_CONFIG = {
+  frontend: {
+    label: "Frontend",
+    icon: Monitor,
+    color: "hsl(var(--discipline-frontend))",
+    bgColor: "hsl(var(--discipline-frontend) / 0.15)",
+  },
+  backend: {
+    label: "Backend",
+    icon: Server,
+    color: "hsl(var(--discipline-backend))",
+    bgColor: "hsl(var(--discipline-backend) / 0.15)",
+  },
+  database: {
+    label: "Database",
+    icon: Database,
+    color: "hsl(var(--discipline-database))",
+    bgColor: "hsl(var(--discipline-database) / 0.15)",
+  },
+  testing: {
+    label: "Testing",
+    icon: FlaskConical,
+    color: "hsl(var(--discipline-testing))",
+    bgColor: "hsl(var(--discipline-testing) / 0.15)",
+  },
+  infrastructure: {
+    label: "Infrastructure",
+    icon: Cloud,
+    color: "hsl(var(--discipline-infrastructure))",
+    bgColor: "hsl(var(--discipline-infrastructure) / 0.15)",
+  },
+  security: {
+    label: "Security",
+    icon: Shield,
+    color: "hsl(var(--discipline-security))",
+    bgColor: "hsl(var(--discipline-security) / 0.15)",
+  },
+  documentation: {
+    label: "Documentation",
+    icon: BookOpen,
+    color: "hsl(var(--discipline-documentation))",
+    bgColor: "hsl(var(--discipline-documentation) / 0.15)",
+  },
+  design: {
+    label: "Design",
+    icon: Palette,
+    color: "hsl(var(--discipline-design))",
+    bgColor: "hsl(var(--discipline-design) / 0.15)",
+  },
+  marketing: {
+    label: "Marketing",
+    icon: Megaphone,
+    color: "hsl(var(--discipline-marketing))",
+    bgColor: "hsl(var(--discipline-marketing) / 0.15)",
+  },
+  api: {
+    label: "API",
+    icon: Plug,
+    color: "hsl(var(--discipline-api))",
+    bgColor: "hsl(var(--discipline-api) / 0.15)",
   },
 } as const;
 

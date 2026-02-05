@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import type { PRDTask } from "@/types/prd";
+import { TaskIdDisplay } from "./TaskIdDisplay";
 
 interface TaskDetailSidebarProps {
   task: PRDTask | null;
@@ -87,10 +88,8 @@ export const TaskDetailSidebar = memo(function TaskDetailSidebar({
               )}
             </div>
           </div>
-          <SheetDescription className="flex flex-col items-start leading-tight text-xs text-[hsl(var(--muted-foreground))] font-mono">
-            {task.id.split("/").map((part, i) => (
-              <span key={i}>{part}</span>
-            ))}
+          <SheetDescription>
+            <TaskIdDisplay taskId={task.id} />
           </SheetDescription>
         </SheetHeader>
 

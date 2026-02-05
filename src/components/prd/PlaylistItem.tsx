@@ -1,16 +1,41 @@
+import { Circle } from "lucide-react";
 import { memo } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { PRIORITY_CONFIG, STATUS_CONFIG } from "@/constants/prd";
+import { DISCIPLINE_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from "@/constants/prd";
 import type { PRDTask } from "@/types/prd";
+import { TaskIdDisplay } from "./TaskIdDisplay";
 
 interface PlaylistItemProps {
   task: PRDTask;
   isNowPlaying?: boolean;
   isIssue?: boolean;
   onClick: () => void;
+}
+
+type DisciplineKey = keyof typeof DISCIPLINE_CONFIG;
+
+function getItemClassName(isNowPlaying: boolean, isIssue: boolean) {
+  return `
+    cursor-pointer transition-all duration-200
+    hover:bg-[hsl(var(--muted)/0.5)]
+    border-l-2
+    ${isNowPlaying ? "bg-[hsl(var(--status-in-progress)/0.1)] border-l-4" : ""}
+    ${isIssue ? "bg-[hsl(var(--status-blocked)/0.08)]" : ""}
+  `;
+}
+
+function getItemStyle(
+  isNowPlaying: boolean,
+  statusColor: string,
+  disciplineConfig: (typeof DISCIPLINE_CONFIG)[DisciplineKey] | null | undefined
+) {
+  return {
+    borderLeftColor: isNowPlaying ? statusColor : disciplineConfig?.color || "transparent",
+    ...(disciplineConfig && !isNowPlaying ? { backgroundColor: disciplineConfig.bgColor } : {}),
+  };
 }
 
 export const PlaylistItem = memo(function PlaylistItem({
@@ -21,33 +46,26 @@ export const PlaylistItem = memo(function PlaylistItem({
 }: PlaylistItemProps) {
   const statusConfig = STATUS_CONFIG[task.status];
   const priorityConfig = task.priority ? PRIORITY_CONFIG[task.priority] : null;
-  const StatusIcon = statusConfig.icon;
+
+  // Extract discipline from task ID (format: feature/discipline/number)
+  const disciplinePart = task.id.split("/")[1];
+  const disciplineConfig = disciplinePart && DISCIPLINE_CONFIG[disciplinePart as DisciplineKey];
+  const DisciplineIcon = disciplineConfig?.icon || Circle;
 
   return (
     <Item
       size="sm"
       variant="default"
-      className={`
-        cursor-pointer transition-all duration-200
-        hover:bg-[hsl(var(--muted)/0.5)]
-        ${isNowPlaying ? "bg-[hsl(var(--status-in-progress)/0.1)] border-l-4" : ""}
-        ${isIssue ? "bg-[hsl(var(--status-blocked)/0.08)]" : ""}
-      `}
-      style={isNowPlaying ? { borderLeftColor: statusConfig.color } : undefined}
+      className={getItemClassName(isNowPlaying, isIssue)}
+      style={getItemStyle(isNowPlaying, statusConfig.color, disciplineConfig)}
       onClick={onClick}
     >
       {/* Icon + Task ID Group */}
       <div className="flex items-center gap-2 flex-shrink-0 self-start">
         <ItemMedia variant="icon" style={{ backgroundColor: statusConfig.bgColor }}>
-          <StatusIcon style={{ color: statusConfig.color }} />
+          <DisciplineIcon style={{ color: statusConfig.color, stroke: statusConfig.color }} />
         </ItemMedia>
-        <div className="flex flex-col items-start leading-tight">
-          {task.id.split("/").map((part, i) => (
-            <span key={i} className="text-xs font-mono text-[hsl(var(--muted-foreground))]">
-              {part}
-            </span>
-          ))}
-        </div>
+        <TaskIdDisplay taskId={task.id} />
       </div>
 
       {/* Main Content: Title + Description */}

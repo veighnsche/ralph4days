@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TaskIdDisplay } from "./TaskIdDisplay";
 
 interface TaskIdPreviewProps {
   feature: string;
@@ -48,13 +48,7 @@ export function TaskIdPreview({ feature, discipline }: TaskIdPreviewProps) {
       {loading ? (
         <Skeleton className="h-12 w-24" />
       ) : previewId ? (
-        <div className="flex flex-col items-start leading-tight">
-          {previewId.split("/").map((part, i) => (
-            <Badge key={i} variant="outline" className="font-mono text-xs mb-0.5">
-              {part}
-            </Badge>
-          ))}
-        </div>
+        <TaskIdDisplay taskId={previewId} variant="badge" />
       ) : (
         <span className="text-sm text-muted-foreground">—</span>
       )}

@@ -1,5 +1,4 @@
 import { Filter, Search } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import type { FilterSetters, FilterState } from "@/hooks/usePRDFilters";
 import type { PRDProject } from "@/types/prd";
 import { TaskCreateDialog } from "./TaskCreateDialog";
+import { TaskStatsBar } from "./TaskStatsBar";
 
 interface PRDHeaderProps {
   project: PRDProject;
@@ -53,30 +53,7 @@ export function PRDHeader({
                 <CardDescription className="text-xs mt-0.5 line-clamp-1">{project.description}</CardDescription>
               )}
             </div>
-            <div className="flex items-center gap-6 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="text-[hsl(var(--muted-foreground))]">Total:</span>
-                <Badge variant="outline" className="h-5">
-                  {totalTasks}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[hsl(var(--muted-foreground))]">Done:</span>
-                <Badge variant="success" className="h-5">
-                  {doneTasks}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[hsl(var(--muted-foreground))]">Remaining:</span>
-                <Badge variant="outline" className="h-5">
-                  {totalTasks - doneTasks}
-                </Badge>
-              </div>
-              <div className="text-right min-w-[60px]">
-                <div className="text-xl font-bold leading-none">{progressPercent}%</div>
-                <div className="text-[10px] text-[hsl(var(--muted-foreground))] mt-0.5">Complete</div>
-              </div>
-            </div>
+            <TaskStatsBar totalTasks={totalTasks} doneTasks={doneTasks} progressPercent={progressPercent} />
           </div>
 
           {/* Progress Bar */}
