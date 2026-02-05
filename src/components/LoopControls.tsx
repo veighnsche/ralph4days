@@ -1,8 +1,8 @@
-import { invoke } from "@tauri-apps/api/core";
 import { Pause, Play, RotateCcw, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { universalInvoke } from "@/services/mockBackend";
 import { useLoopStore } from "@/stores/useLoopStore";
 
 interface LoopControlsProps {
@@ -26,7 +26,7 @@ export function LoopControls({ lockedProject }: LoopControlsProps) {
       clearOutput();
       addOutput(`Starting loop on: ${lockedProject}`, "info");
       addOutput(`Max iterations: ${maxIterations}`, "info");
-      await invoke("start_loop", {
+      await universalInvoke("start_loop", {
         maxIterations,
       });
     } catch (e) {
@@ -36,7 +36,7 @@ export function LoopControls({ lockedProject }: LoopControlsProps) {
 
   const handlePause = async () => {
     try {
-      await invoke("pause_loop");
+      await universalInvoke("pause_loop");
       addOutput("Loop paused", "info");
     } catch (e) {
       addOutput(`Error: ${e}`, "error");
@@ -45,7 +45,7 @@ export function LoopControls({ lockedProject }: LoopControlsProps) {
 
   const handleResume = async () => {
     try {
-      await invoke("resume_loop");
+      await universalInvoke("resume_loop");
       addOutput("Loop resumed", "info");
     } catch (e) {
       addOutput(`Error: ${e}`, "error");
@@ -54,7 +54,7 @@ export function LoopControls({ lockedProject }: LoopControlsProps) {
 
   const handleStop = async () => {
     try {
-      await invoke("stop_loop");
+      await universalInvoke("stop_loop");
       addOutput("Loop stopped", "info");
     } catch (e) {
       addOutput(`Error: ${e}`, "error");

@@ -1,8 +1,8 @@
-import { invoke } from "@tauri-apps/api/core";
 import { Pause, Play, Square } from "lucide-react";
 import { LoopCountBadge } from "@/components/LoopCountBadge";
 import { Settings } from "@/components/Settings";
 import { Button } from "@/components/ui/button";
+import { universalInvoke } from "@/services/mockBackend";
 import { useLoopStore } from "@/stores/useLoopStore";
 
 interface BottomBarProps {
@@ -28,18 +28,18 @@ export function BottomBar({ lockedProject }: BottomBarProps) {
     try {
       if (canPause) {
         // Currently running → pause
-        await invoke("pause_loop");
+        await universalInvoke("pause_loop");
         addOutput("Loop paused", "info");
       } else if (isPaused) {
         // Currently paused → resume
-        await invoke("resume_loop");
+        await universalInvoke("resume_loop");
         addOutput("Loop resumed", "info");
       } else if (isIdle || isComplete || isAborted) {
         // Idle/complete/aborted → start
         clearOutput();
         addOutput(`Starting loop on: ${lockedProject}`, "info");
         addOutput(`Max iterations: ${maxIterations}`, "info");
-        await invoke("start_loop", { maxIterations });
+        await universalInvoke("start_loop", { maxIterations });
       }
     } catch (e) {
       addOutput(`Error: ${e}`, "error");
@@ -48,7 +48,7 @@ export function BottomBar({ lockedProject }: BottomBarProps) {
 
   const handleStop = async () => {
     try {
-      await invoke("stop_loop");
+      await universalInvoke("stop_loop");
       addOutput("Loop stopped", "info");
     } catch (e) {
       addOutput(`Error: ${e}`, "error");
