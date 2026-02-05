@@ -1,4 +1,4 @@
-# Test Project - Ralph Context
+# Initialized Project - Ralph Context
 
 ## Project Overview
 

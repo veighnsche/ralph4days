@@ -1,6 +1,6 @@
 schema_version: '1.0'
 project:
-  title: Test Project
+  title: Initialized Project
   description: Add project description here
   created: 2026-02-05
 _counters:
