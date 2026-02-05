@@ -6,10 +6,10 @@ import { OutputPanel } from "@/components/OutputPanel";
 import { ProjectSelector } from "@/components/ProjectSelector";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import type { Page } from "@/hooks/useNavigation";
+import { useTauriEvent } from "@/hooks/useTauriEvent";
 import { DisciplinesPage } from "@/pages/DisciplinesPage";
 import { FeaturesPage } from "@/pages/FeaturesPage";
 import { TasksPage } from "@/pages/TasksPage";
-import { useTauriEvent } from "@/hooks/useTauriEvent";
 import { type LoopState, useLoopStore } from "@/stores/useLoopStore";
 import "./index.css";
 
