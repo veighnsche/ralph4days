@@ -1,4 +1,3 @@
-import { invoke } from "@tauri-apps/api/core";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -16,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { universalInvoke } from "@/services/mockBackend";
 import { DisciplineSelect } from "./DisciplineSelect";
 import { TaskIdPreview } from "./TaskIdPreview";
 
@@ -75,7 +75,7 @@ export function TaskCreateDialog({ onTaskCreated }: TaskCreateDialogProps) {
         .map((t) => t.trim())
         .filter((t) => t.length > 0);
 
-      const taskId = await invoke<string>("create_task", {
+      const taskId = await universalInvoke<string>("create_task", {
         feature: feature.trim(),
         discipline,
         title: title.trim(),
