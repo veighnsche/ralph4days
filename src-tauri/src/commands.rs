@@ -372,8 +372,11 @@ pub fn create_task(
     // Normalize feature name
     let normalized_feature = feature.to_lowercase().replace(char::is_whitespace, "-");
 
-    // Generate ID (includes validation and duplicate check)
-    let task_id = prd.generate_task_id(&normalized_feature, &discipline)?;
+    // Validate discipline
+    PRD::validate_discipline(&discipline)?;
+
+    // Generate next ID
+    let task_id = prd.get_next_id();
 
     // Parse priority
     let priority_enum = priority.as_deref().and_then(|p| match p {
@@ -387,7 +390,9 @@ pub fn create_task(
     // Create new task
     let now = Utc::now().format("%Y-%m-%d").to_string();
     let new_task = Task {
-        id: task_id.clone(),
+        id: task_id,
+        feature: normalized_feature,
+        discipline,
         title,
         description,
         status: TaskStatus::Pending,
@@ -405,26 +410,26 @@ pub fn create_task(
     prd.tasks.push(new_task);
     prd.to_file(&prd_path)?;
 
-    Ok(task_id)
+    Ok(task_id.to_string())
 }
 
 #[tauri::command]
 pub fn get_next_task_id(
     state: State<'_, AppState>,
-    feature: String,
+    _feature: String,
     discipline: String,
 ) -> Result<String, String> {
     let locked = state.locked_project.lock().map_err(|e| e.to_string())?;
     let project_path = locked.as_ref().ok_or("No project locked")?;
     let prd_path = project_path.join(".ralph/prd.yaml");
 
-    let mut prd = PRD::from_file(&prd_path)?;
+    let prd = PRD::from_file(&prd_path)?;
 
-    // Normalize feature
-    let normalized_feature = feature.to_lowercase().replace(char::is_whitespace, "-");
+    // Validate discipline
+    PRD::validate_discipline(&discipline)?;
 
-    // Generate preview (but don't save)
-    prd.generate_task_id(&normalized_feature, &discipline)
+    // Return next ID
+    Ok(prd.get_next_id().to_string())
 }
 
 #[tauri::command]
@@ -434,11 +439,11 @@ pub fn get_available_disciplines() -> Vec<String> {
         "backend".to_string(),
         "database".to_string(),
         "testing".to_string(),
-        "infrastructure".to_string(),
+        "infra".to_string(),
         "security".to_string(),
-        "documentation".to_string(),
+        "docs".to_string(),
         "design".to_string(),
-        "marketing".to_string(),
+        "promo".to_string(),
         "api".to_string(),
     ]
 }
@@ -451,11 +456,11 @@ pub fn get_existing_features(state: State<'_, AppState>) -> Result<Vec<String>, 
 
     let prd = PRD::from_file(&prd_path)?;
 
-    // Extract unique features from task IDs
+    // Extract unique features from tasks
     let features: std::collections::HashSet<String> = prd
         .tasks
         .iter()
-        .filter_map(|t| t.id.split('/').next().map(String::from))
+        .map(|t| t.feature.clone())
         .collect();
 
     let mut feature_list: Vec<String> = features.into_iter().collect();
