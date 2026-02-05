@@ -4,7 +4,6 @@ mod loop_engine;
 pub mod prd;
 mod prompt_builder;
 mod types;
-pub mod yaml_db;
 
 use commands::AppState;
 use tauri::Manager;

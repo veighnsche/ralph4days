@@ -1,4 +1,4 @@
-use crate::prd::Task;
+use crate::Task;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -10,7 +10,8 @@ pub struct ProjectMetadata {
     pub title: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    pub created: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created: Option<String>,
 }
 
 /// Manages the metadata.yaml file
@@ -36,7 +37,7 @@ impl MetadataFile {
             project: ProjectMetadata {
                 title: "Untitled Project".to_string(),
                 description: None,
-                created: chrono::Utc::now().format("%Y-%m-%d").to_string(),
+                created: Some(chrono::Utc::now().format("%Y-%m-%d").to_string()),
             },
             counters: HashMap::new(),
         }

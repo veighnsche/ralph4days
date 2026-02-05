@@ -1,10 +1,10 @@
 use crate::loop_engine::LoopEngine;
 use crate::prd::{Priority, PRD};
 use crate::types::LoopStatus;
-use crate::yaml_db::{TaskInput, YamlDatabase};
 use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::{AppHandle, State};
+use yaml_db::{TaskInput, YamlDatabase};
 
 // Recursive scan configuration
 const MAX_SCAN_DEPTH: usize = 5; // Max 5 levels deep
@@ -98,7 +98,7 @@ pub fn validate_project_path(path: String) -> Result<(), String> {
 
 #[tauri::command]
 pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(), String> {
-    use crate::yaml_db::{DisciplinesFile, FeaturesFile, MetadataFile, ProjectMetadata, TasksFile};
+    use yaml_db::{DisciplinesFile, FeaturesFile, MetadataFile, ProjectMetadata, TasksFile};
 
     let path = PathBuf::from(&path);
 
@@ -161,7 +161,7 @@ pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(
     metadata.project = ProjectMetadata {
         title: project_title.clone(),
         description: Some("Add project description here".to_string()),
-        created: now,
+        created: Some(now),
     };
     metadata.rebuild_counters(tasks_file.get_all());
     metadata.save()?;
@@ -382,7 +382,7 @@ pub fn get_prd_content(state: State<'_, AppState>) -> Result<String, String> {
         project: crate::prd::ProjectMetadata {
             title: db.get_project_info().title.clone(),
             description: db.get_project_info().description.clone(),
-            created: Some(db.get_project_info().created.clone()),
+            created: db.get_project_info().created.clone(),
         },
         tasks: db.get_tasks().to_vec(),
         _counters: std::collections::HashMap::new(),

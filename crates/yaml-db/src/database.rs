@@ -1,5 +1,5 @@
 use super::{DisciplinesFile, FeaturesFile, MetadataFile, TasksFile};
-use crate::prd::{Priority, Task, TaskStatus};
+use crate::{Priority, Task, TaskStatus};
 use fs2::FileExt;
 use std::fs::{self, File};
 use std::path::PathBuf;
@@ -60,7 +60,7 @@ impl YamlDatabase {
     pub fn load_all(&mut self) -> Result<(), String> {
         self.tasks.load()?;
         self.features.load()?;
-        self.disciplines.load()?;
+        self.disciplines.load_with_defaults()?;
         self.metadata.load()?;
         Ok(())
     }

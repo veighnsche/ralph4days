@@ -3,24 +3,8 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-pub enum TaskStatus {
-    Pending,
-    InProgress,
-    Done,
-    Blocked,
-    Skipped,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
-pub enum Priority {
-    Low,
-    Medium,
-    High,
-    Critical,
-}
+// Re-export types from yaml-db crate
+pub use yaml_db::{Priority, ProjectMetadata, Task, TaskStatus};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PRD {
@@ -29,42 +13,6 @@ pub struct PRD {
     pub tasks: Vec<Task>,
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub _counters: HashMap<String, HashMap<String, u32>>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProjectMetadata {
-    pub title: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub created: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Task {
-    pub id: u32,
-    pub feature: String,
-    pub discipline: String,
-    pub title: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    pub status: TaskStatus,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub priority: Option<Priority>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub tags: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub depends_on: Vec<u32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub blocked_by: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub created: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub updated: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub completed: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub acceptance_criteria: Vec<String>,
 }
 
 impl PRD {
