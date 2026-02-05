@@ -1,31 +1,71 @@
 import { useEffect, useRef } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Terminal, useTerminal } from "./Terminal";
 import { useLoopStore } from "@/stores/useLoopStore";
-import { cn } from "@/lib/utils";
+import type { Terminal as XTerm } from "@xterm/xterm";
 
 export function OutputPanel() {
   const { output, rateLimitInfo } = useLoopStore();
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const { setTerminal, writeln, clear } = useTerminal();
+  const lastOutputLengthRef = useRef(0);
+  const terminalReadyRef = useRef(false);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  // Handle terminal ready
+  const handleTerminalReady = (terminal: XTerm) => {
+    setTerminal(terminal);
+    terminalReadyRef.current = true;
+
+    // Write any existing output that accumulated before terminal was ready
+    if (output.length > 0) {
+      output.forEach((line) => {
+        writeLineToTerminal(terminal, line);
+      });
+      lastOutputLengthRef.current = output.length;
     }
-  }, [output]);
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("en-US", {
-      hour12: false,
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
   };
+
+  // Write a line with appropriate ANSI coloring
+  const writeLineToTerminal = (
+    terminal: XTerm,
+    line: { text: string; timestamp: Date; type: "output" | "error" | "info" | "success" }
+  ) => {
+    const time = formatTime(line.timestamp);
+    const colorCode = getColorCode(line.type);
+    const resetCode = "\x1b[0m";
+    const dimCode = "\x1b[2m";
+
+    terminal.writeln(`${dimCode}[${time}]${resetCode} ${colorCode}${line.text}${resetCode}`);
+  };
+
+  // Write new output lines to terminal
+  useEffect(() => {
+    if (!terminalReadyRef.current) return;
+
+    // Only write new lines
+    const newLines = output.slice(lastOutputLengthRef.current);
+    newLines.forEach((line) => {
+      const time = formatTime(line.timestamp);
+      const colorCode = getColorCode(line.type);
+      const resetCode = "\x1b[0m";
+      const dimCode = "\x1b[2m";
+
+      writeln(`${dimCode}[${time}]${resetCode} ${colorCode}${line.text}${resetCode}`);
+    });
+
+    lastOutputLengthRef.current = output.length;
+  }, [output, writeln]);
+
+  // Clear terminal when output is cleared
+  useEffect(() => {
+    if (output.length === 0 && lastOutputLengthRef.current > 0) {
+      clear();
+      lastOutputLengthRef.current = 0;
+    }
+  }, [output.length, clear]);
 
   return (
     <div className="flex h-full flex-col">
       {rateLimitInfo && (
-        <div className="mb-2 rounded-md bg-yellow-600/20 border border-yellow-600/50 p-3">
+        <div className="mb-2 bg-yellow-600/20 border border-yellow-600/50 p-3">
           <div className="flex items-center gap-2">
             <span className="text-yellow-500 font-medium">Rate Limited</span>
             <span className="text-sm text-[hsl(var(--muted-foreground))]">
@@ -36,36 +76,9 @@ export function OutputPanel() {
         </div>
       )}
 
-      <ScrollArea
-        ref={scrollRef}
-        className="flex-1 rounded-md border border-[hsl(var(--border))] bg-black/50 p-3 font-mono text-sm"
-      >
-        {output.length === 0 ? (
-          <div className="text-[hsl(var(--muted-foreground))] italic">
-            Output will appear here when the loop starts...
-          </div>
-        ) : (
-          <div className="space-y-0.5">
-            {output.map((line) => (
-              <div key={line.id} className="flex gap-2">
-                <span className="text-[hsl(var(--muted-foreground))] shrink-0">
-                  [{formatTime(line.timestamp)}]
-                </span>
-                <span
-                  className={cn("whitespace-pre-wrap break-all", {
-                    "text-red-400": line.type === "error",
-                    "text-blue-400": line.type === "info",
-                    "text-green-400": line.type === "success",
-                    "text-[hsl(var(--foreground))]": line.type === "output",
-                  })}
-                >
-                  {line.text}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </ScrollArea>
+      <div className="flex-1 min-h-0">
+        <Terminal onReady={handleTerminalReady} />
+      </div>
     </div>
   );
 }
@@ -85,4 +98,27 @@ function RateLimitCountdown({ info }: { info: { retryInSecs: number; startTime: 
       </span>
     </div>
   );
+}
+
+function formatTime(date: Date) {
+  return date.toLocaleTimeString("en-US", {
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
+function getColorCode(type: "output" | "error" | "info" | "success"): string {
+  switch (type) {
+    case "error":
+      return "\x1b[31m"; // Red
+    case "info":
+      return "\x1b[34m"; // Blue
+    case "success":
+      return "\x1b[32m"; // Green
+    case "output":
+    default:
+      return ""; // Default color
+  }
 }

@@ -112,12 +112,6 @@ pub struct ClaudeError {
     pub message: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Task {
-    pub description: String,
-    pub completed: bool,
-}
-
 #[derive(Debug, thiserror::Error)]
 pub enum RalphError {
     #[error("Project path does not exist: {0}")]
@@ -129,26 +123,14 @@ pub enum RalphError {
     #[error("Missing required file: {0}")]
     MissingFile(String),
 
-    #[error("Failed to read file: {0}")]
-    FileReadError(String),
-
     #[error("Claude process failed: {0}")]
     ClaudeProcessError(String),
-
-    #[error("Rate limit exceeded after {0} retries")]
-    RateLimitExceeded(u32),
-
-    #[error("Stagnation detected after {0} iterations")]
-    StagnationDetected(u32),
 
     #[error("Loop is not running")]
     NotRunning,
 
     #[error("Loop is already running")]
     AlreadyRunning,
-
-    #[error("Task parse error: {0}")]
-    TaskParseError(String),
 
     #[error("IO error: {0}")]
     IoError(String),

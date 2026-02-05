@@ -1,4 +1,4 @@
-use crate::types::{RalphError, Task};
+use crate::types::RalphError;
 use std::path::Path;
 
 const COMPLETION_MARKER: &str = "<promise>COMPLETE</promise>";
@@ -99,39 +99,6 @@ impl PromptBuilder {
 
     pub fn check_completion(output: &str) -> bool {
         output.contains(COMPLETION_MARKER)
-    }
-
-    pub fn parse_tasks(prd_content: &str) -> Result<Vec<Task>, RalphError> {
-        let mut tasks = Vec::new();
-
-        for line in prd_content.lines() {
-            let trimmed = line.trim();
-
-            if let Some(rest) = trimmed.strip_prefix("- [ ] ") {
-                tasks.push(Task {
-                    description: rest.to_string(),
-                    completed: false,
-                });
-            } else if let Some(rest) = trimmed.strip_prefix("- [x] ") {
-                tasks.push(Task {
-                    description: rest.to_string(),
-                    completed: true,
-                });
-            } else if let Some(rest) = trimmed.strip_prefix("- [X] ") {
-                tasks.push(Task {
-                    description: rest.to_string(),
-                    completed: true,
-                });
-            }
-        }
-
-        if tasks.is_empty() {
-            return Err(RalphError::TaskParseError(
-                "No tasks found in PRD. Expected lines starting with '- [ ]' or '- [x]'".to_string()
-            ));
-        }
-
-        Ok(tasks)
     }
 
     fn read_file(path: &Path, name: &str) -> Result<String, RalphError> {

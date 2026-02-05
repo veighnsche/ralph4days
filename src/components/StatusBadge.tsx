@@ -23,7 +23,7 @@ export function StatusBadge({ state }: StatusBadgeProps) {
   return (
     <Badge variant={config.variant} className="text-sm">
       {state === "running" && (
-        <span className="mr-1.5 inline-block h-2 w-2 animate-pulse rounded-full bg-white" />
+        <span className="mr-1.5 inline-block h-2 w-2 animate-pulse bg-white" />
       )}
       {config.label}
     </Badge>

@@ -20,7 +20,7 @@
   --border: 0 0% 20%;
   --input: 0 0% 20%;
   --ring: 142 76% 36%;
-  --radius: 0.5rem;
+  --radius: 0rem;
 }
 
 * {
@@ -30,7 +30,7 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: 'Geist Mono', 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', Monaco, monospace;
 }
 
 /* Scrollbar styling */
@@ -45,7 +45,6 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--muted-foreground));
-  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {

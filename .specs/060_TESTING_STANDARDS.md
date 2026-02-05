@@ -252,7 +252,7 @@ test.describe('Visual States', () => {
 
 **Visual test guidelines:**
 - Store baselines in `e2e/visual/*.spec.ts-snapshots/`
-- Update baselines with `pnpm exec playwright test --update-snapshots`
+- Update baselines with `bun exec playwright test --update-snapshots`
 - Use `maxDiffPixelRatio: 0.01` for tolerance
 - Disable animations before screenshots
 
@@ -329,7 +329,7 @@ Every public function in the Rust backend MUST have at least one unit test.
 Every React component and hook MUST have at least one unit test.
 
 | Traces To | `src/**/*.tsx`, `src/**/*.ts` |
-| Tested By | `pnpm test` |
+| Tested By | `bun test` |
 | Rationale | Verify UI logic |
 
 ### REQ-060-03: E2E Tests for Critical Paths
@@ -344,7 +344,7 @@ The following user flows MUST have E2E tests:
 | Output streaming | `e2e/output.spec.ts` |
 
 | Traces To | `e2e/*.spec.ts` |
-| Tested By | `pnpm exec playwright test` |
+| Tested By | `bun exec playwright test` |
 | Rationale | Verify user-facing functionality |
 
 ### REQ-060-04: Visual Regression for UI States
@@ -361,7 +361,7 @@ Visual tests MUST cover all loop states:
 | Aborted | `aborted-state.png` |
 
 | Traces To | `e2e/visual/*.spec.ts` |
-| Tested By | `pnpm exec playwright test e2e/visual/` |
+| Tested By | `bun exec playwright test e2e/visual/` |
 | Rationale | Prevent UI regressions |
 
 ### REQ-060-05: Monkey Test Before Release
@@ -369,7 +369,7 @@ Visual tests MUST cover all loop states:
 Monkey tests MUST pass with 500+ interactions before any release.
 
 | Traces To | `e2e/monkey.spec.ts` |
-| Tested By | `pnpm exec playwright test e2e/monkey.spec.ts` |
+| Tested By | `bun exec playwright test e2e/monkey.spec.ts` |
 | Rationale | Verify crash resistance |
 
 ### REQ-060-06: No Flaky Tests
@@ -409,29 +409,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-      - run: pnpm install
-      - run: pnpm test:run
+      - uses: bun/action-setup@v2
+      - run: bun install
+      - run: bun test:run
 
   e2e-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-      - run: pnpm install
-      - run: pnpm exec playwright install --with-deps
-      - run: pnpm build
-      - run: pnpm exec playwright test
+      - uses: bun/action-setup@v2
+      - run: bun install
+      - run: bun exec playwright install --with-deps
+      - run: bun build
+      - run: bun exec playwright test
 
   visual-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-      - run: pnpm install
-      - run: pnpm exec playwright install --with-deps
-      - run: pnpm build
-      - run: pnpm exec playwright test e2e/visual/
+      - uses: bun/action-setup@v2
+      - run: bun install
+      - run: bun exec playwright install --with-deps
+      - run: bun build
+      - run: bun exec playwright test e2e/visual/
 ```
 
 ### 7.2 Required CI Checks
@@ -439,7 +439,7 @@ jobs:
 | Check | Command | Blocking |
 |-------|---------|----------|
 | Rust tests | `cargo test` | Yes |
-| Frontend tests | `pnpm test:run` | Yes |
+| Frontend tests | `bun test:run` | Yes |
 | E2E tests | `playwright test` | Yes |
 | Visual tests | `playwright test e2e/visual/` | Yes |
 | Monkey tests | `playwright test e2e/monkey.spec.ts` | No (warning) |
@@ -450,11 +450,11 @@ jobs:
 
 ```bash
 # Frontend testing
-pnpm add -D vitest @testing-library/react @testing-library/jest-dom jsdom
-pnpm add -D @playwright/test
+bun add -D vitest @testing-library/react @testing-library/jest-dom jsdom
+bun add -D @playwright/test
 
 # Install Playwright browsers
-pnpm exec playwright install
+bun exec playwright install
 ```
 
 ### 8.2 Vitest Configuration
@@ -504,7 +504,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm dev',
+    command: 'bun dev',
     url: 'http://localhost:1420',
     reuseExistingServer: !process.env.CI,
   },
@@ -521,7 +521,7 @@ export default defineConfig({
     "test:e2e": "playwright test",
     "test:visual": "playwright test e2e/visual/",
     "test:monkey": "playwright test e2e/monkey.spec.ts",
-    "test:all": "pnpm test:run && pnpm test:e2e"
+    "test:all": "bun test:run && bun test:e2e"
   }
 }
 ```
@@ -563,7 +563,7 @@ ralph4days/
 | Req ID | Requirement Summary | Implementation | Test | Status |
 |--------|---------------------|----------------|------|--------|
 | REQ-060-01 | Rust unit test coverage | `src-tauri/src/**/*.rs` | `cargo test` | ◐ |
-| REQ-060-02 | Frontend unit test coverage | `src/**/*.test.ts` | `pnpm test` | ✗ |
+| REQ-060-02 | Frontend unit test coverage | `src/**/*.test.ts` | `bun test` | ✗ |
 | REQ-060-03 | E2E tests for critical paths | `e2e/*.spec.ts` | `playwright test` | ✗ |
 | REQ-060-04 | Visual regression for states | `e2e/visual/*.spec.ts` | `playwright test` | ✗ |
 | REQ-060-05 | Monkey test before release | `e2e/monkey.spec.ts` | `playwright test` | ✗ |
