@@ -183,7 +183,7 @@ function App() {
   return (
     <ResizablePanelGroup direction="horizontal" className="h-screen">
       {/* Left: PRD */}
-      <ResizablePanel defaultSize={66} minSize={40}>
+      <ResizablePanel defaultSize={50} minSize={40}>
         <div className="h-full flex flex-col overflow-hidden">
           <div className="flex-1 min-h-0 overflow-hidden">
             <PRDViewer />
@@ -196,7 +196,7 @@ function App() {
       <ResizableHandle withHandle />
 
       {/* Right: Output */}
-      <ResizablePanel defaultSize={34} minSize={20}>
+      <ResizablePanel defaultSize={50} minSize={20}>
         <div className="h-full p-4">
           <OutputPanel />
         </div>
