@@ -1,0 +1,9 @@
+tasks:
+- id: 1
+  feature: setup
+  discipline: frontend
+  title: Replace this with your first task
+  description: Add task details here
+  status: pending
+  priority: medium
+  created: 2026-02-05

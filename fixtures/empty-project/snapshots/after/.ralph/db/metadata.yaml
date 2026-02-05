@@ -1,0 +1,8 @@
+schema_version: '1.0'
+project:
+  title: Test Project
+  description: Add project description here
+  created: 2026-02-05
+_counters:
+  setup:
+    frontend: 1
