@@ -2,51 +2,39 @@ import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLoopStore } from "@/stores/useLoopStore";
-import { Play, Pause, Square, RotateCcw, FolderOpen } from "lucide-react";
-import { open } from "@tauri-apps/plugin-dialog";
+import { Play, Pause, Square, RotateCcw } from "lucide-react";
 
-export function LoopControls() {
+interface LoopControlsProps {
+  lockedProject: string;
+}
+
+export function LoopControls({ lockedProject }: LoopControlsProps) {
   const {
     status,
-    projectPath,
     maxIterations,
-    setProjectPath,
     setMaxIterations,
     addOutput,
     clearOutput,
   } = useLoopStore();
 
+  // Extract project name from path
+  const projectName = lockedProject.split('/').pop() || 'Unknown';
+
   const isIdle = status.state === "idle";
   const isRunning = status.state === "running";
   const isPaused = status.state === "paused";
   const isRateLimited = status.state === "rate_limited";
-  const canStart = isIdle && projectPath.length > 0;
+  const canStart = isIdle;
   const canPause = isRunning;
   const canResume = isPaused;
   const canStop = isRunning || isPaused || isRateLimited;
 
-  const handleSelectFolder = async () => {
-    try {
-      const selected = await open({
-        directory: true,
-        multiple: false,
-        title: "Select Project Directory",
-      });
-      if (selected && typeof selected === "string") {
-        setProjectPath(selected);
-      }
-    } catch (e) {
-      console.error("Failed to open folder dialog:", e);
-    }
-  };
-
   const handleStart = async () => {
     try {
       clearOutput();
-      addOutput(`Starting loop on: ${projectPath}`, "info");
+      addOutput(`Starting loop on: ${lockedProject}`, "info");
       addOutput(`Max iterations: ${maxIterations}`, "info");
       await invoke("start_loop", {
-        projectPath,
         maxIterations,
       });
     } catch (e) {
@@ -85,24 +73,11 @@ export function LoopControls() {
     <div className="space-y-4">
       <div className="space-y-2">
         <label className="text-sm font-medium text-[hsl(var(--muted-foreground))]">
-          Project Path
+          Locked Project
         </label>
-        <div className="flex gap-2">
-          <Input
-            value={projectPath}
-            onChange={(e) => setProjectPath(e.target.value)}
-            placeholder="/path/to/project"
-            disabled={!isIdle}
-            className="flex-1"
-          />
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={handleSelectFolder}
-            disabled={!isIdle}
-          >
-            <FolderOpen className="h-4 w-4" />
-          </Button>
+        <div className="border border-[hsl(var(--input))] bg-[hsl(var(--muted))] px-3 py-2 text-sm space-y-1">
+          <div className="font-mono text-xs break-all">{lockedProject}</div>
+          <div className="text-[hsl(var(--muted-foreground))]">{projectName}/.ralph</div>
         </div>
       </div>
 

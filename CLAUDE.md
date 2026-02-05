@@ -28,21 +28,25 @@
 
 ```bash
 # Development
-pnpm dev                    # Vite dev server (port 1420)
-pnpm tauri dev              # Full Tauri app with hot reload
+bun dev                    # Vite dev server (port 1420)
+bun tauri dev              # Full Tauri app with hot reload
 
 # Build
-pnpm build                  # Frontend production build
-pnpm tauri build            # Full production app (release optimized)
-pnpm tauri build --debug    # Debug build
+bun build                  # Frontend production build
+bun tauri build            # Full production app (release optimized)
+bun tauri build --debug    # Debug build
+
+# Run
+ralph                      # Launch with ProjectPicker modal
+ralph --project /path      # Launch with locked project (skips picker)
 
 # Test
-pnpm test                   # Vitest watch mode
-pnpm test:run               # Vitest single run
-pnpm test:e2e               # Playwright E2E tests
-pnpm test:visual            # Visual regression tests
-pnpm test:monkey            # Chaos testing (Gremlins.js)
-pnpm test:all               # Unit + E2E
+bun test                   # Vitest watch mode
+bun test:run               # Vitest single run
+bun test:e2e               # Playwright E2E tests
+bun test:visual            # Visual regression tests
+bun test:monkey            # Chaos testing (Gremlins.js)
+bun test:all               # Unit + E2E
 
 # Rust
 cargo test --manifest-path src-tauri/Cargo.toml
@@ -148,6 +152,74 @@ target-project/
 └── ... (project files)
 ```
 
+## Project Locking (Session Management)
+
+Ralph locks ONE project per session. User picks project at startup, cannot change during runtime.
+
+### Two Startup Modes
+
+**CLI Argument Mode**:
+```bash
+ralph --project /path/to/project
+```
+- Validates and locks project immediately
+- If invalid: prints error to stderr, exits with code 1
+- If valid: skips ProjectPicker, main UI loads directly
+
+**Interactive Mode**:
+```bash
+ralph
+```
+- ProjectPicker modal appears (cannot be dismissed)
+- Scans home directory for `.ralph/` folders (5 levels, max 100 projects)
+- Dropdown if multiple found, auto-selects if only one
+- Manual path input + folder browser
+- Real-time validation (debounced 500ms)
+- "Lock Project" button enabled when valid
+
+### Backend State
+
+`AppState` in `src-tauri/src/commands.rs`:
+```rust
+pub struct AppState {
+    pub engine: Mutex<LoopEngine>,
+    pub locked_project: Mutex<Option<PathBuf>>,
+}
+```
+
+**Commands**:
+- `validate_project_path(path)` - checks path exists, `.ralph/` exists, `prd.md` exists
+- `set_locked_project(path)` - validates and locks (one-time operation, errors if already locked)
+- `get_locked_project()` - returns `Option<String>` of locked project
+- `start_loop(max_iterations)` - reads locked project from state (no path parameter)
+
+### Validation Rules
+
+Path must:
+1. Exist and be a directory
+2. Contain `.ralph/` subdirectory
+3. Contain `.ralph/prd.md` file
+4. Be canonicalized (symlinks resolved)
+
+Errors:
+- "Directory not found: {path}"
+- "Not a directory: {path}"
+- "No .ralph folder found. Is this a Ralph project?"
+- ".ralph/prd.md not found. Create PRD first."
+- "Project already locked for this session"
+
+### Frontend Flow
+
+`src/App.tsx`:
+1. Queries `get_locked_project()` on mount
+2. If null: renders `<ProjectPicker />`
+3. If set: renders main UI with `<LoopControls lockedProject={path} />`
+
+`src/components/LoopControls.tsx`:
+- Displays locked project as read-only (path + name/.ralph)
+- No project selection UI
+- `start_loop` call omits `projectPath` parameter
+
 ## Key Implementation Details
 
 ### Subprocess Timeout (Critical)
@@ -193,10 +265,10 @@ Read `.specs/000_SPECIFICATION_FORMAT.md` before writing specs.
 | Category | Tool | Command |
 |----------|------|---------|
 | **Rust Unit** | cargo test | `cargo test --manifest-path src-tauri/Cargo.toml` |
-| **Frontend Unit** | Vitest | `pnpm test:run` |
-| **E2E** | Playwright | `pnpm test:e2e` |
-| **Visual** | Playwright Visual | `pnpm test:visual` |
-| **Chaos** | Gremlins.js | `pnpm test:monkey` |
+| **Frontend Unit** | Vitest | `bun test:run` |
+| **E2E** | Playwright | `bun test:e2e` |
+| **Visual** | Playwright Visual | `bun test:visual` |
+| **Chaos** | Gremlins.js | `bun test:monkey` |
 
 See `.specs/060_TESTING_STANDARDS.md` for full testing requirements.
 
@@ -205,7 +277,7 @@ See `.specs/060_TESTING_STANDARDS.md` for full testing requirements.
 - **Frontend:** React 19, TypeScript, Vite, Tailwind v4, Zustand, Lucide Icons
 - **Backend:** Tauri 2.5, Rust, Tokio
 - **Testing:** Vitest, Playwright, Gremlins.js
-- **Build:** pnpm, Cargo
+- **Build:** bun, Cargo
 
 ## Environment Notes
 

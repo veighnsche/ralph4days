@@ -1,9 +1,10 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { LoopControls } from "@/components/LoopControls";
 import { OutputPanel } from "@/components/OutputPanel";
+import { ProjectPicker } from "@/components/ProjectPicker";
 import { useLoopStore, LoopState } from "@/stores/useLoopStore";
 import { useTauriEvent } from "@/hooks/useTauriEvent";
 import "./index.css";
@@ -40,10 +41,31 @@ interface ErrorEvent {
 
 function App() {
   const { status, setStatus, addOutput, setRateLimitInfo } = useLoopStore();
+  const [lockedProject, setLockedProject] = useState<string | null>(null);
+  const [isLoadingProject, setIsLoadingProject] = useState(true);
+
+  // Check for locked project on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && '__TAURI__' in window) {
+      invoke<string | null>("get_locked_project")
+        .then((project) => {
+          setLockedProject(project);
+          setIsLoadingProject(false);
+        })
+        .catch((err) => {
+          console.error("Failed to get locked project:", err);
+          setIsLoadingProject(false);
+        });
+    } else {
+      setIsLoadingProject(false);
+    }
+  }, []);
 
   // Poll for initial state
   useEffect(() => {
-    invoke<typeof status>("get_loop_state").then(setStatus).catch(console.error);
+    if (typeof window !== 'undefined' && '__TAURI__' in window) {
+      invoke<typeof status>("get_loop_state").then(setStatus).catch(console.error);
+    }
   }, [setStatus]);
 
   // Event handlers
@@ -110,6 +132,19 @@ function App() {
   useTauriEvent("ralph://rate_limited", handleRateLimited);
   useTauriEvent("ralph://error", handleError);
 
+  // Show loading or project picker
+  if (isLoadingProject) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-[hsl(var(--muted-foreground))]">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!lockedProject) {
+    return <ProjectPicker onProjectLocked={setLockedProject} />;
+  }
+
   return (
     <div className="flex h-screen gap-4 p-4">
       {/* Left Panel - Controls */}
@@ -126,7 +161,7 @@ function App() {
           )}
         </CardHeader>
         <CardContent>
-          <LoopControls />
+          <LoopControls lockedProject={lockedProject} />
         </CardContent>
       </Card>
 

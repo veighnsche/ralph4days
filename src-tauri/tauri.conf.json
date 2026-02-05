@@ -1,15 +1,16 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Ralph Loop",
+  "productName": "ralph",
   "version": "0.1.0",
-  "identifier": "com.vince.ralph4days",
+  "identifier": "com.vince.ralph",
   "build": {
-    "beforeDevCommand": "pnpm dev",
+    "beforeDevCommand": "bun dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build",
+    "beforeBuildCommand": "bun run build",
     "frontendDist": "../dist"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "Ralph Loop",
@@ -26,6 +27,18 @@
     ],
     "security": {
       "csp": null
+    }
+  },
+  "plugins": {
+    "cli": {
+      "description": "Ralph Loop - Autonomous multi-agent build system",
+      "args": [
+        {
+          "name": "project",
+          "description": "Project directory path to lock for this session",
+          "takesValue": true
+        }
+      ]
     }
   },
   "bundle": {
