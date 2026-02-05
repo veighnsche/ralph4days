@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 pub struct Feature {
     pub name: String,
     pub display_name: String,
+    #[serde(default)]
+    pub acronym: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -22,12 +24,66 @@ pub type FeaturesFile = EntityFile<Feature>;
 
 /// Feature-specific methods
 impl FeaturesFile {
-    /// Auto-populate: Create feature if it doesn't exist
-    pub fn ensure_feature_exists(&mut self, name: &str) -> Result<(), String> {
+    /// Validate features collection for uniqueness constraints (called on load)
+    pub fn validate(&self) -> Result<(), String> {
+        let mut seen_names = std::collections::HashSet::new();
+        let mut seen_acronyms = std::collections::HashSet::new();
+
+        for feature in self.get_all() {
+            // Check name uniqueness
+            if !seen_names.insert(&feature.name) {
+                return Err(format!(
+                    "Duplicate feature name found: '{}'. Each feature must have a unique name.",
+                    feature.name
+                ));
+            }
+
+            // Only validate non-empty acronyms (migration might have empty ones temporarily)
+            if !feature.acronym.is_empty() {
+                // Check acronym uniqueness
+                if !seen_acronyms.insert(&feature.acronym) {
+                    return Err(format!(
+                        "Duplicate feature acronym found: '{}'. Each feature must have a unique acronym.",
+                        feature.acronym
+                    ));
+                }
+
+                // Validate acronym format
+                crate::acronym::validate_acronym_format(&feature.acronym)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Validate acronym is unique within features collection (used during creation)
+    fn validate_acronym(&self, acronym: &str, feature_name: &str) -> Result<(), String> {
+        crate::acronym::validate_acronym_format(acronym)?;
+
+        if self
+            .get_all()
+            .iter()
+            .any(|f| f.acronym == acronym && f.name != feature_name)
+        {
+            return Err(format!(
+                "Acronym '{}' is already used by another feature. Please choose a unique acronym.",
+                acronym
+            ));
+        }
+
+        Ok(())
+    }
+
+    /// Auto-populate: Create feature if it doesn't exist (with required acronym)
+    pub fn ensure_feature_exists(&mut self, name: &str, acronym: &str) -> Result<(), String> {
         if !self.get_all().iter().any(|f| f.name == name) {
+            // Validate acronym format and uniqueness
+            self.validate_acronym(acronym, name)?;
+
             self.add(Feature {
                 name: name.to_string(),
                 display_name: Self::name_to_display_name(name),
+                acronym: acronym.to_string(),
                 description: None,
                 created: Some(chrono::Utc::now().format("%Y-%m-%d").to_string()),
             });

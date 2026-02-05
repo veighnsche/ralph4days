@@ -14,6 +14,10 @@ pub struct TaskInput {
     pub tags: Vec<String>,
     pub depends_on: Vec<u32>,
     pub acceptance_criteria: Option<Vec<String>>,
+
+    // Required acronyms for auto-created features/disciplines
+    pub feature_acronym: String,
+    pub discipline_acronym: String,
 }
 
 /// Multi-file YAML database coordinator
@@ -21,8 +25,8 @@ pub struct YamlDatabase {
     _base_path: PathBuf,
     lock_file: PathBuf,
     tasks: TasksFile,
-    features: FeaturesFile,
-    disciplines: DisciplinesFile,
+    pub(crate) features: FeaturesFile,
+    pub(crate) disciplines: DisciplinesFile,
     metadata: MetadataFile,
 }
 
@@ -52,6 +56,17 @@ impl YamlDatabase {
 
         // Load all files
         db.load_all()?;
+
+        // Validate collections before proceeding
+        db.features.validate()?;
+        db.disciplines.validate()?;
+
+        // Run migration if needed (comes after validation)
+        crate::migration::migrate_acronyms_if_needed(&mut db)?;
+
+        // Validate again after migration to ensure generated acronyms are valid
+        db.features.validate()?;
+        db.disciplines.validate()?;
 
         Ok(db)
     }
@@ -133,10 +148,11 @@ impl YamlDatabase {
 
         // 3. Validate discipline exists (or auto-create if needed)
         self.disciplines
-            .ensure_discipline_exists(&task.discipline)?;
+            .ensure_discipline_exists(&task.discipline, &task.discipline_acronym)?;
 
         // 4. Auto-create feature if needed
-        self.features.ensure_feature_exists(&task.feature)?;
+        self.features
+            .ensure_feature_exists(&task.feature, &task.feature_acronym)?;
 
         // 5. Assign next ID (uses global counter)
         let next_id = self.metadata.get_next_id(self.tasks.get_all());
@@ -298,10 +314,11 @@ impl YamlDatabase {
 
         // 4. Validate discipline exists (or auto-create if needed)
         self.disciplines
-            .ensure_discipline_exists(&update.discipline)?;
+            .ensure_discipline_exists(&update.discipline, &update.discipline_acronym)?;
 
         // 5. Auto-create feature if needed
-        self.features.ensure_feature_exists(&update.feature)?;
+        self.features
+            .ensure_feature_exists(&update.feature, &update.feature_acronym)?;
 
         // 6. Create updated task (preserve ID, status, and timestamps)
         let old_task = &self.tasks.items_mut()[task_index];

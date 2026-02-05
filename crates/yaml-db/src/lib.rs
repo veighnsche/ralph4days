@@ -9,11 +9,13 @@
 
 use serde::{Deserialize, Serialize};
 
+pub mod acronym;
 mod database;
 mod disciplines;
 mod entity;
 mod features;
 mod metadata;
+mod migration;
 mod tasks;
 
 // Re-export public types
