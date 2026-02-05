@@ -12,11 +12,11 @@ default:
 
 # Start development server (frontend + backend hot reload)
 dev:
-    pnpm tauri dev
+    bun tauri dev
 
 # Start frontend dev server only
 dev-frontend:
-    pnpm dev
+    bun dev
 
 # Run cargo check (fast compilation check)
 check:
@@ -29,7 +29,7 @@ lint:
 # Format all code
 fmt:
     cargo fmt --manifest-path src-tauri/Cargo.toml
-    pnpm exec prettier --write "src/**/*.{ts,tsx}"
+    bun exec prettier --write "src/**/*.{ts,tsx}"
 
 # === Testing ===
 
@@ -42,37 +42,37 @@ test-rust:
 
 # Run frontend unit tests
 test-frontend:
-    pnpm test:run
+    bun test:run
 
 # Run E2E tests (requires built frontend)
 test-e2e:
-    pnpm test:e2e
+    bun test:e2e
 
 # Run visual regression tests
 test-visual:
-    pnpm test:visual
+    bun test:visual
 
 # Run chaos/monkey tests
 test-monkey:
-    pnpm test:monkey
+    bun test:monkey
 
 # Update visual test snapshots
 test-visual-update:
-    pnpm exec playwright test e2e/visual/ --update-snapshots
+    bun exec playwright test e2e/visual/ --update-snapshots
 
 # === Building ===
 
 # Build release binary (optimized for Alder Lake)
 build:
-    pnpm tauri build
+    bun tauri build
 
 # Build debug binary (faster compilation)
 build-debug:
-    pnpm tauri build --debug
+    bun tauri build --debug
 
 # Build frontend only
 build-frontend:
-    pnpm build
+    bun build
 
 # Clean build artifacts
 clean:
@@ -83,13 +83,13 @@ clean:
 
 # Build all Linux packages (deb, rpm, appimage)
 release-linux:
-    pnpm tauri build --bundles deb,rpm,appimage
+    bun tauri build --bundles deb,rpm,appimage
 
 # === Utilities ===
 
 # Install Playwright browsers
 playwright-install:
-    pnpm exec playwright install --with-deps
+    bun exec playwright install --with-deps
 
 # Check if mold linker is installed
 check-mold:
@@ -119,3 +119,41 @@ watch-test:
 # Generate TypeScript types from Rust (if using ts-rs)
 types:
     @echo "TODO: Add ts-rs type generation"
+
+# === Fixtures ===
+
+# Reset all fixtures to initial state
+reset-fixtures:
+    @echo "Resetting all fixtures..."
+    @for fixture in fixtures/*/reset.sh; do \
+        if [ -f "$$fixture" ]; then \
+            echo "  Resetting $$(dirname $$fixture)..."; \
+            bash "$$fixture" > /dev/null; \
+        fi; \
+    done
+    @echo "✓ All fixtures reset"
+
+# Reset single-task fixture
+reset-single-task:
+    @bash fixtures/single-task/reset.sh
+
+# List available fixtures
+list-fixtures:
+    #!/usr/bin/env bash
+    echo "Available fixtures:"
+    for f in fixtures/*/; do
+        name=$(basename "$f")
+        prd="${f}.ralph/prd.yaml"
+        if [ -f "$prd" ]; then
+            title=$(grep "^  title:" "$prd" | cut -d'"' -f2 || echo "N/A")
+            tasks=$(grep -c "^  - id:" "$prd" || echo "0")
+            echo "  $name: $tasks tasks - $title"
+        fi
+    done
+
+# Clean fixture generated files (but don't reset PRD status)
+clean-fixtures:
+    @echo "Cleaning fixture outputs..."
+    @rm -f fixtures/*/.ralph/progress.txt fixtures/*/.ralph/learnings.txt
+    @rm -f fixtures/*/CLAUDE.md fixtures/*/CLAUDE.md.ralph-backup
+    @echo "✓ Generated files removed"
