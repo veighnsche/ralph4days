@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import { Terminal, useTerminal } from "./Terminal";
+import { Terminal, useTerminal } from "@/components/ui/terminal";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useLoopStore } from "@/stores/useLoopStore";
 import type { Terminal as XTerm } from "@xterm/xterm";
 
@@ -65,15 +66,15 @@ export function OutputPanel() {
   return (
     <div className="flex h-full flex-col">
       {rateLimitInfo && (
-        <div className="mb-2 bg-yellow-600/20 border border-yellow-600/50 p-3">
-          <div className="flex items-center gap-2">
-            <span className="text-yellow-500 font-medium">Rate Limited</span>
-            <span className="text-sm text-[hsl(var(--muted-foreground))]">
+        <Alert variant="default" className="mb-2 bg-yellow-600/20 border-yellow-600/50">
+          <AlertTitle className="text-yellow-500">Rate Limited</AlertTitle>
+          <AlertDescription className="flex flex-col gap-1">
+            <span className="text-sm">
               Retry attempt {rateLimitInfo.attempt} of {rateLimitInfo.maxAttempts}
             </span>
-          </div>
-          <RateLimitCountdown info={rateLimitInfo} />
-        </div>
+            <RateLimitCountdown info={rateLimitInfo} />
+          </AlertDescription>
+        </Alert>
       )}
 
       <div className="flex-1 min-h-0">
@@ -91,12 +92,12 @@ function RateLimitCountdown({ info }: { info: { retryInSecs: number; startTime: 
   const seconds = remaining % 60;
 
   return (
-    <div className="text-sm mt-1">
+    <span className="text-sm">
       Retrying in:{" "}
       <span className="font-mono text-yellow-400">
         {minutes}:{seconds.toString().padStart(2, "0")}
       </span>
-    </div>
+    </span>
   );
 }
 

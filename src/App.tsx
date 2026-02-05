@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { LoopControls } from "@/components/LoopControls";
 import { OutputPanel } from "@/components/OutputPanel";
-import { ProjectPicker } from "@/components/ProjectPicker";
+import { ProjectSelector } from "@/components/ProjectSelector";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useLoopStore, LoopState } from "@/stores/useLoopStore";
 import { useTauriEvent } from "@/hooks/useTauriEvent";
 import "./index.css";
@@ -44,12 +46,16 @@ function App() {
   const [lockedProject, setLockedProject] = useState<string | null>(null);
   const [isLoadingProject, setIsLoadingProject] = useState(true);
 
-  // Check for locked project on mount
+  // Check for locked project on mount and set window title
   useEffect(() => {
     if (typeof window !== 'undefined' && '__TAURI__' in window) {
       invoke<string | null>("get_locked_project")
         .then((project) => {
           setLockedProject(project);
+          if (project) {
+            const projectName = project.split('/').pop() || 'Unknown';
+            getCurrentWindow().setTitle(`Ralph4days - ${projectName}`);
+          }
           setIsLoadingProject(false);
         })
         .catch((err) => {
@@ -142,8 +148,14 @@ function App() {
   }
 
   if (!lockedProject) {
-    return <ProjectPicker onProjectLocked={setLockedProject} />;
+    return <ProjectSelector onProjectSelected={(project) => {
+      setLockedProject(project);
+      const projectName = project.split('/').pop() || 'Unknown';
+      getCurrentWindow().setTitle(`Ralph4days - ${projectName}`);
+    }} />;
   }
+
+  const projectName = lockedProject.split('/').pop() || 'Unknown';
 
   return (
     <div className="flex h-screen gap-4 p-4">
@@ -151,8 +163,11 @@ function App() {
       <Card className="w-80 shrink-0">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Ralph Loop</CardTitle>
-            <StatusBadge state={status.state} />
+            <CardTitle className="text-lg">{projectName}</CardTitle>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <StatusBadge state={status.state} />
+            </div>
           </div>
           {status.state !== "idle" && (
             <div className="text-sm text-[hsl(var(--muted-foreground))]">

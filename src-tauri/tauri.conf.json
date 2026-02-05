@@ -13,7 +13,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "Ralph Loop",
+        "title": "Ralph4days",
         "width": 1400,
         "height": 900,
         "minWidth": 900,
@@ -53,7 +53,7 @@
     ],
     "category": "Development",
     "shortDescription": "Autonomous multi-agent build system",
-    "longDescription": "Ralph Loop runs Claude Haiku in a loop to complete tasks from a PRD, with periodic Opus reviews for quality control.",
+    "longDescription": "Ralph4days runs Claude Haiku in a loop to complete tasks from a PRD, with periodic Opus reviews for quality control.",
     "linux": {
       "appimage": {
         "bundleMediaFramework": false

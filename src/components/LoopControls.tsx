@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { useLoopStore } from "@/stores/useLoopStore";
 import { Play, Pause, Square, RotateCcw } from "lucide-react";
 
@@ -16,9 +17,6 @@ export function LoopControls({ lockedProject }: LoopControlsProps) {
     addOutput,
     clearOutput,
   } = useLoopStore();
-
-  // Extract project name from path
-  const projectName = lockedProject.split('/').pop() || 'Unknown';
 
   const isIdle = status.state === "idle";
   const isRunning = status.state === "running";
@@ -71,20 +69,8 @@ export function LoopControls({ lockedProject }: LoopControlsProps) {
 
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-[hsl(var(--muted-foreground))]">
-          Locked Project
-        </label>
-        <div className="border border-[hsl(var(--input))] bg-[hsl(var(--muted))] px-3 py-2 text-sm space-y-1">
-          <div className="font-mono text-xs break-all">{lockedProject}</div>
-          <div className="text-[hsl(var(--muted-foreground))]">{projectName}/.ralph</div>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-[hsl(var(--muted-foreground))]">
-          Max Iterations
-        </label>
+      <Field>
+        <FieldLabel>Max Iterations</FieldLabel>
         <Input
           type="number"
           value={maxIterations}
@@ -93,9 +79,9 @@ export function LoopControls({ lockedProject }: LoopControlsProps) {
           max={1000}
           disabled={!isIdle}
         />
-      </div>
+      </Field>
 
-      <div className="flex flex-wrap gap-2 pt-2">
+      <div className="flex flex-wrap gap-2">
         <Button onClick={handleStart} disabled={!canStart} className="gap-2">
           <Play className="h-4 w-4" />
           Start

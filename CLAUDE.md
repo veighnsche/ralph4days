@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Ralph Loop** — Tauri 2.5 desktop application for running autonomous, multi-agent build loops. Runs Claude Haiku in a loop to complete tasks from a PRD, with periodic Opus reviews for quality control.
+**Ralph4days** — Tauri 2.5 desktop application for running autonomous, multi-agent build loops. Runs Claude Haiku in a loop to complete tasks from a PRD, with periodic Opus reviews for quality control.
 
 **Not a general-purpose AI chat app.** This is a build automation tool that orchestrates Claude CLI sessions.
 
@@ -26,33 +26,53 @@
 
 ## Commands
 
+**This project uses [just](https://github.com/casey/just)** as a command runner. Install with: `cargo install just`
+
 ```bash
+# Show all available commands
+just --list
+
 # Development
-bun dev                    # Vite dev server (port 1420)
-bun tauri dev              # Full Tauri app with hot reload
+just dev                   # Full Tauri app with hot reload
+just dev-frontend          # Vite dev server only (port 1420)
+just check                 # Fast Rust compilation check
+just lint                  # Run clippy lints
+just fmt                   # Format all code (Rust + TypeScript)
 
-# Build
-bun build                  # Frontend production build
-bun tauri build            # Full production app (release optimized)
-bun tauri build --debug    # Debug build
+# Testing
+just test                  # Run all tests (Rust + frontend)
+just test-rust             # Rust tests only
+just test-frontend         # Frontend unit tests
+just test-e2e              # E2E tests (Playwright)
+just test-visual           # Visual regression tests
+just test-monkey           # Chaos/monkey tests (Gremlins.js)
+just test-visual-update    # Update visual snapshots
 
-# Run
+# Building
+just build                 # Release build (Alder Lake optimized)
+just build-debug           # Debug build (faster compilation)
+just build-frontend        # Frontend production build only
+just clean                 # Clean build artifacts
+
+# Release
+just release-linux         # Build deb, rpm, appimage packages
+
+# Fixtures
+just reset-fixtures        # Reset all test fixtures
+just list-fixtures         # Show available fixtures
+just clean-fixtures        # Clean fixture outputs
+
+# Utilities
+just sysinfo               # Show system info
+just playwright-install    # Install Playwright browsers
+just watch-test            # Watch and auto-run tests
+
+# Run built app
 ralph                      # Launch with ProjectPicker modal
 ralph --project /path      # Launch with locked project (skips picker)
-
-# Test
-bun test                   # Vitest watch mode
-bun test:run               # Vitest single run
-bun test:e2e               # Playwright E2E tests
-bun test:visual            # Visual regression tests
-bun test:monkey            # Chaos testing (Gremlins.js)
-bun test:all               # Unit + E2E
-
-# Rust
-cargo test --manifest-path src-tauri/Cargo.toml
-cargo check --manifest-path src-tauri/Cargo.toml
-cargo clippy --manifest-path src-tauri/Cargo.toml
 ```
+
+See `justfile` for implementation details and additional commands.
 
 ## Architecture
 
