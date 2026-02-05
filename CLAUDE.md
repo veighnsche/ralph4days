@@ -35,8 +35,7 @@ just --list
 # Development
 just dev                   # Full Tauri app with hot reload
 just dev-frontend          # Vite dev server only
-just dev-with-project PATH # Dev with specific project (skips picker)
-just dev-single-task       # Dev with single-task fixture (port 1420)
+just dev-fixtures FIXTURE  # Dev with fixture (e.g., single-task, elaborate-prd) (port 1420)
 just check                 # Fast Rust compilation check
 just lint                  # Run clippy lints
 just fmt                   # Format all code (Rust + TypeScript)

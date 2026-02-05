@@ -18,13 +18,9 @@ dev:
 dev-frontend:
     bun dev
 
-# Start development server with a specific project (skips project picker)
-dev-with-project PROJECT:
-    bun tauri dev -- -- --project {{PROJECT}}
-
-# Start development server with single-task fixture
-dev-single-task:
-    bun tauri dev -- -- --project {{justfile_directory()}}/fixtures/single-task
+# Start development server with a fixture (skips project picker)
+dev-fixtures FIXTURE:
+    bun tauri dev -- -- --project {{justfile_directory()}}/fixtures/{{FIXTURE}}
 
 # Run cargo check (fast compilation check)
 check:

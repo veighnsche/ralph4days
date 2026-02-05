@@ -1,0 +1,213 @@
+schema_version: "1.0"
+project:
+  title: "Elaborate PRD Showcase"
+  description: "Comprehensive fixture demonstrating all PRD YAML features from SPEC-035"
+  created: "2026-02-05"
+
+tasks:
+  # === DONE TASKS ===
+  - id: "backend-001"
+    title: "Set up database schema"
+    description: "PostgreSQL schema with migrations for users, products, and orders tables"
+    status: "done"
+    priority: "critical"
+    tags: ["backend", "database", "postgresql"]
+    acceptance_criteria:
+      - "Users table created with email, password_hash, and timestamps"
+      - "Products table with SKU, name, price, inventory"
+      - "Orders table with foreign keys to users and products"
+      - "Migration scripts run successfully on fresh database"
+    created: "2026-02-01"
+    updated: "2026-02-01"
+    completed: "2026-02-01T14:30:00Z"
+
+  - id: "backend-002"
+    title: "Implement REST API endpoints"
+    description: "Core CRUD endpoints for users, products, and orders"
+    status: "done"
+    priority: "high"
+    tags: ["backend", "api", "rest"]
+    depends_on: ["backend-001"]
+    acceptance_criteria:
+      - "GET /api/products returns product list with pagination"
+      - "POST /api/orders creates new order with validation"
+      - "All endpoints return proper HTTP status codes"
+      - "OpenAPI documentation generated"
+    created: "2026-02-01"
+    updated: "2026-02-02"
+    completed: "2026-02-02T09:15:00Z"
+
+  - id: "frontend-001"
+    title: "Build product catalog UI"
+    description: "React component showing product grid with filtering and search"
+    status: "done"
+    priority: "high"
+    tags: ["frontend", "ui", "react"]
+    acceptance_criteria:
+      - "Product grid displays with images and prices"
+      - "Search bar filters products in real-time"
+      - "Category filter works correctly"
+      - "Responsive design works on mobile"
+    created: "2026-02-02"
+    updated: "2026-02-03"
+    completed: "2026-02-03T11:00:00Z"
+
+  # === IN PROGRESS TASKS ===
+  - id: "backend-003"
+    title: "Add Stripe payment processing"
+    description: "Integrate Stripe SDK for payment handling with webhooks"
+    status: "in_progress"
+    priority: "critical"
+    tags: ["backend", "payments", "stripe"]
+    depends_on: ["backend-002"]
+    acceptance_criteria:
+      - "Stripe SDK integrated and configured with test keys"
+      - "Payment intent creation endpoint implemented"
+      - "Webhook handlers for payment.succeeded and payment.failed"
+      - "Error handling for declined cards"
+      - "Payment confirmation emails sent"
+    created: "2026-02-03"
+    updated: "2026-02-05"
+
+  - id: "frontend-002"
+    title: "Implement shopping cart"
+    description: "Cart component with add/remove items, quantity updates, and checkout flow"
+    status: "in_progress"
+    priority: "high"
+    tags: ["frontend", "ui", "cart"]
+    depends_on: ["frontend-001", "backend-002"]
+    acceptance_criteria:
+      - "Add to cart button on product cards"
+      - "Cart icon shows item count badge"
+      - "Cart drawer with item list and totals"
+      - "Quantity adjustment buttons work"
+      - "Remove item functionality"
+      - "Checkout button navigates to payment"
+    created: "2026-02-03"
+    updated: "2026-02-05"
+
+  # === BLOCKED TASKS ===
+  - id: "infra-001"
+    title: "Set up CI/CD pipeline"
+    description: "GitHub Actions workflow for testing, building, and deploying"
+    status: "blocked"
+    priority: "medium"
+    tags: ["infrastructure", "devops", "ci-cd"]
+    blocked_by: "Waiting for AWS credentials from DevOps team (ticket #1234)"
+    acceptance_criteria:
+      - "Run tests on every PR"
+      - "Build Docker images on main branch"
+      - "Deploy to staging automatically"
+      - "Manual approval for production deploy"
+    created: "2026-02-02"
+    updated: "2026-02-04"
+
+  - id: "backend-004"
+    title: "Implement inventory management"
+    description: "Track stock levels and prevent overselling"
+    status: "blocked"
+    priority: "high"
+    tags: ["backend", "inventory"]
+    depends_on: ["backend-001"]
+    blocked_by: "Need product team to finalize inventory rules and policies"
+    acceptance_criteria:
+      - "Stock level decremented on order placement"
+      - "Out of stock products marked unavailable"
+      - "Low stock threshold alerts"
+      - "Handle concurrent order race conditions"
+    created: "2026-02-03"
+    updated: "2026-02-05"
+
+  # === PENDING TASKS ===
+  - id: "frontend-003"
+    title: "Add user authentication UI"
+    description: "Login/signup forms with email verification flow"
+    status: "pending"
+    priority: "high"
+    tags: ["frontend", "auth", "security"]
+    depends_on: ["backend-002"]
+    acceptance_criteria:
+      - "Login form with email and password validation"
+      - "Signup form with password strength indicator"
+      - "Email verification link sent on signup"
+      - "Password reset flow implemented"
+      - "Remember me checkbox works"
+    created: "2026-02-04"
+
+  - id: "backend-005"
+    title: "Add order history endpoint"
+    description: "API endpoint to fetch user's past orders with pagination"
+    status: "pending"
+    priority: "medium"
+    tags: ["backend", "api", "orders"]
+    depends_on: ["backend-002"]
+    acceptance_criteria:
+      - "GET /api/users/{id}/orders returns paginated list"
+      - "Includes order items and totals"
+      - "Filter by date range"
+      - "Sort by date descending by default"
+    created: "2026-02-04"
+
+  - id: "backend-006"
+    title: "Implement product search with Elasticsearch"
+    description: "Replace basic SQL search with full-text Elasticsearch"
+    status: "pending"
+    priority: "low"
+    tags: ["backend", "search", "elasticsearch"]
+    depends_on: ["backend-001"]
+    acceptance_criteria:
+      - "Elasticsearch cluster running locally"
+      - "Product data synced to ES on changes"
+      - "Search endpoint uses ES instead of SQL LIKE"
+      - "Fuzzy matching and typo tolerance"
+      - "Search suggestions/autocomplete"
+    created: "2026-02-04"
+
+  - id: "frontend-004"
+    title: "Add product reviews and ratings"
+    description: "UI for customers to leave reviews and see ratings"
+    status: "pending"
+    priority: "low"
+    tags: ["frontend", "reviews", "ui"]
+    depends_on: ["frontend-001"]
+    acceptance_criteria:
+      - "Star rating display on product cards"
+      - "Reviews section on product detail page"
+      - "Review submission form (login required)"
+      - "Sort reviews by date/rating"
+      - "Helpful vote buttons"
+    created: "2026-02-04"
+
+  - id: "testing-001"
+    title: "Write E2E tests for checkout flow"
+    description: "Playwright tests covering full purchase journey"
+    status: "pending"
+    priority: "medium"
+    tags: ["testing", "e2e", "quality"]
+    depends_on: ["frontend-002", "backend-003"]
+    acceptance_criteria:
+      - "Test: Browse products → Add to cart → Checkout → Payment"
+      - "Test: Cart persistence across page reloads"
+      - "Test: Invalid payment card rejection"
+      - "Test: Order confirmation page displayed"
+      - "All tests passing in CI"
+    created: "2026-02-05"
+
+  # === SKIPPED TASKS ===
+  - id: "docs-001"
+    title: "Write comprehensive API documentation"
+    description: "Detailed API docs with examples for all endpoints"
+    status: "skipped"
+    priority: "low"
+    tags: ["documentation", "api"]
+    created: "2026-02-01"
+    updated: "2026-02-03"
+
+  - id: "feature-001"
+    title: "Add social media sharing buttons"
+    description: "Share product links on Facebook, Twitter, Pinterest"
+    status: "skipped"
+    priority: "low"
+    tags: ["frontend", "social", "marketing"]
+    created: "2026-02-02"
+    updated: "2026-02-04"
