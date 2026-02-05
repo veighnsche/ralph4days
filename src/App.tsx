@@ -1,4 +1,3 @@
-import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useCallback, useEffect, useState } from "react";
 import { BottomBar } from "@/components/BottomBar";
@@ -7,6 +6,7 @@ import { ProjectSelector } from "@/components/ProjectSelector";
 import { PRDViewer } from "@/components/prd/PRDViewer";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { useTauriEvent } from "@/hooks/useTauriEvent";
+import { isTauriEnvironment, universalInvoke } from "@/services/mockBackend";
 import { type LoopState, useLoopStore } from "@/stores/useLoopStore";
 import "./index.css";
 
@@ -47,40 +47,42 @@ function App() {
 
   // Check for locked project on mount and set window title
   useEffect(() => {
-    if (typeof window !== "undefined" && "__TAURI__" in window) {
-      invoke<string | null>("get_locked_project")
-        .then(async (project) => {
-          setLockedProject(project);
-          if (project) {
-            const projectName = project.split("/").pop() || "Unknown";
-            try {
-              await getCurrentWindow().setTitle(`Ralph4days - ${projectName}`);
-              console.log("Window title set to:", `Ralph4days - ${projectName}`);
-            } catch (err) {
-              console.error("Failed to set window title:", err);
-            }
+    universalInvoke<string | null>("get_locked_project")
+      .then(async (project) => {
+        // In mock mode, automatically set a mock project if none exists
+        let finalProject = project;
+        if (!project && !isTauriEnvironment()) {
+          finalProject = "/mock/project";
+          await universalInvoke("set_locked_project", { path: finalProject });
+        }
+
+        setLockedProject(finalProject);
+
+        if (finalProject && isTauriEnvironment()) {
+          const projectName = finalProject.split("/").pop() || "Unknown";
+          try {
+            await getCurrentWindow().setTitle(`Ralph4days - ${projectName}`);
+            console.log("Window title set to:", `Ralph4days - ${projectName}`);
+          } catch (err) {
+            console.error("Failed to set window title:", err);
           }
-          setIsLoadingProject(false);
-        })
-        .catch((err) => {
-          console.error("Failed to get locked project:", err);
-          setIsLoadingProject(false);
-        });
-    } else {
-      setIsLoadingProject(false);
-    }
+        }
+        setIsLoadingProject(false);
+      })
+      .catch((err) => {
+        console.error("Failed to get locked project:", err);
+        setIsLoadingProject(false);
+      });
   }, []);
 
   // Poll for initial state
   useEffect(() => {
-    if (typeof window !== "undefined" && "__TAURI__" in window) {
-      invoke<typeof status>("get_loop_state").then(setStatus).catch(console.error);
-    }
+    universalInvoke<typeof status>("get_loop_state").then(setStatus).catch(console.error);
   }, [setStatus]);
 
   // Update window title when project changes
   useEffect(() => {
-    if (lockedProject && typeof window !== "undefined" && "__TAURI__" in window) {
+    if (lockedProject && isTauriEnvironment()) {
       const projectName = lockedProject.split("/").pop() || "Unknown";
       getCurrentWindow()
         .setTitle(`Ralph4days - ${projectName}`)
@@ -168,12 +170,14 @@ function App() {
       <ProjectSelector
         onProjectSelected={async (project) => {
           setLockedProject(project);
-          const projectName = project.split("/").pop() || "Unknown";
-          try {
-            await getCurrentWindow().setTitle(`Ralph4days - ${projectName}`);
-            console.log("Window title set to:", `Ralph4days - ${projectName}`);
-          } catch (err) {
-            console.error("Failed to set window title:", err);
+          if (isTauriEnvironment()) {
+            const projectName = project.split("/").pop() || "Unknown";
+            try {
+              await getCurrentWindow().setTitle(`Ralph4days - ${projectName}`);
+              console.log("Window title set to:", `Ralph4days - ${projectName}`);
+            } catch (err) {
+              console.error("Failed to set window title:", err);
+            }
           }
         }}
       />
