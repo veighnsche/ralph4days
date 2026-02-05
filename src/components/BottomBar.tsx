@@ -1,9 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { Pause, Play, Square } from "lucide-react";
+import { LoopCountBadge } from "@/components/LoopCountBadge";
 import { Settings } from "@/components/Settings";
-import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useLoopStore } from "@/stores/useLoopStore";
 
 interface BottomBarProps {
@@ -77,8 +76,13 @@ export function BottomBar({ lockedProject }: BottomBarProps) {
   return (
     <div className="border-t bg-[hsl(var(--background))] px-4 py-3">
       <div className="flex items-center justify-between gap-4">
-        {/* Left: Transport Controls */}
-        <div className="flex items-center gap-2">
+        {/* Left: Empty */}
+        <div className="flex-1" />
+
+        {/* Center: Transport Controls and Iterations */}
+        <div className="flex items-center gap-3">
+          <LoopCountBadge status={status} maxIterations={maxIterations} setMaxIterations={setMaxIterations} />
+
           <Button
             onClick={handlePrimaryAction}
             disabled={primaryButton.disabled || isRateLimited}
@@ -102,34 +106,8 @@ export function BottomBar({ lockedProject }: BottomBarProps) {
           </Button>
         </div>
 
-        {/* Center: Status and Progress */}
-        <div className="flex items-center gap-4 flex-1 justify-center">
-          <StatusBadge state={status.state} />
-          {status.state !== "idle" && (
-            <div className="text-sm text-[hsl(var(--muted-foreground))] font-mono">
-              {status.current_iteration} / {status.max_iterations}
-            </div>
-          )}
-        </div>
-
-        {/* Right: Controls */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <label htmlFor="max-iterations" className="text-sm text-[hsl(var(--muted-foreground))] whitespace-nowrap">
-              Max
-            </label>
-            <Input
-              id="max-iterations"
-              type="number"
-              value={maxIterations}
-              onChange={(e) => setMaxIterations(parseInt(e.target.value, 10) || 100)}
-              min={1}
-              max={1000}
-              disabled={!isIdle}
-              className="w-20 h-9"
-            />
-          </div>
-
+        {/* Right: Settings */}
+        <div className="flex-1 flex justify-end">
           <Settings />
         </div>
       </div>

@@ -59,7 +59,7 @@ export const useLoopStore = create<LoopStore>((set) => ({
   output: [],
   rateLimitInfo: null,
   projectPath: "",
-  maxIterations: 100,
+  maxIterations: 1,
 
   setStatus: (status) => set({ status }),
 
