@@ -385,6 +385,8 @@ pub fn create_task(
     tags: Vec<String>,
     depends_on: Option<Vec<u32>>,
     acceptance_criteria: Option<Vec<String>>,
+    feature_acronym: String,
+    discipline_acronym: String,
 ) -> Result<String, String> {
     let db_path = get_db_path(&state)?;
     let mut db = YamlDatabase::from_path(db_path)?;
@@ -398,6 +400,8 @@ pub fn create_task(
         tags,
         depends_on: depends_on.unwrap_or_default(),
         acceptance_criteria,
+        feature_acronym,
+        discipline_acronym,
     };
 
     let task_id = db.create_task(task_input)?;

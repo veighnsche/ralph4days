@@ -16,6 +16,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useDisciplines } from "@/hooks/useDisciplines";
+import { useFeatures } from "@/hooks/useFeatures";
+import { generateAcronym, normalizeFeatureName } from "@/lib/acronym";
 import { DisciplineSelect } from "./DisciplineSelect";
 
 interface TaskCreateDialogProps {
@@ -23,6 +26,9 @@ interface TaskCreateDialogProps {
 }
 
 export function TaskCreateDialog({ onTaskCreated }: TaskCreateDialogProps) {
+  const { configMap: featureMap } = useFeatures();
+  const { configMap: disciplineMap } = useDisciplines();
+
   const [open, setOpen] = useState(false);
   const [feature, setFeature] = useState("");
   const [discipline, setDiscipline] = useState("");
@@ -92,8 +98,18 @@ export function TaskCreateDialog({ onTaskCreated }: TaskCreateDialogProps) {
         .map((c) => c.trim())
         .filter((c) => c.length > 0);
 
+      // Normalize feature name
+      const normalizedFeature = normalizeFeatureName(feature.trim());
+
+      // Get or generate feature acronym
+      const existingFeature = featureMap.get(normalizedFeature);
+      const featureAcronym = existingFeature?.acronym || generateAcronym(normalizedFeature);
+
+      // Get discipline acronym (should always exist)
+      const disciplineAcronym = disciplineMap[discipline]?.acronym || generateAcronym(discipline);
+
       const taskId = await invoke<string>("create_task", {
-        feature: feature.trim(),
+        feature: normalizedFeature,
         discipline,
         title: title.trim(),
         description: description.trim() || null,
@@ -101,6 +117,8 @@ export function TaskCreateDialog({ onTaskCreated }: TaskCreateDialogProps) {
         tags: tagArray,
         dependsOn: dependsOnArray.length > 0 ? dependsOnArray : null,
         acceptanceCriteria: criteriaArray.length > 0 ? criteriaArray : null,
+        featureAcronym,
+        disciplineAcronym,
       });
 
       console.log("Task created:", taskId);
