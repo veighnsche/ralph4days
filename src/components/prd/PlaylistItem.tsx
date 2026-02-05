@@ -9,10 +9,16 @@ import type { PRDTask } from "@/types/prd";
 interface PlaylistItemProps {
   task: PRDTask;
   isNowPlaying?: boolean;
+  isIssue?: boolean;
   onClick: () => void;
 }
 
-export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = false, onClick }: PlaylistItemProps) {
+export const PlaylistItem = memo(function PlaylistItem({
+  task,
+  isNowPlaying = false,
+  isIssue = false,
+  onClick,
+}: PlaylistItemProps) {
   const statusConfig = STATUS_CONFIG[task.status];
   const priorityConfig = task.priority ? PRIORITY_CONFIG[task.priority] : null;
   const StatusIcon = statusConfig.icon;
@@ -25,18 +31,19 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
         cursor-pointer transition-all duration-200
         hover:bg-[hsl(var(--muted)/0.5)]
         ${isNowPlaying ? "bg-[hsl(var(--status-in-progress)/0.1)] border-l-4" : ""}
+        ${isIssue ? "bg-[hsl(var(--status-blocked)/0.08)]" : ""}
       `}
       style={isNowPlaying ? { borderLeftColor: statusConfig.color } : undefined}
       onClick={onClick}
     >
-      {/* Status Icon */}
-      <ItemMedia variant="icon" style={{ backgroundColor: statusConfig.bgColor }}>
-        <StatusIcon style={{ color: statusConfig.color }} />
-      </ItemMedia>
-
-      {/* Task ID (like track number) */}
-      <div className="flex-shrink-0 w-20">
-        <span className="text-xs font-mono text-[hsl(var(--muted-foreground))]">{task.id}</span>
+      {/* Icon + Task ID Group */}
+      <div className="flex items-center gap-2 flex-shrink-0 self-start">
+        <ItemMedia variant="icon" style={{ backgroundColor: statusConfig.bgColor }}>
+          <StatusIcon style={{ color: statusConfig.color }} />
+        </ItemMedia>
+        <div className="w-16">
+          <span className="text-xs font-mono text-[hsl(var(--muted-foreground))]">{task.id}</span>
+        </div>
       </div>
 
       {/* Main Content: Title + Description */}
@@ -53,7 +60,7 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
 
         {/* Blocked By Alert */}
         {task.blocked_by && (
-          <Alert variant="destructive" className="mt-2 py-1.5 px-2">
+          <Alert variant="destructive" className="mt-1 py-1.5 px-2">
             <AlertDescription className="text-xs flex items-center gap-1.5">{task.blocked_by}</AlertDescription>
           </Alert>
         )}
