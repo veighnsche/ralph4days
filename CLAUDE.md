@@ -145,12 +145,20 @@ Ralph expects projects to have a `.ralph/` directory:
 ```
 target-project/
 ├── .ralph/
-│   ├── prd.md           # Task list with [ ] / [x] checkboxes (REQUIRED)
-│   ├── progress.txt     # Iteration log (appended after each)
-│   ├── learnings.txt    # Patterns and gotchas (optional)
-│   └── CLAUDE.md        # Context injected into Claude (optional)
+│   ├── prd.md              # Task list with [ ] / [x] checkboxes (REQUIRED)
+│   ├── CLAUDE.RALPH.md     # Ralph-specific context for Claude (RECOMMENDED)
+│   ├── progress.txt        # Iteration log (appended after each)
+│   └── learnings.txt       # Patterns and gotchas (optional)
+├── CLAUDE.md               # Original project context (if exists)
 └── ... (project files)
 ```
+
+**Context File Management**:
+- Ralph-specific context uses `CLAUDE.RALPH.md` (note the `.RALPH.` infix)
+- When loop starts: backs up existing `CLAUDE.md`, copies `CLAUDE.RALPH.md` to `CLAUDE.md`
+- When loop stops: restores original `CLAUDE.md` from backup
+- This prevents conflicts with projects that already have `CLAUDE.md`
+- See [SPEC-030](./.specs/030_RALPH_PROJECT_STANDARDS.md) for full details
 
 ## Project Locking (Session Management)
 
