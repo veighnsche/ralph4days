@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Circle, Play, CheckCircle2, Ban, Slash } from "lucide-react";
@@ -22,7 +23,7 @@ interface KanbanViewProps {
   onTaskClick: (task: PRDTask) => void;
 }
 
-export function KanbanView({ tasks, onTaskClick }: KanbanViewProps) {
+export const KanbanView = memo(function KanbanView({ tasks, onTaskClick }: KanbanViewProps) {
   const columns: Array<{
     status: PRDTask["status"];
     label: string;
@@ -61,9 +62,19 @@ export function KanbanView({ tasks, onTaskClick }: KanbanViewProps) {
     },
   ];
 
-  const getTasksByStatus = (status: PRDTask["status"]) => {
-    return tasks.filter((task) => task.status === status);
-  };
+  const tasksByStatus = useMemo(() => {
+    const result: Record<PRDTask["status"], PRDTask[]> = {
+      pending: [],
+      in_progress: [],
+      done: [],
+      blocked: [],
+      skipped: [],
+    };
+    tasks.forEach((task) => {
+      result[task.status].push(task);
+    });
+    return result;
+  }, [tasks]);
 
   const getPriorityColor = (priority?: PRDTask["priority"]) => {
     if (!priority) return "transparent";
@@ -79,7 +90,7 @@ export function KanbanView({ tasks, onTaskClick }: KanbanViewProps) {
   return (
     <div className="flex gap-4 overflow-x-auto pb-4">
       {columns.map((column) => {
-        const columnTasks = getTasksByStatus(column.status);
+        const columnTasks = tasksByStatus[column.status];
         return (
           <div key={column.status} className="flex-shrink-0 w-[300px]">
             <div
@@ -161,4 +172,4 @@ export function KanbanView({ tasks, onTaskClick }: KanbanViewProps) {
       })}
     </div>
   );
-}
+});

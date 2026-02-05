@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -84,38 +84,8 @@ export function PRDViewer() {
     }
   }, []);
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Only handle when sidebar is open
-      if (!sidebarOpen || !selectedTask || !prdData) return;
-
-      const filteredTasks = getFilteredTasks();
-      const currentIndex = filteredTasks.findIndex(t => t.id === selectedTask.id);
-
-      if (e.key === "ArrowUp" || e.key === "k") {
-        e.preventDefault();
-        if (currentIndex > 0) {
-          const newTask = filteredTasks[currentIndex - 1];
-          setSelectedTask(newTask);
-        }
-      } else if (e.key === "ArrowDown" || e.key === "j") {
-        e.preventDefault();
-        if (currentIndex < filteredTasks.length - 1) {
-          const newTask = filteredTasks[currentIndex + 1];
-          setSelectedTask(newTask);
-        }
-      } else if (e.key === "Escape") {
-        e.preventDefault();
-        setSidebarOpen(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [sidebarOpen, selectedTask, prdData, searchQuery, statusFilter, priorityFilter, tagFilter]);
-
-  const getFilteredTasks = useCallback(() => {
+  // Memoize filtered tasks to avoid recalculation on every render
+  const filteredTasks = useMemo(() => {
     if (!prdData) return [];
 
     let filtered = [...prdData.tasks];
@@ -150,7 +120,7 @@ export function PRDViewer() {
     return filtered;
   }, [prdData, searchQuery, statusFilter, priorityFilter, tagFilter]);
 
-  const getAllTags = useCallback(() => {
+  const allTags = useMemo(() => {
     if (!prdData) return [];
     const tags = new Set<string>();
     prdData.tasks.forEach((task) => {
@@ -159,28 +129,47 @@ export function PRDViewer() {
     return Array.from(tags).sort();
   }, [prdData]);
 
-  const handleTaskClick = (task: PRDTask) => {
+  const handleTaskClick = useCallback((task: PRDTask) => {
     setSelectedTask(task);
     setSidebarOpen(true);
-  };
+  }, []);
 
-  const handleNavigateNext = () => {
-    if (!selectedTask || !prdData) return;
-    const filteredTasks = getFilteredTasks();
+  const handleNavigateNext = useCallback(() => {
+    if (!selectedTask) return;
     const currentIndex = filteredTasks.findIndex(t => t.id === selectedTask.id);
     if (currentIndex < filteredTasks.length - 1) {
       setSelectedTask(filteredTasks[currentIndex + 1]);
     }
-  };
+  }, [selectedTask, filteredTasks]);
 
-  const handleNavigatePrev = () => {
-    if (!selectedTask || !prdData) return;
-    const filteredTasks = getFilteredTasks();
+  const handleNavigatePrev = useCallback(() => {
+    if (!selectedTask) return;
     const currentIndex = filteredTasks.findIndex(t => t.id === selectedTask.id);
     if (currentIndex > 0) {
       setSelectedTask(filteredTasks[currentIndex - 1]);
     }
-  };
+  }, [selectedTask, filteredTasks]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!sidebarOpen || !selectedTask) return;
+
+      if (e.key === "ArrowUp" || e.key === "k") {
+        e.preventDefault();
+        handleNavigatePrev();
+      } else if (e.key === "ArrowDown" || e.key === "j") {
+        e.preventDefault();
+        handleNavigateNext();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        setSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [sidebarOpen, selectedTask, handleNavigateNext, handleNavigatePrev]);
 
   if (loading) {
     return (
@@ -209,10 +198,10 @@ export function PRDViewer() {
     );
   }
 
-  const filteredTasks = getFilteredTasks();
-  const allTags = getAllTags();
-
-  const doneTasks = prdData.tasks.filter((t) => t.status === "done");
+  const doneTasks = useMemo(() =>
+    prdData.tasks.filter((t) => t.status === "done"),
+    [prdData]
+  );
   const totalTasks = prdData.tasks.length;
   const progressPercent = totalTasks > 0 ? Math.round((doneTasks.length / totalTasks) * 100) : 0;
 

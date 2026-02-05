@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Circle, Play, CheckCircle2, Ban, Slash, ChevronRight } from "lucide-react";
@@ -23,7 +24,7 @@ interface TaskListViewProps {
   onTaskClick: (task: PRDTask) => void;
 }
 
-export function TaskListView({ tasks, groupBy, onTaskClick }: TaskListViewProps) {
+export const TaskListView = memo(function TaskListView({ tasks, groupBy, onTaskClick }: TaskListViewProps) {
   const getStatusIcon = (status: PRDTask["status"]) => {
     const icons = {
       pending: <Circle className="h-4 w-4" />,
@@ -84,7 +85,7 @@ export function TaskListView({ tasks, groupBy, onTaskClick }: TaskListViewProps)
     return colors[priority];
   };
 
-  const groupTasks = () => {
+  const groups = useMemo(() => {
     if (groupBy === "none") {
       return [{ label: "All Tasks", tasks }];
     }
@@ -124,9 +125,7 @@ export function TaskListView({ tasks, groupBy, onTaskClick }: TaskListViewProps)
     }
 
     return [{ label: "All Tasks", tasks }];
-  };
-
-  const groups = groupTasks();
+  }, [tasks, groupBy]);
 
   return (
     <div className="space-y-6">
@@ -205,4 +204,4 @@ export function TaskListView({ tasks, groupBy, onTaskClick }: TaskListViewProps)
       ))}
     </div>
   );
-}
+});

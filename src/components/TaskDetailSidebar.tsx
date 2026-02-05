@@ -222,4 +222,4 @@ export function TaskDetailSidebar({
       </SheetContent>
     </Sheet>
   );
-}
+});
