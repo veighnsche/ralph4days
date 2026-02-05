@@ -63,26 +63,6 @@
 --color-priority-high-foreground: var(--priority-high-foreground);
 --color-priority-critical: var(--priority-critical);
 --color-priority-critical-foreground: var(--priority-critical-foreground);
---color-discipline-frontend: var(--discipline-frontend);
---color-discipline-frontend-foreground: var(--discipline-frontend-foreground);
---color-discipline-backend: var(--discipline-backend);
---color-discipline-backend-foreground: var(--discipline-backend-foreground);
---color-discipline-database: var(--discipline-database);
---color-discipline-database-foreground: var(--discipline-database-foreground);
---color-discipline-testing: var(--discipline-testing);
---color-discipline-testing-foreground: var(--discipline-testing-foreground);
---color-discipline-infrastructure: var(--discipline-infrastructure);
---color-discipline-infrastructure-foreground: var(--discipline-infrastructure-foreground);
---color-discipline-security: var(--discipline-security);
---color-discipline-security-foreground: var(--discipline-security-foreground);
---color-discipline-documentation: var(--discipline-documentation);
---color-discipline-documentation-foreground: var(--discipline-documentation-foreground);
---color-discipline-design: var(--discipline-design);
---color-discipline-design-foreground: var(--discipline-design-foreground);
---color-discipline-marketing: var(--discipline-marketing);
---color-discipline-marketing-foreground: var(--discipline-marketing-foreground);
---color-discipline-api: var(--discipline-api);
---color-discipline-api-foreground: var(--discipline-api-foreground);
 --radius-sm: calc(var(--radius) - 4px);
 --radius-md: calc(var(--radius) - 2px);
 --radius-lg: var(--radius);
@@ -150,26 +130,6 @@
 --priority-high-foreground: oklch(0.98 0.02 50);
 --priority-critical: oklch(0.60 0.22 15);
 --priority-critical-foreground: oklch(0.98 0.02 15);
---discipline-frontend: oklch(0.62 0.18 240);
---discipline-frontend-foreground: oklch(0.98 0.02 240);
---discipline-backend: oklch(0.60 0.16 150);
---discipline-backend-foreground: oklch(0.98 0.02 150);
---discipline-database: oklch(0.62 0.20 290);
---discipline-database-foreground: oklch(0.98 0.02 290);
---discipline-testing: oklch(0.68 0.18 50);
---discipline-testing-foreground: oklch(0.15 0.02 50);
---discipline-infrastructure: oklch(0.58 0.08 260);
---discipline-infrastructure-foreground: oklch(0.98 0.02 260);
---discipline-security: oklch(0.60 0.22 15);
---discipline-security-foreground: oklch(0.98 0.02 15);
---discipline-documentation: oklch(0.62 0.16 190);
---discipline-documentation-foreground: oklch(0.98 0.02 190);
---discipline-design: oklch(0.68 0.22 330);
---discipline-design-foreground: oklch(0.98 0.02 330);
---discipline-marketing: oklch(0.70 0.18 80);
---discipline-marketing-foreground: oklch(0.15 0.02 80);
---discipline-api: oklch(0.62 0.18 200);
---discipline-api-foreground: oklch(0.98 0.02 200);
 }
 
 .dark {
@@ -228,26 +188,6 @@
 --priority-high-foreground: oklch(0.15 0.02 50);
 --priority-critical: oklch(0.72 0.24 15);
 --priority-critical-foreground: oklch(0.15 0.02 15);
---discipline-frontend: oklch(0.68 0.20 245);
---discipline-frontend-foreground: oklch(0.15 0.02 245);
---discipline-backend: oklch(0.68 0.18 155);
---discipline-backend-foreground: oklch(0.15 0.02 155);
---discipline-database: oklch(0.68 0.22 295);
---discipline-database-foreground: oklch(0.15 0.02 295);
---discipline-testing: oklch(0.72 0.20 55);
---discipline-testing-foreground: oklch(0.15 0.02 55);
---discipline-infrastructure: oklch(0.65 0.10 265);
---discipline-infrastructure-foreground: oklch(0.15 0.02 265);
---discipline-security: oklch(0.70 0.24 18);
---discipline-security-foreground: oklch(0.15 0.02 18);
---discipline-documentation: oklch(0.68 0.18 195);
---discipline-documentation-foreground: oklch(0.15 0.02 195);
---discipline-design: oklch(0.72 0.24 335);
---discipline-design-foreground: oklch(0.15 0.02 335);
---discipline-marketing: oklch(0.75 0.20 85);
---discipline-marketing-foreground: oklch(0.15 0.02 85);
---discipline-api: oklch(0.68 0.20 205);
---discipline-api-foreground: oklch(0.15 0.02 205);
 }
 
 @layer base {
