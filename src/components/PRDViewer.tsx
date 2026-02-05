@@ -129,6 +129,11 @@ export function PRDViewer() {
     return Array.from(tags).sort();
   }, [prdData]);
 
+  const doneTasks = useMemo(() =>
+    prdData ? prdData.tasks.filter((t) => t.status === "done") : [],
+    [prdData]
+  );
+
   const handleTaskClick = useCallback((task: PRDTask) => {
     setSelectedTask(task);
     setSidebarOpen(true);
@@ -198,10 +203,6 @@ export function PRDViewer() {
     );
   }
 
-  const doneTasks = useMemo(() =>
-    prdData.tasks.filter((t) => t.status === "done"),
-    [prdData]
-  );
   const totalTasks = prdData.tasks.length;
   const progressPercent = totalTasks > 0 ? Math.round((doneTasks.length / totalTasks) * 100) : 0;
 
