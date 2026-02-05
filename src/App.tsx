@@ -1,10 +1,10 @@
-import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useCallback, useEffect, useState } from "react";
 import { BottomBar } from "@/components/BottomBar";
 import { OutputPanel } from "@/components/OutputPanel";
 import { ProjectSelector } from "@/components/ProjectSelector";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { useInvoke } from "@/hooks/useInvoke";
 import type { Page } from "@/hooks/useNavigation";
 import { useTauriEvent } from "@/hooks/useTauriEvent";
 import { DisciplinesPage } from "@/pages/DisciplinesPage";
@@ -43,46 +43,24 @@ interface ErrorEvent {
   message: string;
 }
 
+type LoopStatus = ReturnType<typeof useLoopStore.getState>["status"];
+
 function App() {
-  const { status, setStatus, addOutput, setRateLimitInfo } = useLoopStore();
+  const { setStatus, addOutput, setRateLimitInfo } = useLoopStore();
   const [lockedProject, setLockedProject] = useState<string | null>(null);
-  const [isLoadingProject, setIsLoadingProject] = useState(true);
   const [currentPage, setCurrentPage] = useState<Page>("tasks");
 
-  // Check for locked project on mount and set window title
-  useEffect(() => {
-    if (typeof window !== "undefined" && "__TAURI__" in window) {
-      invoke<string | null>("get_locked_project")
-        .then(async (project) => {
-          setLockedProject(project);
-          if (project) {
-            const projectName = project.split("/").pop() || "Unknown";
-            try {
-              await getCurrentWindow().setTitle(`Ralph4days - ${projectName}`);
-              console.log("Window title set to:", `Ralph4days - ${projectName}`);
-            } catch (err) {
-              console.error("Failed to set window title:", err);
-            }
-          }
-          setIsLoadingProject(false);
-        })
-        .catch((err) => {
-          console.error("Failed to get locked project:", err);
-          setIsLoadingProject(false);
-        });
-    } else {
-      setIsLoadingProject(false);
-    }
-  }, []);
+  // Fetch locked project
+  const { data: fetchedProject, isLoading: isLoadingProject } = useInvoke<string | null>("get_locked_project");
 
-  // Poll for initial state
+  // Sync fetched project to local state (allows onProjectSelected to update without refetch)
   useEffect(() => {
-    if (typeof window !== "undefined" && "__TAURI__" in window) {
-      invoke<typeof status>("get_loop_state").then(setStatus).catch(console.error);
+    if (fetchedProject !== undefined) {
+      setLockedProject(fetchedProject);
     }
-  }, [setStatus]);
+  }, [fetchedProject]);
 
-  // Update window title when project changes
+  // Set window title when project changes
   useEffect(() => {
     if (lockedProject && typeof window !== "undefined" && "__TAURI__" in window) {
       const projectName = lockedProject.split("/").pop() || "Unknown";
@@ -94,11 +72,23 @@ function App() {
     }
   }, [lockedProject]);
 
+  // Bootstrap loop state into Zustand
+  const { data: initialLoopState } = useInvoke<LoopStatus>("get_loop_state", undefined, {
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
+  useEffect(() => {
+    if (initialLoopState) {
+      setStatus(initialLoopState);
+    }
+  }, [initialLoopState, setStatus]);
+
   // Event handlers
   const handleStateChanged = useCallback(
     (event: StateChangedEvent) => {
+      const current = useLoopStore.getState().status;
       setStatus({
-        ...status,
+        ...current,
         state: event.state,
         current_iteration: event.iteration,
       });
@@ -106,7 +96,7 @@ function App() {
         setRateLimitInfo(null);
       }
     },
-    [status, setStatus, setRateLimitInfo]
+    [setStatus, setRateLimitInfo]
   );
 
   const handleOutputChunk = useCallback(
@@ -175,7 +165,6 @@ function App() {
           const projectName = project.split("/").pop() || "Unknown";
           try {
             await getCurrentWindow().setTitle(`Ralph4days - ${projectName}`);
-            console.log("Window title set to:", `Ralph4days - ${projectName}`);
           } catch (err) {
             console.error("Failed to set window title:", err);
           }
@@ -189,10 +178,17 @@ function App() {
       {/* Left: Pages */}
       <ResizablePanel defaultSize={50} minSize={40}>
         <div className="h-full flex flex-col overflow-hidden">
-          <div className="flex-1 min-h-0 overflow-hidden">
-            {currentPage === "tasks" && <TasksPage />}
-            {currentPage === "features" && <FeaturesPage />}
-            {currentPage === "disciplines" && <DisciplinesPage />}
+          <div className="flex-1 min-h-0 overflow-hidden relative">
+            {/* Preload all pages, show/hide with CSS */}
+            <div className={currentPage === "tasks" ? "h-full" : "hidden"}>
+              <TasksPage />
+            </div>
+            <div className={currentPage === "features" ? "h-full" : "hidden"}>
+              <FeaturesPage />
+            </div>
+            <div className={currentPage === "disciplines" ? "h-full" : "hidden"}>
+              <DisciplinesPage />
+            </div>
           </div>
           {/* Bottom Bar */}
           <BottomBar lockedProject={lockedProject} currentPage={currentPage} onPageChange={setCurrentPage} />

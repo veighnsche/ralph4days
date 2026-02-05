@@ -1,6 +1,5 @@
-import { invoke } from "@tauri-apps/api/core";
 import { Target } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
@@ -8,21 +7,17 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { ItemGroup, ItemSeparator } from "@/components/ui/item";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useInvoke } from "@/hooks/useInvoke";
 import { usePRDData } from "@/hooks/usePRDData";
 import type { Feature } from "@/types/prd";
 
 export function FeaturesPage() {
-  const { prdData, loading: prdLoading, error: prdError } = usePRDData();
-  const [features, setFeatures] = useState<Feature[]>([]);
-  const [featuresLoading, setFeaturesLoading] = useState(true);
-  const [featuresError, setFeaturesError] = useState<string | null>(null);
-
-  useEffect(() => {
-    invoke<Feature[]>("get_features")
-      .then(setFeatures)
-      .catch((err) => setFeaturesError(err.toString()))
-      .finally(() => setFeaturesLoading(false));
-  }, []);
+  const { prdData, isLoading: prdLoading, error: prdError } = usePRDData();
+  const {
+    data: features = [],
+    isLoading: featuresLoading,
+    error: featuresError,
+  } = useInvoke<Feature[]>("get_features");
 
   // Calculate task counts per feature
   const featureStats = useMemo(() => {
@@ -49,7 +44,7 @@ export function FeaturesPage() {
   const progressPercent = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
   const loading = prdLoading || featuresLoading;
-  const error = prdError || featuresError;
+  const error = prdError || (featuresError ? String(featuresError) : null);
 
   if (loading) {
     return (

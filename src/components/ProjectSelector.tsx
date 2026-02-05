@@ -1,13 +1,14 @@
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FolderOpen } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { useInvoke } from "@/hooks/useInvoke";
 
 interface RalphProject {
   name: string;
@@ -24,26 +25,8 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
   const [initializing, setInitializing] = useState(false);
 
   // Right side - Open existing
-  const [projects, setProjects] = useState<RalphProject[]>([]);
+  const { data: projects = [], isLoading: scanning } = useInvoke<RalphProject[]>("scan_for_ralph_projects");
   const [selectedProject, setSelectedProject] = useState("");
-  const [scanning, setScanning] = useState(true);
-
-  // Scan for projects on mount
-  useEffect(() => {
-    if (typeof window !== "undefined" && "__TAURI__" in window) {
-      invoke<RalphProject[]>("scan_for_ralph_projects")
-        .then((found) => {
-          setProjects(found);
-          setScanning(false);
-        })
-        .catch((err) => {
-          console.error("Scan error:", err);
-          setScanning(false);
-        });
-    } else {
-      setScanning(false);
-    }
-  }, []);
 
   const handleBrowseInit = async () => {
     try {
@@ -71,6 +54,7 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
       onProjectSelected(initPath);
     } catch (err) {
       alert(`Failed to initialize: ${err}`);
+    } finally {
       setInitializing(false);
     }
   };

@@ -11,7 +11,7 @@ import { useDisciplines } from "@/hooks/useDisciplines";
 import { usePRDData } from "@/hooks/usePRDData";
 
 export function DisciplinesPage() {
-  const { prdData, loading: prdLoading, error: prdError } = usePRDData();
+  const { prdData, isLoading: prdLoading, error: prdError } = usePRDData();
   const { disciplines } = useDisciplines();
 
   // Calculate task counts per discipline

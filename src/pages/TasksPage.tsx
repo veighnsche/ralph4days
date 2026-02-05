@@ -9,7 +9,7 @@ import { usePRDFilters } from "@/hooks/usePRDFilters";
 import { useSidebarNavigation } from "@/hooks/useSidebarNavigation";
 
 export function TasksPage() {
-  const { prdData, loading, error, refresh } = usePRDData();
+  const { prdData, isLoading: loading, error, refetch: refresh } = usePRDData();
   const { filters, setters, filteredTasks, allTags, clearFilters } = usePRDFilters(prdData);
   const { selectedTask, sidebarOpen, handleTaskClick, handleNavigateNext, handleNavigatePrev, setSidebarOpen } =
     useSidebarNavigation(filteredTasks);
