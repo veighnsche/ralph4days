@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
@@ -11,8 +11,8 @@ pub struct PRD {
     pub schema_version: String,
     pub project: ProjectMetadata,
     pub tasks: Vec<Task>,
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub _counters: HashMap<String, HashMap<String, u32>>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub _counters: BTreeMap<String, BTreeMap<String, u32>>,
 }
 
 impl PRD {
@@ -44,7 +44,7 @@ impl PRD {
             let feature_counters = self
                 ._counters
                 .entry(task.feature.clone())
-                .or_insert_with(HashMap::new);
+                .or_insert_with(BTreeMap::new);
 
             let counter = feature_counters.entry(task.discipline.clone()).or_insert(0);
             *counter = (*counter).max(task.id);
@@ -70,7 +70,7 @@ mod tests {
                 created: None,
             },
             tasks: Vec::new(),
-            _counters: HashMap::new(),
+            _counters: BTreeMap::new(),
         };
 
         // First ID should be 1
@@ -178,7 +178,7 @@ mod tests {
                     acceptance_criteria: Vec::new(),
                 },
             ],
-            _counters: HashMap::new(),
+            _counters: BTreeMap::new(),
         };
 
         // Rebuild counters from existing tasks

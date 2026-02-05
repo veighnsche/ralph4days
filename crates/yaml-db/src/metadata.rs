@@ -1,6 +1,6 @@
 use crate::Task;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::PathBuf;
 
@@ -25,8 +25,8 @@ pub struct MetadataFile {
 
     /// Counters track highest task ID per feature+discipline
     /// Structure: { feature: { discipline: max_id } }
-    #[serde(rename = "_counters")]
-    counters: HashMap<String, HashMap<String, u32>>,
+    #[serde(rename = "_counters", skip_serializing_if = "BTreeMap::is_empty")]
+    counters: BTreeMap<String, BTreeMap<String, u32>>,
 }
 
 impl MetadataFile {
@@ -39,7 +39,7 @@ impl MetadataFile {
                 description: None,
                 created: Some(chrono::Utc::now().format("%Y-%m-%d").to_string()),
             },
-            counters: HashMap::new(),
+            counters: BTreeMap::new(),
         }
     }
 
@@ -109,7 +109,7 @@ impl MetadataFile {
             let feature_counters = self
                 .counters
                 .entry(task.feature.clone())
-                .or_insert_with(HashMap::new);
+                .or_insert_with(BTreeMap::new);
 
             let current_max = feature_counters.get(&task.discipline).copied().unwrap_or(0);
             if task.id > current_max {
@@ -129,7 +129,7 @@ impl MetadataFile {
     }
 
     /// Get counters (read-only)
-    pub fn get_counters(&self) -> &HashMap<String, HashMap<String, u32>> {
+    pub fn get_counters(&self) -> &BTreeMap<String, BTreeMap<String, u32>> {
         &self.counters
     }
 }

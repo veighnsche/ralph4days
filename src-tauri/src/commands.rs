@@ -385,7 +385,7 @@ pub fn get_prd_content(state: State<'_, AppState>) -> Result<String, String> {
             created: db.get_project_info().created.clone(),
         },
         tasks: db.get_tasks().to_vec(),
-        _counters: std::collections::HashMap::new(),
+        _counters: std::collections::BTreeMap::new(),
     };
 
     serde_yaml::to_string(&prd).map_err(|e| format!("Failed to serialize PRD: {}", e))

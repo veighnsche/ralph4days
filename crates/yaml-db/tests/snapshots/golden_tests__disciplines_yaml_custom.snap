@@ -1,0 +1,13 @@
+---
+source: crates/yaml-db/tests/golden_tests.rs
+expression: yaml_content
+---
+disciplines:
+- name: ml-ops
+  display_name: ML/Ops
+  icon: Brain
+  color: violet
+- name: data-eng
+  display_name: Data Engineering
+  icon: Database
+  color: emerald

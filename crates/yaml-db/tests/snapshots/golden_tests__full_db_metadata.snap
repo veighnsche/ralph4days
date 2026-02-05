@@ -1,0 +1,12 @@
+---
+source: crates/yaml-db/tests/golden_tests.rs
+expression: metadata_yaml
+---
+schema_version: '1.0'
+project:
+  title: Untitled Project
+  created: 2026-02-05
+_counters:
+  user-management:
+    backend: 1
+    frontend: 2

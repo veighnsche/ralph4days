@@ -1,0 +1,29 @@
+---
+source: crates/yaml-db/tests/golden_tests.rs
+expression: yaml_content
+---
+tasks:
+- id: 1
+  feature: authentication
+  discipline: backend
+  title: Implement OAuth2
+  description: Add OAuth2 support for Google and GitHub
+  status: in_progress
+  priority: high
+  tags:
+  - security
+  - auth
+  created: 2024-01-15
+  updated: 2024-01-16
+  acceptance_criteria:
+  - Users can sign in with Google
+  - Users can sign in with GitHub
+- id: 2
+  feature: authentication
+  discipline: frontend
+  title: Create login UI
+  status: pending
+  priority: medium
+  depends_on:
+  - 1
+  created: 2024-01-15

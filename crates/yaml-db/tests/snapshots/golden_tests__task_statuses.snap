@@ -1,0 +1,30 @@
+---
+source: crates/yaml-db/tests/golden_tests.rs
+expression: yaml_content
+---
+tasks:
+- id: 1
+  feature: test
+  discipline: backend
+  title: Task with status Pending
+  status: pending
+- id: 2
+  feature: test
+  discipline: backend
+  title: Task with status InProgress
+  status: in_progress
+- id: 3
+  feature: test
+  discipline: backend
+  title: Task with status Done
+  status: done
+- id: 4
+  feature: test
+  discipline: backend
+  title: Task with status Blocked
+  status: blocked
+- id: 5
+  feature: test
+  discipline: backend
+  title: Task with status Skipped
+  status: skipped

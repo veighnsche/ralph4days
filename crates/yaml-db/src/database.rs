@@ -108,7 +108,23 @@ impl YamlDatabase {
 
     /// Create a new task with automatic ID assignment and feature/discipline creation
     /// Thread-safe: Uses exclusive file lock
+    ///
+    /// # Errors
+    /// - Returns error if feature or discipline name is empty
+    /// - Returns error if title is empty
+    /// - Returns error if dependency references non-existent task
     pub fn create_task(&mut self, task: TaskInput) -> Result<u32, String> {
+        // 0. Validate input
+        if task.feature.trim().is_empty() {
+            return Err("Feature name cannot be empty".to_string());
+        }
+        if task.discipline.trim().is_empty() {
+            return Err("Discipline name cannot be empty".to_string());
+        }
+        if task.title.trim().is_empty() {
+            return Err("Task title cannot be empty".to_string());
+        }
+
         // 1. Acquire exclusive lock (blocks until available)
         let _lock = self.acquire_lock()?;
 

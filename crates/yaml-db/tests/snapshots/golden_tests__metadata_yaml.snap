@@ -1,0 +1,13 @@
+---
+source: crates/yaml-db/tests/golden_tests.rs
+expression: yaml_content
+---
+schema_version: '1.0'
+project:
+  title: My Awesome Project
+  description: A revolutionary new application
+  created: 2024-01-15
+_counters:
+  auth:
+    backend: 1
+    frontend: 2

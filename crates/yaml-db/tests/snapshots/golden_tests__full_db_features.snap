@@ -1,0 +1,8 @@
+---
+source: crates/yaml-db/tests/golden_tests.rs
+expression: features_yaml
+---
+features:
+- name: user-management
+  display_name: User Management
+  created: 2026-02-05
