@@ -13,7 +13,8 @@ impl PromptBuilder {
             return Err(RalphError::MissingRalphDir);
         }
 
-        let prd = Self::read_file(&ralph_dir.join("prd.yaml"), "prd.yaml")?;
+        // Read PRD from database
+        let prd = Self::read_prd_content(&ralph_dir)?;
         let progress = Self::read_file_optional(&ralph_dir.join("progress.txt"));
         let learnings = Self::read_file_optional(&ralph_dir.join("learnings.txt"));
         let claude_md = Self::read_file_optional(&ralph_dir.join("CLAUDE.md"));
@@ -65,7 +66,8 @@ impl PromptBuilder {
             return Err(RalphError::MissingRalphDir);
         }
 
-        let prd = Self::read_file(&ralph_dir.join("prd.yaml"), "prd.yaml")?;
+        // Read PRD from database
+        let prd = Self::read_prd_content(&ralph_dir)?;
         let progress = Self::read_file_optional(&ralph_dir.join("progress.txt"));
         let learnings = Self::read_file_optional(&ralph_dir.join("learnings.txt"));
 
@@ -101,6 +103,17 @@ impl PromptBuilder {
 
     pub fn check_completion(output: &str) -> bool {
         output.contains(COMPLETION_MARKER)
+    }
+
+    /// Read PRD content from .ralph/db/ files
+    /// Raw YAML is fine since Claude reads it as text context
+    fn read_prd_content(ralph_dir: &Path) -> Result<String, RalphError> {
+        let db_path = ralph_dir.join("db");
+
+        let metadata = Self::read_file(&db_path.join("metadata.yaml"), "db/metadata.yaml")?;
+        let tasks = Self::read_file(&db_path.join("tasks.yaml"), "db/tasks.yaml")?;
+
+        Ok(format!("{}\n{}", metadata, tasks))
     }
 
     fn read_file(path: &Path, name: &str) -> Result<String, RalphError> {

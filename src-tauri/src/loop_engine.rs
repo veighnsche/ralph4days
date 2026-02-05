@@ -449,13 +449,28 @@ impl LoopEngine {
     }
 
     fn get_progress_hash(project_path: &PathBuf) -> String {
-        let progress_path = project_path.join(".ralph/progress.txt");
-        let prd_path = project_path.join(".ralph/prd.yaml");
+        let ralph_dir = project_path.join(".ralph");
+        let db_path = ralph_dir.join("db");
 
-        let progress = std::fs::read_to_string(&progress_path).unwrap_or_default();
-        let prd = std::fs::read_to_string(&prd_path).unwrap_or_default();
+        // Read all database files (new format)
+        let tasks = std::fs::read_to_string(db_path.join("tasks.yaml")).unwrap_or_default();
+        let features = std::fs::read_to_string(db_path.join("features.yaml")).unwrap_or_default();
+        let disciplines =
+            std::fs::read_to_string(db_path.join("disciplines.yaml")).unwrap_or_default();
+        let metadata = std::fs::read_to_string(db_path.join("metadata.yaml")).unwrap_or_default();
 
-        hash_content(&format!("{}{}", progress, prd))
+        // Read progress and learnings
+        let progress = std::fs::read_to_string(ralph_dir.join("progress.txt")).unwrap_or_default();
+        let learnings =
+            std::fs::read_to_string(ralph_dir.join("learnings.txt")).unwrap_or_default();
+
+        // Combine all for hash (detects changes to ANY file)
+        let combined = format!(
+            "{}{}{}{}{}{}",
+            tasks, features, disciplines, metadata, progress, learnings
+        );
+
+        hash_content(&combined)
     }
 
     fn emit_state_changed(&self, app: &AppHandle) {

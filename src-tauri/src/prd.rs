@@ -75,11 +75,6 @@ impl PRD {
         let mut prd: PRD =
             serde_yaml::from_str(&content).map_err(|e| format!("Failed to parse YAML: {}", e))?;
 
-        // Validate all tasks have valid disciplines
-        for task in &prd.tasks {
-            Self::validate_discipline(&task.discipline)?;
-        }
-
         // Rebuild counters from existing tasks
         prd.rebuild_counters();
 
@@ -114,30 +109,6 @@ impl PRD {
         self.tasks.iter().map(|t| t.id).max().unwrap_or(0) + 1
     }
 
-    pub fn validate_discipline(discipline: &str) -> Result<(), String> {
-        const VALID: &[&str] = &[
-            "frontend",
-            "backend",
-            "database",
-            "testing",
-            "infra",
-            "security",
-            "docs",
-            "design",
-            "promo",
-            "api",
-        ];
-
-        if VALID.contains(&discipline) {
-            Ok(())
-        } else {
-            Err(format!(
-                "Invalid discipline '{}'. Must be one of: {}",
-                discipline,
-                VALID.join(", ")
-            ))
-        }
-    }
 }
 
 #[cfg(test)]
@@ -201,21 +172,6 @@ mod tests {
 
         // Next ID should be 6
         assert_eq!(prd.get_next_id(), 6);
-    }
-
-    #[test]
-    fn test_validate_discipline() {
-        assert!(PRD::validate_discipline("frontend").is_ok());
-        assert!(PRD::validate_discipline("backend").is_ok());
-        assert!(PRD::validate_discipline("infra").is_ok());
-        assert!(PRD::validate_discipline("docs").is_ok());
-        assert!(PRD::validate_discipline("promo").is_ok());
-
-        assert!(PRD::validate_discipline("infrastructure").is_err());
-        assert!(PRD::validate_discipline("documentation").is_err());
-        assert!(PRD::validate_discipline("marketing").is_err());
-        assert!(PRD::validate_discipline("invalid").is_err());
-        assert!(PRD::validate_discipline("Frontend").is_err()); // uppercase
     }
 
     #[test]
@@ -329,34 +285,4 @@ tasks:
         std::fs::remove_file(&test_file).ok();
     }
 
-    #[test]
-    fn test_rejects_invalid_disciplines() {
-        let yaml_content = r#"
-schema_version: "1.0"
-project:
-  title: "Test Project"
-tasks:
-  - id: 1
-    feature: "auth"
-    discipline: "infrastructure"
-    title: "Old discipline name"
-    status: "pending"
-"#;
-
-        // Write to temp file
-        let temp_dir = std::env::temp_dir();
-        let test_file = temp_dir.join("test_invalid_discipline.yaml");
-        std::fs::write(&test_file, yaml_content).unwrap();
-
-        // Attempt to load - should FAIL HARD
-        let result = PRD::from_file(&test_file);
-
-        assert!(result.is_err());
-        let error = result.unwrap_err();
-        assert!(error.contains("Invalid discipline"));
-        assert!(error.contains("infrastructure"));
-
-        // Cleanup
-        std::fs::remove_file(&test_file).ok();
-    }
 }

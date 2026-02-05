@@ -4,6 +4,7 @@ mod loop_engine;
 pub mod prd;
 mod prompt_builder;
 mod types;
+pub mod yaml_db;
 
 use commands::AppState;
 use tauri::Manager;
@@ -60,8 +61,8 @@ pub fn run() {
             commands::get_locked_project,
             commands::get_prd_content,
             commands::create_task,
-            commands::get_next_task_id,
             commands::get_available_disciplines,
+            commands::get_disciplines_config,
             commands::get_existing_features,
         ])
         .run(tauri::generate_context!())

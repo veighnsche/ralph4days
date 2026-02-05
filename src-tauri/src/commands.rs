@@ -1,7 +1,7 @@
 use crate::loop_engine::LoopEngine;
-use crate::prd::{Priority, Task, TaskStatus, PRD};
+use crate::prd::{Priority, PRD};
 use crate::types::LoopStatus;
-use chrono::Utc;
+use crate::yaml_db::{TaskInput, YamlDatabase};
 use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::{AppHandle, State};
@@ -50,6 +50,13 @@ impl Default for AppState {
     }
 }
 
+/// Get the .ralph/db/ path for the locked project. Fails if no project locked.
+fn get_db_path(state: &State<'_, AppState>) -> Result<PathBuf, String> {
+    let locked = state.locked_project.lock().map_err(|e| e.to_string())?;
+    let project_path = locked.as_ref().ok_or("No project locked")?;
+    Ok(project_path.join(".ralph").join("db"))
+}
+
 #[tauri::command]
 pub fn validate_project_path(path: String) -> Result<(), String> {
     let path = PathBuf::from(&path);
@@ -77,15 +84,13 @@ pub fn validate_project_path(path: String) -> Result<(), String> {
         ));
     }
 
-    // Check .ralph/prd.yaml exists
-    let prd_path = ralph_dir.join("prd.yaml");
-    if !prd_path.exists() {
+    // Check .ralph/db/ directory exists
+    let db_path = ralph_dir.join("db");
+    if !db_path.exists() || !db_path.is_dir() {
         return Err(format!(
-            "No prd.yaml found. Create one:\n  # See: .specs/035_PRD_FORMAT.md\n  # Or copy from: fixtures/single-task/.ralph/prd.yaml"
+            "No .ralph/db/ folder found. Initialize with:\n  ralph --init \"{}\"",
+            path.display()
         ));
-    }
-    if !prd_path.is_file() {
-        return Err(format!("{} exists but is not a file", prd_path.display()));
     }
 
     Ok(())
@@ -93,6 +98,8 @@ pub fn validate_project_path(path: String) -> Result<(), String> {
 
 #[tauri::command]
 pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(), String> {
+    use crate::yaml_db::{DisciplinesFile, FeaturesFile, MetadataFile, ProjectMetadata, TasksFile};
+
     let path = PathBuf::from(&path);
 
     // Check path exists and is directory
@@ -112,31 +119,52 @@ pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(
     std::fs::create_dir(&ralph_dir)
         .map_err(|e| format!("Failed to create .ralph/ directory: {}", e))?;
 
-    // Create template prd.yaml
-    let prd_path = ralph_dir.join("prd.yaml");
-    let prd_template = format!(
-        r#"schema_version: "1.0"
-project:
-  title: "{}"
-  description: "Add project description here"
-  created: "{}"
+    // Create .ralph/db/ directory with new format
+    let db_path = ralph_dir.join("db");
+    std::fs::create_dir(&db_path)
+        .map_err(|e| format!("Failed to create .ralph/db/ directory: {}", e))?;
 
-tasks:
-  - id: "task-001"
-    title: "Replace this with your first task"
-    description: "Add task details here"
-    status: "pending"
-    priority: "medium"
-    tags: []
-    created: "{}"
-"#,
-        project_title,
-        chrono::Utc::now().format("%Y-%m-%d"),
-        chrono::Utc::now().format("%Y-%m-%d")
-    );
+    let now = chrono::Utc::now().format("%Y-%m-%d").to_string();
 
-    std::fs::write(&prd_path, prd_template)
-        .map_err(|e| format!("Failed to create prd.yaml: {}", e))?;
+    // Create tasks.yaml with a starter task (numeric ID)
+    let mut tasks_file = TasksFile::new(db_path.join("tasks.yaml"));
+    tasks_file.add_task(crate::prd::Task {
+        id: 1,
+        feature: "setup".to_string(),
+        discipline: "frontend".to_string(),
+        title: "Replace this with your first task".to_string(),
+        description: Some("Add task details here".to_string()),
+        status: crate::prd::TaskStatus::Pending,
+        priority: Some(crate::prd::Priority::Medium),
+        tags: Vec::new(),
+        depends_on: Vec::new(),
+        blocked_by: None,
+        created: Some(now.clone()),
+        updated: None,
+        completed: None,
+        acceptance_criteria: Vec::new(),
+    });
+    tasks_file.save()?;
+
+    // Create features.yaml
+    let mut features_file = FeaturesFile::new(db_path.join("features.yaml"));
+    features_file.ensure_feature_exists("setup")?;
+    features_file.save()?;
+
+    // Create disciplines.yaml with defaults
+    let mut disciplines = DisciplinesFile::new(db_path.join("disciplines.yaml"));
+    disciplines.initialize_defaults();
+    disciplines.save()?;
+
+    // Create metadata.yaml
+    let mut metadata = MetadataFile::new(db_path.join("metadata.yaml"));
+    metadata.project = ProjectMetadata {
+        title: project_title.clone(),
+        description: Some("Add project description here".to_string()),
+        created: now,
+    };
+    metadata.rebuild_counters(tasks_file.get_all());
+    metadata.save()?;
 
     // Create optional CLAUDE.RALPH.md template
     let claude_path = ralph_dir.join("CLAUDE.RALPH.md");
@@ -346,10 +374,21 @@ pub fn get_current_dir() -> Result<String, String> {
 
 #[tauri::command]
 pub fn get_prd_content(state: State<'_, AppState>) -> Result<String, String> {
-    let locked = state.locked_project.lock().map_err(|e| e.to_string())?;
-    let project_path = locked.as_ref().ok_or("No project locked")?;
-    let prd_path = project_path.join(".ralph/prd.yaml");
-    std::fs::read_to_string(prd_path).map_err(|e| format!("Failed to read prd.yaml: {}", e))
+    let db_path = get_db_path(&state)?;
+    let db = YamlDatabase::from_path(db_path)?;
+
+    let prd = PRD {
+        schema_version: "1.0".to_string(),
+        project: crate::prd::ProjectMetadata {
+            title: db.get_project_info().title.clone(),
+            description: db.get_project_info().description.clone(),
+            created: Some(db.get_project_info().created.clone()),
+        },
+        tasks: db.get_tasks().to_vec(),
+        _counters: std::collections::HashMap::new(),
+    };
+
+    serde_yaml::to_string(&prd).map_err(|e| format!("Failed to serialize PRD: {}", e))
 }
 
 #[tauri::command]
@@ -361,110 +400,83 @@ pub fn create_task(
     description: Option<String>,
     priority: Option<String>,
     tags: Vec<String>,
+    depends_on: Option<Vec<u32>>,
+    acceptance_criteria: Option<Vec<String>>,
 ) -> Result<String, String> {
-    let locked = state.locked_project.lock().map_err(|e| e.to_string())?;
-    let project_path = locked.as_ref().ok_or("No project locked")?;
-    let prd_path = project_path.join(".ralph/prd.yaml");
+    let db_path = get_db_path(&state)?;
+    let mut db = YamlDatabase::from_path(db_path)?;
 
-    // Load PRD and rebuild counters
-    let mut prd = PRD::from_file(&prd_path)?;
+    let task_input = TaskInput {
+        feature: normalize_feature_name(&feature)?,
+        discipline,
+        title,
+        description,
+        priority: parse_priority(priority.as_deref()),
+        tags,
+        depends_on: depends_on.unwrap_or_default(),
+        acceptance_criteria,
+    };
 
-    // Normalize feature name
-    let normalized_feature = feature.to_lowercase().replace(char::is_whitespace, "-");
+    let task_id = db.create_task(task_input)?;
+    Ok(task_id.to_string())
+}
 
-    // Validate discipline
-    PRD::validate_discipline(&discipline)?;
+/// Normalize feature name to lowercase with hyphens, reject invalid chars
+fn normalize_feature_name(name: &str) -> Result<String, String> {
+    // Reject slashes, colons, and other special chars
+    if name.contains('/') || name.contains(':') || name.contains('\\') {
+        return Err("Feature name cannot contain /, :, or \\".to_string());
+    }
 
-    // Generate next ID
-    let task_id = prd.get_next_id();
+    // Normalize: lowercase, replace whitespace with hyphens
+    Ok(name.to_lowercase().trim().replace(char::is_whitespace, "-"))
+}
 
-    // Parse priority
-    let priority_enum = priority.as_deref().and_then(|p| match p {
+/// Parse priority string to Priority enum
+fn parse_priority(priority: Option<&str>) -> Option<Priority> {
+    priority.and_then(|p| match p {
         "low" => Some(Priority::Low),
         "medium" => Some(Priority::Medium),
         "high" => Some(Priority::High),
         "critical" => Some(Priority::Critical),
         _ => None,
-    });
-
-    // Create new task
-    let now = Utc::now().format("%Y-%m-%d").to_string();
-    let new_task = Task {
-        id: task_id,
-        feature: normalized_feature,
-        discipline,
-        title,
-        description,
-        status: TaskStatus::Pending,
-        priority: priority_enum,
-        tags,
-        depends_on: Vec::new(),
-        blocked_by: None,
-        created: Some(now.clone()),
-        updated: Some(now),
-        completed: None,
-        acceptance_criteria: Vec::new(),
-    };
-
-    // Add task and save
-    prd.tasks.push(new_task);
-    prd.to_file(&prd_path)?;
-
-    Ok(task_id.to_string())
+    })
 }
 
 #[tauri::command]
-pub fn get_next_task_id(
-    state: State<'_, AppState>,
-    _feature: String,
-    discipline: String,
-) -> Result<String, String> {
-    let locked = state.locked_project.lock().map_err(|e| e.to_string())?;
-    let project_path = locked.as_ref().ok_or("No project locked")?;
-    let prd_path = project_path.join(".ralph/prd.yaml");
+pub fn get_available_disciplines(state: State<'_, AppState>) -> Result<Vec<String>, String> {
+    let db_path = get_db_path(&state)?;
+    let db = YamlDatabase::from_path(db_path)?;
+    Ok(db.get_disciplines().iter().map(|d| d.name.clone()).collect())
+}
 
-    let prd = PRD::from_file(&prd_path)?;
-
-    // Validate discipline
-    PRD::validate_discipline(&discipline)?;
-
-    // Return next ID
-    Ok(prd.get_next_id().to_string())
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct DisciplineConfig {
+    pub name: String,
+    pub display_name: String,
+    pub icon: String,
+    pub color: String,
 }
 
 #[tauri::command]
-pub fn get_available_disciplines() -> Vec<String> {
-    vec![
-        "frontend".to_string(),
-        "backend".to_string(),
-        "database".to_string(),
-        "testing".to_string(),
-        "infra".to_string(),
-        "security".to_string(),
-        "docs".to_string(),
-        "design".to_string(),
-        "promo".to_string(),
-        "api".to_string(),
-    ]
+pub fn get_disciplines_config(state: State<'_, AppState>) -> Result<Vec<DisciplineConfig>, String> {
+    let db_path = get_db_path(&state)?;
+    let db = YamlDatabase::from_path(db_path)?;
+    Ok(db
+        .get_disciplines()
+        .iter()
+        .map(|d| DisciplineConfig {
+            name: d.name.clone(),
+            display_name: d.display_name.clone(),
+            icon: d.icon.clone(),
+            color: d.color.clone(),
+        })
+        .collect())
 }
 
 #[tauri::command]
 pub fn get_existing_features(state: State<'_, AppState>) -> Result<Vec<String>, String> {
-    let locked = state.locked_project.lock().map_err(|e| e.to_string())?;
-    let project_path = locked.as_ref().ok_or("No project locked")?;
-    let prd_path = project_path.join(".ralph/prd.yaml");
-
-    let prd = PRD::from_file(&prd_path)?;
-
-    // Extract unique features from tasks
-    let features: std::collections::HashSet<String> = prd
-        .tasks
-        .iter()
-        .map(|t| t.feature.clone())
-        .collect();
-
-    let mut feature_list: Vec<String> = features.into_iter().collect();
-    feature_list.sort();
-
-    Ok(feature_list)
+    let db_path = get_db_path(&state)?;
+    let db = YamlDatabase::from_path(db_path)?;
+    Ok(db.get_existing_feature_names())
 }
