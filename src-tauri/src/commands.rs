@@ -1,6 +1,6 @@
 use crate::loop_engine::LoopEngine;
 use crate::mcp_generator::MCPGenerator;
-use crate::prd::{Priority, PRD};
+use yaml_db::Priority;
 use crate::terminal::{PTYManager, SessionConfig};
 use crate::types::LoopStatus;
 use std::path::PathBuf;
@@ -353,25 +353,6 @@ pub fn get_current_dir() -> Result<String, String> {
 }
 
 #[tauri::command]
-pub fn get_prd_content(state: State<'_, AppState>) -> Result<String, String> {
-    let db_path = get_db_path(&state)?;
-    let db = YamlDatabase::from_path(db_path)?;
-
-    let prd = PRD {
-        schema_version: "1.0".to_string(),
-        project: crate::prd::ProjectMetadata {
-            title: db.get_project_info().title.clone(),
-            description: db.get_project_info().description.clone(),
-            created: db.get_project_info().created.clone(),
-        },
-        tasks: db.get_tasks().to_vec(),
-        _counters: std::collections::BTreeMap::new(),
-    };
-
-    serde_yaml::to_string(&prd).map_err(|e| format!("Failed to serialize PRD: {}", e))
-}
-
-#[tauri::command]
 pub fn create_task(
     state: State<'_, AppState>,
     feature: String,
@@ -382,8 +363,6 @@ pub fn create_task(
     tags: Vec<String>,
     depends_on: Option<Vec<u32>>,
     acceptance_criteria: Option<Vec<String>>,
-    feature_acronym: String,
-    discipline_acronym: String,
 ) -> Result<String, String> {
     let db_path = get_db_path(&state)?;
     let mut db = YamlDatabase::from_path(db_path)?;
@@ -397,8 +376,6 @@ pub fn create_task(
         tags,
         depends_on: depends_on.unwrap_or_default(),
         acceptance_criteria,
-        feature_acronym,
-        discipline_acronym,
     };
 
     let task_id = db.create_task(task_input)?;
@@ -427,18 +404,8 @@ fn parse_priority(priority: Option<&str>) -> Option<Priority> {
     })
 }
 
-#[tauri::command]
-pub fn get_available_disciplines(state: State<'_, AppState>) -> Result<Vec<String>, String> {
-    let db_path = get_db_path(&state)?;
-    let db = YamlDatabase::from_path(db_path)?;
-    Ok(db
-        .get_disciplines()
-        .iter()
-        .map(|d| d.name.clone())
-        .collect())
-}
-
 #[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DisciplineConfig {
     pub name: String,
     pub display_name: String,
@@ -465,6 +432,7 @@ pub fn get_disciplines_config(state: State<'_, AppState>) -> Result<Vec<Discipli
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FeatureConfig {
     pub name: String,
     pub display_name: String,
@@ -486,14 +454,8 @@ pub fn get_features_config(state: State<'_, AppState>) -> Result<Vec<FeatureConf
         .collect())
 }
 
-#[tauri::command]
-pub fn get_existing_features(state: State<'_, AppState>) -> Result<Vec<String>, String> {
-    let db_path = get_db_path(&state)?;
-    let db = YamlDatabase::from_path(db_path)?;
-    Ok(db.get_existing_feature_names())
-}
-
 #[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FeatureData {
     pub name: String,
     pub display_name: String,
@@ -579,6 +541,69 @@ pub fn update_discipline(
     let db_path = get_db_path(&state)?;
     let mut db = YamlDatabase::from_path(db_path)?;
     db.update_discipline(name, display_name, acronym, icon, color)
+}
+
+// --- Enriched Query Commands ---
+
+#[tauri::command]
+pub fn get_enriched_tasks(
+    state: State<'_, AppState>,
+) -> Result<Vec<yaml_db::EnrichedTask>, String> {
+    let db_path = get_db_path(&state)?;
+    let db = YamlDatabase::from_path(db_path)?;
+    Ok(db.get_enriched_tasks())
+}
+
+#[tauri::command]
+pub fn get_feature_stats(state: State<'_, AppState>) -> Result<Vec<yaml_db::GroupStats>, String> {
+    let db_path = get_db_path(&state)?;
+    let db = YamlDatabase::from_path(db_path)?;
+    Ok(db.get_feature_stats())
+}
+
+#[tauri::command]
+pub fn get_discipline_stats(
+    state: State<'_, AppState>,
+) -> Result<Vec<yaml_db::GroupStats>, String> {
+    let db_path = get_db_path(&state)?;
+    let db = YamlDatabase::from_path(db_path)?;
+    Ok(db.get_discipline_stats())
+}
+
+#[tauri::command]
+pub fn get_project_progress(
+    state: State<'_, AppState>,
+) -> Result<yaml_db::ProjectProgress, String> {
+    let db_path = get_db_path(&state)?;
+    let db = YamlDatabase::from_path(db_path)?;
+    Ok(db.get_project_progress())
+}
+
+#[tauri::command]
+pub fn get_all_tags(state: State<'_, AppState>) -> Result<Vec<String>, String> {
+    let db_path = get_db_path(&state)?;
+    let db = YamlDatabase::from_path(db_path)?;
+    Ok(db.get_all_tags())
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectInfo {
+    pub title: String,
+    pub description: Option<String>,
+    pub created: Option<String>,
+}
+
+#[tauri::command]
+pub fn get_project_info(state: State<'_, AppState>) -> Result<ProjectInfo, String> {
+    let db_path = get_db_path(&state)?;
+    let db = YamlDatabase::from_path(db_path)?;
+    let info = db.get_project_info();
+    Ok(ProjectInfo {
+        title: info.title.clone(),
+        description: info.description.clone(),
+        created: info.created.clone(),
+    })
 }
 
 // --- PTY Commands ---

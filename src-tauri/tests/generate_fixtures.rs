@@ -305,9 +305,13 @@ Next stage: 03-with-tasks-project
     let db_path = fixture_path.join(".undetect-ralph/db");
     let mut features_file = FeaturesFile::new(db_path.join("features.yaml"));
     features_file.load().unwrap();
-    features_file
-        .ensure_feature_exists("authentication", "AUTH")
-        .unwrap();
+    features_file.add(yaml_db::Feature {
+        name: "authentication".to_string(),
+        display_name: "Authentication".to_string(),
+        acronym: "AUTH".to_string(),
+        description: None,
+        created: None,
+    });
     features_file.save().unwrap();
 
     println!(
@@ -387,12 +391,20 @@ just dev-mock 03-with-tasks-project
     // Add features
     let mut features_file = FeaturesFile::new(db_path.join("features.yaml"));
     features_file.load().unwrap();
-    features_file
-        .ensure_feature_exists("authentication", "AUTH")
-        .unwrap();
-    features_file
-        .ensure_feature_exists("user-profile", "USPR")
-        .unwrap();
+    features_file.add(yaml_db::Feature {
+        name: "authentication".to_string(),
+        display_name: "Authentication".to_string(),
+        acronym: "AUTH".to_string(),
+        description: None,
+        created: None,
+    });
+    features_file.add(yaml_db::Feature {
+        name: "user-profile".to_string(),
+        display_name: "User Profile".to_string(),
+        acronym: "USPR".to_string(),
+        description: None,
+        created: None,
+    });
     features_file.save().unwrap();
 
     // Add tasks
