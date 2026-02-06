@@ -1,5 +1,5 @@
 import { AlertCircle, ChevronDown } from "lucide-react";
-import { memo, useMemo, useState } from "react";
+import { Fragment, memo, useMemo, useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ItemGroup, ItemSeparator } from "@/components/ui/item";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -62,10 +62,10 @@ export const PlaylistView = memo(function PlaylistView({ tasks, onTaskClick }: P
             <CollapsibleContent className="mt-2">
               <ItemGroup className="rounded-md">
                 {blockedSkipped.map((task, index) => (
-                  <>
-                    <PlaylistItem key={task.id} task={task} isIssue onClick={() => onTaskClick(task)} />
+                  <Fragment key={task.id}>
+                    <PlaylistItem task={task} isIssue onClick={() => onTaskClick(task)} />
                     {index < blockedSkipped.length - 1 && <ItemSeparator />}
-                  </>
+                  </Fragment>
                 ))}
               </ItemGroup>
             </CollapsibleContent>
@@ -76,32 +76,32 @@ export const PlaylistView = memo(function PlaylistView({ tasks, onTaskClick }: P
         <ItemGroup className="rounded-md">
           {/* Completed Tasks */}
           {done.map((task) => (
-            <>
-              <PlaylistItem key={task.id} task={task} onClick={() => onTaskClick(task)} />
+            <Fragment key={task.id}>
+              <PlaylistItem task={task} onClick={() => onTaskClick(task)} />
               <ItemSeparator />
-            </>
+            </Fragment>
           ))}
 
           {/* Now Playing */}
           {inProgress.map((task) => (
-            <>
-              <PlaylistItem key={task.id} task={task} isNowPlaying onClick={() => onTaskClick(task)} />
+            <Fragment key={task.id}>
+              <PlaylistItem task={task} isNowPlaying onClick={() => onTaskClick(task)} />
               <ItemSeparator />
-            </>
+            </Fragment>
           ))}
 
           {/* Pending Tasks */}
           {pending.map((task, index) => (
-            <>
-              <PlaylistItem key={task.id} task={task} onClick={() => onTaskClick(task)} />
+            <Fragment key={task.id}>
+              <PlaylistItem task={task} onClick={() => onTaskClick(task)} />
               {index < pending.length - 1 && <ItemSeparator />}
-            </>
+            </Fragment>
           ))}
 
           {/* Empty State */}
           {tasks.length === 0 && (
             <div className="flex items-center justify-center h-32">
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">No tasks in playlist</p>
+              <p className="text-sm text-muted-foreground">No tasks in playlist</p>
             </div>
           )}
         </ItemGroup>

@@ -62,7 +62,7 @@ export function PRDHeader({
           {/* Search */}
           <div className="flex-1 max-w-xs">
             <div className="relative">
-              <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-[hsl(var(--muted-foreground))]" />
+              <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 placeholder="Search tasks..."
                 value={filters.searchQuery}
@@ -75,7 +75,7 @@ export function PRDHeader({
           {/* Filters Modal */}
           <FiltersModal filters={filters} setters={setters} allTags={allTags} onClearFilters={onClearFilters} />
 
-          <div className="text-[10px] text-[hsl(var(--muted-foreground))] ml-auto whitespace-nowrap">
+          <div className="text-[10px] text-muted-foreground ml-auto whitespace-nowrap">
             Showing {filteredCount} of {totalTasks}
           </div>
         </div>

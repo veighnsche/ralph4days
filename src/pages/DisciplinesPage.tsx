@@ -57,22 +57,22 @@ export function DisciplinesPage() {
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <div className="text-sm font-medium">
-                    Total: <span className="text-[hsl(var(--muted-foreground))]">{disciplines.length}</span>
+                    Total: <span className="text-muted-foreground">{disciplines.length}</span>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-medium">
-                    Done: <span className="text-green-600">{doneTasks}</span>
+                    Done: <span style={{ color: "var(--status-done)" }}>{doneTasks}</span>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-medium">
-                    Remaining: <span className="text-[hsl(var(--muted-foreground))]">{totalTasks - doneTasks}</span>
+                    Remaining: <span className="text-muted-foreground">{totalTasks - doneTasks}</span>
                   </div>
                 </div>
                 <div className="text-right min-w-[60px]">
                   <div className="text-lg font-semibold leading-none">{progressPercent}%</div>
-                  <div className="text-[10px] text-[hsl(var(--muted-foreground))]">Complete</div>
+                  <div className="text-[10px] text-muted-foreground">Complete</div>
                 </div>
               </div>
             </div>

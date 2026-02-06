@@ -1,6 +1,8 @@
 import type { BrowserTab } from "@/components/BrowserTabs";
 import { BrowserTabs } from "@/components/BrowserTabs";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { type Model, ModelThinkingTabButton } from "@/components/ModelThinkingTabButton";
+import { Button } from "@/components/ui/button";
 import {
   BraindumpFormTabContent,
   DisciplineFormTabContent,
@@ -53,7 +55,9 @@ export function WorkspacePanel() {
         ) : (
           tabs.map((tab) => (
             <div key={tab.id} className={tab.id === activeTabId ? "absolute inset-0" : "absolute inset-0 invisible"}>
-              <TabContent tab={tab} />
+              <ErrorBoundary>
+                <TabContent tab={tab} />
+              </ErrorBoundary>
             </div>
           ))
         )}
@@ -110,9 +114,9 @@ function EmptyWorkspace() {
           <p>Click the + button above to create a new terminal</p>
           <p>or select an item from the left to open a tab</p>
         </div>
-        <button type="button" onClick={handleCreateTerminal} className="text-xs text-primary hover:underline">
+        <Button variant="link" size="sm" onClick={handleCreateTerminal} className="text-xs">
           Create terminal tab
-        </button>
+        </Button>
       </div>
     </div>
   );

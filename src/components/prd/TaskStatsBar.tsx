@@ -12,26 +12,26 @@ export function TaskStatsBar({ totalTasks, doneTasks, progressPercent }: TaskSta
   return (
     <div className="flex items-center gap-3 text-xs">
       <div className="flex items-center gap-2">
-        <span className="text-[hsl(var(--muted-foreground))]">Total:</span>
+        <span className="text-muted-foreground">Total:</span>
         <Badge variant="outline" className="h-4">
           {totalTasks}
         </Badge>
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-[hsl(var(--muted-foreground))]">Done:</span>
+        <span className="text-muted-foreground">Done:</span>
         <Badge variant="success" className="h-4">
           {doneTasks}
         </Badge>
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-[hsl(var(--muted-foreground))]">Remaining:</span>
+        <span className="text-muted-foreground">Remaining:</span>
         <Badge variant="outline" className="h-4">
           {remainingTasks}
         </Badge>
       </div>
       <div className="text-right min-w-[60px]">
         <div className="text-base font-bold leading-none">{progressPercent}%</div>
-        <div className="text-[10px] text-[hsl(var(--muted-foreground))] mt-0.5">Complete</div>
+        <div className="text-[10px] text-muted-foreground mt-0.5">Complete</div>
       </div>
     </div>
   );

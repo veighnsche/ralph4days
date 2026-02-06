@@ -146,15 +146,17 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
           {priorityConfig && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <div
-                  className="px-2 py-0.5 rounded text-xs font-medium cursor-help"
+                <Badge
+                  variant="outline"
+                  className="text-xs px-2 py-0.5 h-5 cursor-help"
                   style={{
                     backgroundColor: priorityConfig.bgColor,
                     color: priorityConfig.color,
+                    borderColor: priorityConfig.color,
                   }}
                 >
                   {priorityConfig.label}
-                </div>
+                </Badge>
               </TooltipTrigger>
               <TooltipContent>{priorityConfig.label} Priority</TooltipContent>
             </Tooltip>

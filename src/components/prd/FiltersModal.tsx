@@ -49,7 +49,7 @@ export function FiltersModal({ filters, setters, allTags, onClearFilters }: Filt
           )}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[380px]">
+      <DialogContent className="max-w-[380px]">
         <DialogHeader>
           <DialogTitle>Filter Tasks</DialogTitle>
           <DialogDescription>Set filters to narrow down your task list</DialogDescription>
