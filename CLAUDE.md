@@ -83,6 +83,14 @@ Specs in `.specs/` (read `000_SPECIFICATION_FORMAT.md` first). Tests: `just test
 
 Claude CLI required (`claude --version`). Projects need `.ralph/db/` (new format) or `.ralph/prd.yaml` (legacy, auto-migrates). Loop runs in project dir. Commits happen in Claude CLI sessions (not managed by Ralph).
 
+## Documentation & Info Dumps
+
+**Location:** `.docs/` folder stores loose markdown files documenting completed work, implementation notes, and decision summaries.
+
+**Numbering Rule:** Files are numbered chronologically by creation date: `NNN_DESCRIPTION.md` (e.g., `001_PROJECT_LOCK_IMPLEMENTATION.md`, `002_MCP_SERVERS.md`).
+
+**IMPORTANT:** When creating a new info dump document, **ALWAYS check the highest existing number in `.docs/` first** before assigning the next number. Do NOT hallucinate or guess the number. Use `ls -1 .docs/ | sort | tail -1` to find the last file, then increment the number prefix accordingly.
+
 ## Database Schema
 
 **New multi-file YAML format** (`.ralph/db/`):
