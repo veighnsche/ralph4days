@@ -1,7 +1,11 @@
-import { Target } from "lucide-react";
-import { useMemo } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { Plus, Target } from "lucide-react";
+import { useMemo, useState } from "react";
+import type { FeatureFormData } from "@/components/forms/FeatureForm";
+import { FeatureModal } from "@/components/modals/FeatureModal";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { ItemGroup, ItemSeparator } from "@/components/ui/item";
@@ -17,7 +21,9 @@ export function FeaturesPage() {
     data: features = [],
     isLoading: featuresLoading,
     error: featuresError,
+    refetch: refreshFeatures,
   } = useInvoke<Feature[]>("get_features");
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   // Calculate task counts per feature
   const featureStats = useMemo(() => {
@@ -45,6 +51,16 @@ export function FeaturesPage() {
 
   const loading = prdLoading || featuresLoading;
   const error = prdError || (featuresError ? String(featuresError) : null);
+
+  const handleCreateFeature = async (data: FeatureFormData) => {
+    await invoke("create_feature", {
+      name: data.name || data.display_name, // Use display_name as fallback for auto-generation
+      displayName: data.display_name,
+      acronym: data.acronym,
+      description: data.description || null,
+    });
+    refreshFeatures();
+  };
 
   if (loading) {
     return (
@@ -78,10 +94,14 @@ export function FeaturesPage() {
         <Card className="py-3">
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-1">
                 <Target className="h-5 w-5" />
                 <CardTitle className="text-base">Features</CardTitle>
               </div>
+              <Button onClick={() => setCreateModalOpen(true)} size="sm" variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Feature
+              </Button>
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <div className="text-sm font-medium">
@@ -162,6 +182,13 @@ export function FeaturesPage() {
           </ItemGroup>
         )}
       </div>
+
+      <FeatureModal
+        open={createModalOpen}
+        onOpenChange={setCreateModalOpen}
+        onSubmit={handleCreateFeature}
+        mode="create"
+      />
     </div>
   );
 }

@@ -15,9 +15,7 @@ fn initialize_project_for_fixture(
     project_title: String,
     use_undetect: bool,
 ) -> Result<(), String> {
-    use yaml_db::{
-        DisciplinesFile, FeaturesFile, MetadataFile, ProjectMetadata, TasksFile,
-    };
+    use yaml_db::{DisciplinesFile, FeaturesFile, MetadataFile, ProjectMetadata, TasksFile};
 
     if !path.exists() {
         return Err(format!("Directory not found: {}", path.display()));
@@ -45,8 +43,7 @@ fn initialize_project_for_fixture(
         ));
     }
 
-    fs::create_dir(&ralph_dir)
-        .map_err(|e| format!("Failed to create ralph directory: {}", e))?;
+    fs::create_dir(&ralph_dir).map_err(|e| format!("Failed to create ralph directory: {}", e))?;
 
     // Create db/ directory
     let db_path = ralph_dir.join("db");
@@ -164,7 +161,10 @@ See `initialized-project` fixture for the AFTER state.
 
     fs::write(fixture_path.join("README.md"), readme).unwrap();
 
-    println!("✓ Created 00-empty-project fixture at: {}", fixture_path.display());
+    println!(
+        "✓ Created 00-empty-project fixture at: {}",
+        fixture_path.display()
+    );
 }
 
 /// Generate 01-initialized-project fixture (after initialization)
@@ -237,7 +237,10 @@ ralph --project mock/initialized-project
     )
     .unwrap();
 
-    println!("✓ Created 01-initialized-project fixture at: {}", fixture_path.display());
+    println!(
+        "✓ Created 01-initialized-project fixture at: {}",
+        fixture_path.display()
+    );
 }
 
 /// Generate 02-with-feature-project fixture (has feature, no tasks yet)
@@ -295,21 +298,22 @@ Next stage: 03-with-tasks-project
     fs::write(fixture_path.join("README.md"), readme).unwrap();
 
     // Initialize
-    initialize_project_for_fixture(
-        fixture_path.clone(),
-        "Feature Project".to_string(),
-        true,
-    )
-    .unwrap();
+    initialize_project_for_fixture(fixture_path.clone(), "Feature Project".to_string(), true)
+        .unwrap();
 
     // Add a feature
     let db_path = fixture_path.join(".undetect-ralph/db");
     let mut features_file = FeaturesFile::new(db_path.join("features.yaml"));
     features_file.load().unwrap();
-    features_file.ensure_feature_exists("authentication").unwrap();
+    features_file
+        .ensure_feature_exists("authentication", "AUTH")
+        .unwrap();
     features_file.save().unwrap();
 
-    println!("✓ Created 02-with-feature-project fixture at: {}", fixture_path.display());
+    println!(
+        "✓ Created 02-with-feature-project fixture at: {}",
+        fixture_path.display()
+    );
 }
 
 /// Generate 03-with-tasks-project fixture (has feature + tasks)
@@ -375,20 +379,20 @@ just dev-mock 03-with-tasks-project
     fs::write(fixture_path.join("README.md"), readme).unwrap();
 
     // Initialize
-    initialize_project_for_fixture(
-        fixture_path.clone(),
-        "Tasks Project".to_string(),
-        true,
-    )
-    .unwrap();
+    initialize_project_for_fixture(fixture_path.clone(), "Tasks Project".to_string(), true)
+        .unwrap();
 
     let db_path = fixture_path.join(".undetect-ralph/db");
 
     // Add features
     let mut features_file = FeaturesFile::new(db_path.join("features.yaml"));
     features_file.load().unwrap();
-    features_file.ensure_feature_exists("authentication").unwrap();
-    features_file.ensure_feature_exists("user-profile").unwrap();
+    features_file
+        .ensure_feature_exists("authentication", "AUTH")
+        .unwrap();
+    features_file
+        .ensure_feature_exists("user-profile", "USPR")
+        .unwrap();
     features_file.save().unwrap();
 
     // Add tasks
@@ -460,7 +464,10 @@ just dev-mock 03-with-tasks-project
     metadata.rebuild_counters(tasks_file.get_all());
     metadata.save().unwrap();
 
-    println!("✓ Created 03-with-tasks-project fixture at: {}", fixture_path.display());
+    println!(
+        "✓ Created 03-with-tasks-project fixture at: {}",
+        fixture_path.display()
+    );
 }
 
 /// Print fixture contents
@@ -469,13 +476,22 @@ fn print_fixture_contents(fixture_path: &PathBuf) {
 
     println!("\n=== Contents ===");
     println!("\n--- tasks.yaml ---");
-    println!("{}", fs::read_to_string(db_path.join("tasks.yaml")).unwrap());
+    println!(
+        "{}",
+        fs::read_to_string(db_path.join("tasks.yaml")).unwrap()
+    );
 
     println!("\n--- features.yaml ---");
-    println!("{}", fs::read_to_string(db_path.join("features.yaml")).unwrap());
+    println!(
+        "{}",
+        fs::read_to_string(db_path.join("features.yaml")).unwrap()
+    );
 
     println!("\n--- metadata.yaml ---");
-    println!("{}", fs::read_to_string(db_path.join("metadata.yaml")).unwrap());
+    println!(
+        "{}",
+        fs::read_to_string(db_path.join("metadata.yaml")).unwrap()
+    );
 }
 
 /// Generate all fixtures

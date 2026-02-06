@@ -336,15 +336,6 @@ pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProj
     scan_recursive(&scan_path, &mut projects, 0, MAX_SCAN_DEPTH, MAX_PROJECTS)
         .map_err(|e| e.to_string())?;
 
-    // If we hit max results, add a note
-    if projects.len() >= MAX_PROJECTS {
-        return Err(format!(
-            "Found {} projects (max limit). Scan stopped at {} levels deep. Consider narrowing search.",
-            MAX_PROJECTS,
-            MAX_SCAN_DEPTH
-        ));
-    }
-
     Ok(projects)
 }
 
@@ -518,4 +509,66 @@ pub fn get_features(state: State<'_, AppState>) -> Result<Vec<FeatureData>, Stri
             created: f.created.clone(),
         })
         .collect())
+}
+
+#[tauri::command]
+pub fn create_feature(
+    state: State<'_, AppState>,
+    name: String,
+    display_name: String,
+    acronym: String,
+    description: Option<String>,
+) -> Result<(), String> {
+    let db_path = get_db_path(&state)?;
+    let mut db = YamlDatabase::from_path(db_path)?;
+
+    // Normalize name (lowercase with hyphens)
+    let normalized_name = normalize_feature_name(&name)?;
+
+    db.create_feature(normalized_name, display_name, acronym, description)
+}
+
+#[tauri::command]
+pub fn update_feature(
+    state: State<'_, AppState>,
+    name: String,
+    display_name: String,
+    acronym: String,
+    description: Option<String>,
+) -> Result<(), String> {
+    let db_path = get_db_path(&state)?;
+    let mut db = YamlDatabase::from_path(db_path)?;
+    db.update_feature(name, display_name, acronym, description)
+}
+
+#[tauri::command]
+pub fn create_discipline(
+    state: State<'_, AppState>,
+    name: String,
+    display_name: String,
+    acronym: String,
+    icon: String,
+    color: String,
+) -> Result<(), String> {
+    let db_path = get_db_path(&state)?;
+    let mut db = YamlDatabase::from_path(db_path)?;
+
+    // Normalize name (lowercase with hyphens)
+    let normalized_name = name.to_lowercase().trim().replace(char::is_whitespace, "-");
+
+    db.create_discipline(normalized_name, display_name, acronym, icon, color)
+}
+
+#[tauri::command]
+pub fn update_discipline(
+    state: State<'_, AppState>,
+    name: String,
+    display_name: String,
+    acronym: String,
+    icon: String,
+    color: String,
+) -> Result<(), String> {
+    let db_path = get_db_path(&state)?;
+    let mut db = YamlDatabase::from_path(db_path)?;
+    db.update_discipline(name, display_name, acronym, icon, color)
 }

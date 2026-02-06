@@ -48,15 +48,15 @@ pub fn generate_acronym(name: &str, display_name: &str) -> String {
                 }
             } else {
                 // Pad short words by repeating last letter
-                format!(
-                    "{}{}",
-                    word,
-                    word.chars()
-                        .last()
-                        .unwrap()
-                        .to_string()
-                        .repeat(4 - word.len())
-                )
+                if let Some(last_char) = word.chars().last() {
+                    format!(
+                        "{}{}",
+                        word,
+                        last_char.to_string().repeat(4 - word.len())
+                    )
+                } else {
+                    "UNKN".to_string()
+                }
             }
         }
         2 => {
@@ -72,8 +72,8 @@ pub fn generate_acronym(name: &str, display_name: &str) -> String {
             format!(
                 "{}{}{}",
                 words[0].chars().take(2).collect::<String>(),
-                words[1].chars().next().unwrap(),
-                words[2].chars().next().unwrap()
+                words[1].chars().next().unwrap_or('X'),
+                words[2].chars().next().unwrap_or('X')
             )
         }
         _ => {

@@ -1,7 +1,10 @@
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export function useTauriEvent<T>(eventName: string, handler: (payload: T) => void) {
+  const handlerRef = useRef(handler);
+  handlerRef.current = handler;
+
   useEffect(() => {
     // Skip if not in Tauri context
     if (typeof window === "undefined" || !("__TAURI__" in window)) {
@@ -11,7 +14,7 @@ export function useTauriEvent<T>(eventName: string, handler: (payload: T) => voi
     let unlisten: UnlistenFn | null = null;
 
     listen<T>(eventName, (event) => {
-      handler(event.payload);
+      handlerRef.current(event.payload);
     })
       .then((fn) => {
         unlisten = fn;
@@ -23,5 +26,5 @@ export function useTauriEvent<T>(eventName: string, handler: (payload: T) => voi
         unlisten();
       }
     };
-  }, [eventName, handler]);
+  }, [eventName]);
 }

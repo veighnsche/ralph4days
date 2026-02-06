@@ -65,6 +65,10 @@ pub fn run() {
             commands::get_existing_features,
             commands::get_features,
             commands::get_features_config,
+            commands::create_feature,
+            commands::update_feature,
+            commands::create_discipline,
+            commands::update_discipline,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

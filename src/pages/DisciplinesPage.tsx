@@ -1,7 +1,11 @@
-import { Layers } from "lucide-react";
-import { useMemo } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { Layers, Plus } from "lucide-react";
+import { useMemo, useState } from "react";
+import type { DisciplineFormData } from "@/components/forms/DisciplineForm";
+import { DisciplineModal } from "@/components/modals/DisciplineModal";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { ItemGroup, ItemSeparator } from "@/components/ui/item";
@@ -13,6 +17,7 @@ import { usePRDData } from "@/hooks/usePRDData";
 export function DisciplinesPage() {
   const { prdData, isLoading: prdLoading, error: prdError } = usePRDData();
   const { disciplines } = useDisciplines();
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   // Calculate task counts per discipline
   const disciplineStats = useMemo(() => {
@@ -39,6 +44,18 @@ export function DisciplinesPage() {
   const progressPercent = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
   const loading = prdLoading || disciplines.length === 0;
+
+  const handleCreateDiscipline = async (data: DisciplineFormData) => {
+    await invoke("create_discipline", {
+      name: data.name || data.display_name, // Use display_name as fallback for auto-generation
+      displayName: data.display_name,
+      acronym: data.acronym,
+      icon: data.icon,
+      color: data.color,
+    });
+    // Reload disciplines - they're cached with infinite staleTime so we need to reload
+    window.location.reload();
+  };
 
   if (loading) {
     return (
@@ -72,10 +89,14 @@ export function DisciplinesPage() {
         <Card className="py-3">
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-1">
                 <Layers className="h-5 w-5" />
                 <CardTitle className="text-base">Disciplines</CardTitle>
               </div>
+              <Button onClick={() => setCreateModalOpen(true)} size="sm" variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Discipline
+              </Button>
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <div className="text-sm font-medium">
@@ -165,6 +186,13 @@ export function DisciplinesPage() {
           </ItemGroup>
         )}
       </div>
+
+      <DisciplineModal
+        open={createModalOpen}
+        onOpenChange={setCreateModalOpen}
+        onSubmit={handleCreateDiscipline}
+        mode="create"
+      />
     </div>
   );
 }

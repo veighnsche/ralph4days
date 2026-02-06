@@ -427,6 +427,250 @@ impl YamlDatabase {
     pub fn get_next_task_id(&self) -> u32 {
         self.metadata.get_next_id(self.tasks.get_all())
     }
+
+    /// Create a new feature
+    /// Thread-safe: Uses exclusive file lock
+    ///
+    /// # Errors
+    /// - Returns error if feature name already exists
+    /// - Returns error if acronym is invalid or already in use
+    pub fn create_feature(
+        &mut self,
+        name: String,
+        display_name: String,
+        acronym: String,
+        description: Option<String>,
+    ) -> Result<(), String> {
+        // Validate input
+        if name.trim().is_empty() {
+            return Err("Feature name cannot be empty".to_string());
+        }
+        if display_name.trim().is_empty() {
+            return Err("Feature display name cannot be empty".to_string());
+        }
+
+        // Acquire exclusive lock
+        let _lock = self.acquire_lock()?;
+
+        // Reload all files from disk
+        self.load_all()?;
+
+        // Check if feature already exists
+        if self.features.get_all().iter().any(|f| f.name == name) {
+            return Err(format!("Feature '{}' already exists", name));
+        }
+
+        // Validate acronym format and uniqueness
+        crate::acronym::validate_acronym_format(&acronym)?;
+        if self.features.get_all().iter().any(|f| f.acronym == acronym) {
+            return Err(format!(
+                "Acronym '{}' is already used by another feature",
+                acronym
+            ));
+        }
+
+        // Create the feature
+        self.features.add(super::Feature {
+            name,
+            display_name,
+            acronym,
+            description,
+            created: Some(chrono::Utc::now().format("%Y-%m-%d").to_string()),
+        });
+
+        // Save all files atomically
+        self.save_all()?;
+
+        Ok(())
+    }
+
+    /// Update an existing feature
+    /// Thread-safe: Uses exclusive file lock
+    ///
+    /// # Errors
+    /// - Returns error if feature doesn't exist
+    /// - Returns error if new acronym is invalid or conflicts with another feature
+    pub fn update_feature(
+        &mut self,
+        name: String,
+        display_name: String,
+        acronym: String,
+        description: Option<String>,
+    ) -> Result<(), String> {
+        // Validate input
+        if display_name.trim().is_empty() {
+            return Err("Feature display name cannot be empty".to_string());
+        }
+
+        // Acquire exclusive lock
+        let _lock = self.acquire_lock()?;
+
+        // Reload all files from disk
+        self.load_all()?;
+
+        // Find the feature to update
+        let feature_index = self
+            .features
+            .items_mut()
+            .iter()
+            .position(|f| f.name == name)
+            .ok_or_else(|| format!("Feature '{}' does not exist", name))?;
+
+        // Validate acronym format and uniqueness (excluding current feature)
+        crate::acronym::validate_acronym_format(&acronym)?;
+        if self
+            .features
+            .get_all()
+            .iter()
+            .any(|f| f.acronym == acronym && f.name != name)
+        {
+            return Err(format!(
+                "Acronym '{}' is already used by another feature",
+                acronym
+            ));
+        }
+
+        // Update the feature (preserve name and created timestamp)
+        let old_feature = &self.features.items_mut()[feature_index];
+        self.features.items_mut()[feature_index] = super::Feature {
+            name: old_feature.name.clone(), // Preserve internal name
+            display_name,
+            acronym,
+            description,
+            created: old_feature.created.clone(), // Preserve created timestamp
+        };
+
+        // Save all files atomically
+        self.save_all()?;
+
+        Ok(())
+    }
+
+    /// Create a new discipline
+    /// Thread-safe: Uses exclusive file lock
+    ///
+    /// # Errors
+    /// - Returns error if discipline name already exists
+    /// - Returns error if acronym is invalid or already in use
+    pub fn create_discipline(
+        &mut self,
+        name: String,
+        display_name: String,
+        acronym: String,
+        icon: String,
+        color: String,
+    ) -> Result<(), String> {
+        // Validate input
+        if name.trim().is_empty() {
+            return Err("Discipline name cannot be empty".to_string());
+        }
+        if display_name.trim().is_empty() {
+            return Err("Discipline display name cannot be empty".to_string());
+        }
+
+        // Acquire exclusive lock
+        let _lock = self.acquire_lock()?;
+
+        // Reload all files from disk
+        self.load_all()?;
+
+        // Check if discipline already exists
+        if self.disciplines.get_all().iter().any(|d| d.name == name) {
+            return Err(format!("Discipline '{}' already exists", name));
+        }
+
+        // Validate acronym format and uniqueness
+        crate::acronym::validate_acronym_format(&acronym)?;
+        if self
+            .disciplines
+            .get_all()
+            .iter()
+            .any(|d| d.acronym == acronym)
+        {
+            return Err(format!(
+                "Acronym '{}' is already used by another discipline",
+                acronym
+            ));
+        }
+
+        // Create the discipline
+        self.disciplines.add(super::Discipline {
+            name,
+            display_name,
+            acronym,
+            icon,
+            color,
+        });
+
+        // Save all files atomically
+        self.save_all()?;
+
+        Ok(())
+    }
+
+    /// Update an existing discipline
+    /// Thread-safe: Uses exclusive file lock
+    ///
+    /// # Errors
+    /// - Returns error if discipline doesn't exist
+    /// - Returns error if new acronym is invalid or conflicts with another discipline
+    pub fn update_discipline(
+        &mut self,
+        name: String,
+        display_name: String,
+        acronym: String,
+        icon: String,
+        color: String,
+    ) -> Result<(), String> {
+        // Validate input
+        if display_name.trim().is_empty() {
+            return Err("Discipline display name cannot be empty".to_string());
+        }
+
+        // Acquire exclusive lock
+        let _lock = self.acquire_lock()?;
+
+        // Reload all files from disk
+        self.load_all()?;
+
+        // Find the discipline to update
+        let discipline_index = self
+            .disciplines
+            .items_mut()
+            .iter()
+            .position(|d| d.name == name)
+            .ok_or_else(|| format!("Discipline '{}' does not exist", name))?;
+
+        // Validate acronym format and uniqueness (excluding current discipline)
+        crate::acronym::validate_acronym_format(&acronym)?;
+        if self
+            .disciplines
+            .get_all()
+            .iter()
+            .any(|d| d.acronym == acronym && d.name != name)
+        {
+            return Err(format!(
+                "Acronym '{}' is already used by another discipline",
+                acronym
+            ));
+        }
+
+        // Update the discipline (preserve name)
+        self.disciplines.items_mut()[discipline_index] = super::Discipline {
+            name: self.disciplines.items_mut()[discipline_index]
+                .name
+                .clone(), // Preserve internal name
+            display_name,
+            acronym,
+            icon,
+            color,
+        };
+
+        // Save all files atomically
+        self.save_all()?;
+
+        Ok(())
+    }
 }
 
 /// RAII lock guard - auto-releases lock on drop
