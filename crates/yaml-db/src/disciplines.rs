@@ -167,21 +167,4 @@ impl DisciplinesFile {
         Ok(())
     }
 
-    /// Ensure discipline exists (auto-create with generic defaults if not found)
-    pub fn ensure_discipline_exists(&mut self, name: &str, acronym: &str) -> Result<(), String> {
-        if !self.get_all().iter().any(|d| d.name == name) {
-            // Validate acronym format and uniqueness
-            self.validate_acronym(acronym, name)?;
-
-            // Auto-create with generic defaults
-            self.add(Discipline {
-                name: name.to_string(),
-                display_name: name.to_string(),
-                acronym: acronym.to_string(),
-                icon: "Circle".to_string(),   // Generic icon
-                color: "#94a3b8".to_string(), // Gray default
-            });
-        }
-        Ok(())
-    }
 }

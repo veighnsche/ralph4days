@@ -5,7 +5,7 @@ tasks:
   title: Implement login API
   status: pending
   priority: high
-  created: 2026-02-05
+  created: 2026-02-06
 - id: 2
   feature: authentication
   discipline: frontend
@@ -17,6 +17,6 @@ tasks:
   - ui
   depends_on:
   - 1
-  created: 2026-02-05
+  created: 2026-02-06
   acceptance_criteria:
   - Form validates input

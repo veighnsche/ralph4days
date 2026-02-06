@@ -1,5 +1,23 @@
-use crate::{acronym::generate_acronym, YamlDatabase};
+use crate::YamlDatabase;
 use std::collections::HashSet;
+
+/// Simple acronym generation for migration only: uppercase, strip separators, take first 4 chars, pad if short.
+fn simple_acronym(name: &str) -> String {
+    let raw: String = name
+        .to_uppercase()
+        .replace('-', "")
+        .replace('_', "")
+        .chars()
+        .take(4)
+        .collect();
+    if raw.len() >= 4 {
+        raw
+    } else {
+        // Pad with last char to reach 4
+        let last = raw.chars().last().unwrap_or('X');
+        format!("{}{}", raw, last.to_string().repeat(4 - raw.len()))
+    }
+}
 
 /// Migrate existing features/disciplines to include acronyms
 /// This runs once when loading old projects without acronyms
@@ -10,7 +28,7 @@ pub fn migrate_acronyms_if_needed(db: &mut YamlDatabase) -> Result<(), String> {
     // Migrate features
     for feature in db.features.items_mut() {
         if feature.acronym.is_empty() {
-            let generated = generate_acronym(&feature.name, &feature.display_name);
+            let generated = simple_acronym(&feature.name);
 
             // Handle collisions by appending numbers
             let mut acronym = generated.clone();
@@ -32,7 +50,7 @@ pub fn migrate_acronyms_if_needed(db: &mut YamlDatabase) -> Result<(), String> {
     used_acronyms.clear();
     for discipline in db.disciplines.items_mut() {
         if discipline.acronym.is_empty() {
-            let generated = generate_acronym(&discipline.name, &discipline.display_name);
+            let generated = simple_acronym(&discipline.name);
 
             let mut acronym = generated.clone();
             let mut counter = 1;

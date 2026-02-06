@@ -21,6 +21,8 @@ fn test_create_task() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
+    db.create_feature("auth".to_string(), "Auth".to_string(), "AUTH".to_string(), None).unwrap();
+
     let task_id = db
         .create_task(TaskInput {
             feature: "auth".to_string(),
@@ -31,8 +33,6 @@ fn test_create_task() {
             tags: vec!["api".to_string()],
             depends_on: vec![],
             acceptance_criteria: Some(vec!["Works".to_string()]),
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -47,6 +47,8 @@ fn test_get_task_by_id_exists() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+
     let task_id = db
         .create_task(TaskInput {
             feature: "test".to_string(),
@@ -57,8 +59,6 @@ fn test_get_task_by_id_exists() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -87,6 +87,8 @@ fn test_update_task() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
+    db.create_feature("auth".to_string(), "Auth".to_string(), "AUTH".to_string(), None).unwrap();
+
     // Create initial task
     let task_id = db
         .create_task(TaskInput {
@@ -98,8 +100,6 @@ fn test_update_task() {
             tags: vec!["old".to_string()],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -115,8 +115,6 @@ fn test_update_task() {
             tags: vec!["new".to_string()],
             depends_on: vec![],
             acceptance_criteria: Some(vec!["Updated criteria".to_string()]),
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         },
     )
     .unwrap();
@@ -140,6 +138,8 @@ fn test_update_nonexistent_task() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+
     let result = db.update_task(
         999,
         TaskInput {
@@ -151,8 +151,6 @@ fn test_update_nonexistent_task() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         },
     );
 
@@ -165,6 +163,8 @@ fn test_update_task_with_invalid_dependency() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+
     let task_id = db
         .create_task(TaskInput {
             feature: "test".to_string(),
@@ -175,8 +175,6 @@ fn test_update_task_with_invalid_dependency() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -191,8 +189,6 @@ fn test_update_task_with_invalid_dependency() {
             tags: vec![],
             depends_on: vec![999], // Non-existent
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         },
     );
 
@@ -205,6 +201,8 @@ fn test_update_task_creates_self_referential_dependency() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+
     let task_id = db
         .create_task(TaskInput {
             feature: "test".to_string(),
@@ -215,8 +213,6 @@ fn test_update_task_creates_self_referential_dependency() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -231,8 +227,6 @@ fn test_update_task_creates_self_referential_dependency() {
             tags: vec![],
             depends_on: vec![task_id], // Self-reference!
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         },
     );
 
@@ -245,6 +239,8 @@ fn test_update_task_creates_circular_dependency() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+
     // Create task A
     let task_a = db
         .create_task(TaskInput {
@@ -256,8 +252,6 @@ fn test_update_task_creates_circular_dependency() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -272,8 +266,6 @@ fn test_update_task_creates_circular_dependency() {
             tags: vec![],
             depends_on: vec![task_a],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -289,8 +281,6 @@ fn test_update_task_creates_circular_dependency() {
             tags: vec![],
             depends_on: vec![task_b], // Creates cycle!
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         },
     );
 
@@ -303,6 +293,8 @@ fn test_update_task_complex_circular_dependency() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+
     // Create chain: A -> B -> C
     let task_a = db
         .create_task(TaskInput {
@@ -314,8 +306,6 @@ fn test_update_task_complex_circular_dependency() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -329,8 +319,6 @@ fn test_update_task_complex_circular_dependency() {
             tags: vec![],
             depends_on: vec![task_a],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -344,8 +332,6 @@ fn test_update_task_complex_circular_dependency() {
             tags: vec![],
             depends_on: vec![task_b],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -361,8 +347,6 @@ fn test_update_task_complex_circular_dependency() {
             tags: vec![],
             depends_on: vec![task_c], // Creates long cycle!
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         },
     );
 
@@ -377,6 +361,8 @@ fn test_delete_task() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+
     let task_id = db
         .create_task(TaskInput {
             feature: "test".to_string(),
@@ -387,8 +373,6 @@ fn test_delete_task() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -415,6 +399,8 @@ fn test_delete_task_with_dependents() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+
     // Create task A
     let task_a = db
         .create_task(TaskInput {
@@ -426,8 +412,6 @@ fn test_delete_task_with_dependents() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -442,8 +426,6 @@ fn test_delete_task_with_dependents() {
             tags: vec![],
             depends_on: vec![task_a],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -458,6 +440,8 @@ fn test_delete_dependent_task_then_dependency() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+
     // Create task A
     let task_a = db
         .create_task(TaskInput {
@@ -469,8 +453,6 @@ fn test_delete_dependent_task_then_dependency() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -485,8 +467,6 @@ fn test_delete_dependent_task_then_dependency() {
             tags: vec![],
             depends_on: vec![task_a],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -508,6 +488,8 @@ fn test_crud_lifecycle() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
+    db.create_feature("auth".to_string(), "Auth".to_string(), "AUTH".to_string(), None).unwrap();
+
     // CREATE
     let task_id = db
         .create_task(TaskInput {
@@ -519,8 +501,6 @@ fn test_crud_lifecycle() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -541,8 +521,6 @@ fn test_crud_lifecycle() {
             tags: vec!["updated".to_string()],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         },
     )
     .unwrap();

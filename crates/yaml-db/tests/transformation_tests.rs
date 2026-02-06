@@ -67,6 +67,7 @@ fn test_transform_empty_db_to_first_task() {
 
     // Perform transformation: create first task
     let mut db = YamlDatabase::from_path(db_path.clone()).unwrap();
+    db.create_feature("authentication".to_string(), "Authentication".to_string(), "AUTH".to_string(), None).unwrap();
     let task_id = db
         .create_task(TaskInput {
             feature: "authentication".to_string(),
@@ -80,8 +81,6 @@ fn test_transform_empty_db_to_first_task() {
                 "POST /login endpoint works".to_string(),
                 "Returns JWT token".to_string(),
             ]),
-            feature_acronym: "AUTH".to_string(),
-            discipline_acronym: "BACK".to_string(),
         })
         .unwrap();
 
@@ -95,7 +94,7 @@ fn test_transform_empty_db_to_first_task() {
 fn test_transform_add_task_with_dependency() {
     let (_temp, db_path) = setup_from_snapshot("add_dependent_task");
 
-    // Load existing database with one task
+    // Load existing database with one task (authentication feature already in before snapshot)
     let mut db = YamlDatabase::from_path(db_path.clone()).unwrap();
 
     // Add second task that depends on first
@@ -109,8 +108,6 @@ fn test_transform_add_task_with_dependency() {
             tags: vec!["ui".to_string()],
             depends_on: vec![1], // Depends on existing task 1
             acceptance_criteria: Some(vec!["Form validates input".to_string()]),
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -124,6 +121,7 @@ fn test_transform_add_task_with_dependency() {
 fn test_transform_multiple_tasks_multiple_features() {
     let (_temp, db_path) = setup_from_snapshot("multi_feature_expansion");
 
+    // authentication feature already in before snapshot
     let mut db = YamlDatabase::from_path(db_path.clone()).unwrap();
 
     // Add tasks across multiple features
@@ -136,10 +134,10 @@ fn test_transform_multiple_tasks_multiple_features() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
-            feature_acronym: "AUTH".to_string(),
-            discipline_acronym: "BCKN".to_string(),
     })
     .unwrap();
+
+    db.create_feature("user-profile".to_string(), "User Profile".to_string(), "USPR".to_string(), None).unwrap();
 
     db.create_task(TaskInput {
         feature: "user-profile".to_string(),
@@ -150,8 +148,6 @@ fn test_transform_multiple_tasks_multiple_features() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
-            feature_acronym: "USPR".to_string(),
-            discipline_acronym: "FRNT".to_string(),
     })
     .unwrap();
 
@@ -164,8 +160,6 @@ fn test_transform_multiple_tasks_multiple_features() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
-            feature_acronym: "USPR".to_string(),
-            discipline_acronym: "BCKN".to_string(),
     })
     .unwrap();
 
@@ -194,7 +188,16 @@ fn test_transform_custom_discipline_addition() {
 
     let mut db = YamlDatabase::from_path(db_path.clone()).unwrap();
 
-    // Create task with custom discipline (auto-creates it)
+    // Create feature and custom discipline before creating the task
+    db.create_feature("ml-pipeline".to_string(), "ML Pipeline".to_string(), "MLPP".to_string(), None).unwrap();
+    db.create_discipline(
+        "machine-learning".to_string(),
+        "Machine Learning".to_string(),
+        "MLRN".to_string(),
+        "Brain".to_string(),
+        "violet".to_string(),
+    ).unwrap();
+
     db.create_task(TaskInput {
         feature: "ml-pipeline".to_string(),
         discipline: "machine-learning".to_string(),
@@ -204,8 +207,6 @@ fn test_transform_custom_discipline_addition() {
         tags: vec!["ml".to_string(), "training".to_string()],
         depends_on: vec![],
         acceptance_criteria: None,
-            feature_acronym: "MLPP".to_string(),
-            discipline_acronym: "MLRN".to_string(),
     })
     .unwrap();
 
@@ -220,6 +221,7 @@ fn test_transform_reload_and_modify() {
     // First operation: create a task
     {
         let mut db = YamlDatabase::from_path(db_path.clone()).unwrap();
+        db.create_feature("search".to_string(), "Search".to_string(), "SRCH".to_string(), None).unwrap();
         db.create_task(TaskInput {
             feature: "search".to_string(),
             discipline: "backend".to_string(),
@@ -229,8 +231,6 @@ fn test_transform_reload_and_modify() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
     }
@@ -247,8 +247,6 @@ fn test_transform_reload_and_modify() {
             tags: vec![],
             depends_on: vec![1],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
     }

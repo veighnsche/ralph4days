@@ -5,7 +5,7 @@ tasks:
   title: Implement search API
   status: pending
   priority: high
-  created: 2026-02-05
+  created: 2026-02-06
 - id: 2
   feature: search
   discipline: frontend
@@ -14,4 +14,4 @@ tasks:
   priority: medium
   depends_on:
   - 1
-  created: 2026-02-05
+  created: 2026-02-06

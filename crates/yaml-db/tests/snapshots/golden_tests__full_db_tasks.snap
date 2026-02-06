@@ -12,7 +12,7 @@ tasks:
   priority: high
   tags:
   - api
-  created: 2026-02-05
+  created: 2026-02-06
   acceptance_criteria:
   - POST /users creates a user
   - GET /users/:id returns user
@@ -24,4 +24,4 @@ tasks:
   priority: medium
   depends_on:
   - 1
-  created: 2026-02-05
+  created: 2026-02-06

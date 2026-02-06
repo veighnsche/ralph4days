@@ -21,6 +21,8 @@ fn test_self_referential_dependency() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+
     // Create first task to get its ID
     let _task1_id = db
         .create_task(TaskInput {
@@ -32,8 +34,6 @@ fn test_self_referential_dependency() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -48,8 +48,6 @@ fn test_self_referential_dependency() {
         tags: vec![],
         depends_on: vec![999], // Future ID that will fail
         acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_err());
@@ -60,6 +58,8 @@ fn test_self_referential_dependency() {
 fn test_circular_dependency_chain() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
 
     // Create task A
     let task_a = db
@@ -72,8 +72,6 @@ fn test_circular_dependency_chain() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -88,8 +86,6 @@ fn test_circular_dependency_chain() {
             tags: vec![],
             depends_on: vec![task_a],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -104,8 +100,6 @@ fn test_circular_dependency_chain() {
             tags: vec![],
             depends_on: vec![task_b],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -130,8 +124,6 @@ fn test_whitespace_only_feature_name() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_err());
@@ -152,8 +144,6 @@ fn test_whitespace_only_discipline_name() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_err());
@@ -176,8 +166,6 @@ fn test_whitespace_only_title() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_err());
@@ -191,6 +179,8 @@ fn test_feature_name_with_underscores() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
+    db.create_feature("user_profile".to_string(), "User Profile".to_string(), "USRP".to_string(), None).unwrap();
+
     db.create_task(TaskInput {
         feature: "user_profile".to_string(),
         discipline: "backend".to_string(),
@@ -200,15 +190,13 @@ fn test_feature_name_with_underscores() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
     })
     .unwrap();
 
     let features = db.get_features();
     let feature = features.iter().find(|f| f.name == "user_profile").unwrap();
 
-    // Should convert underscores to spaces and capitalize
+    // Should have the display name we provided
     assert_eq!(feature.display_name, "User Profile");
 }
 
@@ -216,6 +204,8 @@ fn test_feature_name_with_underscores() {
 fn test_feature_name_with_mixed_separators() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    db.create_feature("user-profile_settings".to_string(), "User Profile Settings".to_string(), "USPS".to_string(), None).unwrap();
 
     db.create_task(TaskInput {
         feature: "user-profile_settings".to_string(),
@@ -226,8 +216,6 @@ fn test_feature_name_with_mixed_separators() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
     })
     .unwrap();
 
@@ -248,6 +236,8 @@ fn test_get_task_by_id() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+
     let task_id = db
         .create_task(TaskInput {
             feature: "test".to_string(),
@@ -258,8 +248,6 @@ fn test_get_task_by_id() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -277,6 +265,8 @@ fn test_duplicate_dependency() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+
     let task1_id = db
         .create_task(TaskInput {
             feature: "test".to_string(),
@@ -287,8 +277,6 @@ fn test_duplicate_dependency() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -302,8 +290,6 @@ fn test_duplicate_dependency() {
         tags: vec![],
         depends_on: vec![task1_id, task1_id, task1_id], // Duplicates
         acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
     });
 
     // Should succeed (duplicates are allowed for now, could be cleaned up)

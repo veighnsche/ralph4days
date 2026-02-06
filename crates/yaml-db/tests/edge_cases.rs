@@ -19,6 +19,8 @@ fn test_create_task_with_invalid_dependency() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+
     // Try to create task with non-existent dependency
     let result = db.create_task(TaskInput {
         feature: "test".to_string(),
@@ -29,8 +31,6 @@ fn test_create_task_with_invalid_dependency() {
         tags: vec![],
         depends_on: vec![999], // Non-existent task ID
         acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_err());
@@ -44,6 +44,8 @@ fn test_create_task_with_circular_dependency() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+
     // Create first task
     let task1_id = db
         .create_task(TaskInput {
@@ -55,8 +57,6 @@ fn test_create_task_with_circular_dependency() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -73,8 +73,6 @@ fn test_create_task_with_circular_dependency() {
             tags: vec![],
             depends_on: vec![task1_id],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -84,6 +82,19 @@ fn test_create_task_with_circular_dependency() {
 #[test]
 fn test_concurrent_task_creation() {
     let (_temp, db_path) = create_temp_db();
+
+    // Pre-create all features that the threads will use
+    {
+        let mut db = YamlDatabase::from_path(db_path.clone()).unwrap();
+        for i in 0..5 {
+            db.create_feature(
+                format!("feature-{}", i),
+                format!("Feature {}", i),
+                format!("FT{:02}", i),
+                None,
+            ).unwrap();
+        }
+    }
 
     // Create multiple tasks "concurrently" (file locking should prevent conflicts)
     let mut handles = vec![];
@@ -101,8 +112,6 @@ fn test_concurrent_task_creation() {
                 tags: vec![],
                 depends_on: vec![],
                 acceptance_criteria: None,
-            feature_acronym: format!("FT{:02}", i),
-            discipline_acronym: "BACK".to_string(),
             })
             .unwrap()
         });
@@ -122,6 +131,8 @@ fn test_reload_database_after_external_modification() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path.clone()).unwrap();
 
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+
     // Create a task
     let id1 = db
         .create_task(TaskInput {
@@ -133,8 +144,6 @@ fn test_reload_database_after_external_modification() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -152,8 +161,6 @@ fn test_reload_database_after_external_modification() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
 
@@ -174,6 +181,7 @@ fn test_task_id_sequence_after_reload() {
     // Create task with ID 5
     {
         let mut db = YamlDatabase::from_path(db_path.clone()).unwrap();
+        db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
         db.create_task(TaskInput {
             feature: "test".to_string(),
             discipline: "backend".to_string(),
@@ -183,8 +191,6 @@ fn test_task_id_sequence_after_reload() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
         })
         .unwrap();
     }
@@ -205,8 +211,6 @@ fn test_task_id_sequence_after_reload() {
                 tags: vec![],
                 depends_on: vec![],
                 acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
             })
             .unwrap();
 
@@ -229,8 +233,6 @@ fn test_empty_feature_name() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_err());
@@ -251,8 +253,6 @@ fn test_empty_discipline_name() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_err());
@@ -275,8 +275,6 @@ fn test_empty_title() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_err());
@@ -288,6 +286,8 @@ fn test_very_long_title() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+
     let long_title = "A".repeat(10000);
     let result = db.create_task(TaskInput {
         feature: "test".to_string(),
@@ -298,8 +298,6 @@ fn test_very_long_title() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_ok());
@@ -312,6 +310,8 @@ fn test_many_tags() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+
     let tags: Vec<String> = (0..100).map(|i| format!("tag-{}", i)).collect();
 
     let result = db.create_task(TaskInput {
@@ -323,8 +323,6 @@ fn test_many_tags() {
         tags: tags.clone(),
         depends_on: vec![],
         acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_ok());
@@ -336,6 +334,8 @@ fn test_many_tags() {
 fn test_special_characters_in_fields() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    db.create_feature("feature:with:colons".to_string(), "Feature With Colons".to_string(), "FTWC".to_string(), None).unwrap();
 
     let result = db.create_task(TaskInput {
         feature: "feature:with:colons".to_string(),
@@ -349,8 +349,6 @@ fn test_special_characters_in_fields() {
         ],
         depends_on: vec![],
         acceptance_criteria: Some(vec!["Criteria with: special chars!".to_string()]),
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
     });
 
     assert!(result.is_ok());
@@ -377,7 +375,18 @@ fn test_discipline_auto_creation() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path).unwrap();
 
-    // Create task with custom discipline (should auto-create)
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+
+    // Create the custom discipline before creating the task
+    db.create_discipline(
+        "custom-discipline".to_string(),
+        "Custom Discipline".to_string(),
+        "CSTM".to_string(),
+        "Wrench".to_string(),
+        "gray".to_string(),
+    ).unwrap();
+
+    // Create task with custom discipline
     let result = db.create_task(TaskInput {
         feature: "test".to_string(),
         discipline: "custom-discipline".to_string(),
@@ -387,8 +396,6 @@ fn test_discipline_auto_creation() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
-            feature_acronym: "TSTT".to_string(),
-            discipline_acronym: "CSTM".to_string(),
     });
 
     assert!(result.is_ok());

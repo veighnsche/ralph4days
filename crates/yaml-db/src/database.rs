@@ -14,10 +14,6 @@ pub struct TaskInput {
     pub tags: Vec<String>,
     pub depends_on: Vec<u32>,
     pub acceptance_criteria: Option<Vec<String>>,
-
-    // Required acronyms for auto-created features/disciplines
-    pub feature_acronym: String,
-    pub discipline_acronym: String,
 }
 
 /// Multi-file YAML database coordinator
@@ -146,13 +142,26 @@ impl YamlDatabase {
         // 2. Reload all files from disk (ensure fresh state)
         self.load_all()?;
 
-        // 3. Validate discipline exists (or auto-create if needed)
-        self.disciplines
-            .ensure_discipline_exists(&task.discipline, &task.discipline_acronym)?;
+        // 3. Validate feature exists
+        if !self.features.get_all().iter().any(|f| f.name == task.feature) {
+            return Err(format!(
+                "Feature '{}' does not exist. Create it first.",
+                task.feature
+            ));
+        }
 
-        // 4. Auto-create feature if needed
-        self.features
-            .ensure_feature_exists(&task.feature, &task.feature_acronym)?;
+        // 4. Validate discipline exists
+        if !self
+            .disciplines
+            .get_all()
+            .iter()
+            .any(|d| d.name == task.discipline)
+        {
+            return Err(format!(
+                "Discipline '{}' does not exist. Create it first.",
+                task.discipline
+            ));
+        }
 
         // 5. Assign next ID (uses global counter)
         let next_id = self.metadata.get_next_id(self.tasks.get_all());
@@ -312,13 +321,26 @@ impl YamlDatabase {
             .position(|t| t.id == id)
             .ok_or_else(|| format!("Task {} does not exist", id))?;
 
-        // 4. Validate discipline exists (or auto-create if needed)
-        self.disciplines
-            .ensure_discipline_exists(&update.discipline, &update.discipline_acronym)?;
+        // 4. Validate feature exists
+        if !self.features.get_all().iter().any(|f| f.name == update.feature) {
+            return Err(format!(
+                "Feature '{}' does not exist. Create it first.",
+                update.feature
+            ));
+        }
 
-        // 5. Auto-create feature if needed
-        self.features
-            .ensure_feature_exists(&update.feature, &update.feature_acronym)?;
+        // 5. Validate discipline exists
+        if !self
+            .disciplines
+            .get_all()
+            .iter()
+            .any(|d| d.name == update.discipline)
+        {
+            return Err(format!(
+                "Discipline '{}' does not exist. Create it first.",
+                update.discipline
+            ));
+        }
 
         // 6. Create updated task (preserve ID, status, and timestamps)
         let old_task = &self.tasks.items_mut()[task_index];
@@ -426,6 +448,169 @@ impl YamlDatabase {
 
     pub fn get_next_task_id(&self) -> u32 {
         self.metadata.get_next_id(self.tasks.get_all())
+    }
+
+    /// Get tasks joined with feature/discipline display data
+    pub fn get_enriched_tasks(&self) -> Vec<super::EnrichedTask> {
+        let features = self.features.get_all();
+        let disciplines = self.disciplines.get_all();
+
+        self.tasks
+            .get_all()
+            .iter()
+            .map(|task| {
+                let feature = features.iter().find(|f| f.name == task.feature);
+                let discipline = disciplines.iter().find(|d| d.name == task.discipline);
+
+                super::EnrichedTask {
+                    id: task.id,
+                    feature: task.feature.clone(),
+                    discipline: task.discipline.clone(),
+                    title: task.title.clone(),
+                    description: task.description.clone(),
+                    status: task.status,
+                    priority: task.priority,
+                    tags: task.tags.clone(),
+                    depends_on: task.depends_on.clone(),
+                    blocked_by: task.blocked_by.clone(),
+                    created: task.created.clone(),
+                    updated: task.updated.clone(),
+                    completed: task.completed.clone(),
+                    acceptance_criteria: task.acceptance_criteria.clone(),
+                    feature_display_name: feature
+                        .map(|f| f.display_name.clone())
+                        .unwrap_or_else(|| task.feature.clone()),
+                    feature_acronym: feature
+                        .map(|f| f.acronym.clone())
+                        .unwrap_or_else(|| task.feature.clone()),
+                    discipline_display_name: discipline
+                        .map(|d| d.display_name.clone())
+                        .unwrap_or_else(|| task.discipline.clone()),
+                    discipline_acronym: discipline
+                        .map(|d| d.acronym.clone())
+                        .unwrap_or_else(|| task.discipline.clone()),
+                    discipline_icon: discipline
+                        .map(|d| d.icon.clone())
+                        .unwrap_or_else(|| "Circle".to_string()),
+                    discipline_color: discipline
+                        .map(|d| d.color.clone())
+                        .unwrap_or_else(|| "#94a3b8".to_string()),
+                }
+            })
+            .collect()
+    }
+
+    /// Get task counts grouped by feature
+    pub fn get_feature_stats(&self) -> Vec<super::GroupStats> {
+        use std::collections::HashMap;
+        let mut stats: HashMap<String, super::GroupStats> = HashMap::new();
+
+        // Initialize from features list
+        for feature in self.features.get_all() {
+            stats.insert(
+                feature.name.clone(),
+                super::GroupStats {
+                    name: feature.name.clone(),
+                    display_name: feature.display_name.clone(),
+                    total: 0,
+                    done: 0,
+                    pending: 0,
+                    in_progress: 0,
+                    blocked: 0,
+                    skipped: 0,
+                },
+            );
+        }
+
+        // Count tasks (only for known features)
+        for task in self.tasks.get_all() {
+            if let Some(entry) = stats.get_mut(&task.feature) {
+                entry.total += 1;
+                match task.status {
+                    super::TaskStatus::Done => entry.done += 1,
+                    super::TaskStatus::Pending => entry.pending += 1,
+                    super::TaskStatus::InProgress => entry.in_progress += 1,
+                    super::TaskStatus::Blocked => entry.blocked += 1,
+                    super::TaskStatus::Skipped => entry.skipped += 1,
+                }
+            }
+        }
+
+        let mut result: Vec<_> = stats.into_values().collect();
+        result.sort_by(|a, b| a.name.cmp(&b.name));
+        result
+    }
+
+    /// Get task counts grouped by discipline
+    pub fn get_discipline_stats(&self) -> Vec<super::GroupStats> {
+        use std::collections::HashMap;
+        let mut stats: HashMap<String, super::GroupStats> = HashMap::new();
+
+        // Initialize from disciplines list
+        for discipline in self.disciplines.get_all() {
+            stats.insert(
+                discipline.name.clone(),
+                super::GroupStats {
+                    name: discipline.name.clone(),
+                    display_name: discipline.display_name.clone(),
+                    total: 0,
+                    done: 0,
+                    pending: 0,
+                    in_progress: 0,
+                    blocked: 0,
+                    skipped: 0,
+                },
+            );
+        }
+
+        // Count tasks (only for known disciplines)
+        for task in self.tasks.get_all() {
+            if let Some(entry) = stats.get_mut(&task.discipline) {
+                entry.total += 1;
+                match task.status {
+                    super::TaskStatus::Done => entry.done += 1,
+                    super::TaskStatus::Pending => entry.pending += 1,
+                    super::TaskStatus::InProgress => entry.in_progress += 1,
+                    super::TaskStatus::Blocked => entry.blocked += 1,
+                    super::TaskStatus::Skipped => entry.skipped += 1,
+                }
+            }
+        }
+
+        let mut result: Vec<_> = stats.into_values().collect();
+        result.sort_by(|a, b| a.name.cmp(&b.name));
+        result
+    }
+
+    /// Get overall project progress
+    pub fn get_project_progress(&self) -> super::ProjectProgress {
+        let tasks = self.tasks.get_all();
+        let total = tasks.len() as u32;
+        let done = tasks
+            .iter()
+            .filter(|t| t.status == super::TaskStatus::Done)
+            .count() as u32;
+        let percent = if total > 0 {
+            (done * 100) / total
+        } else {
+            0
+        };
+        super::ProjectProgress {
+            total_tasks: total,
+            done_tasks: done,
+            progress_percent: percent,
+        }
+    }
+
+    /// Get sorted unique tags from all tasks
+    pub fn get_all_tags(&self) -> Vec<String> {
+        let mut tags = std::collections::BTreeSet::new();
+        for task in self.tasks.get_all() {
+            for tag in &task.tags {
+                tags.insert(tag.clone());
+            }
+        }
+        tags.into_iter().collect()
     }
 
     /// Create a new feature

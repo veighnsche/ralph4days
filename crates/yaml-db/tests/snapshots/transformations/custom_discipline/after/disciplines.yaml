@@ -50,7 +50,7 @@ disciplines:
   color: '#84cc16'
   acronym: APII
 - name: machine-learning
-  display_name: machine-learning
-  icon: Circle
-  color: '#94a3b8'
+  display_name: Machine Learning
+  icon: Brain
+  color: violet
   acronym: MLRN

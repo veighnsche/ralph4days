@@ -74,23 +74,6 @@ impl FeaturesFile {
         Ok(())
     }
 
-    /// Auto-populate: Create feature if it doesn't exist (with required acronym)
-    pub fn ensure_feature_exists(&mut self, name: &str, acronym: &str) -> Result<(), String> {
-        if !self.get_all().iter().any(|f| f.name == name) {
-            // Validate acronym format and uniqueness
-            self.validate_acronym(acronym, name)?;
-
-            self.add(Feature {
-                name: name.to_string(),
-                display_name: Self::name_to_display_name(name),
-                acronym: acronym.to_string(),
-                description: None,
-                created: Some(chrono::Utc::now().format("%Y-%m-%d").to_string()),
-            });
-        }
-        Ok(())
-    }
-
     /// Convert feature name to display name
     /// "auth" -> "Auth"
     /// "user-profile" -> "User Profile"

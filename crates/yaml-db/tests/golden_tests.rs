@@ -7,8 +7,8 @@
 use std::fs;
 use tempfile::TempDir;
 use yaml_db::{
-    Discipline, DisciplinesFile, FeaturesFile, MetadataFile, Priority, ProjectMetadata, Task,
-    TaskInput, TaskStatus, TasksFile, YamlDatabase,
+    Discipline, DisciplinesFile, Feature, FeaturesFile, MetadataFile, Priority, ProjectMetadata,
+    Task, TaskInput, TaskStatus, TasksFile, YamlDatabase,
 };
 
 /// Helper to create a temporary database directory
@@ -72,12 +72,20 @@ fn test_features_yaml_output() {
     let (_temp, db_path) = create_temp_db();
     let mut features_file = FeaturesFile::new(db_path.join("features.yaml"));
 
-    features_file
-        .ensure_feature_exists("authentication", "AUTH")
-        .unwrap();
-    features_file
-        .ensure_feature_exists("user-profile", "USPR")
-        .unwrap();
+    features_file.add(Feature {
+        name: "authentication".to_string(),
+        display_name: "Authentication".to_string(),
+        acronym: "AUTH".to_string(),
+        description: None,
+        created: None,
+    });
+    features_file.add(Feature {
+        name: "user-profile".to_string(),
+        display_name: "User Profile".to_string(),
+        acronym: "USPR".to_string(),
+        description: None,
+        created: None,
+    });
 
     features_file.save().unwrap();
     let yaml_content = fs::read_to_string(db_path.join("features.yaml")).unwrap();
@@ -183,7 +191,9 @@ fn test_full_database_creation() {
     let (_temp, db_path) = create_temp_db();
     let mut db = YamlDatabase::from_path(db_path.clone()).unwrap();
 
-    // Create tasks with automatic feature/discipline creation
+    db.create_feature("user-management".to_string(), "User Management".to_string(), "USRM".to_string(), None).unwrap();
+
+    // Create tasks
     let task_id_1 = db
         .create_task(TaskInput {
             feature: "user-management".to_string(),
@@ -197,8 +207,6 @@ fn test_full_database_creation() {
                 "POST /users creates a user".to_string(),
                 "GET /users/:id returns user".to_string(),
             ]),
-            feature_acronym: "USRM".to_string(),
-            discipline_acronym: "BACK".to_string(),
         })
         .unwrap();
 
@@ -212,8 +220,6 @@ fn test_full_database_creation() {
             tags: vec![],
             depends_on: vec![task_id_1],
             acceptance_criteria: None,
-            feature_acronym: "USRM".to_string(),
-            discipline_acronym: "FRNT".to_string(),
         })
         .unwrap();
 

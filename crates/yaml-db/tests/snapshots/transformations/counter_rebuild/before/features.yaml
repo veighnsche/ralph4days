@@ -4,4 +4,4 @@ features:
   acronym: AUTH
 - name: payments
   display_name: Payments
-  acronym: PYMN
+  acronym: PAYM

@@ -23,6 +23,7 @@ fn generate_empty_to_first_task_after() {
 
     // Perform transformation
     let mut db = YamlDatabase::from_path(db_path.clone()).unwrap();
+    db.create_feature("authentication".to_string(), "Authentication".to_string(), "AUTH".to_string(), None).unwrap();
     db.create_task(TaskInput {
         feature: "authentication".to_string(),
         discipline: "backend".to_string(),
@@ -35,8 +36,6 @@ fn generate_empty_to_first_task_after() {
             "POST /login endpoint works".to_string(),
             "Returns JWT token".to_string(),
         ]),
-        feature_acronym: "AUTH".to_string(),
-        discipline_acronym: "BACK".to_string(),
     })
     .unwrap();
 
@@ -77,6 +76,7 @@ fn generate_all_transformation_snapshots() {
 
         // Create before state with one task
         let mut db = YamlDatabase::from_path(db_path.clone()).unwrap();
+        db.create_feature("authentication".to_string(), "Authentication".to_string(), "AUTH".to_string(), None).unwrap();
         db.create_task(TaskInput {
             feature: "authentication".to_string(),
             discipline: "backend".to_string(),
@@ -86,8 +86,6 @@ fn generate_all_transformation_snapshots() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "AUTH".to_string(),
-            discipline_acronym: "BACK".to_string(),
         })
         .unwrap();
 
@@ -107,8 +105,6 @@ fn generate_all_transformation_snapshots() {
             tags: vec!["ui".to_string()],
             depends_on: vec![1],
             acceptance_criteria: Some(vec!["Form validates input".to_string()]),
-            feature_acronym: "AUTH".to_string(),
-            discipline_acronym: "BACK".to_string(),
         })
         .unwrap();
 
@@ -129,6 +125,8 @@ fn generate_all_transformation_snapshots() {
 
         let mut db = YamlDatabase::from_path(db_path.clone()).unwrap();
 
+        db.create_feature("authentication".to_string(), "Authentication".to_string(), "AUTH".to_string(), None).unwrap();
+
         // Create initial task
         db.create_task(TaskInput {
             feature: "authentication".to_string(),
@@ -139,8 +137,6 @@ fn generate_all_transformation_snapshots() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "AUTH".to_string(),
-            discipline_acronym: "BACK".to_string(),
         }).unwrap();
 
         // Save before state
@@ -159,9 +155,9 @@ fn generate_all_transformation_snapshots() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "AUTH".to_string(),
-            discipline_acronym: "BACK".to_string(),
         }).unwrap();
+
+        db.create_feature("user-profile".to_string(), "User Profile".to_string(), "USPR".to_string(), None).unwrap();
 
         db.create_task(TaskInput {
             feature: "user-profile".to_string(),
@@ -172,8 +168,6 @@ fn generate_all_transformation_snapshots() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "USPR".to_string(),
-            discipline_acronym: "FRNT".to_string(),
         }).unwrap();
 
         db.create_task(TaskInput {
@@ -185,8 +179,6 @@ fn generate_all_transformation_snapshots() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "USPR".to_string(),
-            discipline_acronym: "BACK".to_string(),
         }).unwrap();
 
         // Save after state
@@ -207,6 +199,8 @@ fn generate_all_transformation_snapshots() {
         // Create tasks with specific IDs by creating them in order
         let mut db = YamlDatabase::from_path(db_path.clone()).unwrap();
 
+        db.create_feature("auth".to_string(), "Auth".to_string(), "AUTH".to_string(), None).unwrap();
+
         // Create 10 tasks to get to ID 10
         for i in 1..=10 {
             let feature = if i <= 5 { "auth" } else if i <= 10 { "auth" } else { "payments" };
@@ -220,8 +214,6 @@ fn generate_all_transformation_snapshots() {
                 tags: vec![],
                 depends_on: vec![],
                 acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "TEST".to_string(),
             }).unwrap();
         }
 
@@ -318,6 +310,14 @@ project:
 
         // Create task with custom discipline
         let mut db = YamlDatabase::from_path(db_path.clone()).unwrap();
+        db.create_feature("ml-pipeline".to_string(), "ML Pipeline".to_string(), "MLPP".to_string(), None).unwrap();
+        db.create_discipline(
+            "machine-learning".to_string(),
+            "Machine Learning".to_string(),
+            "MLRN".to_string(),
+            "Brain".to_string(),
+            "violet".to_string(),
+        ).unwrap();
         db.create_task(TaskInput {
             feature: "ml-pipeline".to_string(),
             discipline: "machine-learning".to_string(),
@@ -327,8 +327,6 @@ project:
             tags: vec!["ml".to_string(), "training".to_string()],
             depends_on: vec![],
             acceptance_criteria: None,
-            feature_acronym: "MLPP".to_string(),
-            discipline_acronym: "MLRN".to_string(),
         }).unwrap();
 
         // Save after state (including new discipline)
@@ -365,6 +363,7 @@ project:
         // First operation
         {
             let mut db = YamlDatabase::from_path(db_path.clone()).unwrap();
+            db.create_feature("search".to_string(), "Search".to_string(), "SRCH".to_string(), None).unwrap();
             db.create_task(TaskInput {
                 feature: "search".to_string(),
                 discipline: "backend".to_string(),
@@ -374,8 +373,6 @@ project:
                 tags: vec![],
                 depends_on: vec![],
                 acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "BACK".to_string(),
             }).unwrap();
         }
 
@@ -391,8 +388,6 @@ project:
                 tags: vec![],
                 depends_on: vec![1],
                 acceptance_criteria: None,
-            feature_acronym: "TEST".to_string(),
-            discipline_acronym: "BACK".to_string(),
             }).unwrap();
         }
 

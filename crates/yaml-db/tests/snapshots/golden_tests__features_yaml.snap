@@ -6,8 +6,6 @@ features:
 - name: authentication
   display_name: Authentication
   acronym: AUTH
-  created: 2026-02-05
 - name: user-profile
   display_name: User Profile
   acronym: USPR
-  created: 2026-02-05
