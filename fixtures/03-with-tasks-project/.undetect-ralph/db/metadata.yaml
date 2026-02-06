@@ -2,7 +2,7 @@ schema_version: '1.0'
 project:
   title: Tasks Project
   description: Add project description here
-  created: 2026-02-05
+  created: 2026-02-06
 _counters:
   authentication:
     backend: 1
