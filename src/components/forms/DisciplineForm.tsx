@@ -15,8 +15,8 @@ export interface DisciplineFormData {
 
 export interface DisciplineFormProps {
   initialData?: Partial<DisciplineConfig>;
-  onSubmit: (data: DisciplineFormData) => void;
-  isSubmitting?: boolean;
+  onChange: (data: DisciplineFormData) => void;
+  disabled?: boolean;
 }
 
 // Common icon options for disciplines
@@ -57,7 +57,7 @@ const COMMON_COLORS = [
  * Discipline creation/edit form.
  * Used by both create and edit modals (mode determined by initialData presence).
  */
-export function DisciplineForm({ initialData, onSubmit }: DisciplineFormProps) {
+export function DisciplineForm({ initialData, onChange, disabled }: DisciplineFormProps) {
   const [formData, setFormData] = useState<DisciplineFormData>({
     name: initialData?.name || "",
     display_name: initialData?.displayName || "",
@@ -78,16 +78,15 @@ export function DisciplineForm({ initialData, onSubmit }: DisciplineFormProps) {
     }
   }, [initialData]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
+  useEffect(() => {
+    onChange(formData);
+  }, [formData, onChange]);
 
   // Get the icon component for preview
   const IconComponent = LucideIcons[formData.icon as keyof typeof LucideIcons] as LucideIcons.LucideIcon;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-4">
       {/* Display Name */}
       <div className="space-y-2">
         <Label htmlFor="display_name">
@@ -99,6 +98,7 @@ export function DisciplineForm({ initialData, onSubmit }: DisciplineFormProps) {
           onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
           placeholder="Enter discipline display name"
           required
+          disabled={disabled}
         />
         <p className="text-xs text-muted-foreground">The human-readable name shown in the UI</p>
       </div>
@@ -116,6 +116,7 @@ export function DisciplineForm({ initialData, onSubmit }: DisciplineFormProps) {
           maxLength={4}
           required
           className="font-mono"
+          disabled={disabled}
         />
         <p className="text-xs text-muted-foreground">3-4 uppercase letters for task IDs (e.g., FRNT, BACK, TEST)</p>
       </div>
@@ -128,7 +129,7 @@ export function DisciplineForm({ initialData, onSubmit }: DisciplineFormProps) {
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="auto-generated-from-display-name"
-          disabled={!!initialData?.name}
+          disabled={disabled || !!initialData?.name}
         />
         <p className="text-xs text-muted-foreground">
           {initialData?.name
@@ -149,6 +150,7 @@ export function DisciplineForm({ initialData, onSubmit }: DisciplineFormProps) {
             onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
             required
             className="flex-1"
+            disabled={disabled}
           >
             {COMMON_ICONS.map((icon) => (
               <option key={icon} value={icon}>
@@ -182,6 +184,7 @@ export function DisciplineForm({ initialData, onSubmit }: DisciplineFormProps) {
             onChange={(e) => setFormData({ ...formData, color: e.target.value })}
             required
             className="flex-1"
+            disabled={disabled}
           >
             {COMMON_COLORS.map((color) => (
               <option key={color.value} value={color.value}>
@@ -196,6 +199,6 @@ export function DisciplineForm({ initialData, onSubmit }: DisciplineFormProps) {
           />
         </div>
       </div>
-    </form>
+    </div>
   );
 }

@@ -13,19 +13,19 @@ export interface FeatureFormData {
 
 export interface FeatureFormProps {
   initialData?: Partial<Feature>;
-  onSubmit: (data: FeatureFormData) => void;
-  isSubmitting?: boolean;
+  onChange: (data: FeatureFormData) => void;
+  disabled?: boolean;
 }
 
 /**
  * Feature creation/edit form.
  * Used by both create and edit modals (mode determined by initialData presence).
  */
-export function FeatureForm({ initialData, onSubmit }: FeatureFormProps) {
+export function FeatureForm({ initialData, onChange, disabled }: FeatureFormProps) {
   const [formData, setFormData] = useState<FeatureFormData>({
     name: initialData?.name || "",
     display_name: initialData?.display_name || "",
-    acronym: "",
+    acronym: initialData?.acronym || "",
     description: initialData?.description || "",
   });
 
@@ -34,19 +34,18 @@ export function FeatureForm({ initialData, onSubmit }: FeatureFormProps) {
       setFormData({
         name: initialData.name || "",
         display_name: initialData.display_name || "",
-        acronym: "",
+        acronym: initialData.acronym || "",
         description: initialData.description || "",
       });
     }
   }, [initialData]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
+  useEffect(() => {
+    onChange(formData);
+  }, [formData, onChange]);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-4">
       {/* Display Name */}
       <div className="space-y-2">
         <Label htmlFor="display_name">
@@ -58,6 +57,7 @@ export function FeatureForm({ initialData, onSubmit }: FeatureFormProps) {
           onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
           placeholder="Enter feature display name"
           required
+          disabled={disabled}
         />
         <p className="text-xs text-muted-foreground">Human-readable name shown in the UI</p>
       </div>
@@ -75,6 +75,7 @@ export function FeatureForm({ initialData, onSubmit }: FeatureFormProps) {
           maxLength={4}
           required
           className="font-mono"
+          disabled={disabled}
         />
         <p className="text-xs text-muted-foreground">3-4 uppercase letters for task IDs (e.g., AUTH, USER, PROD)</p>
       </div>
@@ -87,7 +88,7 @@ export function FeatureForm({ initialData, onSubmit }: FeatureFormProps) {
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="auto-generated-from-display-name"
-          disabled={!!initialData?.name}
+          disabled={disabled || !!initialData?.name}
         />
         <p className="text-xs text-muted-foreground">
           {initialData?.name
@@ -105,8 +106,9 @@ export function FeatureForm({ initialData, onSubmit }: FeatureFormProps) {
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           placeholder="Enter feature description"
           rows={4}
+          disabled={disabled}
         />
       </div>
-    </form>
+    </div>
   );
 }

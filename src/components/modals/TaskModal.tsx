@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import type { PRDTask } from "@/types/prd";
 import { TaskForm, type TaskFormData } from "../forms/TaskForm";
 import { EntityModal } from "./EntityModal";
@@ -19,9 +20,9 @@ export function TaskModal({ open, onOpenChange, onSubmit, initialData, mode = "c
   const [isSubmitting, setIsSubmitting] = useState(false);
   const formRef = useRef<TaskFormData | null>(null);
 
-  const handleFormSubmit = (data: TaskFormData) => {
+  const handleFormChange = useCallback((data: TaskFormData) => {
     formRef.current = data;
-  };
+  }, []);
 
   const handleModalSubmit = async () => {
     if (!formRef.current) return;
@@ -29,10 +30,11 @@ export function TaskModal({ open, onOpenChange, onSubmit, initialData, mode = "c
     setIsSubmitting(true);
     try {
       await onSubmit(formRef.current);
+      toast.success(mode === "create" ? "Task created" : "Task updated");
       onOpenChange(false);
       formRef.current = null;
     } catch (error) {
-      console.error("Failed to save task:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to save task");
     } finally {
       setIsSubmitting(false);
     }
@@ -60,7 +62,7 @@ export function TaskModal({ open, onOpenChange, onSubmit, initialData, mode = "c
       isSubmitting={isSubmitting}
       submitLabel={mode === "create" ? "Create" : "Update"}
     >
-      <TaskForm initialData={initialData} onSubmit={handleFormSubmit} isSubmitting={isSubmitting} />
+      <TaskForm initialData={initialData} onChange={handleFormChange} disabled={isSubmitting} />
     </EntityModal>
   );
 }

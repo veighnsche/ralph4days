@@ -4,6 +4,7 @@ import { BottomBar } from "@/components/BottomBar";
 import { OutputPanel } from "@/components/OutputPanel";
 import { ProjectSelector } from "@/components/ProjectSelector";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { Toaster } from "@/components/ui/sonner";
 import { useInvoke } from "@/hooks/useInvoke";
 import type { Page } from "@/hooks/useNavigation";
 import { useTauriEvent } from "@/hooks/useTauriEvent";
@@ -174,36 +175,39 @@ function App() {
   }
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="h-screen">
-      {/* Left: Pages */}
-      <ResizablePanel defaultSize={50} minSize={40}>
-        <div className="h-full flex flex-col overflow-hidden">
-          <div className="flex-1 min-h-0 overflow-hidden relative">
-            {/* Preload all pages, show/hide with CSS */}
-            <div className={currentPage === "tasks" ? "h-full" : "hidden"}>
-              <TasksPage />
+    <>
+      <ResizablePanelGroup direction="horizontal" className="h-screen">
+        {/* Left: Pages */}
+        <ResizablePanel defaultSize={50} minSize={40}>
+          <div className="h-full flex flex-col overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-hidden relative">
+              {/* Preload all pages, show/hide with CSS */}
+              <div className={currentPage === "tasks" ? "h-full" : "hidden"}>
+                <TasksPage />
+              </div>
+              <div className={currentPage === "features" ? "h-full" : "hidden"}>
+                <FeaturesPage />
+              </div>
+              <div className={currentPage === "disciplines" ? "h-full" : "hidden"}>
+                <DisciplinesPage />
+              </div>
             </div>
-            <div className={currentPage === "features" ? "h-full" : "hidden"}>
-              <FeaturesPage />
-            </div>
-            <div className={currentPage === "disciplines" ? "h-full" : "hidden"}>
-              <DisciplinesPage />
-            </div>
+            {/* Bottom Bar */}
+            <BottomBar lockedProject={lockedProject} currentPage={currentPage} onPageChange={setCurrentPage} />
           </div>
-          {/* Bottom Bar */}
-          <BottomBar lockedProject={lockedProject} currentPage={currentPage} onPageChange={setCurrentPage} />
-        </div>
-      </ResizablePanel>
+        </ResizablePanel>
 
-      <ResizableHandle withHandle />
+        <ResizableHandle withHandle />
 
-      {/* Right: Output (always visible) */}
-      <ResizablePanel defaultSize={50} minSize={20}>
-        <div className="h-full p-4">
-          <OutputPanel />
-        </div>
-      </ResizablePanel>
-    </ResizablePanelGroup>
+        {/* Right: Output (always visible) */}
+        <ResizablePanel defaultSize={50} minSize={20}>
+          <div className="h-full p-4">
+            <OutputPanel />
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+      <Toaster />
+    </>
   );
 }
 

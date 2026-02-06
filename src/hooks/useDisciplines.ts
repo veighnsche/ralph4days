@@ -43,7 +43,7 @@ function buildConfigMap(disciplines: DisciplineConfig[]): Record<string, Discipl
 /** Fetch discipline configs from the backend, resolve icons, and provide a lookup map */
 export function useDisciplines() {
   const { data, error } = useInvoke<DisciplineConfigRaw[], DisciplineConfig[]>("get_disciplines_config", undefined, {
-    staleTime: Number.POSITIVE_INFINITY,
+    staleTime: 5 * 60 * 1000,
     select: resolveDisciplines,
   });
 

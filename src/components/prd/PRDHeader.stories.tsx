@@ -45,7 +45,6 @@ export const NewProject: Story = {
     setters: mockSetters,
     allTags: [],
     onClearFilters: () => console.log("Clear filters"),
-    onRefresh: () => console.log("Refresh"),
   },
 };
 
@@ -60,7 +59,6 @@ export const JustStarted: Story = {
     setters: mockSetters,
     allTags: ["frontend", "backend", "design"],
     onClearFilters: () => console.log("Clear filters"),
-    onRefresh: () => console.log("Refresh"),
   },
 };
 
@@ -75,7 +73,6 @@ export const HalfwayComplete: Story = {
     setters: mockSetters,
     allTags: ["frontend", "backend", "database", "testing", "design"],
     onClearFilters: () => console.log("Clear filters"),
-    onRefresh: () => console.log("Refresh"),
   },
 };
 
@@ -90,7 +87,6 @@ export const NearlyComplete: Story = {
     setters: mockSetters,
     allTags: ["frontend", "backend", "polish"],
     onClearFilters: () => console.log("Clear filters"),
-    onRefresh: () => console.log("Refresh"),
   },
 };
 
@@ -105,7 +101,6 @@ export const Complete: Story = {
     setters: mockSetters,
     allTags: ["frontend", "backend", "database", "testing", "design", "docs"],
     onClearFilters: () => console.log("Clear filters"),
-    onRefresh: () => console.log("Refresh"),
   },
 };
 
@@ -125,7 +120,6 @@ export const WithFiltersActive: Story = {
     setters: mockSetters,
     allTags: ["frontend", "backend", "database", "testing", "api"],
     onClearFilters: () => console.log("Clear filters"),
-    onRefresh: () => console.log("Refresh"),
   },
 };
 
@@ -145,6 +139,5 @@ export const LongProjectName: Story = {
     setters: mockSetters,
     allTags: ["frontend", "backend", "database", "api", "analytics", "ai", "security"],
     onClearFilters: () => console.log("Clear filters"),
-    onRefresh: () => console.log("Refresh"),
   },
 };

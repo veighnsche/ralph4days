@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { Layers, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -15,6 +16,7 @@ import { useDisciplines } from "@/hooks/useDisciplines";
 import { usePRDData } from "@/hooks/usePRDData";
 
 export function DisciplinesPage() {
+  const queryClient = useQueryClient();
   const { prdData, isLoading: prdLoading, error: prdError } = usePRDData();
   const { disciplines } = useDisciplines();
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -53,8 +55,7 @@ export function DisciplinesPage() {
       icon: data.icon,
       color: data.color,
     });
-    // Reload disciplines - they're cached with infinite staleTime so we need to reload
-    window.location.reload();
+    await queryClient.invalidateQueries({ queryKey: ["get_disciplines_config"] });
   };
 
   if (loading) {

@@ -491,6 +491,7 @@ pub fn get_existing_features(state: State<'_, AppState>) -> Result<Vec<String>, 
 pub struct FeatureData {
     pub name: String,
     pub display_name: String,
+    pub acronym: String,
     pub description: Option<String>,
     pub created: Option<String>,
 }
@@ -505,6 +506,7 @@ pub fn get_features(state: State<'_, AppState>) -> Result<Vec<FeatureData>, Stri
         .map(|f| FeatureData {
             name: f.name.clone(),
             display_name: f.display_name.clone(),
+            acronym: f.acronym.clone(),
             description: f.description.clone(),
             created: f.created.clone(),
         })

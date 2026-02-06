@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import type { DisciplineConfig } from "@/hooks/useDisciplines";
 import { DisciplineForm, type DisciplineFormData } from "../forms/DisciplineForm";
 import { EntityModal } from "./EntityModal";
@@ -19,9 +20,9 @@ export function DisciplineModal({ open, onOpenChange, onSubmit, initialData, mod
   const [isSubmitting, setIsSubmitting] = useState(false);
   const formRef = useRef<DisciplineFormData | null>(null);
 
-  const handleFormSubmit = (data: DisciplineFormData) => {
+  const handleFormChange = useCallback((data: DisciplineFormData) => {
     formRef.current = data;
-  };
+  }, []);
 
   const handleModalSubmit = async () => {
     if (!formRef.current) return;
@@ -29,10 +30,11 @@ export function DisciplineModal({ open, onOpenChange, onSubmit, initialData, mod
     setIsSubmitting(true);
     try {
       await onSubmit(formRef.current);
+      toast.success(mode === "create" ? "Discipline created" : "Discipline updated");
       onOpenChange(false);
       formRef.current = null;
     } catch (error) {
-      console.error("Failed to save discipline:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to save discipline");
     } finally {
       setIsSubmitting(false);
     }
@@ -60,7 +62,7 @@ export function DisciplineModal({ open, onOpenChange, onSubmit, initialData, mod
       isSubmitting={isSubmitting}
       submitLabel={mode === "create" ? "Create" : "Update"}
     >
-      <DisciplineForm initialData={initialData} onSubmit={handleFormSubmit} isSubmitting={isSubmitting} />
+      <DisciplineForm initialData={initialData} onChange={handleFormChange} disabled={isSubmitting} />
     </EntityModal>
   );
 }

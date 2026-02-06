@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import type { Feature } from "@/types/prd";
 import { FeatureForm, type FeatureFormData } from "../forms/FeatureForm";
 import { EntityModal } from "./EntityModal";
@@ -19,9 +20,9 @@ export function FeatureModal({ open, onOpenChange, onSubmit, initialData, mode =
   const [isSubmitting, setIsSubmitting] = useState(false);
   const formRef = useRef<FeatureFormData | null>(null);
 
-  const handleFormSubmit = (data: FeatureFormData) => {
+  const handleFormChange = useCallback((data: FeatureFormData) => {
     formRef.current = data;
-  };
+  }, []);
 
   const handleModalSubmit = async () => {
     if (!formRef.current) return;
@@ -29,10 +30,11 @@ export function FeatureModal({ open, onOpenChange, onSubmit, initialData, mode =
     setIsSubmitting(true);
     try {
       await onSubmit(formRef.current);
+      toast.success(mode === "create" ? "Feature created" : "Feature updated");
       onOpenChange(false);
       formRef.current = null;
     } catch (error) {
-      console.error("Failed to save feature:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to save feature");
     } finally {
       setIsSubmitting(false);
     }
@@ -60,7 +62,7 @@ export function FeatureModal({ open, onOpenChange, onSubmit, initialData, mode =
       isSubmitting={isSubmitting}
       submitLabel={mode === "create" ? "Create" : "Update"}
     >
-      <FeatureForm initialData={initialData} onSubmit={handleFormSubmit} isSubmitting={isSubmitting} />
+      <FeatureForm initialData={initialData} onChange={handleFormChange} disabled={isSubmitting} />
     </EntityModal>
   );
 }

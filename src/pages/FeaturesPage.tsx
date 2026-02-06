@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { Plus, Target } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -16,12 +17,12 @@ import { usePRDData } from "@/hooks/usePRDData";
 import type { Feature } from "@/types/prd";
 
 export function FeaturesPage() {
+  const queryClient = useQueryClient();
   const { prdData, isLoading: prdLoading, error: prdError } = usePRDData();
   const {
     data: features = [],
     isLoading: featuresLoading,
     error: featuresError,
-    refetch: refreshFeatures,
   } = useInvoke<Feature[]>("get_features");
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
@@ -59,7 +60,8 @@ export function FeaturesPage() {
       acronym: data.acronym,
       description: data.description || null,
     });
-    refreshFeatures();
+    await queryClient.invalidateQueries({ queryKey: ["get_features"] });
+    await queryClient.invalidateQueries({ queryKey: ["get_features_config"] });
   };
 
   if (loading) {

@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -22,7 +23,8 @@ interface FeatureConfig {
 }
 
 export function TasksPage() {
-  const { prdData, isLoading: loading, error, refetch: refresh } = usePRDData();
+  const queryClient = useQueryClient();
+  const { prdData, isLoading: loading, error } = usePRDData();
   const { filters, setters, filteredTasks, allTags, clearFilters } = usePRDFilters(prdData);
   const { selectedTask, sidebarOpen, handleTaskClick, handleNavigateNext, handleNavigatePrev, setSidebarOpen } =
     useSidebarNavigation(filteredTasks);
@@ -59,7 +61,9 @@ export function TasksPage() {
       featureAcronym: featureConfig.acronym,
       disciplineAcronym: disciplineConfig.acronym,
     });
-    refresh();
+    await queryClient.invalidateQueries({ queryKey: ["get_prd_content"] });
+    await queryClient.invalidateQueries({ queryKey: ["get_features"] });
+    await queryClient.invalidateQueries({ queryKey: ["get_features_config"] });
   };
 
   if (loading) {
@@ -110,7 +114,6 @@ export function TasksPage() {
           setters={setters}
           allTags={allTags}
           onClearFilters={clearFilters}
-          onRefresh={refresh}
         />
         <div className="px-4 pb-2">
           <Button onClick={() => setCreateModalOpen(true)} size="sm">

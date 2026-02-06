@@ -7,7 +7,6 @@ import type { FilterSetters, FilterState } from "@/hooks/usePRDFilters";
 import type { PRDProject } from "@/types/prd";
 import { ActiveFilters } from "./ActiveFilters";
 import { FiltersModal } from "./FiltersModal";
-import { TaskCreateDialog } from "./TaskCreateDialog";
 import { TaskStatsBar } from "./TaskStatsBar";
 
 interface PRDHeaderProps {
@@ -20,7 +19,6 @@ interface PRDHeaderProps {
   setters: FilterSetters;
   allTags: string[];
   onClearFilters: () => void;
-  onRefresh: () => void;
 }
 
 export function PRDHeader({
@@ -33,7 +31,6 @@ export function PRDHeader({
   setters,
   allTags,
   onClearFilters,
-  onRefresh,
 }: PRDHeaderProps) {
   const hasActiveFilters =
     filters.searchQuery ||
@@ -58,11 +55,6 @@ export function PRDHeader({
 
           {/* Progress Bar */}
           <Progress value={progressPercent} className="h-1.5" />
-
-          {/* New Task Button */}
-          <div className="flex justify-end">
-            <TaskCreateDialog onTaskCreated={onRefresh} />
-          </div>
 
           <Separator />
 

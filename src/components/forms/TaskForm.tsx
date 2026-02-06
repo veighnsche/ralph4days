@@ -23,15 +23,15 @@ export interface TaskFormData {
 
 export interface TaskFormProps {
   initialData?: Partial<PRDTask>;
-  onSubmit: (data: TaskFormData) => void;
-  isSubmitting?: boolean;
+  onChange: (data: TaskFormData) => void;
+  disabled?: boolean;
 }
 
 /**
  * Task creation/edit form.
  * Used by both create and edit modals (mode determined by initialData presence).
  */
-export function TaskForm({ initialData, onSubmit }: TaskFormProps) {
+export function TaskForm({ initialData, onChange, disabled }: TaskFormProps) {
   const { disciplines } = useDisciplines();
   const { data: features = [] } = useInvoke<Feature[]>("get_features");
 
@@ -64,10 +64,9 @@ export function TaskForm({ initialData, onSubmit }: TaskFormProps) {
     }
   }, [initialData]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
+  useEffect(() => {
+    onChange(formData);
+  }, [formData, onChange]);
 
   const addTag = () => {
     if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
@@ -98,7 +97,7 @@ export function TaskForm({ initialData, onSubmit }: TaskFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-4">
       {/* Feature */}
       <div className="space-y-2">
         <Label htmlFor="feature">
@@ -110,6 +109,7 @@ export function TaskForm({ initialData, onSubmit }: TaskFormProps) {
             value={formData.feature}
             onChange={(e) => setFormData({ ...formData, feature: e.target.value })}
             required
+            disabled={disabled}
           >
             <option value="">Select a feature...</option>
             {features.map((feature) => (
@@ -125,6 +125,7 @@ export function TaskForm({ initialData, onSubmit }: TaskFormProps) {
             onChange={(e) => setFormData({ ...formData, feature: e.target.value })}
             placeholder="Enter feature name"
             required
+            disabled={disabled}
           />
         )}
       </div>
@@ -139,6 +140,7 @@ export function TaskForm({ initialData, onSubmit }: TaskFormProps) {
           value={formData.discipline}
           onChange={(e) => setFormData({ ...formData, discipline: e.target.value })}
           required
+          disabled={disabled}
         >
           <option value="">Select a discipline...</option>
           {disciplines.map((discipline) => (
@@ -160,6 +162,7 @@ export function TaskForm({ initialData, onSubmit }: TaskFormProps) {
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           placeholder="Enter task title"
           required
+          disabled={disabled}
         />
       </div>
 
@@ -172,6 +175,7 @@ export function TaskForm({ initialData, onSubmit }: TaskFormProps) {
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           placeholder="Enter task description"
           rows={4}
+          disabled={disabled}
         />
       </div>
 
@@ -182,6 +186,7 @@ export function TaskForm({ initialData, onSubmit }: TaskFormProps) {
           id="priority"
           value={formData.priority}
           onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+          disabled={disabled}
         >
           <option value="low">Low</option>
           <option value="medium">Medium</option>
@@ -198,6 +203,7 @@ export function TaskForm({ initialData, onSubmit }: TaskFormProps) {
             value={newTag}
             onChange={(e) => setNewTag(e.target.value)}
             placeholder="Add a tag"
+            disabled={disabled}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -205,7 +211,7 @@ export function TaskForm({ initialData, onSubmit }: TaskFormProps) {
               }
             }}
           />
-          <Button type="button" onClick={addTag} variant="outline">
+          <Button type="button" onClick={addTag} variant="outline" disabled={disabled}>
             Add
           </Button>
         </div>
@@ -214,7 +220,12 @@ export function TaskForm({ initialData, onSubmit }: TaskFormProps) {
             {formData.tags.map((tag) => (
               <Badge key={tag} variant="secondary" className="gap-1">
                 {tag}
-                <button type="button" onClick={() => removeTag(tag)} className="hover:text-destructive">
+                <button
+                  type="button"
+                  onClick={() => removeTag(tag)}
+                  className="hover:text-destructive"
+                  disabled={disabled}
+                >
                   <X className="h-3 w-3" />
                 </button>
               </Badge>
@@ -231,6 +242,7 @@ export function TaskForm({ initialData, onSubmit }: TaskFormProps) {
             value={newCriterion}
             onChange={(e) => setNewCriterion(e.target.value)}
             placeholder="Add acceptance criterion"
+            disabled={disabled}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -238,7 +250,7 @@ export function TaskForm({ initialData, onSubmit }: TaskFormProps) {
               }
             }}
           />
-          <Button type="button" onClick={addCriterion} variant="outline">
+          <Button type="button" onClick={addCriterion} variant="outline" disabled={disabled}>
             Add
           </Button>
         </div>
@@ -251,6 +263,7 @@ export function TaskForm({ initialData, onSubmit }: TaskFormProps) {
                   type="button"
                   onClick={() => removeCriterion(index)}
                   className="text-muted-foreground hover:text-destructive"
+                  disabled={disabled}
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -259,6 +272,6 @@ export function TaskForm({ initialData, onSubmit }: TaskFormProps) {
           </ul>
         )}
       </div>
-    </form>
+    </div>
   );
 }

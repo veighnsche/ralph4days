@@ -25,7 +25,7 @@ function resolveFeatures(raw: FeatureConfigRaw[]): FeatureConfig[] {
 /** Fetch feature configs from the backend and provide a lookup map */
 export function useFeatures() {
   const { data, error } = useInvoke<FeatureConfigRaw[], FeatureConfig[]>("get_features_config", undefined, {
-    staleTime: Number.POSITIVE_INFINITY,
+    staleTime: 5 * 60 * 1000,
     select: resolveFeatures,
   });
 
