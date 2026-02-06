@@ -60,57 +60,60 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
       </ItemContent>
 
       {/* Right Side: Priority + Metadata */}
-      <ItemActions>
-        {/* Priority Badge */}
-        {priorityConfig && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div
-                className="px-2 py-0.5 rounded text-xs font-medium cursor-help"
-                style={{
-                  backgroundColor: priorityConfig.bgColor,
-                  color: priorityConfig.color,
-                }}
-              >
-                {priorityConfig.label}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>{priorityConfig.label} Priority</TooltipContent>
-          </Tooltip>
-        )}
+      <ItemActions className="flex-col items-end gap-2">
+        {/* Top Row: Counts + Priority */}
+        <div className="flex items-center gap-2">
+          {/* Metadata Badges */}
+          {task.acceptance_criteria && task.acceptance_criteria.length > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5 cursor-help">
+                  {task.acceptance_criteria.length} AC
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>{task.acceptance_criteria.length} Acceptance Criteria</TooltipContent>
+            </Tooltip>
+          )}
 
-        {/* Metadata Badges */}
-        {task.acceptance_criteria && task.acceptance_criteria.length > 0 && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5 cursor-help">
-                {task.acceptance_criteria.length} AC
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>{task.acceptance_criteria.length} Acceptance Criteria</TooltipContent>
-          </Tooltip>
-        )}
+          {task.depends_on && task.depends_on.length > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5 cursor-help">
+                  {task.depends_on.length} deps
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>{task.depends_on.length} Dependencies</TooltipContent>
+            </Tooltip>
+          )}
 
-        {task.depends_on && task.depends_on.length > 0 && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5 cursor-help">
-                {task.depends_on.length} deps
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>{task.depends_on.length} Dependencies</TooltipContent>
-          </Tooltip>
-        )}
+          {/* Priority Badge */}
+          {priorityConfig && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div
+                  className="px-2 py-0.5 rounded text-xs font-medium cursor-help"
+                  style={{
+                    backgroundColor: priorityConfig.bgColor,
+                    color: priorityConfig.color,
+                  }}
+                >
+                  {priorityConfig.label}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>{priorityConfig.label} Priority</TooltipContent>
+            </Tooltip>
+          )}
+        </div>
 
+        {/* Bottom Row: Individual Tags */}
         {task.tags && task.tags.length > 0 && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="secondary" className="text-xs px-1.5 py-0.5 h-5 cursor-help">
-                {task.tags.length} tags
+          <div className="flex flex-wrap gap-1 justify-end">
+            {task.tags.map((tag) => (
+              <Badge key={tag} variant="outline" className="text-xs px-2.5 py-0.5 h-5 min-w-[3rem]">
+                {tag}
               </Badge>
-            </TooltipTrigger>
-            <TooltipContent>{task.tags.join(", ")}</TooltipContent>
-          </Tooltip>
+            ))}
+          </div>
         )}
       </ItemActions>
     </Item>

@@ -60,7 +60,7 @@ export const PlaylistView = memo(function PlaylistView({ tasks, onTaskClick }: P
               </div>
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-2">
-              <ItemGroup className="rounded-md border">
+              <ItemGroup className="rounded-md">
                 {blockedSkipped.map((task, index) => (
                   <>
                     <PlaylistItem key={task.id} task={task} isIssue onClick={() => onTaskClick(task)} />
@@ -73,7 +73,7 @@ export const PlaylistView = memo(function PlaylistView({ tasks, onTaskClick }: P
         )}
 
         {/* Main Playlist */}
-        <ItemGroup className="rounded-md border pb-8">
+        <ItemGroup className="rounded-md">
           {/* Completed Tasks */}
           {done.map((task) => (
             <>
