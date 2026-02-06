@@ -789,3 +789,209 @@ fn test_update_task_preserves_comments() {
     assert_eq!(task.comments.len(), 1);
     assert_eq!(task.comments[0].body, "Keep me");
 }
+
+// === FEATURE DELETE tests ===
+
+#[test]
+fn test_delete_feature() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    db.create_feature("auth".to_string(), "Auth".to_string(), "AUTH".to_string(), None).unwrap();
+    assert_eq!(db.get_features().len(), 1);
+
+    db.delete_feature("auth".to_string()).unwrap();
+    assert_eq!(db.get_features().len(), 0);
+}
+
+#[test]
+fn test_delete_feature_nonexistent() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    let result = db.delete_feature("nope".to_string());
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("does not exist"));
+}
+
+#[test]
+fn test_delete_feature_with_tasks_rejected() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    db.create_feature("auth".to_string(), "Auth".to_string(), "AUTH".to_string(), None).unwrap();
+    db.create_task(TaskInput {
+        feature: "auth".to_string(),
+        discipline: "backend".to_string(),
+        title: "Task".to_string(),
+        ..Default::default()
+    })
+    .unwrap();
+
+    let result = db.delete_feature("auth".to_string());
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Cannot delete feature"));
+}
+
+// === DISCIPLINE DELETE tests ===
+
+#[test]
+fn test_delete_discipline() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    db.create_discipline(
+        "custom".to_string(), "Custom".to_string(), "CUST".to_string(),
+        "Wrench".to_string(), "#ff0000".to_string(),
+    ).unwrap();
+
+    let initial_count = db.get_disciplines().len();
+    db.delete_discipline("custom".to_string()).unwrap();
+    assert_eq!(db.get_disciplines().len(), initial_count - 1);
+}
+
+#[test]
+fn test_delete_discipline_nonexistent() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    let result = db.delete_discipline("nope".to_string());
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("does not exist"));
+}
+
+#[test]
+fn test_delete_discipline_with_tasks_rejected() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+    db.create_task(TaskInput {
+        feature: "test".to_string(),
+        discipline: "backend".to_string(),
+        title: "Task".to_string(),
+        ..Default::default()
+    })
+    .unwrap();
+
+    let result = db.delete_discipline("backend".to_string());
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Cannot delete discipline"));
+}
+
+// === COMMENT UPDATE/DELETE tests ===
+
+#[test]
+fn test_update_comment() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+    let task_id = db.create_task(TaskInput {
+        feature: "test".to_string(),
+        discipline: "backend".to_string(),
+        title: "Task".to_string(),
+        ..Default::default()
+    }).unwrap();
+
+    db.add_comment(task_id, CommentAuthor::Human, None, "Original".to_string()).unwrap();
+    db.update_comment(task_id, 0, "Edited".to_string()).unwrap();
+
+    let task = db.get_task_by_id(task_id).unwrap();
+    assert_eq!(task.comments[0].body, "Edited");
+    // Author and created should be preserved
+    assert_eq!(task.comments[0].author, CommentAuthor::Human);
+    assert!(task.comments[0].created.is_some());
+}
+
+#[test]
+fn test_update_comment_empty_body_rejected() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+    let task_id = db.create_task(TaskInput {
+        feature: "test".to_string(),
+        discipline: "backend".to_string(),
+        title: "Task".to_string(),
+        ..Default::default()
+    }).unwrap();
+
+    db.add_comment(task_id, CommentAuthor::Human, None, "Hello".to_string()).unwrap();
+
+    let result = db.update_comment(task_id, 0, "   ".to_string());
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("cannot be empty"));
+}
+
+#[test]
+fn test_update_comment_out_of_bounds() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+    let task_id = db.create_task(TaskInput {
+        feature: "test".to_string(),
+        discipline: "backend".to_string(),
+        title: "Task".to_string(),
+        ..Default::default()
+    }).unwrap();
+
+    let result = db.update_comment(task_id, 0, "Hello".to_string());
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("out of bounds"));
+}
+
+#[test]
+fn test_delete_comment() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+    let task_id = db.create_task(TaskInput {
+        feature: "test".to_string(),
+        discipline: "backend".to_string(),
+        title: "Task".to_string(),
+        ..Default::default()
+    }).unwrap();
+
+    db.add_comment(task_id, CommentAuthor::Human, None, "First".to_string()).unwrap();
+    db.add_comment(task_id, CommentAuthor::Human, None, "Second".to_string()).unwrap();
+    db.add_comment(task_id, CommentAuthor::Human, None, "Third".to_string()).unwrap();
+
+    // Delete middle comment
+    db.delete_comment(task_id, 1).unwrap();
+
+    let task = db.get_task_by_id(task_id).unwrap();
+    assert_eq!(task.comments.len(), 2);
+    assert_eq!(task.comments[0].body, "First");
+    assert_eq!(task.comments[1].body, "Third");
+}
+
+#[test]
+fn test_delete_comment_out_of_bounds() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+    let task_id = db.create_task(TaskInput {
+        feature: "test".to_string(),
+        discipline: "backend".to_string(),
+        title: "Task".to_string(),
+        ..Default::default()
+    }).unwrap();
+
+    let result = db.delete_comment(task_id, 0);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("out of bounds"));
+}
+
+#[test]
+fn test_delete_comment_nonexistent_task() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    let result = db.delete_comment(999, 0);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("does not exist"));
+}

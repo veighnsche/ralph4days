@@ -594,6 +594,67 @@ pub fn update_discipline(
 }
 
 #[tauri::command]
+pub fn update_task(
+    state: State<'_, AppState>,
+    id: u32,
+    feature: String,
+    discipline: String,
+    title: String,
+    description: Option<String>,
+    priority: Option<String>,
+    tags: Vec<String>,
+    depends_on: Option<Vec<u32>>,
+    acceptance_criteria: Option<Vec<String>>,
+    context_files: Option<Vec<String>>,
+    output_artifacts: Option<Vec<String>>,
+    hints: Option<String>,
+    estimated_turns: Option<u32>,
+    provenance: Option<String>,
+) -> Result<(), String> {
+    let db_path = get_db_path(&state)?;
+    let mut db = YamlDatabase::from_path(db_path)?;
+
+    let task_input = TaskInput {
+        feature: normalize_feature_name(&feature)?,
+        discipline,
+        title,
+        description,
+        priority: parse_priority(priority.as_deref()),
+        tags,
+        depends_on: depends_on.unwrap_or_default(),
+        acceptance_criteria,
+        context_files: context_files.unwrap_or_default(),
+        output_artifacts: output_artifacts.unwrap_or_default(),
+        hints,
+        estimated_turns,
+        provenance: parse_provenance(provenance.as_deref()),
+    };
+
+    db.update_task(id, task_input)
+}
+
+#[tauri::command]
+pub fn delete_task(state: State<'_, AppState>, id: u32) -> Result<(), String> {
+    let db_path = get_db_path(&state)?;
+    let mut db = YamlDatabase::from_path(db_path)?;
+    db.delete_task(id)
+}
+
+#[tauri::command]
+pub fn delete_feature(state: State<'_, AppState>, name: String) -> Result<(), String> {
+    let db_path = get_db_path(&state)?;
+    let mut db = YamlDatabase::from_path(db_path)?;
+    db.delete_feature(name)
+}
+
+#[tauri::command]
+pub fn delete_discipline(state: State<'_, AppState>, name: String) -> Result<(), String> {
+    let db_path = get_db_path(&state)?;
+    let mut db = YamlDatabase::from_path(db_path)?;
+    db.delete_discipline(name)
+}
+
+#[tauri::command]
 pub fn add_task_comment(
     state: State<'_, AppState>,
     task_id: u32,
@@ -609,6 +670,29 @@ pub fn add_task_comment(
         _ => return Err(format!("Invalid author: {}", author)),
     };
     db.add_comment(task_id, comment_author, agent_task_id, body)
+}
+
+#[tauri::command]
+pub fn update_task_comment(
+    state: State<'_, AppState>,
+    task_id: u32,
+    comment_index: usize,
+    body: String,
+) -> Result<(), String> {
+    let db_path = get_db_path(&state)?;
+    let mut db = YamlDatabase::from_path(db_path)?;
+    db.update_comment(task_id, comment_index, body)
+}
+
+#[tauri::command]
+pub fn delete_task_comment(
+    state: State<'_, AppState>,
+    task_id: u32,
+    comment_index: usize,
+) -> Result<(), String> {
+    let db_path = get_db_path(&state)?;
+    let mut db = YamlDatabase::from_path(db_path)?;
+    db.delete_comment(task_id, comment_index)
 }
 
 // --- Enriched Query Commands ---

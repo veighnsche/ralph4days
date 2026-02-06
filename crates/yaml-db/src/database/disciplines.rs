@@ -118,4 +118,35 @@ impl super::YamlDatabase {
         self.save_all()?;
         Ok(())
     }
+
+    /// Delete a discipline by name
+    /// Thread-safe: Uses exclusive file lock
+    ///
+    /// # Errors
+    /// - Returns error if discipline doesn't exist
+    /// - Returns error if any tasks reference this discipline
+    pub fn delete_discipline(&mut self, name: String) -> Result<(), String> {
+        let _lock = self.acquire_lock()?;
+        self.load_all()?;
+
+        // Check if any tasks reference this discipline
+        for task in self.tasks.get_all() {
+            if task.discipline == name {
+                return Err(format!(
+                    "Cannot delete discipline '{}': task {} ('{}') belongs to it",
+                    name, task.id, task.title
+                ));
+            }
+        }
+
+        let initial_len = self.disciplines.items_mut().len();
+        self.disciplines.items_mut().retain(|d| d.name != name);
+
+        if self.disciplines.items_mut().len() == initial_len {
+            return Err(format!("Discipline '{}' does not exist", name));
+        }
+
+        self.save_all()?;
+        Ok(())
+    }
 }

@@ -102,4 +102,35 @@ impl super::YamlDatabase {
         self.save_all()?;
         Ok(())
     }
+
+    /// Delete a feature by name
+    /// Thread-safe: Uses exclusive file lock
+    ///
+    /// # Errors
+    /// - Returns error if feature doesn't exist
+    /// - Returns error if any tasks reference this feature
+    pub fn delete_feature(&mut self, name: String) -> Result<(), String> {
+        let _lock = self.acquire_lock()?;
+        self.load_all()?;
+
+        // Check if any tasks reference this feature
+        for task in self.tasks.get_all() {
+            if task.feature == name {
+                return Err(format!(
+                    "Cannot delete feature '{}': task {} ('{}') belongs to it",
+                    name, task.id, task.title
+                ));
+            }
+        }
+
+        let initial_len = self.features.items_mut().len();
+        self.features.items_mut().retain(|f| f.name != name);
+
+        if self.features.items_mut().len() == initial_len {
+            return Err(format!("Feature '{}' does not exist", name));
+        }
+
+        self.save_all()?;
+        Ok(())
+    }
 }
