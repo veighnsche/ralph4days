@@ -1,10 +1,22 @@
+/** Task status stored in YAML */
+export type TaskStatus = "pending" | "in_progress" | "done" | "blocked" | "skipped";
+
+/** Inferred task status (computed from TaskStatus + dependency graph) */
+export type InferredTaskStatus =
+  | "ready" // pending + all deps met + not blocked
+  | "waiting_on_deps" // pending + some deps not done
+  | "externally_blocked" // status == blocked (manual)
+  | "in_progress" // status == in_progress
+  | "done" // status == done
+  | "skipped"; // status == skipped
+
 export interface PRDTask {
   id: number;
   feature: string;
   discipline: string;
   title: string;
   description?: string;
-  status: "pending" | "in_progress" | "done" | "blocked" | "skipped";
+  status: TaskStatus;
   priority?: "low" | "medium" | "high" | "critical";
   tags?: string[];
   dependsOn?: number[];
@@ -17,6 +29,7 @@ export interface PRDTask {
 
 /** Task with pre-joined feature/discipline display data from backend */
 export interface EnrichedTask extends PRDTask {
+  inferredStatus: InferredTaskStatus;
   featureDisplayName: string;
   featureAcronym: string;
   disciplineDisplayName: string;
@@ -51,7 +64,17 @@ export interface ProjectInfo {
   created?: string;
 }
 
-export type StatusFilter = "all" | "pending" | "in_progress" | "done" | "blocked" | "skipped";
+export type StatusFilter =
+  | "all"
+  // Actual statuses (match TaskStatus)
+  | "pending"
+  | "in_progress"
+  | "blocked"
+  | "done"
+  | "skipped"
+  // Inferred statuses (additional computed states)
+  | "ready" // Inferred: pending + all deps met
+  | "waiting_on_deps"; // Inferred: pending + unmet deps
 export type PriorityFilter = "all" | "low" | "medium" | "high" | "critical";
 
 export interface Feature {

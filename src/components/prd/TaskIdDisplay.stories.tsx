@@ -52,6 +52,7 @@ const createTask = (id: number, feature: string, discipline: string): EnrichedTa
     discipline,
     title: "Example task",
     status: "pending",
+    inferredStatus: "ready",
     featureDisplayName: featureDisplayName(feature),
     featureAcronym: featureAcronym(feature),
     disciplineDisplayName: disc.displayName,

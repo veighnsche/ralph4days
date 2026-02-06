@@ -450,6 +450,32 @@ impl YamlDatabase {
         self.metadata.get_next_id(self.tasks.get_all())
     }
 
+    /// Compute the inferred status for a task based on its actual status and dependencies
+    fn compute_inferred_status(&self, task: &Task) -> super::InferredTaskStatus {
+        use super::InferredTaskStatus;
+
+        match task.status {
+            TaskStatus::InProgress => InferredTaskStatus::InProgress,
+            TaskStatus::Done => InferredTaskStatus::Done,
+            TaskStatus::Skipped => InferredTaskStatus::Skipped,
+            TaskStatus::Blocked => InferredTaskStatus::ExternallyBlocked,
+            TaskStatus::Pending => {
+                // Check if all dependencies are met
+                let all_deps_met = task.depends_on.iter().all(|dep_id| {
+                    self.get_task_by_id(*dep_id)
+                        .map(|dep| dep.status == TaskStatus::Done)
+                        .unwrap_or(false)
+                });
+
+                if all_deps_met {
+                    InferredTaskStatus::Ready
+                } else {
+                    InferredTaskStatus::WaitingOnDeps
+                }
+            }
+        }
+    }
+
     /// Get tasks joined with feature/discipline display data
     pub fn get_enriched_tasks(&self) -> Vec<super::EnrichedTask> {
         let features = self.features.get_all();
@@ -461,6 +487,7 @@ impl YamlDatabase {
             .map(|task| {
                 let feature = features.iter().find(|f| f.name == task.feature);
                 let discipline = disciplines.iter().find(|d| d.name == task.discipline);
+                let inferred_status = self.compute_inferred_status(task);
 
                 super::EnrichedTask {
                     id: task.id,
@@ -469,6 +496,7 @@ impl YamlDatabase {
                     title: task.title.clone(),
                     description: task.description.clone(),
                     status: task.status,
+                    inferred_status,
                     priority: task.priority,
                     tags: task.tags.clone(),
                     depends_on: task.depends_on.clone(),

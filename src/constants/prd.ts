@@ -1,5 +1,5 @@
-import { Ban, CheckCircle2, Circle, Play, Slash } from "lucide-react";
-import type { PRDTask } from "@/types/prd";
+import { AlertCircle, Ban, CheckCircle2, Circle, Clock, Play, Slash } from "lucide-react";
+import type { InferredTaskStatus, PRDTask } from "@/types/prd";
 
 export const STATUS_CONFIG = {
   pending: {
@@ -33,6 +33,54 @@ export const STATUS_CONFIG = {
     bgColor: "color-mix(in oklch, var(--status-skipped) 10%, transparent)",
   },
 } as const;
+
+export const INFERRED_STATUS_CONFIG = {
+  ready: {
+    label: "Ready",
+    icon: CheckCircle2,
+    color: "var(--status-done)", // Green
+    bgColor: "color-mix(in oklch, var(--status-done) 15%, transparent)",
+    description: "All dependencies met - can be claimed",
+  },
+  waiting_on_deps: {
+    label: "Waiting on Deps",
+    icon: Clock,
+    color: "var(--priority-medium)", // Yellow/Orange
+    bgColor: "color-mix(in oklch, var(--priority-medium) 15%, transparent)",
+    description: "Waiting for dependencies to complete",
+  },
+  externally_blocked: {
+    label: "Blocked",
+    icon: AlertCircle,
+    color: "var(--status-blocked)", // Red
+    bgColor: "color-mix(in oklch, var(--status-blocked) 15%, transparent)",
+    description: "Externally blocked",
+  },
+  in_progress: {
+    label: "In Progress",
+    icon: Play,
+    color: "var(--status-in-progress)", // Blue
+    bgColor: "color-mix(in oklch, var(--status-in-progress) 15%, transparent)",
+    description: "Currently being worked on",
+  },
+  done: {
+    label: "Done",
+    icon: CheckCircle2,
+    color: "var(--status-done)", // Green
+    bgColor: "color-mix(in oklch, var(--status-done) 15%, transparent)",
+    description: "Completed",
+  },
+  skipped: {
+    label: "Skipped",
+    icon: Slash,
+    color: "var(--status-skipped)", // Gray
+    bgColor: "color-mix(in oklch, var(--status-skipped) 15%, transparent)",
+    description: "Intentionally skipped",
+  },
+} as const satisfies Record<
+  InferredTaskStatus,
+  { label: string; icon: any; color: string; bgColor: string; description: string }
+>;
 
 export const PRIORITY_CONFIG = {
   low: {

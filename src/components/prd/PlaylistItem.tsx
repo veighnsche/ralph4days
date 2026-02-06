@@ -3,7 +3,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { PRIORITY_CONFIG, STATUS_CONFIG } from "@/constants/prd";
+import { INFERRED_STATUS_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from "@/constants/prd";
+import { getInferredStatusExplanation } from "@/lib/taskStatus";
 import type { EnrichedTask } from "@/types/prd";
 import { TaskIdDisplay } from "./TaskIdDisplay";
 
@@ -89,16 +90,40 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
             </Tooltip>
           )}
 
-          {task.dependsOn && task.dependsOn.length > 0 && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5 cursor-help">
-                  {task.dependsOn.length} deps
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>{task.dependsOn.length} Dependencies</TooltipContent>
-            </Tooltip>
-          )}
+          {/* Dependencies Badge - enhanced with inferred status color */}
+          {task.dependsOn &&
+            task.dependsOn.length > 0 &&
+            (() => {
+              const isWaiting = task.inferredStatus === "waiting_on_deps";
+              const inferredConfig = isWaiting ? INFERRED_STATUS_CONFIG.waiting_on_deps : null;
+
+              return (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge
+                      variant="outline"
+                      className="text-xs px-1.5 py-0.5 h-5 cursor-help"
+                      style={
+                        inferredConfig
+                          ? {
+                              borderColor: inferredConfig.color,
+                              color: inferredConfig.color,
+                              backgroundColor: inferredConfig.bgColor,
+                            }
+                          : undefined
+                      }
+                    >
+                      {task.dependsOn.length} dep{task.dependsOn.length !== 1 ? "s" : ""}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {isWaiting
+                      ? getInferredStatusExplanation(task.status, task.inferredStatus, task.dependsOn.length)
+                      : `${task.dependsOn.length} ${task.dependsOn.length === 1 ? "Dependency" : "Dependencies"}`}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })()}
 
           {/* Priority Badge */}
           {priorityConfig && (

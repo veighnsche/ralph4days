@@ -3,9 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { FullBleedSeparator } from "@/components/ui/full-bleed-separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { PRIORITY_CONFIG, STATUS_CONFIG } from "@/constants/prd";
+import { INFERRED_STATUS_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from "@/constants/prd";
 import { useTabMeta } from "@/hooks/useTabMeta";
 import { resolveIcon } from "@/lib/iconRegistry";
+import { shouldShowInferredStatus } from "@/lib/taskStatus";
 import type { WorkspaceTab } from "@/stores/useWorkspaceStore";
 import type { EnrichedTask } from "@/types/prd";
 import { TaskIdDisplay } from "../prd/TaskIdDisplay";
@@ -108,13 +109,62 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
         {/* ── Properties Sidebar ── */}
         <div className="w-56 flex-shrink-0 border-l">
           <div className="px-4 py-4 space-y-0.5 overflow-y-auto h-full">
-            {/* Status */}
+            {/* Status - consolidated with inferred status and dependencies */}
             <PropertyRow label="Status">
-              <div className="flex items-center gap-1.5">
-                <StatusIcon className="h-3.5 w-3.5" style={{ color: statusConfig.color }} />
-                <span className="text-sm" style={{ color: statusConfig.color }}>
-                  {statusConfig.label}
-                </span>
+              <div className="flex flex-col gap-1.5">
+                {/* Actual Status */}
+                <div className="flex items-center gap-1.5">
+                  <StatusIcon className="h-3.5 w-3.5" style={{ color: statusConfig.color }} />
+                  <span className="text-sm" style={{ color: statusConfig.color }}>
+                    {statusConfig.label}
+                  </span>
+                </div>
+
+                {/* Inferred Status (only if different from actual) */}
+                {shouldShowInferredStatus(task.status, task.inferredStatus) &&
+                  (() => {
+                    const inferredConfig = INFERRED_STATUS_CONFIG[task.inferredStatus];
+                    const InferredIcon = inferredConfig.icon;
+                    const hasDeps = task.dependsOn && task.dependsOn.length > 0;
+
+                    return (
+                      <div className="flex items-start gap-1.5 pl-5">
+                        <span className="text-xs text-muted-foreground mt-0.5">→</span>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <InferredIcon className="h-3 w-3" style={{ color: inferredConfig.color }} />
+                            <span className="text-xs font-medium" style={{ color: inferredConfig.color }}>
+                              {inferredConfig.label}
+                            </span>
+                          </div>
+                          {hasDeps && (
+                            <div className="flex flex-wrap gap-1 items-center">
+                              <span className="text-xs text-muted-foreground">Depends on:</span>
+                              {task.dependsOn?.map((depId) => (
+                                <Badge key={depId} variant="outline" className="text-xs font-mono px-1.5 py-0 h-4">
+                                  #{depId.toString().padStart(3, "0")}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                {/* Show dependencies even when not waiting (if task has no inferred status difference) */}
+                {!shouldShowInferredStatus(task.status, task.inferredStatus) &&
+                  task.dependsOn &&
+                  task.dependsOn.length > 0 && (
+                    <div className="flex flex-wrap gap-1 items-center pl-5">
+                      <span className="text-xs text-muted-foreground">Depends on:</span>
+                      {task.dependsOn.map((depId) => (
+                        <Badge key={depId} variant="outline" className="text-xs font-mono px-1.5 py-0 h-4">
+                          #{depId.toString().padStart(3, "0")}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
               </div>
             </PropertyRow>
 
@@ -155,22 +205,6 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
                     {task.tags.map((tag) => (
                       <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0 h-5">
                         {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </PropertyRow>
-              </>
-            )}
-
-            {/* Dependencies */}
-            {task.dependsOn && task.dependsOn.length > 0 && (
-              <>
-                <FullBleedSeparator className="my-2" />
-                <PropertyRow label="Depends on">
-                  <div className="flex flex-wrap gap-1">
-                    {task.dependsOn.map((depId) => (
-                      <Badge key={depId} variant="outline" className="text-xs font-mono px-1.5 py-0 h-5">
-                        #{depId.toString().padStart(3, "0")}
                       </Badge>
                     ))}
                   </div>

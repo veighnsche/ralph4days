@@ -24,11 +24,10 @@ pub use disciplines::{Discipline, DisciplinesFile};
 pub use features::{Feature, FeaturesFile};
 pub use metadata::{MetadataFile, ProjectMetadata};
 pub use tasks::TasksFile;
-// Re-export enriched types (defined in this file)
 
 // Core data types
 
-/// Task status enum
+/// Task status enum (stored in YAML)
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum TaskStatus {
@@ -36,6 +35,25 @@ pub enum TaskStatus {
     InProgress,
     Done,
     Blocked,
+    Skipped,
+}
+
+/// Inferred task status (computed from TaskStatus + dependency graph)
+/// This is what the UI should display and what determines task eligibility
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum InferredTaskStatus {
+    /// Task is ready to be claimed and worked on (pending + all deps met + not blocked)
+    Ready,
+    /// Task is pending but waiting on dependencies to complete
+    WaitingOnDeps,
+    /// Task is manually marked as blocked (external blocker like "waiting for API key")
+    ExternallyBlocked,
+    /// Task is currently being worked on by a Claude instance
+    InProgress,
+    /// Task has been completed
+    Done,
+    /// Task was intentionally skipped
     Skipped,
 }
 
@@ -88,6 +106,7 @@ pub struct EnrichedTask {
     pub title: String,
     pub description: Option<String>,
     pub status: TaskStatus,
+    pub inferred_status: InferredTaskStatus,
     pub priority: Option<Priority>,
     pub tags: Vec<String>,
     pub depends_on: Vec<u32>,

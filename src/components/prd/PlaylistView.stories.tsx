@@ -22,6 +22,7 @@ const mockTasks: EnrichedTask[] = [
     title: "Implement login API",
     description: "Create REST API endpoints for user authentication",
     status: "done",
+    inferredStatus: "done",
     priority: "high",
     tags: ["api", "security"],
     dependsOn: [],
@@ -40,6 +41,7 @@ const mockTasks: EnrichedTask[] = [
     title: "Build login form",
     description: "Create UI for user login",
     status: "in_progress",
+    inferredStatus: "in_progress",
     priority: "medium",
     tags: ["ui"],
     dependsOn: [1],
@@ -56,6 +58,7 @@ const mockTasks: EnrichedTask[] = [
     discipline: "backend",
     title: "Profile API endpoints",
     status: "pending",
+    inferredStatus: "ready",
     priority: "low",
     tags: [],
     dependsOn: [],
@@ -72,6 +75,7 @@ const mockTasks: EnrichedTask[] = [
     discipline: "frontend",
     title: "Profile page UI",
     status: "pending",
+    inferredStatus: "waiting_on_deps",
     priority: "medium",
     tags: ["ui"],
     dependsOn: [3],
@@ -100,6 +104,7 @@ export const WithBlockedTasks: Story = {
         discipline: "backend",
         title: "Integrate payment gateway",
         status: "blocked",
+        inferredStatus: "externally_blocked",
         blockedBy: "Waiting for API credentials from payment provider",
         priority: "critical",
         tags: ["payments"],
@@ -117,6 +122,7 @@ export const WithBlockedTasks: Story = {
         discipline: "backend",
         title: "Email notifications",
         status: "skipped",
+        inferredStatus: "skipped",
         priority: "low",
         tags: ["email"],
         dependsOn: [],
@@ -133,13 +139,18 @@ export const WithBlockedTasks: Story = {
 
 export const AllDone: Story = {
   args: {
-    tasks: mockTasks.map((task) => ({ ...task, status: "done" as const })),
+    tasks: mockTasks.map((task) => ({ ...task, status: "done" as const, inferredStatus: "done" as const })),
   },
 };
 
 export const AllPending: Story = {
   args: {
-    tasks: mockTasks.map((task) => ({ ...task, status: "pending" as const })),
+    tasks: mockTasks.map((task) => ({
+      ...task,
+      status: "pending" as const,
+      inferredStatus: "ready" as const,
+      dependsOn: [],
+    })),
   },
 };
 
