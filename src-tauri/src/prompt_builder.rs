@@ -1,3 +1,40 @@
+// TODO: Prompt Builder - Generate context-rich prompts for Claude
+//
+// This module builds prompts for the autonomous loop. Need to add new prompt types:
+//
+// TODO LIST:
+// 1. build_braindump_prompt(braindump_text: &str, ralph_db: &Path) -> Result<String>
+//    - System instructions: "You are helping structure a project braindump..."
+//    - Explain available MCP tools (create_task, create_feature, etc.)
+//    - Tell Claude to ask clarifying questions if needed
+//    - Include braindump text
+//    - Request structured output (features, disciplines, tasks)
+//
+// 2. build_task_execution_prompt(task_id: &str, ralph_db: &Path) -> Result<String>
+//    - Read task from tasks.yaml
+//    - Include task title, description, acceptance criteria
+//    - Include feature context (read from features.yaml)
+//    - Include discipline context (read from disciplines.yaml)
+//    - List completed dependencies
+//    - Include project files overview (ls -R or similar)
+//    - Tell Claude to use update_task_status tool when done
+//
+// 3. build_yap_prompt(user_rambling: &str, ralph_db: &Path) -> Result<String>
+//    - List existing tasks from tasks.yaml
+//    - Include user's thoughts about what to change
+//    - Explain update_task and create_task tools
+//    - Ask Claude to clarify ambiguities
+//
+// 4. build_ramble_prompt(user_rambling: &str, ralph_db: &Path) -> Result<String>
+//    - List existing features from features.yaml
+//    - Include user's thoughts about features
+//    - Explain update_feature and create_feature tools
+//
+// 5. Include CLAUDE.RALPH.md in all prompts
+//    - Read .ralph/CLAUDE.RALPH.md if it exists
+//    - Inject as project-specific context
+//    - Gives Claude project-specific knowledge
+
 use crate::types::RalphError;
 use std::path::Path;
 
@@ -45,11 +82,15 @@ impl PromptBuilder {
 
         prompt.push_str("## Instructions\n\n");
         prompt.push_str("You are working on tasks from the PRD above. ");
-        prompt.push_str("Pick ONE incomplete task (marked with [ ]) and complete it.\n\n");
+        prompt.push_str(
+            "Pick ONE incomplete task (status: todo or in-progress) and complete it.\n\n",
+        );
         prompt.push_str("After completing the task:\n");
-        prompt.push_str("1. Mark it as done by changing [ ] to [x] in prd.yaml\n");
+        prompt.push_str(
+            "1. Update its status to 'done' in .ralph/db/tasks.yaml\n",
+        );
         prompt.push_str("2. Commit your changes with a descriptive message\n");
-        prompt.push_str("3. Append a brief summary to progress.txt\n\n");
+        prompt.push_str("3. Append a brief summary to .ralph/progress.txt\n\n");
         prompt.push_str("If ALL tasks are complete, output exactly: ");
         prompt.push_str(COMPLETION_MARKER);
         prompt.push_str(
@@ -111,9 +152,15 @@ impl PromptBuilder {
         let db_path = ralph_dir.join("db");
 
         let metadata = Self::read_file(&db_path.join("metadata.yaml"), "db/metadata.yaml")?;
+        let features = Self::read_file(&db_path.join("features.yaml"), "db/features.yaml")?;
+        let disciplines =
+            Self::read_file(&db_path.join("disciplines.yaml"), "db/disciplines.yaml")?;
         let tasks = Self::read_file(&db_path.join("tasks.yaml"), "db/tasks.yaml")?;
 
-        Ok(format!("{}\n{}", metadata, tasks))
+        Ok(format!(
+            "{}\n{}\n{}\n{}",
+            metadata, features, disciplines, tasks
+        ))
     }
 
     fn read_file(path: &Path, name: &str) -> Result<String, RalphError> {

@@ -1,5 +1,7 @@
 use crate::loop_engine::LoopEngine;
+use crate::mcp_generator::MCPGenerator;
 use crate::prd::{Priority, PRD};
+use crate::pty_session::{PTYManager, SessionConfig};
 use crate::types::LoopStatus;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -39,6 +41,8 @@ pub struct RalphProject {
 pub struct AppState {
     pub engine: Mutex<LoopEngine>,
     pub locked_project: Mutex<Option<PathBuf>>,
+    pub pty_manager: PTYManager,
+    pub mcp_generator: MCPGenerator,
 }
 
 impl Default for AppState {
@@ -46,6 +50,8 @@ impl Default for AppState {
         Self {
             engine: Mutex::new(LoopEngine::new()),
             locked_project: Mutex::new(None),
+            pty_manager: PTYManager::new(),
+            mcp_generator: MCPGenerator::new(),
         }
     }
 }
@@ -573,4 +579,60 @@ pub fn update_discipline(
     let db_path = get_db_path(&state)?;
     let mut db = YamlDatabase::from_path(db_path)?;
     db.update_discipline(name, display_name, acronym, icon, color)
+}
+
+// --- PTY Commands ---
+
+#[tauri::command]
+pub fn create_pty_session(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    session_id: String,
+    mcp_mode: Option<String>,
+    model: Option<String>,
+    thinking: Option<bool>,
+) -> Result<(), String> {
+    let locked = state.locked_project.lock().map_err(|e| e.to_string())?;
+    let project_path = locked.as_ref().ok_or("No project locked")?.clone();
+    drop(locked);
+
+    let mcp_config = if let Some(mode) = mcp_mode {
+        let ralph_db = project_path.join(".ralph").join("db");
+        Some(state.mcp_generator.generate(&mode, &ralph_db)?)
+    } else {
+        None
+    };
+
+    let config = SessionConfig { model, thinking };
+
+    state
+        .pty_manager
+        .create_session(app, session_id, &project_path, mcp_config, config)
+}
+
+#[tauri::command]
+pub fn send_terminal_input(
+    state: State<'_, AppState>,
+    session_id: String,
+    data: Vec<u8>,
+) -> Result<(), String> {
+    state.pty_manager.send_input(&session_id, &data)
+}
+
+#[tauri::command]
+pub fn resize_pty(
+    state: State<'_, AppState>,
+    session_id: String,
+    cols: u16,
+    rows: u16,
+) -> Result<(), String> {
+    state.pty_manager.resize(&session_id, cols, rows)
+}
+
+#[tauri::command]
+pub fn terminate_pty_session(
+    state: State<'_, AppState>,
+    session_id: String,
+) -> Result<(), String> {
+    state.pty_manager.terminate(&session_id)
 }

@@ -1,8 +1,10 @@
 mod claude_client;
 mod commands;
 mod loop_engine;
+mod mcp_generator;
 pub mod prd;
 mod prompt_builder;
+mod pty_session;
 mod types;
 
 use commands::AppState;
@@ -69,6 +71,10 @@ pub fn run() {
             commands::update_feature,
             commands::create_discipline,
             commands::update_discipline,
+            commands::create_pty_session,
+            commands::send_terminal_input,
+            commands::resize_pty,
+            commands::terminate_pty_session,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

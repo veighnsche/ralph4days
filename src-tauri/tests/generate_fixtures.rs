@@ -577,7 +577,10 @@ just dev-mock 04-dev-project
         feature: "bookmark-crud".to_string(),
         discipline: "design".to_string(),
         title: "Bookmark card layout".to_string(),
-        description: Some("Design the bookmark card component with favicon, title, URL, and action buttons".to_string()),
+        description: Some(
+            "Design the bookmark card component with favicon, title, URL, and action buttons"
+                .to_string(),
+        ),
         status: TaskStatus::Done,
         priority: Some(Priority::Low),
         tags: vec!["ui".to_string(), "design".to_string()],
@@ -598,7 +601,10 @@ just dev-mock 04-dev-project
         feature: "bookmark-crud".to_string(),
         discipline: "frontend".to_string(),
         title: "Create bookmark form".to_string(),
-        description: Some("Implement the form to add new bookmarks with URL validation and auto-title fetch".to_string()),
+        description: Some(
+            "Implement the form to add new bookmarks with URL validation and auto-title fetch"
+                .to_string(),
+        ),
         status: TaskStatus::Done,
         priority: Some(Priority::High),
         tags: vec!["ui".to_string(), "forms".to_string()],
@@ -620,7 +626,10 @@ just dev-mock 04-dev-project
         feature: "bookmark-crud".to_string(),
         discipline: "backend".to_string(),
         title: "Bookmark localStorage storage".to_string(),
-        description: Some("Implement localStorage-based persistence layer for bookmarks with CRUD operations".to_string()),
+        description: Some(
+            "Implement localStorage-based persistence layer for bookmarks with CRUD operations"
+                .to_string(),
+        ),
         status: TaskStatus::Done,
         priority: Some(Priority::High),
         tags: vec!["storage".to_string()],
@@ -642,7 +651,10 @@ just dev-mock 04-dev-project
         feature: "bookmark-crud".to_string(),
         discipline: "testing".to_string(),
         title: "Unit tests for bookmark CRUD".to_string(),
-        description: Some("Write comprehensive unit tests for create, read, update, and delete operations".to_string()),
+        description: Some(
+            "Write comprehensive unit tests for create, read, update, and delete operations"
+                .to_string(),
+        ),
         status: TaskStatus::InProgress,
         priority: Some(Priority::Medium),
         tags: vec!["testing".to_string()],
@@ -663,7 +675,9 @@ just dev-mock 04-dev-project
         feature: "bookmark-crud".to_string(),
         discipline: "frontend".to_string(),
         title: "Edit bookmark modal".to_string(),
-        description: Some("Modal dialog for editing existing bookmark title, URL, and notes".to_string()),
+        description: Some(
+            "Modal dialog for editing existing bookmark title, URL, and notes".to_string(),
+        ),
         status: TaskStatus::Pending,
         priority: Some(Priority::Medium),
         tags: vec!["ui".to_string(), "forms".to_string()],
@@ -684,7 +698,9 @@ just dev-mock 04-dev-project
         feature: "bookmark-crud".to_string(),
         discipline: "frontend".to_string(),
         title: "Bulk delete bookmarks".to_string(),
-        description: Some("Multi-select bookmarks and delete them in batch with confirmation dialog".to_string()),
+        description: Some(
+            "Multi-select bookmarks and delete them in batch with confirmation dialog".to_string(),
+        ),
         status: TaskStatus::Pending,
         priority: Some(Priority::Medium),
         tags: vec!["ui".to_string()],
@@ -705,7 +721,9 @@ just dev-mock 04-dev-project
         feature: "bookmark-crud".to_string(),
         discipline: "security".to_string(),
         title: "URL input sanitization".to_string(),
-        description: Some("Sanitize and validate all URL inputs to prevent XSS and injection attacks".to_string()),
+        description: Some(
+            "Sanitize and validate all URL inputs to prevent XSS and injection attacks".to_string(),
+        ),
         status: TaskStatus::Pending,
         priority: Some(Priority::High),
         tags: vec!["security".to_string(), "validation".to_string()],
@@ -727,7 +745,9 @@ just dev-mock 04-dev-project
         feature: "collections".to_string(),
         discipline: "backend".to_string(),
         title: "Collection data model".to_string(),
-        description: Some("Define collection schema with name, color, icon, and bookmark references".to_string()),
+        description: Some(
+            "Define collection schema with name, color, icon, and bookmark references".to_string(),
+        ),
         status: TaskStatus::Done,
         priority: Some(Priority::High),
         tags: vec!["storage".to_string(), "data-model".to_string()],
@@ -748,7 +768,10 @@ just dev-mock 04-dev-project
         feature: "collections".to_string(),
         discipline: "frontend".to_string(),
         title: "Collection sidebar".to_string(),
-        description: Some("Sidebar component showing all collections with bookmark counts and quick navigation".to_string()),
+        description: Some(
+            "Sidebar component showing all collections with bookmark counts and quick navigation"
+                .to_string(),
+        ),
         status: TaskStatus::InProgress,
         priority: Some(Priority::High),
         tags: vec!["ui".to_string(), "navigation".to_string()],
@@ -770,7 +793,9 @@ just dev-mock 04-dev-project
         feature: "collections".to_string(),
         discipline: "frontend".to_string(),
         title: "Drag-and-drop sorting".to_string(),
-        description: Some("Allow reordering bookmarks within a collection via drag-and-drop".to_string()),
+        description: Some(
+            "Allow reordering bookmarks within a collection via drag-and-drop".to_string(),
+        ),
         status: TaskStatus::Pending,
         priority: Some(Priority::Medium),
         tags: vec!["ui".to_string(), "interaction".to_string()],
@@ -791,7 +816,9 @@ just dev-mock 04-dev-project
         feature: "collections".to_string(),
         discipline: "design".to_string(),
         title: "Collection icons and colors".to_string(),
-        description: Some("Design the icon picker and color palette for collection customization".to_string()),
+        description: Some(
+            "Design the icon picker and color palette for collection customization".to_string(),
+        ),
         status: TaskStatus::Pending,
         priority: None,
         tags: vec!["design".to_string()],
@@ -809,7 +836,9 @@ just dev-mock 04-dev-project
         feature: "collections".to_string(),
         discipline: "frontend".to_string(),
         title: "Nested collections".to_string(),
-        description: Some("Support hierarchical collection nesting with tree view navigation".to_string()),
+        description: Some(
+            "Support hierarchical collection nesting with tree view navigation".to_string(),
+        ),
         status: TaskStatus::Pending,
         priority: Some(Priority::Low),
         tags: vec!["ui".to_string(), "navigation".to_string()],
@@ -830,7 +859,10 @@ just dev-mock 04-dev-project
         feature: "search".to_string(),
         discipline: "backend".to_string(),
         title: "Full-text search index".to_string(),
-        description: Some("Build an inverted index for full-text search across bookmark titles, URLs, and notes".to_string()),
+        description: Some(
+            "Build an inverted index for full-text search across bookmark titles, URLs, and notes"
+                .to_string(),
+        ),
         status: TaskStatus::Pending,
         priority: Some(Priority::Critical),
         tags: vec!["search".to_string(), "performance".to_string()],
@@ -853,7 +885,10 @@ just dev-mock 04-dev-project
         feature: "search".to_string(),
         discipline: "frontend".to_string(),
         title: "Search bar with autocomplete".to_string(),
-        description: Some("Search input with debounced autocomplete dropdown showing matching bookmarks".to_string()),
+        description: Some(
+            "Search input with debounced autocomplete dropdown showing matching bookmarks"
+                .to_string(),
+        ),
         status: TaskStatus::Blocked,
         priority: Some(Priority::High),
         tags: vec!["ui".to_string(), "search".to_string()],
@@ -875,7 +910,10 @@ just dev-mock 04-dev-project
         feature: "search".to_string(),
         discipline: "testing".to_string(),
         title: "Search ranking tests".to_string(),
-        description: Some("Test search result ranking and relevance scoring with various query patterns".to_string()),
+        description: Some(
+            "Test search result ranking and relevance scoring with various query patterns"
+                .to_string(),
+        ),
         status: TaskStatus::Pending,
         priority: None,
         tags: vec!["testing".to_string(), "search".to_string()],
@@ -896,7 +934,10 @@ just dev-mock 04-dev-project
         feature: "import-export".to_string(),
         discipline: "backend".to_string(),
         title: "HTML bookmark parser".to_string(),
-        description: Some("Parse Netscape bookmark HTML format exported by Chrome, Firefox, and Safari".to_string()),
+        description: Some(
+            "Parse Netscape bookmark HTML format exported by Chrome, Firefox, and Safari"
+                .to_string(),
+        ),
         status: TaskStatus::Pending,
         priority: Some(Priority::High),
         tags: vec!["parser".to_string(), "import".to_string()],
@@ -918,7 +959,10 @@ just dev-mock 04-dev-project
         feature: "import-export".to_string(),
         discipline: "frontend".to_string(),
         title: "Import bookmarks UI".to_string(),
-        description: Some("File upload dialog for importing bookmarks with preview and conflict resolution".to_string()),
+        description: Some(
+            "File upload dialog for importing bookmarks with preview and conflict resolution"
+                .to_string(),
+        ),
         status: TaskStatus::Blocked,
         priority: Some(Priority::Medium),
         tags: vec!["ui".to_string(), "import".to_string()],
@@ -939,7 +983,9 @@ just dev-mock 04-dev-project
         feature: "import-export".to_string(),
         discipline: "frontend".to_string(),
         title: "Export to JSON".to_string(),
-        description: Some("Export all bookmarks and collections to a JSON file for backup".to_string()),
+        description: Some(
+            "Export all bookmarks and collections to a JSON file for backup".to_string(),
+        ),
         status: TaskStatus::Pending,
         priority: Some(Priority::Low),
         tags: vec!["export".to_string()],
@@ -978,7 +1024,9 @@ just dev-mock 04-dev-project
         feature: "settings".to_string(),
         discipline: "database".to_string(),
         title: "Theme preference storage".to_string(),
-        description: Some("Store user theme preference (light/dark/system) in local database".to_string()),
+        description: Some(
+            "Store user theme preference (light/dark/system) in local database".to_string(),
+        ),
         status: TaskStatus::Pending,
         priority: None,
         tags: vec!["storage".to_string()],
@@ -987,9 +1035,7 @@ just dev-mock 04-dev-project
         created: Some("2025-01-14".to_string()),
         updated: None,
         completed: None,
-        acceptance_criteria: vec![
-            "Persists theme preference across sessions".to_string(),
-        ],
+        acceptance_criteria: vec!["Persists theme preference across sessions".to_string()],
     });
 
     tasks_file.save().unwrap();

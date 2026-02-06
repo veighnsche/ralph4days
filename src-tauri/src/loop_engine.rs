@@ -36,11 +36,15 @@ impl LoopEngine {
         self.status.lock().unwrap().clone()
     }
 
+    // TODO: DEPRECATED ITERATION LOGIC - Remove max_iterations parameter
+    // - Replace with loop_enabled: bool (true = infinite, false = 1)
+    // - Infinite loops run until manually stopped (no iteration limit)
+    // - Remove all iteration counting/comparison logic
     pub fn start(
         &self,
         app: AppHandle,
         project_path: PathBuf,
-        max_iterations: u32,
+        max_iterations: u32, // TODO: Replace with loop_enabled: bool
     ) -> Result<(), RalphError> {
         {
             let status = self.status.lock().unwrap();
@@ -196,6 +200,9 @@ impl LoopEngine {
                 continue;
             }
 
+            // TODO: DEPRECATED ITERATION LOGIC - Remove this entire iteration limit check
+            // - For infinite loops, never complete based on iteration count
+            // - Only complete when manually stopped or all tasks done
             // Check iteration limit
             {
                 let s = status.lock().unwrap();

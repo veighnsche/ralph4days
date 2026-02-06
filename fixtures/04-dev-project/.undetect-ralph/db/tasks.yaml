@@ -1,0 +1,305 @@
+tasks:
+- id: 1
+  feature: bookmark-crud
+  discipline: design
+  title: Bookmark card layout
+  description: Design the bookmark card component with favicon, title, URL, and action buttons
+  status: done
+  priority: low
+  tags:
+  - ui
+  - design
+  created: 2025-01-10
+  completed: 2025-01-14
+  acceptance_criteria:
+  - Card displays favicon, title, and truncated URL
+  - Action buttons visible on hover
+- id: 2
+  feature: bookmark-crud
+  discipline: frontend
+  title: Create bookmark form
+  description: Implement the form to add new bookmarks with URL validation and auto-title fetch
+  status: done
+  priority: high
+  tags:
+  - ui
+  - forms
+  created: 2025-01-10
+  completed: 2025-01-16
+  acceptance_criteria:
+  - Form accepts URL input with validation
+  - Auto-fetches page title from URL
+  - Shows loading state during fetch
+- id: 3
+  feature: bookmark-crud
+  discipline: backend
+  title: Bookmark localStorage storage
+  description: Implement localStorage-based persistence layer for bookmarks with CRUD operations
+  status: done
+  priority: high
+  tags:
+  - storage
+  depends_on:
+  - 2
+  created: 2025-01-11
+  completed: 2025-01-18
+  acceptance_criteria:
+  - Bookmarks persist across page reloads
+  - CRUD operations update localStorage atomically
+  - Handles storage quota errors gracefully
+- id: 4
+  feature: bookmark-crud
+  discipline: testing
+  title: Unit tests for bookmark CRUD
+  description: Write comprehensive unit tests for create, read, update, and delete operations
+  status: in_progress
+  priority: medium
+  tags:
+  - testing
+  depends_on:
+  - 3
+  created: 2025-01-15
+  updated: 2025-01-20
+  acceptance_criteria:
+  - Tests cover all CRUD operations
+  - Edge cases for empty and malformed URLs tested
+- id: 5
+  feature: bookmark-crud
+  discipline: frontend
+  title: Edit bookmark modal
+  description: Modal dialog for editing existing bookmark title, URL, and notes
+  status: pending
+  priority: medium
+  tags:
+  - ui
+  - forms
+  depends_on:
+  - 2
+  created: 2025-01-12
+  acceptance_criteria:
+  - Modal pre-fills current bookmark data
+  - Validates URL format on save
+- id: 6
+  feature: bookmark-crud
+  discipline: frontend
+  title: Bulk delete bookmarks
+  description: Multi-select bookmarks and delete them in batch with confirmation dialog
+  status: pending
+  priority: medium
+  tags:
+  - ui
+  depends_on:
+  - 3
+  created: 2025-01-12
+  acceptance_criteria:
+  - Checkbox selection for multiple bookmarks
+  - Confirmation dialog before bulk delete
+- id: 7
+  feature: bookmark-crud
+  discipline: security
+  title: URL input sanitization
+  description: Sanitize and validate all URL inputs to prevent XSS and injection attacks
+  status: pending
+  priority: high
+  tags:
+  - security
+  - validation
+  created: 2025-01-13
+  acceptance_criteria:
+  - 'Rejects javascript: and data: URLs'
+  - Escapes HTML entities in bookmark titles
+  - Validates URL format before storage
+- id: 8
+  feature: collections
+  discipline: backend
+  title: Collection data model
+  description: Define collection schema with name, color, icon, and bookmark references
+  status: done
+  priority: high
+  tags:
+  - storage
+  - data-model
+  created: 2025-01-10
+  completed: 2025-01-15
+  acceptance_criteria:
+  - Collection stores name, color, icon, and ordered bookmark IDs
+  - Supports many-to-many relationship with bookmarks
+- id: 9
+  feature: collections
+  discipline: frontend
+  title: Collection sidebar
+  description: Sidebar component showing all collections with bookmark counts and quick navigation
+  status: in_progress
+  priority: high
+  tags:
+  - ui
+  - navigation
+  depends_on:
+  - 8
+  created: 2025-01-14
+  updated: 2025-01-21
+  acceptance_criteria:
+  - Sidebar lists all collections with bookmark counts
+  - Click collection filters bookmark list
+  - Collapse/expand sidebar on mobile
+- id: 10
+  feature: collections
+  discipline: frontend
+  title: Drag-and-drop sorting
+  description: Allow reordering bookmarks within a collection via drag-and-drop
+  status: pending
+  priority: medium
+  tags:
+  - ui
+  - interaction
+  depends_on:
+  - 9
+  created: 2025-01-14
+  acceptance_criteria:
+  - Drag handle on each bookmark card
+  - Visual feedback during drag operation
+- id: 11
+  feature: collections
+  discipline: design
+  title: Collection icons and colors
+  description: Design the icon picker and color palette for collection customization
+  status: pending
+  tags:
+  - design
+  created: 2025-01-15
+- id: 12
+  feature: collections
+  discipline: frontend
+  title: Nested collections
+  description: Support hierarchical collection nesting with tree view navigation
+  status: pending
+  priority: low
+  tags:
+  - ui
+  - navigation
+  depends_on:
+  - 9
+  - 8
+  created: 2025-01-15
+  acceptance_criteria:
+  - Collections can contain sub-collections
+  - Tree view shows hierarchy with expand/collapse
+- id: 13
+  feature: search
+  discipline: backend
+  title: Full-text search index
+  description: Build an inverted index for full-text search across bookmark titles, URLs, and notes
+  status: pending
+  priority: critical
+  tags:
+  - search
+  - performance
+  depends_on:
+  - 3
+  created: 2025-01-11
+  acceptance_criteria:
+  - Index updates on bookmark create/update/delete
+  - Search returns results in under 50ms for 10k bookmarks
+  - Supports partial word matching
+  - Ranks results by relevance
+- id: 14
+  feature: search
+  discipline: frontend
+  title: Search bar with autocomplete
+  description: Search input with debounced autocomplete dropdown showing matching bookmarks
+  status: blocked
+  priority: high
+  tags:
+  - ui
+  - search
+  depends_on:
+  - 13
+  blocked_by: Waiting for search index (#13)
+  created: 2025-01-12
+  acceptance_criteria:
+  - Debounced input with 300ms delay
+  - Dropdown shows top 5 matching bookmarks
+  - Keyboard navigation through results
+- id: 15
+  feature: search
+  discipline: testing
+  title: Search ranking tests
+  description: Test search result ranking and relevance scoring with various query patterns
+  status: pending
+  tags:
+  - testing
+  - search
+  depends_on:
+  - 13
+  created: 2025-01-13
+  acceptance_criteria:
+  - Exact title matches rank highest
+  - Partial matches rank by relevance score
+- id: 16
+  feature: import-export
+  discipline: backend
+  title: HTML bookmark parser
+  description: Parse Netscape bookmark HTML format exported by Chrome, Firefox, and Safari
+  status: pending
+  priority: high
+  tags:
+  - parser
+  - import
+  created: 2025-01-12
+  acceptance_criteria:
+  - Parses Chrome bookmark export format
+  - Parses Firefox bookmark export format
+  - Preserves folder structure as collections
+- id: 17
+  feature: import-export
+  discipline: frontend
+  title: Import bookmarks UI
+  description: File upload dialog for importing bookmarks with preview and conflict resolution
+  status: blocked
+  priority: medium
+  tags:
+  - ui
+  - import
+  depends_on:
+  - 16
+  blocked_by: Needs HTML parser (#16)
+  created: 2025-01-13
+  acceptance_criteria:
+  - File picker accepts .html files
+  - Preview shows bookmarks to import before confirming
+- id: 18
+  feature: import-export
+  discipline: frontend
+  title: Export to JSON
+  description: Export all bookmarks and collections to a JSON file for backup
+  status: pending
+  priority: low
+  tags:
+  - export
+  depends_on:
+  - 3
+  created: 2025-01-13
+  acceptance_criteria:
+  - Exports all bookmarks with metadata
+  - Includes collection membership info
+- id: 19
+  feature: settings
+  discipline: docs
+  title: Write settings documentation
+  description: Document all available settings and their default values
+  status: skipped
+  priority: low
+  tags:
+  - docs
+  created: 2025-01-14
+- id: 20
+  feature: settings
+  discipline: database
+  title: Theme preference storage
+  description: Store user theme preference (light/dark/system) in local database
+  status: pending
+  tags:
+  - storage
+  created: 2025-01-14
+  acceptance_criteria:
+  - Persists theme preference across sessions

@@ -30,6 +30,7 @@ chrono = "0.4"
 serde_yaml = "0.9"
 regex = "1.10"
 lazy_static = "1.4"
+portable-pty = "0.9"
 
 [dev-dependencies]
 tempfile = "3"
