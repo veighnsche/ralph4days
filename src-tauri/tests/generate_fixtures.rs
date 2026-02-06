@@ -311,6 +311,8 @@ Next stage: 03-with-tasks-project
         acronym: "AUTH".to_string(),
         description: None,
         created: None,
+    knowledge_paths: vec![],
+    context_files: vec![],
     });
     features_file.save().unwrap();
 
@@ -397,6 +399,8 @@ just dev-mock 03-with-tasks-project
         acronym: "AUTH".to_string(),
         description: None,
         created: None,
+    knowledge_paths: vec![],
+    context_files: vec![],
     });
     features_file.add(yaml_db::Feature {
         name: "user-profile".to_string(),
@@ -404,6 +408,8 @@ just dev-mock 03-with-tasks-project
         acronym: "USPR".to_string(),
         description: None,
         created: None,
+    knowledge_paths: vec![],
+    context_files: vec![],
     });
     features_file.save().unwrap();
 
@@ -431,6 +437,12 @@ just dev-mock 03-with-tasks-project
             "POST /login endpoint works".to_string(),
             "Returns JWT token".to_string(),
         ],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     tasks_file.add_task(Task {
@@ -448,6 +460,12 @@ just dev-mock 03-with-tasks-project
         updated: None,
         completed: None,
         acceptance_criteria: vec!["Form validates input".to_string()],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     tasks_file.add_task(Task {
@@ -465,6 +483,12 @@ just dev-mock 03-with-tasks-project
         updated: None,
         completed: None,
         acceptance_criteria: vec!["Shows user info".to_string()],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     tasks_file.save().unwrap();
@@ -547,6 +571,8 @@ just dev-mock 04-dev-project
         acronym: "BKMK".to_string(),
         description: Some("Core bookmark create, read, update, delete operations".to_string()),
         created: Some("2025-01-10".to_string()),
+        knowledge_paths: vec![],
+        context_files: vec![],
     });
     features_file.add(Feature {
         name: "collections".to_string(),
@@ -554,6 +580,8 @@ just dev-mock 04-dev-project
         acronym: "COLL".to_string(),
         description: Some("Organize bookmarks into named collections".to_string()),
         created: Some("2025-01-10".to_string()),
+        knowledge_paths: vec![],
+        context_files: vec![],
     });
     features_file.add(Feature {
         name: "search".to_string(),
@@ -561,6 +589,8 @@ just dev-mock 04-dev-project
         acronym: "SRCH".to_string(),
         description: Some("Full-text search and filtering across bookmarks".to_string()),
         created: Some("2025-01-11".to_string()),
+        knowledge_paths: vec![],
+        context_files: vec![],
     });
     features_file.add(Feature {
         name: "import-export".to_string(),
@@ -568,6 +598,8 @@ just dev-mock 04-dev-project
         acronym: "IMEX".to_string(),
         description: Some("Import from HTML, export to JSON".to_string()),
         created: Some("2025-01-11".to_string()),
+        knowledge_paths: vec![],
+        context_files: vec![],
     });
     features_file.add(Feature {
         name: "settings".to_string(),
@@ -575,6 +607,8 @@ just dev-mock 04-dev-project
         acronym: "STNG".to_string(),
         description: Some("User preferences and theme configuration".to_string()),
         created: Some("2025-01-12".to_string()),
+        knowledge_paths: vec![],
+        context_files: vec![],
     });
 
     features_file.save().unwrap();
@@ -605,6 +639,12 @@ just dev-mock 04-dev-project
             "Card displays favicon, title, and truncated URL".to_string(),
             "Action buttons visible on hover".to_string(),
         ],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     // Task 2: bookmark-crud / frontend / done / high
@@ -630,6 +670,12 @@ just dev-mock 04-dev-project
             "Auto-fetches page title from URL".to_string(),
             "Shows loading state during fetch".to_string(),
         ],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     // Task 3: bookmark-crud / backend / done / high
@@ -655,6 +701,12 @@ just dev-mock 04-dev-project
             "CRUD operations update localStorage atomically".to_string(),
             "Handles storage quota errors gracefully".to_string(),
         ],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     // Task 4: bookmark-crud / testing / in_progress / medium
@@ -679,6 +731,12 @@ just dev-mock 04-dev-project
             "Tests cover all CRUD operations".to_string(),
             "Edge cases for empty and malformed URLs tested".to_string(),
         ],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     // Task 5: bookmark-crud / frontend / pending / medium
@@ -702,6 +760,12 @@ just dev-mock 04-dev-project
             "Modal pre-fills current bookmark data".to_string(),
             "Validates URL format on save".to_string(),
         ],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     // Task 6: bookmark-crud / frontend / pending / medium
@@ -725,6 +789,12 @@ just dev-mock 04-dev-project
             "Checkbox selection for multiple bookmarks".to_string(),
             "Confirmation dialog before bulk delete".to_string(),
         ],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     // Task 7: bookmark-crud / security / pending / high
@@ -749,6 +819,12 @@ just dev-mock 04-dev-project
             "Escapes HTML entities in bookmark titles".to_string(),
             "Validates URL format before storage".to_string(),
         ],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     // Task 8: collections / backend / done / high
@@ -772,6 +848,12 @@ just dev-mock 04-dev-project
             "Collection stores name, color, icon, and ordered bookmark IDs".to_string(),
             "Supports many-to-many relationship with bookmarks".to_string(),
         ],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     // Task 9: collections / frontend / in_progress / high
@@ -797,6 +879,12 @@ just dev-mock 04-dev-project
             "Click collection filters bookmark list".to_string(),
             "Collapse/expand sidebar on mobile".to_string(),
         ],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     // Task 10: collections / frontend / pending / medium
@@ -820,6 +908,12 @@ just dev-mock 04-dev-project
             "Drag handle on each bookmark card".to_string(),
             "Visual feedback during drag operation".to_string(),
         ],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     // Task 11: collections / design / pending / none
@@ -840,6 +934,12 @@ just dev-mock 04-dev-project
         updated: None,
         completed: None,
         acceptance_criteria: vec![],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     // Task 12: collections / frontend / pending / low
@@ -863,6 +963,12 @@ just dev-mock 04-dev-project
             "Collections can contain sub-collections".to_string(),
             "Tree view shows hierarchy with expand/collapse".to_string(),
         ],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     // Task 13: search / backend / pending / critical
@@ -889,6 +995,12 @@ just dev-mock 04-dev-project
             "Supports partial word matching".to_string(),
             "Ranks results by relevance".to_string(),
         ],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     // Task 14: search / frontend / blocked / high
@@ -914,6 +1026,12 @@ just dev-mock 04-dev-project
             "Dropdown shows top 5 matching bookmarks".to_string(),
             "Keyboard navigation through results".to_string(),
         ],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     // Task 15: search / testing / pending / none
@@ -938,6 +1056,12 @@ just dev-mock 04-dev-project
             "Exact title matches rank highest".to_string(),
             "Partial matches rank by relevance score".to_string(),
         ],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     // Task 16: import-export / backend / pending / high
@@ -963,6 +1087,12 @@ just dev-mock 04-dev-project
             "Parses Firefox bookmark export format".to_string(),
             "Preserves folder structure as collections".to_string(),
         ],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     // Task 17: import-export / frontend / blocked / medium
@@ -987,6 +1117,12 @@ just dev-mock 04-dev-project
             "File picker accepts .html files".to_string(),
             "Preview shows bookmarks to import before confirming".to_string(),
         ],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     // Task 18: import-export / frontend / pending / low
@@ -1010,6 +1146,12 @@ just dev-mock 04-dev-project
             "Exports all bookmarks with metadata".to_string(),
             "Includes collection membership info".to_string(),
         ],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     // Task 19: settings / docs / skipped / low
@@ -1028,6 +1170,12 @@ just dev-mock 04-dev-project
         updated: None,
         completed: None,
         acceptance_criteria: vec![],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     // Task 20: settings / database / pending / none
@@ -1048,6 +1196,12 @@ just dev-mock 04-dev-project
         updated: None,
         completed: None,
         acceptance_criteria: vec!["Persists theme preference across sessions".to_string()],
+    context_files: vec![],
+    output_artifacts: vec![],
+    hints: None,
+    estimated_turns: None,
+    provenance: None,
+    attempt_notes: vec![],
     });
 
     tasks_file.save().unwrap();

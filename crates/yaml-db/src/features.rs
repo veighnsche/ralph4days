@@ -12,6 +12,11 @@ pub struct Feature {
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
+    // Knowledge context
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub knowledge_paths: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub context_files: Vec<String>,
 }
 
 // Implement YamlEntity trait for Feature

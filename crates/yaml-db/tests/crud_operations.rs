@@ -33,6 +33,7 @@ fn test_create_task() {
             tags: vec!["api".to_string()],
             depends_on: vec![],
             acceptance_criteria: Some(vec!["Works".to_string()]),
+            ..Default::default()
         })
         .unwrap();
 
@@ -59,6 +60,7 @@ fn test_get_task_by_id_exists() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            ..Default::default()
         })
         .unwrap();
 
@@ -100,6 +102,7 @@ fn test_update_task() {
             tags: vec!["old".to_string()],
             depends_on: vec![],
             acceptance_criteria: None,
+            ..Default::default()
         })
         .unwrap();
 
@@ -115,6 +118,7 @@ fn test_update_task() {
             tags: vec!["new".to_string()],
             depends_on: vec![],
             acceptance_criteria: Some(vec!["Updated criteria".to_string()]),
+            ..Default::default()
         },
     )
     .unwrap();
@@ -151,6 +155,7 @@ fn test_update_nonexistent_task() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            ..Default::default()
         },
     );
 
@@ -175,6 +180,7 @@ fn test_update_task_with_invalid_dependency() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            ..Default::default()
         })
         .unwrap();
 
@@ -189,6 +195,7 @@ fn test_update_task_with_invalid_dependency() {
             tags: vec![],
             depends_on: vec![999], // Non-existent
             acceptance_criteria: None,
+            ..Default::default()
         },
     );
 
@@ -213,6 +220,7 @@ fn test_update_task_creates_self_referential_dependency() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            ..Default::default()
         })
         .unwrap();
 
@@ -227,6 +235,7 @@ fn test_update_task_creates_self_referential_dependency() {
             tags: vec![],
             depends_on: vec![task_id], // Self-reference!
             acceptance_criteria: None,
+            ..Default::default()
         },
     );
 
@@ -252,6 +261,7 @@ fn test_update_task_creates_circular_dependency() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            ..Default::default()
         })
         .unwrap();
 
@@ -266,6 +276,7 @@ fn test_update_task_creates_circular_dependency() {
             tags: vec![],
             depends_on: vec![task_a],
             acceptance_criteria: None,
+            ..Default::default()
         })
         .unwrap();
 
@@ -281,6 +292,7 @@ fn test_update_task_creates_circular_dependency() {
             tags: vec![],
             depends_on: vec![task_b], // Creates cycle!
             acceptance_criteria: None,
+            ..Default::default()
         },
     );
 
@@ -306,6 +318,7 @@ fn test_update_task_complex_circular_dependency() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            ..Default::default()
         })
         .unwrap();
 
@@ -319,6 +332,7 @@ fn test_update_task_complex_circular_dependency() {
             tags: vec![],
             depends_on: vec![task_a],
             acceptance_criteria: None,
+            ..Default::default()
         })
         .unwrap();
 
@@ -332,6 +346,7 @@ fn test_update_task_complex_circular_dependency() {
             tags: vec![],
             depends_on: vec![task_b],
             acceptance_criteria: None,
+            ..Default::default()
         })
         .unwrap();
 
@@ -347,6 +362,7 @@ fn test_update_task_complex_circular_dependency() {
             tags: vec![],
             depends_on: vec![task_c], // Creates long cycle!
             acceptance_criteria: None,
+            ..Default::default()
         },
     );
 
@@ -373,6 +389,7 @@ fn test_delete_task() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            ..Default::default()
         })
         .unwrap();
 
@@ -412,6 +429,7 @@ fn test_delete_task_with_dependents() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            ..Default::default()
         })
         .unwrap();
 
@@ -426,6 +444,7 @@ fn test_delete_task_with_dependents() {
             tags: vec![],
             depends_on: vec![task_a],
             acceptance_criteria: None,
+            ..Default::default()
         })
         .unwrap();
 
@@ -453,6 +472,7 @@ fn test_delete_dependent_task_then_dependency() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            ..Default::default()
         })
         .unwrap();
 
@@ -467,6 +487,7 @@ fn test_delete_dependent_task_then_dependency() {
             tags: vec![],
             depends_on: vec![task_a],
             acceptance_criteria: None,
+            ..Default::default()
         })
         .unwrap();
 
@@ -501,6 +522,7 @@ fn test_crud_lifecycle() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            ..Default::default()
         })
         .unwrap();
 
@@ -521,6 +543,7 @@ fn test_crud_lifecycle() {
             tags: vec!["updated".to_string()],
             depends_on: vec![],
             acceptance_criteria: None,
+            ..Default::default()
         },
     )
     .unwrap();

@@ -36,6 +36,7 @@ fn generate_empty_to_first_task_after() {
             "POST /login endpoint works".to_string(),
             "Returns JWT token".to_string(),
         ]),
+        ..Default::default()
     })
     .unwrap();
 
@@ -86,6 +87,7 @@ fn generate_all_transformation_snapshots() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            ..Default::default()
         })
         .unwrap();
 
@@ -105,6 +107,7 @@ fn generate_all_transformation_snapshots() {
             tags: vec!["ui".to_string()],
             depends_on: vec![1],
             acceptance_criteria: Some(vec!["Form validates input".to_string()]),
+            ..Default::default()
         })
         .unwrap();
 
@@ -137,6 +140,7 @@ fn generate_all_transformation_snapshots() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            ..Default::default()
         }).unwrap();
 
         // Save before state
@@ -155,6 +159,7 @@ fn generate_all_transformation_snapshots() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            ..Default::default()
         }).unwrap();
 
         db.create_feature("user-profile".to_string(), "User Profile".to_string(), "USPR".to_string(), None).unwrap();
@@ -168,6 +173,7 @@ fn generate_all_transformation_snapshots() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            ..Default::default()
         }).unwrap();
 
         db.create_task(TaskInput {
@@ -179,6 +185,7 @@ fn generate_all_transformation_snapshots() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            ..Default::default()
         }).unwrap();
 
         // Save after state
@@ -214,6 +221,7 @@ fn generate_all_transformation_snapshots() {
                 tags: vec![],
                 depends_on: vec![],
                 acceptance_criteria: None,
+                ..Default::default()
             }).unwrap();
         }
 
@@ -327,6 +335,7 @@ project:
             tags: vec!["ml".to_string(), "training".to_string()],
             depends_on: vec![],
             acceptance_criteria: None,
+            ..Default::default()
         }).unwrap();
 
         // Save after state (including new discipline)
@@ -373,6 +382,7 @@ project:
                 tags: vec![],
                 depends_on: vec![],
                 acceptance_criteria: None,
+                ..Default::default()
             }).unwrap();
         }
 
@@ -388,6 +398,7 @@ project:
                 tags: vec![],
                 depends_on: vec![1],
                 acceptance_criteria: None,
+                ..Default::default()
             }).unwrap();
         }
 

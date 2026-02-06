@@ -1,5 +1,5 @@
 use super::{DisciplinesFile, FeaturesFile, MetadataFile, TasksFile};
-use crate::{Priority, Task, TaskStatus};
+use crate::{Priority, Task, TaskProvenance, TaskStatus};
 use fs2::FileExt;
 use std::fs::{self, File};
 use std::path::PathBuf;
@@ -14,6 +14,32 @@ pub struct TaskInput {
     pub tags: Vec<String>,
     pub depends_on: Vec<u32>,
     pub acceptance_criteria: Option<Vec<String>>,
+    // Execution context
+    pub context_files: Vec<String>,
+    pub output_artifacts: Vec<String>,
+    pub hints: Option<String>,
+    pub estimated_turns: Option<u32>,
+    pub provenance: Option<TaskProvenance>,
+}
+
+impl Default for TaskInput {
+    fn default() -> Self {
+        Self {
+            feature: String::new(),
+            discipline: String::new(),
+            title: String::new(),
+            description: None,
+            priority: None,
+            tags: vec![],
+            depends_on: vec![],
+            acceptance_criteria: None,
+            context_files: vec![],
+            output_artifacts: vec![],
+            hints: None,
+            estimated_turns: None,
+            provenance: None,
+        }
+    }
 }
 
 /// Multi-file YAML database coordinator
@@ -182,6 +208,12 @@ impl YamlDatabase {
             updated: None,
             completed: None,
             acceptance_criteria: task.acceptance_criteria.unwrap_or_default(),
+            context_files: task.context_files,
+            output_artifacts: task.output_artifacts,
+            hints: task.hints,
+            estimated_turns: task.estimated_turns,
+            provenance: task.provenance,
+            attempt_notes: vec![],
         };
 
         // 7. Validate dependencies exist
@@ -359,6 +391,12 @@ impl YamlDatabase {
             updated: Some(chrono::Utc::now().format("%Y-%m-%d").to_string()),
             completed: old_task.completed.clone(), // Preserve completed
             acceptance_criteria: update.acceptance_criteria.unwrap_or_default(),
+            context_files: update.context_files,
+            output_artifacts: update.output_artifacts,
+            hints: update.hints,
+            estimated_turns: update.estimated_turns,
+            provenance: old_task.provenance,              // Preserve
+            attempt_notes: old_task.attempt_notes.clone(), // Preserve
         };
 
         // 7. Validate dependencies exist (including checking for cycles)
@@ -505,6 +543,12 @@ impl YamlDatabase {
                     updated: task.updated.clone(),
                     completed: task.completed.clone(),
                     acceptance_criteria: task.acceptance_criteria.clone(),
+                    context_files: task.context_files.clone(),
+                    output_artifacts: task.output_artifacts.clone(),
+                    hints: task.hints.clone(),
+                    estimated_turns: task.estimated_turns,
+                    provenance: task.provenance,
+                    attempt_notes: task.attempt_notes.clone(),
                     feature_display_name: feature
                         .map(|f| f.display_name.clone())
                         .unwrap_or_else(|| task.feature.clone()),
@@ -689,6 +733,8 @@ impl YamlDatabase {
             acronym,
             description,
             created: Some(chrono::Utc::now().format("%Y-%m-%d").to_string()),
+            knowledge_paths: vec![],
+            context_files: vec![],
         });
 
         // Save all files atomically
@@ -743,7 +789,7 @@ impl YamlDatabase {
             ));
         }
 
-        // Update the feature (preserve name and created timestamp)
+        // Update the feature (preserve name, created timestamp, and knowledge context)
         let old_feature = &self.features.items_mut()[feature_index];
         self.features.items_mut()[feature_index] = super::Feature {
             name: old_feature.name.clone(), // Preserve internal name
@@ -751,6 +797,8 @@ impl YamlDatabase {
             acronym,
             description,
             created: old_feature.created.clone(), // Preserve created timestamp
+            knowledge_paths: old_feature.knowledge_paths.clone(), // Preserve
+            context_files: old_feature.context_files.clone(),     // Preserve
         };
 
         // Save all files atomically
@@ -813,6 +861,10 @@ impl YamlDatabase {
             acronym,
             icon,
             color,
+            system_prompt: None,
+            skills: vec![],
+            conventions: None,
+            mcp_servers: vec![],
         });
 
         // Save all files atomically
@@ -868,15 +920,23 @@ impl YamlDatabase {
             ));
         }
 
-        // Update the discipline (preserve name)
+        // Update the discipline (preserve name and execution context)
+        let old_disc = &self.disciplines.items_mut()[discipline_index];
+        let preserved_name = old_disc.name.clone();
+        let preserved_system_prompt = old_disc.system_prompt.clone();
+        let preserved_skills = old_disc.skills.clone();
+        let preserved_conventions = old_disc.conventions.clone();
+        let preserved_mcp_servers = old_disc.mcp_servers.clone();
         self.disciplines.items_mut()[discipline_index] = super::Discipline {
-            name: self.disciplines.items_mut()[discipline_index]
-                .name
-                .clone(), // Preserve internal name
+            name: preserved_name,
             display_name,
             acronym,
             icon,
             color,
+            system_prompt: preserved_system_prompt,
+            skills: preserved_skills,
+            conventions: preserved_conventions,
+            mcp_servers: preserved_mcp_servers,
         };
 
         // Save all files atomically

@@ -92,6 +92,12 @@ mod tests {
             updated: None,
             completed: None,
             acceptance_criteria: Vec::new(),
+            context_files: vec![],
+            output_artifacts: vec![],
+            hints: None,
+            estimated_turns: None,
+            provenance: None,
+            attempt_notes: vec![],
         });
 
         // Next ID should be 2
@@ -113,6 +119,12 @@ mod tests {
             updated: None,
             completed: None,
             acceptance_criteria: Vec::new(),
+            context_files: vec![],
+            output_artifacts: vec![],
+            hints: None,
+            estimated_turns: None,
+            provenance: None,
+            attempt_notes: vec![],
         });
 
         // Next ID should be 6
@@ -144,6 +156,12 @@ mod tests {
                     updated: None,
                     completed: None,
                     acceptance_criteria: Vec::new(),
+                    context_files: vec![],
+                    output_artifacts: vec![],
+                    hints: None,
+                    estimated_turns: None,
+                    provenance: None,
+                    attempt_notes: vec![],
                 },
                 Task {
                     id: 2,
@@ -160,6 +178,12 @@ mod tests {
                     updated: None,
                     completed: None,
                     acceptance_criteria: Vec::new(),
+                    context_files: vec![],
+                    output_artifacts: vec![],
+                    hints: None,
+                    estimated_turns: None,
+                    provenance: None,
+                    attempt_notes: vec![],
                 },
                 Task {
                     id: 3,
@@ -176,6 +200,12 @@ mod tests {
                     updated: None,
                     completed: None,
                     acceptance_criteria: Vec::new(),
+                    context_files: vec![],
+                    output_artifacts: vec![],
+                    hints: None,
+                    estimated_turns: None,
+                    provenance: None,
+                    attempt_notes: vec![],
                 },
             ],
             _counters: BTreeMap::new(),

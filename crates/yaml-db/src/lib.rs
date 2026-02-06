@@ -8,6 +8,7 @@
 //! - metadata.yaml: Project metadata and counters
 
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 pub mod acronym;
 mod database;
@@ -67,6 +68,26 @@ pub enum Priority {
     Critical,
 }
 
+/// Task provenance — who created this task
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum TaskProvenance {
+    Agent,
+    Human,
+    System,
+}
+
+/// MCP server configuration for discipline-specific tooling
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct McpServerConfig {
+    pub name: String,
+    pub command: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub args: Vec<String>,
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub env: HashMap<String, String>,
+}
+
 /// Task record
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Task {
@@ -93,6 +114,20 @@ pub struct Task {
     pub completed: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub acceptance_criteria: Vec<String>,
+    // Execution context
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub context_files: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub output_artifacts: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hints: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub estimated_turns: Option<u32>,
+    // Provenance & history
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub provenance: Option<TaskProvenance>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub attempt_notes: Vec<String>,
 }
 
 /// Task with pre-joined feature/discipline display data for IPC.
@@ -115,6 +150,14 @@ pub struct EnrichedTask {
     pub updated: Option<String>,
     pub completed: Option<String>,
     pub acceptance_criteria: Vec<String>,
+    // Execution context
+    pub context_files: Vec<String>,
+    pub output_artifacts: Vec<String>,
+    pub hints: Option<String>,
+    pub estimated_turns: Option<u32>,
+    // Provenance & history
+    pub provenance: Option<TaskProvenance>,
+    pub attempt_notes: Vec<String>,
     // Pre-joined display fields
     pub feature_display_name: String,
     pub feature_acronym: String,

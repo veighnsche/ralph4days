@@ -10,6 +10,15 @@ pub struct Discipline {
     pub color: String,
     #[serde(default)]
     pub acronym: String,
+    // Execution context
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub system_prompt: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub skills: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub conventions: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub mcp_servers: Vec<crate::McpServerConfig>,
 }
 
 // Implement YamlEntity trait for Discipline
@@ -42,6 +51,10 @@ impl DisciplinesFile {
                 acronym: "FRNT".into(),
                 icon: "Monitor".into(),
                 color: "#3b82f6".into(),
+                system_prompt: None,
+                skills: vec![],
+                conventions: None,
+                mcp_servers: vec![],
             },
             Discipline {
                 name: "backend".into(),
@@ -49,6 +62,10 @@ impl DisciplinesFile {
                 acronym: "BACK".into(),
                 icon: "Server".into(),
                 color: "#8b5cf6".into(),
+                system_prompt: None,
+                skills: vec![],
+                conventions: None,
+                mcp_servers: vec![],
             },
             Discipline {
                 name: "wiring".into(),
@@ -56,6 +73,10 @@ impl DisciplinesFile {
                 acronym: "WIRE".into(),
                 icon: "Cable".into(),
                 color: "#06b6d4".into(),
+                system_prompt: None,
+                skills: vec![],
+                conventions: None,
+                mcp_servers: vec![],
             },
             Discipline {
                 name: "database".into(),
@@ -63,6 +84,10 @@ impl DisciplinesFile {
                 acronym: "DTBS".into(),
                 icon: "Database".into(),
                 color: "#10b981".into(),
+                system_prompt: None,
+                skills: vec![],
+                conventions: None,
+                mcp_servers: vec![],
             },
             Discipline {
                 name: "testing".into(),
@@ -70,6 +95,10 @@ impl DisciplinesFile {
                 acronym: "TEST".into(),
                 icon: "FlaskConical".into(),
                 color: "#f59e0b".into(),
+                system_prompt: None,
+                skills: vec![],
+                conventions: None,
+                mcp_servers: vec![],
             },
             Discipline {
                 name: "infra".into(),
@@ -77,6 +106,10 @@ impl DisciplinesFile {
                 acronym: "INFR".into(),
                 icon: "Cloud".into(),
                 color: "#6366f1".into(),
+                system_prompt: None,
+                skills: vec![],
+                conventions: None,
+                mcp_servers: vec![],
             },
             Discipline {
                 name: "security".into(),
@@ -84,6 +117,10 @@ impl DisciplinesFile {
                 acronym: "SECR".into(),
                 icon: "Shield".into(),
                 color: "#ef4444".into(),
+                system_prompt: None,
+                skills: vec![],
+                conventions: None,
+                mcp_servers: vec![],
             },
             Discipline {
                 name: "docs".into(),
@@ -91,6 +128,10 @@ impl DisciplinesFile {
                 acronym: "DOCS".into(),
                 icon: "BookOpen".into(),
                 color: "#14b8a6".into(),
+                system_prompt: None,
+                skills: vec![],
+                conventions: None,
+                mcp_servers: vec![],
             },
             Discipline {
                 name: "design".into(),
@@ -98,6 +139,10 @@ impl DisciplinesFile {
                 acronym: "DSGN".into(),
                 icon: "Palette".into(),
                 color: "#ec4899".into(),
+                system_prompt: None,
+                skills: vec![],
+                conventions: None,
+                mcp_servers: vec![],
             },
             Discipline {
                 name: "api".into(),
@@ -105,6 +150,10 @@ impl DisciplinesFile {
                 acronym: "APIS".into(),
                 icon: "Plug".into(),
                 color: "#84cc16".into(),
+                system_prompt: None,
+                skills: vec![],
+                conventions: None,
+                mcp_servers: vec![],
             },
         ];
     }

@@ -43,6 +43,12 @@ fn test_tasks_yaml_output() {
             "Users can sign in with Google".to_string(),
             "Users can sign in with GitHub".to_string(),
         ],
+        context_files: vec![],
+        output_artifacts: vec![],
+        hints: None,
+        estimated_turns: None,
+        provenance: None,
+        attempt_notes: vec![],
     });
 
     tasks_file.add_task(Task {
@@ -60,6 +66,12 @@ fn test_tasks_yaml_output() {
         updated: None,
         completed: None,
         acceptance_criteria: vec![],
+        context_files: vec![],
+        output_artifacts: vec![],
+        hints: None,
+        estimated_turns: None,
+        provenance: None,
+        attempt_notes: vec![],
     });
 
     tasks_file.save().unwrap();
@@ -78,6 +90,8 @@ fn test_features_yaml_output() {
         acronym: "AUTH".to_string(),
         description: None,
         created: None,
+        knowledge_paths: vec![],
+        context_files: vec![],
     });
     features_file.add(Feature {
         name: "user-profile".to_string(),
@@ -85,6 +99,8 @@ fn test_features_yaml_output() {
         acronym: "USPR".to_string(),
         description: None,
         created: None,
+        knowledge_paths: vec![],
+        context_files: vec![],
     });
 
     features_file.save().unwrap();
@@ -117,6 +133,10 @@ fn test_disciplines_yaml_custom() {
         acronym: "MLOP".to_string(),
         icon: "Brain".to_string(),
         color: "violet".to_string(),
+        system_prompt: None,
+        skills: vec![],
+        conventions: None,
+        mcp_servers: vec![],
     });
 
     disciplines_file.add(Discipline {
@@ -125,6 +145,10 @@ fn test_disciplines_yaml_custom() {
         acronym: "DENG".to_string(),
         icon: "Database".to_string(),
         color: "emerald".to_string(),
+        system_prompt: None,
+        skills: vec![],
+        conventions: None,
+        mcp_servers: vec![],
     });
 
     disciplines_file.save().unwrap();
@@ -160,6 +184,12 @@ fn test_metadata_yaml_output() {
             updated: None,
             completed: None,
             acceptance_criteria: vec![],
+            context_files: vec![],
+            output_artifacts: vec![],
+            hints: None,
+            estimated_turns: None,
+            provenance: None,
+            attempt_notes: vec![],
         },
         Task {
             id: 2,
@@ -176,6 +206,12 @@ fn test_metadata_yaml_output() {
             updated: None,
             completed: None,
             acceptance_criteria: vec![],
+            context_files: vec![],
+            output_artifacts: vec![],
+            hints: None,
+            estimated_turns: None,
+            provenance: None,
+            attempt_notes: vec![],
         },
     ];
 
@@ -207,6 +243,7 @@ fn test_full_database_creation() {
                 "POST /users creates a user".to_string(),
                 "GET /users/:id returns user".to_string(),
             ]),
+            ..Default::default()
         })
         .unwrap();
 
@@ -220,6 +257,7 @@ fn test_full_database_creation() {
             tags: vec![],
             depends_on: vec![task_id_1],
             acceptance_criteria: None,
+            ..Default::default()
         })
         .unwrap();
 
@@ -264,6 +302,12 @@ fn test_task_with_all_fields() {
             "Webhook handles payment success".to_string(),
             "Webhook handles payment failure".to_string(),
         ],
+        context_files: vec![],
+        output_artifacts: vec![],
+        hints: None,
+        estimated_turns: None,
+        provenance: None,
+        attempt_notes: vec![],
     });
 
     tasks_file.save().unwrap();
@@ -291,6 +335,12 @@ fn test_task_minimal_fields() {
         updated: None,
         completed: None,
         acceptance_criteria: vec![],
+        context_files: vec![],
+        output_artifacts: vec![],
+        hints: None,
+        estimated_turns: None,
+        provenance: None,
+        attempt_notes: vec![],
     });
 
     tasks_file.save().unwrap();
@@ -326,6 +376,12 @@ fn test_task_status_serialization() {
             updated: None,
             completed: None,
             acceptance_criteria: vec![],
+            context_files: vec![],
+            output_artifacts: vec![],
+            hints: None,
+            estimated_turns: None,
+            provenance: None,
+            attempt_notes: vec![],
         });
     }
 
@@ -362,6 +418,12 @@ fn test_task_priority_serialization() {
             updated: None,
             completed: None,
             acceptance_criteria: vec![],
+            context_files: vec![],
+            output_artifacts: vec![],
+            hints: None,
+            estimated_turns: None,
+            provenance: None,
+            attempt_notes: vec![],
         });
     }
 
@@ -404,6 +466,12 @@ fn test_counter_rebuild() {
             updated: None,
             completed: None,
             acceptance_criteria: vec![],
+            context_files: vec![],
+            output_artifacts: vec![],
+            hints: None,
+            estimated_turns: None,
+            provenance: None,
+            attempt_notes: vec![],
         },
         Task {
             id: 10,
@@ -420,6 +488,12 @@ fn test_counter_rebuild() {
             updated: None,
             completed: None,
             acceptance_criteria: vec![],
+            context_files: vec![],
+            output_artifacts: vec![],
+            hints: None,
+            estimated_turns: None,
+            provenance: None,
+            attempt_notes: vec![],
         },
         Task {
             id: 3,
@@ -436,6 +510,12 @@ fn test_counter_rebuild() {
             updated: None,
             completed: None,
             acceptance_criteria: vec![],
+            context_files: vec![],
+            output_artifacts: vec![],
+            hints: None,
+            estimated_turns: None,
+            provenance: None,
+            attempt_notes: vec![],
         },
     ];
 

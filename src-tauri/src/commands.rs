@@ -363,6 +363,11 @@ pub fn create_task(
     tags: Vec<String>,
     depends_on: Option<Vec<u32>>,
     acceptance_criteria: Option<Vec<String>>,
+    context_files: Option<Vec<String>>,
+    output_artifacts: Option<Vec<String>>,
+    hints: Option<String>,
+    estimated_turns: Option<u32>,
+    provenance: Option<String>,
 ) -> Result<String, String> {
     let db_path = get_db_path(&state)?;
     let mut db = YamlDatabase::from_path(db_path)?;
@@ -376,6 +381,11 @@ pub fn create_task(
         tags,
         depends_on: depends_on.unwrap_or_default(),
         acceptance_criteria,
+        context_files: context_files.unwrap_or_default(),
+        output_artifacts: output_artifacts.unwrap_or_default(),
+        hints,
+        estimated_turns,
+        provenance: parse_provenance(provenance.as_deref()),
     };
 
     let task_id = db.create_task(task_input)?;
@@ -404,6 +414,25 @@ fn parse_priority(priority: Option<&str>) -> Option<Priority> {
     })
 }
 
+/// Parse provenance string to TaskProvenance enum
+fn parse_provenance(provenance: Option<&str>) -> Option<yaml_db::TaskProvenance> {
+    provenance.and_then(|p| match p {
+        "agent" => Some(yaml_db::TaskProvenance::Agent),
+        "human" => Some(yaml_db::TaskProvenance::Human),
+        "system" => Some(yaml_db::TaskProvenance::System),
+        _ => None,
+    })
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct McpServerConfigData {
+    pub name: String,
+    pub command: String,
+    pub args: Vec<String>,
+    pub env: std::collections::HashMap<String, String>,
+}
+
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DisciplineConfig {
@@ -412,6 +441,10 @@ pub struct DisciplineConfig {
     pub icon: String,
     pub color: String,
     pub acronym: String,
+    pub system_prompt: Option<String>,
+    pub skills: Vec<String>,
+    pub conventions: Option<String>,
+    pub mcp_servers: Vec<McpServerConfigData>,
 }
 
 #[tauri::command]
@@ -427,6 +460,19 @@ pub fn get_disciplines_config(state: State<'_, AppState>) -> Result<Vec<Discipli
             icon: d.icon.clone(),
             color: d.color.clone(),
             acronym: d.acronym.clone(),
+            system_prompt: d.system_prompt.clone(),
+            skills: d.skills.clone(),
+            conventions: d.conventions.clone(),
+            mcp_servers: d
+                .mcp_servers
+                .iter()
+                .map(|m| McpServerConfigData {
+                    name: m.name.clone(),
+                    command: m.command.clone(),
+                    args: m.args.clone(),
+                    env: m.env.clone(),
+                })
+                .collect(),
         })
         .collect())
 }
@@ -462,6 +508,8 @@ pub struct FeatureData {
     pub acronym: String,
     pub description: Option<String>,
     pub created: Option<String>,
+    pub knowledge_paths: Vec<String>,
+    pub context_files: Vec<String>,
 }
 
 #[tauri::command]
@@ -477,6 +525,8 @@ pub fn get_features(state: State<'_, AppState>) -> Result<Vec<FeatureData>, Stri
             acronym: f.acronym.clone(),
             description: f.description.clone(),
             created: f.created.clone(),
+            knowledge_paths: f.knowledge_paths.clone(),
+            context_files: f.context_files.clone(),
         })
         .collect())
 }

@@ -81,6 +81,7 @@ fn test_transform_empty_db_to_first_task() {
                 "POST /login endpoint works".to_string(),
                 "Returns JWT token".to_string(),
             ]),
+            ..Default::default()
         })
         .unwrap();
 
@@ -108,6 +109,7 @@ fn test_transform_add_task_with_dependency() {
             tags: vec!["ui".to_string()],
             depends_on: vec![1], // Depends on existing task 1
             acceptance_criteria: Some(vec!["Form validates input".to_string()]),
+            ..Default::default()
         })
         .unwrap();
 
@@ -134,6 +136,7 @@ fn test_transform_multiple_tasks_multiple_features() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
+        ..Default::default()
     })
     .unwrap();
 
@@ -148,6 +151,7 @@ fn test_transform_multiple_tasks_multiple_features() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
+        ..Default::default()
     })
     .unwrap();
 
@@ -160,6 +164,7 @@ fn test_transform_multiple_tasks_multiple_features() {
         tags: vec![],
         depends_on: vec![],
         acceptance_criteria: None,
+        ..Default::default()
     })
     .unwrap();
 
@@ -207,6 +212,7 @@ fn test_transform_custom_discipline_addition() {
         tags: vec!["ml".to_string(), "training".to_string()],
         depends_on: vec![],
         acceptance_criteria: None,
+        ..Default::default()
     })
     .unwrap();
 
@@ -231,6 +237,7 @@ fn test_transform_reload_and_modify() {
             tags: vec![],
             depends_on: vec![],
             acceptance_criteria: None,
+            ..Default::default()
         })
         .unwrap();
     }
@@ -247,6 +254,7 @@ fn test_transform_reload_and_modify() {
             tags: vec![],
             depends_on: vec![1],
             acceptance_criteria: None,
+            ..Default::default()
         })
         .unwrap();
     }

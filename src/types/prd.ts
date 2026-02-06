@@ -10,6 +10,15 @@ export type InferredTaskStatus =
   | "done" // status == done
   | "skipped"; // status == skipped
 
+export type TaskProvenance = "agent" | "human" | "system";
+
+export interface McpServerConfig {
+  name: string;
+  command: string;
+  args?: string[];
+  env?: Record<string, string>;
+}
+
 export interface PRDTask {
   id: number;
   feature: string;
@@ -25,6 +34,14 @@ export interface PRDTask {
   updated?: string;
   completed?: string;
   acceptanceCriteria?: string[];
+  // Execution context
+  contextFiles?: string[];
+  outputArtifacts?: string[];
+  hints?: string;
+  estimatedTurns?: number;
+  // Provenance & history
+  provenance?: TaskProvenance;
+  attemptNotes?: string[];
 }
 
 /** Task with pre-joined feature/discipline display data from backend */
@@ -83,4 +100,7 @@ export interface Feature {
   acronym?: string;
   description?: string;
   created?: string;
+  // Knowledge context
+  knowledgePaths?: string[];
+  contextFiles?: string[];
 }
