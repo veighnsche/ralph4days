@@ -7,8 +7,8 @@
 use std::fs;
 use tempfile::TempDir;
 use yaml_db::{
-    Discipline, DisciplinesFile, Feature, FeaturesFile, MetadataFile, Priority, ProjectMetadata,
-    Task, TaskInput, TaskStatus, TasksFile, YamlDatabase,
+    CommentAuthor, Discipline, DisciplinesFile, Feature, FeaturesFile, MetadataFile, Priority,
+    ProjectMetadata, Task, TaskComment, TaskInput, TaskStatus, TasksFile, YamlDatabase,
 };
 
 /// Helper to create a temporary database directory
@@ -48,7 +48,7 @@ fn test_tasks_yaml_output() {
         hints: None,
         estimated_turns: None,
         provenance: None,
-        attempt_notes: vec![],
+        comments: vec![],
     });
 
     tasks_file.add_task(Task {
@@ -71,7 +71,7 @@ fn test_tasks_yaml_output() {
         hints: None,
         estimated_turns: None,
         provenance: None,
-        attempt_notes: vec![],
+        comments: vec![],
     });
 
     tasks_file.save().unwrap();
@@ -189,7 +189,7 @@ fn test_metadata_yaml_output() {
             hints: None,
             estimated_turns: None,
             provenance: None,
-            attempt_notes: vec![],
+            comments: vec![],
         },
         Task {
             id: 2,
@@ -211,7 +211,7 @@ fn test_metadata_yaml_output() {
             hints: None,
             estimated_turns: None,
             provenance: None,
-            attempt_notes: vec![],
+            comments: vec![],
         },
     ];
 
@@ -307,7 +307,7 @@ fn test_task_with_all_fields() {
         hints: None,
         estimated_turns: None,
         provenance: None,
-        attempt_notes: vec![],
+        comments: vec![],
     });
 
     tasks_file.save().unwrap();
@@ -340,7 +340,7 @@ fn test_task_minimal_fields() {
         hints: None,
         estimated_turns: None,
         provenance: None,
-        attempt_notes: vec![],
+        comments: vec![],
     });
 
     tasks_file.save().unwrap();
@@ -381,7 +381,7 @@ fn test_task_status_serialization() {
             hints: None,
             estimated_turns: None,
             provenance: None,
-            attempt_notes: vec![],
+            comments: vec![],
         });
     }
 
@@ -423,7 +423,7 @@ fn test_task_priority_serialization() {
             hints: None,
             estimated_turns: None,
             provenance: None,
-            attempt_notes: vec![],
+            comments: vec![],
         });
     }
 
@@ -471,7 +471,7 @@ fn test_counter_rebuild() {
             hints: None,
             estimated_turns: None,
             provenance: None,
-            attempt_notes: vec![],
+            comments: vec![],
         },
         Task {
             id: 10,
@@ -493,7 +493,7 @@ fn test_counter_rebuild() {
             hints: None,
             estimated_turns: None,
             provenance: None,
-            attempt_notes: vec![],
+            comments: vec![],
         },
         Task {
             id: 3,
@@ -515,7 +515,7 @@ fn test_counter_rebuild() {
             hints: None,
             estimated_turns: None,
             provenance: None,
-            attempt_notes: vec![],
+            comments: vec![],
         },
     ];
 
@@ -524,4 +524,61 @@ fn test_counter_rebuild() {
 
     let yaml_content = fs::read_to_string(db_path.join("metadata.yaml")).unwrap();
     insta::assert_snapshot!("metadata_with_counters", yaml_content);
+}
+
+#[test]
+fn test_task_with_comments_yaml_output() {
+    let (_temp, db_path) = create_temp_db();
+    let mut tasks_file = TasksFile::new(db_path.join("tasks.yaml"));
+
+    tasks_file.add_task(Task {
+        id: 1,
+        feature: "auth".to_string(),
+        discipline: "backend".to_string(),
+        title: "Implement login".to_string(),
+        description: None,
+        status: TaskStatus::Pending,
+        priority: None,
+        tags: vec![],
+        depends_on: vec![],
+        blocked_by: None,
+        created: None,
+        updated: None,
+        completed: None,
+        acceptance_criteria: vec![],
+        context_files: vec![],
+        output_artifacts: vec![],
+        hints: None,
+        estimated_turns: None,
+        provenance: None,
+        comments: vec![
+            TaskComment {
+                author: CommentAuthor::Human,
+                body: "Use bcrypt, not SHA256".to_string(),
+                agent_task_id: None,
+                created: Some("2026-02-06T10:30:00Z".to_string()),
+            },
+            TaskComment {
+                author: CommentAuthor::Agent,
+                body: "Failed: forgot JWT_SECRET".to_string(),
+                agent_task_id: Some(5),
+                created: Some("2026-02-06T14:22:00Z".to_string()),
+            },
+        ],
+    });
+
+    tasks_file.save().unwrap();
+    let yaml_content = fs::read_to_string(db_path.join("tasks.yaml")).unwrap();
+    insta::assert_snapshot!("task_with_comments", yaml_content);
+
+    // Verify round-trip: load the YAML back and check fields
+    let mut reloaded = TasksFile::new(db_path.join("tasks.yaml"));
+    reloaded.load().unwrap();
+    let tasks = reloaded.get_all();
+    assert_eq!(tasks.len(), 1);
+    assert_eq!(tasks[0].comments.len(), 2);
+    assert_eq!(tasks[0].comments[0].author, CommentAuthor::Human);
+    assert!(tasks[0].comments[0].agent_task_id.is_none());
+    assert_eq!(tasks[0].comments[1].author, CommentAuthor::Agent);
+    assert_eq!(tasks[0].comments[1].agent_task_id, Some(5));
 }

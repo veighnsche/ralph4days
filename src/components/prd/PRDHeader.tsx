@@ -1,8 +1,8 @@
 import { Search } from "lucide-react";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
-import { FullBleedSeparator } from "@/components/ui/full-bleed-separator";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 import type { FilterSetters, FilterState } from "@/hooks/usePRDFilters";
 import type { ProjectInfo } from "@/types/prd";
 import { ActiveFilters } from "./ActiveFilters";
@@ -55,7 +55,7 @@ export function PRDHeader({
         {/* Progress Bar */}
         <Progress value={progressPercent} className="h-1.5" />
 
-        <FullBleedSeparator />
+        <Separator bleed="md" />
 
         {/* Filters Row */}
         <div className="flex items-center gap-2">

@@ -77,6 +77,25 @@ pub enum TaskProvenance {
     System,
 }
 
+/// Comment author — who wrote a task comment
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum CommentAuthor {
+    Human,
+    Agent,
+}
+
+/// A structured comment on a task
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TaskComment {
+    pub author: CommentAuthor,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub agent_task_id: Option<u32>,
+    pub body: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created: Option<String>,
+}
+
 /// MCP server configuration for discipline-specific tooling
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct McpServerConfig {
@@ -127,7 +146,7 @@ pub struct Task {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub provenance: Option<TaskProvenance>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub attempt_notes: Vec<String>,
+    pub comments: Vec<TaskComment>,
 }
 
 /// Task with pre-joined feature/discipline display data for IPC.
@@ -157,7 +176,7 @@ pub struct EnrichedTask {
     pub estimated_turns: Option<u32>,
     // Provenance & history
     pub provenance: Option<TaskProvenance>,
-    pub attempt_notes: Vec<String>,
+    pub comments: Vec<TaskComment>,
     // Pre-joined display fields
     pub feature_display_name: String,
     pub feature_acronym: String,

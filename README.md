@@ -26,7 +26,7 @@ Ralph is deliberately not AI. It implements only deterministic, coded behavior: 
 - **10 default disciplines** -- Frontend, Backend, Wiring, Database, Testing, Infrastructure, Security, Documentation, Design, and API -- each with icon, color, and acronym
 - **Task filtering** -- Filter tasks by status, feature, discipline, priority, and tags with a combined header control bar
 - **Workspace tabs** -- Browser-style tabbed workspace panel for terminals, task details, forms, and braindump sessions
-- **Task provenance tracking** -- Records whether tasks were created by an agent, human, or system, with attempt notes for retry history
+- **Task provenance tracking** -- Records whether tasks were created by an agent, human, or system, with structured comments for context and retry history
 - **Execution context per task** -- Context files, output artifacts, hints, and estimated turns give Claude precise guidance for each task
 
 ## Architecture
@@ -210,7 +210,7 @@ Task records with rich metadata:
 - **Core fields:** `id`, `feature`, `discipline`, `title`, `description`, `status`, `priority`
 - **Organization:** `tags`, `depends_on` (dependency graph), `blocked_by` (external blocker text)
 - **Execution context:** `context_files`, `output_artifacts`, `hints`, `estimated_turns`
-- **History:** `provenance` (agent/human/system), `attempt_notes`, `created`/`updated`/`completed` timestamps
+- **History:** `provenance` (agent/human/system), `comments` (structured with author/body/timestamp), `created`/`updated`/`completed` timestamps
 - **Acceptance criteria:** List of success conditions
 
 Task statuses: `pending`, `in_progress`, `done`, `blocked`, `skipped`

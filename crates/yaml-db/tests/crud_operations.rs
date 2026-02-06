@@ -4,7 +4,7 @@
 
 use std::fs;
 use tempfile::TempDir;
-use yaml_db::{Priority, TaskInput, TaskStatus, YamlDatabase};
+use yaml_db::{CommentAuthor, Priority, TaskInput, TaskStatus, YamlDatabase};
 
 /// Helper to create a temporary database directory
 fn create_temp_db() -> (TempDir, std::path::PathBuf) {
@@ -556,4 +556,236 @@ fn test_crud_lifecycle() {
     // DELETE
     db.delete_task(task_id).unwrap();
     assert!(db.get_task_by_id(task_id).is_none());
+}
+
+// === COMMENT tests ===
+
+#[test]
+fn test_add_human_comment() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "test".to_string(),
+            discipline: "backend".to_string(),
+            title: "Task".to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+
+    db.add_comment(task_id, CommentAuthor::Human, None, "Use bcrypt".to_string())
+        .unwrap();
+
+    let task = db.get_task_by_id(task_id).unwrap();
+    assert_eq!(task.comments.len(), 1);
+    assert_eq!(task.comments[0].author, CommentAuthor::Human);
+    assert_eq!(task.comments[0].body, "Use bcrypt");
+    assert!(task.comments[0].agent_task_id.is_none());
+    assert!(task.comments[0].created.is_some());
+}
+
+#[test]
+fn test_add_agent_comment() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "test".to_string(),
+            discipline: "backend".to_string(),
+            title: "Task".to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+
+    db.add_comment(task_id, CommentAuthor::Agent, Some(5), "Failed: missing .env".to_string())
+        .unwrap();
+
+    let task = db.get_task_by_id(task_id).unwrap();
+    assert_eq!(task.comments.len(), 1);
+    assert_eq!(task.comments[0].author, CommentAuthor::Agent);
+    assert_eq!(task.comments[0].agent_task_id, Some(5));
+    assert_eq!(task.comments[0].body, "Failed: missing .env");
+}
+
+#[test]
+fn test_add_comment_empty_body_rejected() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "test".to_string(),
+            discipline: "backend".to_string(),
+            title: "Task".to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+
+    let result = db.add_comment(task_id, CommentAuthor::Human, None, "   ".to_string());
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("cannot be empty"));
+}
+
+#[test]
+fn test_add_comment_agent_missing_task_id_rejected() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "test".to_string(),
+            discipline: "backend".to_string(),
+            title: "Task".to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+
+    let result = db.add_comment(task_id, CommentAuthor::Agent, None, "Note".to_string());
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("agent_task_id is required"));
+}
+
+#[test]
+fn test_add_comment_human_with_task_id_rejected() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "test".to_string(),
+            discipline: "backend".to_string(),
+            title: "Task".to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+
+    let result = db.add_comment(task_id, CommentAuthor::Human, Some(1), "Note".to_string());
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("must not be set"));
+}
+
+#[test]
+fn test_add_comment_nonexistent_task() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    let result = db.add_comment(999, CommentAuthor::Human, None, "Hello".to_string());
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("does not exist"));
+}
+
+#[test]
+fn test_add_multiple_comments() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "test".to_string(),
+            discipline: "backend".to_string(),
+            title: "Task".to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+
+    db.add_comment(task_id, CommentAuthor::Human, None, "First".to_string()).unwrap();
+    db.add_comment(task_id, CommentAuthor::Agent, Some(1), "Second".to_string()).unwrap();
+    db.add_comment(task_id, CommentAuthor::Human, None, "Third".to_string()).unwrap();
+
+    let task = db.get_task_by_id(task_id).unwrap();
+    assert_eq!(task.comments.len(), 3);
+    assert_eq!(task.comments[0].body, "First");
+    assert_eq!(task.comments[1].body, "Second");
+    assert_eq!(task.comments[2].body, "Third");
+}
+
+#[test]
+fn test_comments_persist_through_reload() {
+    let (_temp, db_path) = create_temp_db();
+
+    // Add comment and drop db
+    {
+        let mut db = YamlDatabase::from_path(db_path.clone()).unwrap();
+        db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+        db.create_task(TaskInput {
+            feature: "test".to_string(),
+            discipline: "backend".to_string(),
+            title: "Task".to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+        db.add_comment(1, CommentAuthor::Human, None, "Persisted".to_string()).unwrap();
+    }
+
+    // Reload from disk
+    let db = YamlDatabase::from_path(db_path).unwrap();
+    let task = db.get_task_by_id(1).unwrap();
+    assert_eq!(task.comments.len(), 1);
+    assert_eq!(task.comments[0].body, "Persisted");
+    assert_eq!(task.comments[0].author, CommentAuthor::Human);
+    assert!(task.comments[0].agent_task_id.is_none());
+    assert!(task.comments[0].created.is_some());
+}
+
+#[test]
+fn test_comments_in_enriched_tasks() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+    db.create_task(TaskInput {
+        feature: "test".to_string(),
+        discipline: "backend".to_string(),
+        title: "Task".to_string(),
+        ..Default::default()
+    })
+    .unwrap();
+    db.add_comment(1, CommentAuthor::Human, None, "Visible in enriched".to_string()).unwrap();
+
+    let enriched = db.get_enriched_tasks();
+    assert_eq!(enriched.len(), 1);
+    assert_eq!(enriched[0].comments.len(), 1);
+    assert_eq!(enriched[0].comments[0].body, "Visible in enriched");
+}
+
+#[test]
+fn test_update_task_preserves_comments() {
+    let (_temp, db_path) = create_temp_db();
+    let mut db = YamlDatabase::from_path(db_path).unwrap();
+
+    db.create_feature("test".to_string(), "Test".to_string(), "TEST".to_string(), None).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "test".to_string(),
+            discipline: "backend".to_string(),
+            title: "Original".to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+
+    db.add_comment(task_id, CommentAuthor::Human, None, "Keep me".to_string()).unwrap();
+
+    db.update_task(
+        task_id,
+        TaskInput {
+            feature: "test".to_string(),
+            discipline: "backend".to_string(),
+            title: "Updated".to_string(),
+            ..Default::default()
+        },
+    )
+    .unwrap();
+
+    let task = db.get_task_by_id(task_id).unwrap();
+    assert_eq!(task.title, "Updated");
+    assert_eq!(task.comments.len(), 1);
+    assert_eq!(task.comments[0].body, "Keep me");
 }

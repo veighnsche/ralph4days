@@ -13,6 +13,20 @@ tasks:
   acceptance_criteria:
   - POST /login endpoint works
   - Returns JWT token
+  context_files:
+  - src/auth/mod.rs
+  - src/routes/auth.rs
+  output_artifacts:
+  - src/routes/auth.rs
+  - tests/auth_test.rs
+  hints: Use bcrypt for password hashing, not SHA256. Check existing middleware pattern in src/middleware/
+  estimated_turns: 3
+  provenance: agent
+  comments:
+  - author: agent
+    agent_task_id: 1
+    body: 'First attempt failed: forgot to add JWT_SECRET to .env'
+    created: 2026-02-06T14:22:00Z
 - id: 2
   feature: authentication
   discipline: frontend
@@ -27,6 +41,10 @@ tasks:
   created: 2026-02-06
   acceptance_criteria:
   - Form validates input
+  context_files:
+  - src/components/LoginForm.tsx
+  estimated_turns: 2
+  provenance: human
 - id: 3
   feature: user-profile
   discipline: frontend
@@ -39,3 +57,4 @@ tasks:
   created: 2026-02-06
   acceptance_criteria:
   - Shows user info
+  provenance: system

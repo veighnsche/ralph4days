@@ -2,6 +2,13 @@ features:
 - name: authentication
   display_name: Authentication
   acronym: AUTH
+  knowledge_paths:
+  - docs/auth-architecture.md
+  context_files:
+  - src/auth/mod.rs
+  - src/auth/jwt.rs
 - name: user-profile
   display_name: User Profile
   acronym: USPR
+  context_files:
+  - src/profile/mod.rs

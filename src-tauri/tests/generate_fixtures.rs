@@ -325,7 +325,7 @@ Next stage: 03-with-tasks-project
 /// Generate 03-with-tasks-project fixture (has feature + tasks)
 #[test]
 fn generate_fixture_03_with_tasks() {
-    use yaml_db::{FeaturesFile, Priority, Task, TaskStatus, TasksFile};
+    use yaml_db::{FeaturesFile, Priority, Task, TaskProvenance, TaskStatus, TasksFile};
 
     println!("\n=== Generating fixture: 03-with-tasks-project ===");
 
@@ -399,8 +399,8 @@ just dev-mock 03-with-tasks-project
         acronym: "AUTH".to_string(),
         description: None,
         created: None,
-    knowledge_paths: vec![],
-    context_files: vec![],
+        knowledge_paths: vec!["docs/auth-architecture.md".to_string()],
+        context_files: vec!["src/auth/mod.rs".to_string(), "src/auth/jwt.rs".to_string()],
     });
     features_file.add(yaml_db::Feature {
         name: "user-profile".to_string(),
@@ -408,8 +408,8 @@ just dev-mock 03-with-tasks-project
         acronym: "USPR".to_string(),
         description: None,
         created: None,
-    knowledge_paths: vec![],
-    context_files: vec![],
+        knowledge_paths: vec![],
+        context_files: vec!["src/profile/mod.rs".to_string()],
     });
     features_file.save().unwrap();
 
@@ -437,12 +437,19 @@ just dev-mock 03-with-tasks-project
             "POST /login endpoint works".to_string(),
             "Returns JWT token".to_string(),
         ],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    attempt_notes: vec![],
+        context_files: vec!["src/auth/mod.rs".to_string(), "src/routes/auth.rs".to_string()],
+        output_artifacts: vec!["src/routes/auth.rs".to_string(), "tests/auth_test.rs".to_string()],
+        hints: Some("Use bcrypt for password hashing, not SHA256. Check existing middleware pattern in src/middleware/".to_string()),
+        estimated_turns: Some(3),
+        provenance: Some(TaskProvenance::Agent),
+        comments: vec![
+            yaml_db::TaskComment {
+                author: yaml_db::CommentAuthor::Agent,
+                agent_task_id: Some(1),
+                body: "First attempt failed: forgot to add JWT_SECRET to .env".to_string(),
+                created: Some("2026-02-06T14:22:00Z".to_string()),
+            },
+        ],
     });
 
     tasks_file.add_task(Task {
@@ -460,12 +467,12 @@ just dev-mock 03-with-tasks-project
         updated: None,
         completed: None,
         acceptance_criteria: vec!["Form validates input".to_string()],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    attempt_notes: vec![],
+        context_files: vec!["src/components/LoginForm.tsx".to_string()],
+        output_artifacts: vec![],
+        hints: None,
+        estimated_turns: Some(2),
+        provenance: Some(TaskProvenance::Human),
+        comments: vec![],
     });
 
     tasks_file.add_task(Task {
@@ -483,12 +490,12 @@ just dev-mock 03-with-tasks-project
         updated: None,
         completed: None,
         acceptance_criteria: vec!["Shows user info".to_string()],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    attempt_notes: vec![],
+        context_files: vec![],
+        output_artifacts: vec![],
+        hints: None,
+        estimated_turns: None,
+        provenance: Some(TaskProvenance::System),
+        comments: vec![],
     });
 
     tasks_file.save().unwrap();
@@ -644,7 +651,7 @@ just dev-mock 04-dev-project
     hints: None,
     estimated_turns: None,
     provenance: None,
-    attempt_notes: vec![],
+    comments: vec![],
     });
 
     // Task 2: bookmark-crud / frontend / done / high
@@ -675,7 +682,7 @@ just dev-mock 04-dev-project
     hints: None,
     estimated_turns: None,
     provenance: None,
-    attempt_notes: vec![],
+    comments: vec![],
     });
 
     // Task 3: bookmark-crud / backend / done / high
@@ -706,7 +713,7 @@ just dev-mock 04-dev-project
     hints: None,
     estimated_turns: None,
     provenance: None,
-    attempt_notes: vec![],
+    comments: vec![],
     });
 
     // Task 4: bookmark-crud / testing / in_progress / medium
@@ -736,7 +743,7 @@ just dev-mock 04-dev-project
     hints: None,
     estimated_turns: None,
     provenance: None,
-    attempt_notes: vec![],
+    comments: vec![],
     });
 
     // Task 5: bookmark-crud / frontend / pending / medium
@@ -765,7 +772,7 @@ just dev-mock 04-dev-project
     hints: None,
     estimated_turns: None,
     provenance: None,
-    attempt_notes: vec![],
+    comments: vec![],
     });
 
     // Task 6: bookmark-crud / frontend / pending / medium
@@ -794,7 +801,7 @@ just dev-mock 04-dev-project
     hints: None,
     estimated_turns: None,
     provenance: None,
-    attempt_notes: vec![],
+    comments: vec![],
     });
 
     // Task 7: bookmark-crud / security / pending / high
@@ -824,7 +831,7 @@ just dev-mock 04-dev-project
     hints: None,
     estimated_turns: None,
     provenance: None,
-    attempt_notes: vec![],
+    comments: vec![],
     });
 
     // Task 8: collections / backend / done / high
@@ -853,7 +860,7 @@ just dev-mock 04-dev-project
     hints: None,
     estimated_turns: None,
     provenance: None,
-    attempt_notes: vec![],
+    comments: vec![],
     });
 
     // Task 9: collections / frontend / in_progress / high
@@ -884,7 +891,7 @@ just dev-mock 04-dev-project
     hints: None,
     estimated_turns: None,
     provenance: None,
-    attempt_notes: vec![],
+    comments: vec![],
     });
 
     // Task 10: collections / frontend / pending / medium
@@ -913,7 +920,7 @@ just dev-mock 04-dev-project
     hints: None,
     estimated_turns: None,
     provenance: None,
-    attempt_notes: vec![],
+    comments: vec![],
     });
 
     // Task 11: collections / design / pending / none
@@ -939,7 +946,7 @@ just dev-mock 04-dev-project
     hints: None,
     estimated_turns: None,
     provenance: None,
-    attempt_notes: vec![],
+    comments: vec![],
     });
 
     // Task 12: collections / frontend / pending / low
@@ -968,7 +975,7 @@ just dev-mock 04-dev-project
     hints: None,
     estimated_turns: None,
     provenance: None,
-    attempt_notes: vec![],
+    comments: vec![],
     });
 
     // Task 13: search / backend / pending / critical
@@ -1000,7 +1007,7 @@ just dev-mock 04-dev-project
     hints: None,
     estimated_turns: None,
     provenance: None,
-    attempt_notes: vec![],
+    comments: vec![],
     });
 
     // Task 14: search / frontend / blocked / high
@@ -1031,7 +1038,7 @@ just dev-mock 04-dev-project
     hints: None,
     estimated_turns: None,
     provenance: None,
-    attempt_notes: vec![],
+    comments: vec![],
     });
 
     // Task 15: search / testing / pending / none
@@ -1061,7 +1068,7 @@ just dev-mock 04-dev-project
     hints: None,
     estimated_turns: None,
     provenance: None,
-    attempt_notes: vec![],
+    comments: vec![],
     });
 
     // Task 16: import-export / backend / pending / high
@@ -1092,7 +1099,7 @@ just dev-mock 04-dev-project
     hints: None,
     estimated_turns: None,
     provenance: None,
-    attempt_notes: vec![],
+    comments: vec![],
     });
 
     // Task 17: import-export / frontend / blocked / medium
@@ -1122,7 +1129,7 @@ just dev-mock 04-dev-project
     hints: None,
     estimated_turns: None,
     provenance: None,
-    attempt_notes: vec![],
+    comments: vec![],
     });
 
     // Task 18: import-export / frontend / pending / low
@@ -1151,7 +1158,7 @@ just dev-mock 04-dev-project
     hints: None,
     estimated_turns: None,
     provenance: None,
-    attempt_notes: vec![],
+    comments: vec![],
     });
 
     // Task 19: settings / docs / skipped / low
@@ -1175,7 +1182,7 @@ just dev-mock 04-dev-project
     hints: None,
     estimated_turns: None,
     provenance: None,
-    attempt_notes: vec![],
+    comments: vec![],
     });
 
     // Task 20: settings / database / pending / none
@@ -1201,7 +1208,7 @@ just dev-mock 04-dev-project
     hints: None,
     estimated_turns: None,
     provenance: None,
-    attempt_notes: vec![],
+    comments: vec![],
     });
 
     tasks_file.save().unwrap();

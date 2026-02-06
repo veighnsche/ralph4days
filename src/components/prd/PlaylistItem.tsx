@@ -1,3 +1,4 @@
+import { Bot, Cog, User } from "lucide-react";
 import { memo } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -78,6 +79,22 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
       <ItemActions className="flex-col items-end gap-2">
         {/* Top Row: Counts + Priority */}
         <div className="flex items-center gap-2">
+          {/* Provenance Icon */}
+          {task.provenance &&
+            (() => {
+              const Icon = task.provenance === "agent" ? Bot : task.provenance === "human" ? User : Cog;
+              return (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center h-5 px-1 cursor-help">
+                      <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>Created by {task.provenance}</TooltipContent>
+                </Tooltip>
+              );
+            })()}
+
           {/* Metadata Badges */}
           {task.acceptanceCriteria && task.acceptanceCriteria.length > 0 && (
             <Tooltip>

@@ -593,6 +593,24 @@ pub fn update_discipline(
     db.update_discipline(name, display_name, acronym, icon, color)
 }
 
+#[tauri::command]
+pub fn add_task_comment(
+    state: State<'_, AppState>,
+    task_id: u32,
+    author: String,
+    agent_task_id: Option<u32>,
+    body: String,
+) -> Result<(), String> {
+    let db_path = get_db_path(&state)?;
+    let mut db = YamlDatabase::from_path(db_path)?;
+    let comment_author = match author.as_str() {
+        "human" => yaml_db::CommentAuthor::Human,
+        "agent" => yaml_db::CommentAuthor::Agent,
+        _ => return Err(format!("Invalid author: {}", author)),
+    };
+    db.add_comment(task_id, comment_author, agent_task_id, body)
+}
+
 // --- Enriched Query Commands ---
 
 #[tauri::command]

@@ -97,7 +97,7 @@ mod tests {
             hints: None,
             estimated_turns: None,
             provenance: None,
-            attempt_notes: vec![],
+            comments: vec![],
         });
 
         // Next ID should be 2
@@ -124,7 +124,7 @@ mod tests {
             hints: None,
             estimated_turns: None,
             provenance: None,
-            attempt_notes: vec![],
+            comments: vec![],
         });
 
         // Next ID should be 6
@@ -161,7 +161,7 @@ mod tests {
                     hints: None,
                     estimated_turns: None,
                     provenance: None,
-                    attempt_notes: vec![],
+                    comments: vec![],
                 },
                 Task {
                     id: 2,
@@ -183,7 +183,7 @@ mod tests {
                     hints: None,
                     estimated_turns: None,
                     provenance: None,
-                    attempt_notes: vec![],
+                    comments: vec![],
                 },
                 Task {
                     id: 3,
@@ -205,7 +205,7 @@ mod tests {
                     hints: None,
                     estimated_turns: None,
                     provenance: None,
-                    attempt_notes: vec![],
+                    comments: vec![],
                 },
             ],
             _counters: BTreeMap::new(),

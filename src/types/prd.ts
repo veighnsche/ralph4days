@@ -19,6 +19,15 @@ export interface McpServerConfig {
   env?: Record<string, string>;
 }
 
+export type CommentAuthor = "human" | "agent";
+
+export interface TaskComment {
+  author: CommentAuthor;
+  agent_task_id?: number; // snake_case — matches Rust serde output (no rename_all on TaskComment)
+  body: string;
+  created?: string;
+}
+
 export interface PRDTask {
   id: number;
   feature: string;
@@ -41,7 +50,7 @@ export interface PRDTask {
   estimatedTurns?: number;
   // Provenance & history
   provenance?: TaskProvenance;
-  attemptNotes?: string[];
+  comments?: TaskComment[];
 }
 
 /** Task with pre-joined feature/discipline display data from backend */

@@ -68,6 +68,7 @@ pub fn run() {
             commands::update_feature,
             commands::create_discipline,
             commands::update_discipline,
+            commands::add_task_comment,
             commands::get_enriched_tasks,
             commands::get_feature_stats,
             commands::get_discipline_stats,
