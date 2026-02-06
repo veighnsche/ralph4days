@@ -28,25 +28,15 @@
  */
 
 import { invoke } from "@tauri-apps/api/core";
-import { Brain, ChevronDown } from "lucide-react";
+import { Brain } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { type Model, ModelThinkingPicker } from "@/components/ModelThinkingPicker";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTabMeta } from "@/hooks/useTabMeta";
 import type { WorkspaceTab } from "@/stores/useWorkspaceStore";
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
@@ -65,16 +55,6 @@ Any constraints or special requirements?
 
 What's your timeline or priorities?`;
 
-const STORAGE_KEY_MODEL = "ralph.preferences.model";
-const STORAGE_KEY_THINKING = "ralph.preferences.thinking";
-
-const VALID_MODELS = ["haiku", "sonnet", "opus"] as const;
-type Model = (typeof VALID_MODELS)[number];
-
-function isValidModel(value: string | null): value is Model {
-  return VALID_MODELS.includes(value as Model);
-}
-
 interface BraindumpFormTabContentProps {
   tab: WorkspaceTab;
 }
@@ -83,14 +63,6 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
   useTabMeta(tab.id, "Braindump", Brain);
   const { closeTab, openTab, tabs } = useWorkspaceStore();
   const [braindump, setBraindump] = useState(DEFAULT_QUESTIONS);
-  const [model, setModel] = useState<string>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY_MODEL);
-    return isValidModel(saved) ? saved : "sonnet";
-  });
-  const [thinking, setThinking] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY_THINKING);
-    return saved === "true";
-  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isMountedRef = useRef(true);
 
@@ -101,21 +73,7 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
     };
   }, []);
 
-  // Persist model preference (validate before saving)
-  useEffect(() => {
-    if (isValidModel(model)) {
-      localStorage.setItem(STORAGE_KEY_MODEL, model);
-    }
-  }, [model]);
-
-  // Persist thinking preference
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_THINKING, String(thinking));
-  }, [thinking]);
-
-  const handleSubmit = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-
+  const handleSubmit = async (model: Model, thinking: boolean) => {
     // Validate input
     const trimmedBraindump = braindump.trim();
     if (!trimmedBraindump) {
@@ -183,7 +141,7 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
   return (
     <div className="flex h-full flex-col">
       <ScrollArea className="flex-1">
-        <form onSubmit={handleSubmit} className="px-4 space-y-6">
+        <form className="px-4 space-y-6">
           <div>
             <h2 className="text-lg font-semibold mb-2">Braindump Your Project</h2>
             <p className="text-sm text-muted-foreground">
@@ -216,56 +174,11 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
           Cancel
         </Button>
 
-        <TooltipProvider>
-          <div className="flex">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="submit"
-                  size="lg"
-                  onClick={handleSubmit}
-                  disabled={isSubmitting || !braindump.trim()}
-                  className="rounded-r-none"
-                >
-                  {isSubmitting ? "Sending..." : "Send to Claude"}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <div className="space-y-1">
-                  <div>
-                    <span className="font-semibold">Model:</span> {model.charAt(0).toUpperCase() + model.slice(1)}
-                  </div>
-                  <div>
-                    <span className="font-semibold">Thinking:</span> {thinking ? "On" : "Off"}
-                  </div>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button type="button" size="lg" disabled={isSubmitting} className="rounded-l-none border-l px-2">
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel>Model</DropdownMenuLabel>
-                <DropdownMenuRadioGroup value={model} onValueChange={setModel}>
-                  <DropdownMenuRadioItem value="haiku">Haiku (fast)</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="sonnet">Sonnet (balanced)</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="opus">Opus (smart)</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-
-                <DropdownMenuSeparator />
-
-                <DropdownMenuLabel>Options</DropdownMenuLabel>
-                <DropdownMenuCheckboxItem checked={thinking} onCheckedChange={setThinking}>
-                  Extended thinking
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </TooltipProvider>
+        <ModelThinkingPicker
+          onAction={handleSubmit}
+          actionLabel={isSubmitting ? "Sending..." : "Send to Claude"}
+          disabled={isSubmitting || !braindump.trim()}
+        />
       </div>
     </div>
   );

@@ -17,10 +17,19 @@ interface BrowserTabsProps {
   onTabChange: (tabId: string) => void;
   onTabClose?: (tabId: string) => void;
   onNewTab?: () => void;
+  newTabButton?: React.ReactNode;
   className?: string;
 }
 
-export function BrowserTabs({ tabs, activeTabId, onTabChange, onTabClose, onNewTab, className }: BrowserTabsProps) {
+export function BrowserTabs({
+  tabs,
+  activeTabId,
+  onTabChange,
+  onTabClose,
+  onNewTab,
+  newTabButton,
+  className,
+}: BrowserTabsProps) {
   return (
     <Tabs value={activeTabId} onValueChange={onTabChange} className={cn("w-full", className)}>
       <TabsList
@@ -80,7 +89,9 @@ export function BrowserTabs({ tabs, activeTabId, onTabChange, onTabClose, onNewT
           </TabsTrigger>
         ))}
 
-        {onNewTab && (
+        {newTabButton ? (
+          newTabButton
+        ) : onNewTab ? (
           <Button
             variant="ghost"
             size="sm"
@@ -93,7 +104,7 @@ export function BrowserTabs({ tabs, activeTabId, onTabChange, onTabClose, onNewT
             <Plus className="h-4 w-4" />
             <span className="sr-only">New tab</span>
           </Button>
-        )}
+        ) : null}
       </TabsList>
     </Tabs>
   );

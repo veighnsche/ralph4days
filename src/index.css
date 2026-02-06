@@ -2,11 +2,52 @@
 @import "tw-animate-css";
 /* @import "shadcn/tailwind.css"; */
 
+/* Bundled fonts — no network dependency, no FOUT */
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/Geist-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "GeistMono NF";
+  src: url("/fonts/GeistMonoNFM-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "GeistMono NF";
+  src: url("/fonts/GeistMonoNFM-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "GeistMono NF";
+  src: url("/fonts/GeistMonoNFM-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "GeistMono NF";
+  src: url("/fonts/GeistMonoNFM-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: block;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
---font-sans: var(--font-sans);
---font-mono: var(--font-mono);
+--font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+--font-mono: var(--font-mono), ui-monospace, monospace;
 --color-background: var(--background);
 --color-foreground: var(--foreground);
 --color-card: var(--card);
@@ -63,6 +104,29 @@
 --color-priority-high-foreground: var(--priority-high-foreground);
 --color-priority-critical: var(--priority-critical);
 --color-priority-critical-foreground: var(--priority-critical-foreground);
+--color-teal-50: #0bffff;
+--color-teal-100: #0affff;
+--color-teal-200: #09ffff;
+--color-teal-300: #08f8ff;
+--color-teal-400: #07d7fa;
+--color-teal-500: #06b6d4;
+--color-teal-600: #0599b2;
+--color-teal-700: #047c90;
+--color-teal-800: #035f6e;
+--color-teal-900: #02424c;
+--color-teal-950: #02333b;
+--color-purple-50: #fca7ff;
+--color-purple-100: #ef9eff;
+--color-purple-200: #d68eff;
+--color-purple-300: #bd7dff;
+--color-purple-400: #a46dff;
+--color-purple-500: #8b5cf6;
+--color-purple-600: #754dcf;
+--color-purple-700: #5f3fa7;
+--color-purple-800: #483080;
+--color-purple-900: #322159;
+--color-purple-950: #271a45;
+--color-claude-orange: #ff6b35;
 --radius-sm: calc(var(--radius) - 4px);
 --radius-md: calc(var(--radius) - 2px);
 --radius-lg: var(--radius);
@@ -73,7 +137,8 @@
 }
 
 :root {
-  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "GeistMono NF", ui-monospace, SFMono-Regular, monospace;
   --background: oklch(1 0 0);
 --foreground: oklch(0.145 0 0);
 --card: oklch(1 0 0);
@@ -132,6 +197,12 @@
 --priority-critical-foreground: oklch(0.98 0.02 15);
 }
 
+/* Dark Mode Color System (Triadic Harmony)
+ * Primary: Teal/Cyan (#06B6D4) - oklch(0.70 0.14 195) - Cool, professional
+ * Secondary: Purple (#8B5CF6) - oklch(0.64 0.24 285) - Creative, elegant
+ * Accent/Tertiary: Claude Orange (#FF6B35) - oklch(0.68 0.22 35) - FIXED, cannot change
+ * These colors are ~120° apart on the color wheel (triadic scheme)
+ */
 .dark {
   --background: oklch(0.145 0 0);
 --foreground: oklch(0.985 0 0);
@@ -139,14 +210,14 @@
 --card-foreground: oklch(0.985 0 0);
 --popover: oklch(0.205 0 0);
 --popover-foreground: oklch(0.985 0 0);
---primary: oklch(0.67 0.26 322);
---primary-foreground: oklch(0.98 0.02 320);
---secondary: oklch(0.274 0.006 286.033);
---secondary-foreground: oklch(0.985 0 0);
+--primary: oklch(0.70 0.14 195);
+--primary-foreground: oklch(0.98 0.02 195);
+--secondary: oklch(0.64 0.24 285);
+--secondary-foreground: oklch(0.98 0.02 285);
 --muted: oklch(0.269 0 0);
 --muted-foreground: oklch(0.708 0 0);
---accent: oklch(0.67 0.26 322);
---accent-foreground: oklch(0.98 0.02 320);
+--accent: oklch(0.68 0.22 35);
+--accent-foreground: oklch(0.98 0.02 35);
 --destructive: oklch(0.704 0.191 22.216);
 --border: oklch(1 0 0 / 10%);
 --input: oklch(1 0 0 / 15%);
@@ -158,10 +229,10 @@
 --chart-5: oklch(0.52 0.23 324);
 --sidebar: oklch(0.205 0 0);
 --sidebar-foreground: oklch(0.985 0 0);
---sidebar-primary: oklch(0.75 0.21 322);
---sidebar-primary-foreground: oklch(0.98 0.02 320);
---sidebar-accent: oklch(0.67 0.26 322);
---sidebar-accent-foreground: oklch(0.98 0.02 320);
+--sidebar-primary: oklch(0.70 0.14 195);
+--sidebar-primary-foreground: oklch(0.98 0.02 195);
+--sidebar-accent: oklch(0.68 0.22 35);
+--sidebar-accent-foreground: oklch(0.98 0.02 35);
 --sidebar-border: oklch(1 0 0 / 10%);
 --sidebar-ring: oklch(0.556 0 0);
 --success: oklch(0.65 0.18 155);

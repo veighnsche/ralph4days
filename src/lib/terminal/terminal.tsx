@@ -27,8 +27,8 @@ export function Terminal({ onReady, onResize }: TerminalProps) {
       cursorBlink: true,
       cursorStyle: "block",
       fontSize: 13,
-      fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
-      lineHeight: 1.2,
+      fontFamily: "'GeistMono NF', monospace",
+      lineHeight: 1.0,
       scrollback: 10000,
       convertEol: true,
       theme: {
@@ -88,5 +88,11 @@ export function Terminal({ onReady, onResize }: TerminalProps) {
     };
   }, []);
 
-  return <div ref={containerRef} className="h-full w-full overflow-hidden" style={{ backgroundColor: TERMINAL_BG }} />;
+  return (
+    <div
+      ref={containerRef}
+      className="h-full w-full overflow-hidden ml-[11px]"
+      style={{ backgroundColor: TERMINAL_BG }}
+    />
+  );
 }

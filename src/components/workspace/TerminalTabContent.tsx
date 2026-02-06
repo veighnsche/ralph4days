@@ -39,6 +39,24 @@ export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
     requestAnimationFrame(() => session.resize(terminal.cols, terminal.rows));
     session.markReady();
     terminal.onData((data) => session.sendInput(data));
+
+    // xterm.js doesn't implement the kitty keyboard protocol, so Shift+Enter
+    // sends \r (same as Enter). Real terminals (Ghostty, Kitty, Konsole) send
+    // the CSI u sequence \x1b[13;2u which Claude Code needs for multi-line input.
+    terminal.attachCustomKeyEventHandler((event) => {
+      if (
+        event.type === "keydown" &&
+        event.key === "Enter" &&
+        event.shiftKey &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        !event.metaKey
+      ) {
+        session.sendInput("\x1b[13;2u");
+        return false;
+      }
+      return true;
+    });
   };
 
   const handleResize = ({ cols, rows }: { cols: number; rows: number }) => {

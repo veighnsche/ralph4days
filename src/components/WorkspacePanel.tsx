@@ -1,5 +1,6 @@
 import type { BrowserTab } from "@/components/BrowserTabs";
 import { BrowserTabs } from "@/components/BrowserTabs";
+import { type Model, ModelThinkingTabButton } from "@/components/ModelThinkingTabButton";
 import {
   BraindumpFormTabContent,
   DisciplineFormTabContent,
@@ -13,12 +14,15 @@ import { useWorkspaceStore, type WorkspaceTab } from "@/stores/useWorkspaceStore
 export function WorkspacePanel() {
   const { tabs, activeTabId, switchTab, closeTab, openTab } = useWorkspaceStore();
 
-  const handleNewTab = () => {
-    const tabNumber = tabs.filter((t) => t.type === "terminal").length + 1;
+  const handleNewTab = (model: Model, thinking: boolean) => {
     openTab({
       type: "terminal",
-      title: `Terminal ${tabNumber}`,
+      title: `Claude (${model})`,
       closeable: true,
+      data: {
+        model,
+        thinking,
+      },
     });
   };
 
@@ -29,6 +33,8 @@ export function WorkspacePanel() {
     closeable: t.closeable,
   }));
 
+  const newTabButton = <ModelThinkingTabButton onNewTab={handleNewTab} />;
+
   return (
     <div className="flex h-full flex-col">
       {/* BrowserTabs ALWAYS rendered at root - never bound to tab content */}
@@ -37,7 +43,7 @@ export function WorkspacePanel() {
         activeTabId={activeTabId}
         onTabChange={switchTab}
         onTabClose={closeTab}
-        onNewTab={handleNewTab}
+        newTabButton={newTabButton}
       />
 
       {/* Tab content area - shows empty state if no tabs */}

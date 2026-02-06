@@ -15,6 +15,7 @@ vi.mock("@/lib/terminal", () => ({
           write: vi.fn(),
           writeln: vi.fn(),
           onData: vi.fn(),
+          attachCustomKeyEventHandler: vi.fn(),
         });
       }, 0);
     }
