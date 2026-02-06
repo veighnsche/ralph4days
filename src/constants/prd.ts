@@ -1,4 +1,4 @@
-import { AlertCircle, Ban, CheckCircle2, Circle, Clock, Play, Slash } from "lucide-react";
+import { AlertCircle, Ban, CheckCircle2, Circle, Clock, type LucideIcon, Play, Slash } from "lucide-react";
 import type { InferredTaskStatus, PRDTask } from "@/types/prd";
 
 export const STATUS_CONFIG = {
@@ -79,7 +79,7 @@ export const INFERRED_STATUS_CONFIG = {
   },
 } as const satisfies Record<
   InferredTaskStatus,
-  { label: string; icon: any; color: string; bgColor: string; description: string }
+  { label: string; icon: LucideIcon; color: string; bgColor: string; description: string }
 >;
 
 export const PRIORITY_CONFIG = {

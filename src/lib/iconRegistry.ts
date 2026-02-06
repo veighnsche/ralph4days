@@ -492,7 +492,6 @@ export function resolveIcon(name: string): LucideIcon {
 
   // 1. Try exact match (case-sensitive, PascalCase)
   if (icons[name as keyof typeof icons]) {
-    console.log(`✅ Icon resolved: "${name}" (exact match)`);
     return icons[name as keyof typeof icons] as LucideIcon;
   }
 
@@ -532,6 +531,4 @@ if (import.meta.env.DEV) {
       `Icon registry contains ${invalidIcons.length} non-existent icons. Fix AI_ICON_ALIASES in iconRegistry.ts`
     );
   }
-
-  console.log(`✅ Icon registry validated: ${Object.keys(AI_ICON_ALIASES).length} aliases, all valid`);
 }

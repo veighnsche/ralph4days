@@ -1,6 +1,8 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BottomBar } from "@/components/BottomBar";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ProjectSelector } from "@/components/ProjectSelector";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Toaster } from "@/components/ui/sonner";
@@ -13,18 +15,10 @@ import { TasksPage } from "@/pages/TasksPage";
 import "./index.css";
 
 function App() {
-  const [lockedProject, setLockedProject] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<Page>("tasks");
+  const queryClient = useQueryClient();
 
-  // Fetch locked project
-  const { data: fetchedProject, isLoading: isLoadingProject } = useInvoke<string | null>("get_locked_project");
-
-  // Sync fetched project to local state (allows onProjectSelected to update without refetch)
-  useEffect(() => {
-    if (fetchedProject !== undefined) {
-      setLockedProject(fetchedProject);
-    }
-  }, [fetchedProject]);
+  const { data: lockedProject, isLoading: isLoadingProject } = useInvoke<string | null>("get_locked_project");
 
   // Set window title when project changes
   useEffect(() => {
@@ -38,33 +32,34 @@ function App() {
     }
   }, [lockedProject]);
 
+  const handleProjectSelected = useCallback(
+    async (project: string) => {
+      queryClient.setQueryData(["get_locked_project"], project);
+      const projectName = project.split("/").pop() || "Unknown";
+      try {
+        await getCurrentWindow().setTitle(`Ralph4days - ${projectName}`);
+      } catch (err) {
+        console.error("Failed to set window title:", err);
+      }
+    },
+    [queryClient]
+  );
+
   // Show loading or project picker
   if (isLoadingProject) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="text-[hsl(var(--muted-foreground))]">Loading...</div>
+        <div className="text-muted-foreground">Loading...</div>
       </div>
     );
   }
 
   if (!lockedProject) {
-    return (
-      <ProjectSelector
-        onProjectSelected={async (project) => {
-          setLockedProject(project);
-          const projectName = project.split("/").pop() || "Unknown";
-          try {
-            await getCurrentWindow().setTitle(`Ralph4days - ${projectName}`);
-          } catch (err) {
-            console.error("Failed to set window title:", err);
-          }
-        }}
-      />
-    );
+    return <ProjectSelector onProjectSelected={handleProjectSelected} />;
   }
 
   return (
-    <>
+    <ErrorBoundary>
       <ResizablePanelGroup orientation="horizontal" className="h-screen">
         {/* Left: Pages */}
         <ResizablePanel defaultSize={50} minSize={40}>
@@ -96,7 +91,7 @@ function App() {
         </ResizablePanel>
       </ResizablePanelGroup>
       <Toaster />
-    </>
+    </ErrorBoundary>
   );
 }
 

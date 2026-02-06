@@ -5,7 +5,7 @@
  * Used across multiple components (braindump form, workspace panel, etc.)
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 const STORAGE_KEY_MODEL = "ralph.preferences.model";
 const STORAGE_KEY_THINKING = "ralph.preferences.thinking";
@@ -18,27 +18,27 @@ function isValidModel(value: string | null): value is Model {
 }
 
 export function useModelThinkingPreferences() {
-  const [model, setModel] = useState<Model>(() => {
+  const [model, setModelState] = useState<Model>(() => {
     const saved = localStorage.getItem(STORAGE_KEY_MODEL);
     return isValidModel(saved) ? saved : "sonnet";
   });
 
-  const [thinking, setThinking] = useState(() => {
+  const [thinking, setThinkingState] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY_THINKING);
     return saved === "true";
   });
 
-  // Persist model preference (validate before saving)
-  useEffect(() => {
-    if (isValidModel(model)) {
-      localStorage.setItem(STORAGE_KEY_MODEL, model);
+  const setModel = useCallback((value: Model) => {
+    setModelState(value);
+    if (isValidModel(value)) {
+      localStorage.setItem(STORAGE_KEY_MODEL, value);
     }
-  }, [model]);
+  }, []);
 
-  // Persist thinking preference
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_THINKING, String(thinking));
-  }, [thinking]);
+  const setThinking = useCallback((value: boolean) => {
+    setThinkingState(value);
+    localStorage.setItem(STORAGE_KEY_THINKING, String(value));
+  }, []);
 
   return {
     model,
