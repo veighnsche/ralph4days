@@ -1,5 +1,6 @@
 import type { Terminal as XTerm } from "@xterm/xterm";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { type BrowserTab, BrowserTabs } from "@/components/BrowserTabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal, useTerminal } from "@/components/ui/terminal";
 import { useLoopStore } from "@/stores/useLoopStore";
@@ -9,6 +10,21 @@ export function OutputPanel() {
   const { setTerminal, writeln, clear } = useTerminal();
   const lastOutputLengthRef = useRef(0);
   const terminalReadyRef = useRef(false);
+
+  // Browser tabs state (mock - showing multiple tabs)
+  const [tabs] = useState<BrowserTab[]>([
+    { id: "output", title: "Output" },
+    { id: "task-1", title: "Create Authentication" },
+    { id: "task-2", title: "Database Migration" },
+    { id: "task-3", title: "API Implementation" },
+  ]);
+  const [activeTabId, setActiveTabId] = useState("output");
+
+  // Mock close handler (not connected to real logic yet)
+  const handleTabClose = (tabId: string) => {
+    console.log("Tab close clicked:", tabId);
+    // TODO: Connect to real tab management logic
+  };
 
   // Handle terminal ready
   const handleTerminalReady = (terminal: XTerm) => {
@@ -65,20 +81,24 @@ export function OutputPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      {rateLimitInfo && (
-        <Alert variant="default" className="mb-2 bg-yellow-600/20 border-yellow-600/50">
-          <AlertTitle className="text-yellow-500">Rate Limited</AlertTitle>
-          <AlertDescription className="flex flex-col gap-1">
-            <span className="text-sm">
-              Retry attempt {rateLimitInfo.attempt} of {rateLimitInfo.maxAttempts}
-            </span>
-            <RateLimitCountdown info={rateLimitInfo} />
-          </AlertDescription>
-        </Alert>
-      )}
+      <BrowserTabs tabs={tabs} activeTabId={activeTabId} onTabChange={setActiveTabId} onTabClose={handleTabClose} />
 
-      <div className="flex-1 min-h-0">
-        <Terminal onReady={handleTerminalReady} />
+      <div className="flex-1 flex flex-col min-h-0">
+        {rateLimitInfo && (
+          <Alert variant="default" className="m-2 bg-yellow-600/20 border-yellow-600/50">
+            <AlertTitle className="text-yellow-500">Rate Limited</AlertTitle>
+            <AlertDescription className="flex flex-col gap-1">
+              <span className="text-sm">
+                Retry attempt {rateLimitInfo.attempt} of {rateLimitInfo.maxAttempts}
+              </span>
+              <RateLimitCountdown info={rateLimitInfo} />
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <div className="flex-1 min-h-0">
+          <Terminal onReady={handleTerminalReady} />
+        </div>
       </div>
     </div>
   );

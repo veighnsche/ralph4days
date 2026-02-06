@@ -6,6 +6,19 @@
 
 **No parallel implementations, feature flags, view toggles, or alternate modes.** When asked to "add a view" or "add a mode", interpret as: same data/logic/path, different presentation only. Consolidate or delete duplicates immediately. This prevents reward hacking and feature bloat.
 
+## CRITICAL: Ralph is the Thinnest Wrapper
+
+**Ralph is an ORCHESTRATOR, not a replacement for Claude Code.** Ralph interacts with Claude Code as if it were a human user. Ralph does NOT re-implement Claude Code's capabilities. See SPEC-050 for full details.
+
+**Key principles:**
+- Ralph IS NOT AI — only deterministic, coded behavior
+- Ralph launches Claude CLI instances and monitors their output
+- Ralph generates deterministic prompts from human input
+- Ralph can run slash commands and restart Claude with different flags
+- Humans provide unorganized ramblings; agents create structured tasks
+- Two task creation paths: agent-structured (robot icon) vs human-explained (message icon)
+- **Dynamic MCP servers** — Ralph generates bash MCP servers on-the-fly, giving Claude access to `.ralph/db/` as tools/resources. Restarting Claude with new MCP config is core to "ralphing" (perfect prompt + perfect toolset for Haiku)
+
 ## Dev Environment
 
 Intel NUC12WSKi5 (i5-1240P, 64GB RAM, RTX 3090, Ultramarine Linux 43 Wayland/KDE). Builds target Alder Lake x86_64.
