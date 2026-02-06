@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import type { PRDData, PriorityFilter, StatusFilter } from "@/types/prd";
+import type { EnrichedTask, PriorityFilter, StatusFilter } from "@/types/prd";
 
 export interface FilterState {
   searchQuery: string;
@@ -15,16 +15,16 @@ export interface FilterSetters {
   setTagFilter: (tag: string) => void;
 }
 
-export function usePRDFilters(prdData: PRDData | null) {
+export function usePRDFilters(tasks: EnrichedTask[] | null, allTags: string[]) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all");
   const [tagFilter, setTagFilter] = useState<string>("all");
 
   const filteredTasks = useMemo(() => {
-    if (!prdData) return [];
+    if (!tasks) return [];
 
-    let filtered = [...prdData.tasks];
+    let filtered = [...tasks];
 
     // Search filter
     if (searchQuery.trim()) {
@@ -56,20 +56,7 @@ export function usePRDFilters(prdData: PRDData | null) {
     }
 
     return filtered;
-  }, [prdData, searchQuery, statusFilter, priorityFilter, tagFilter]);
-
-  const allTags = useMemo(() => {
-    if (!prdData) return [];
-    const tags = new Set<string>();
-    for (const task of prdData.tasks) {
-      if (task.tags) {
-        for (const tag of task.tags) {
-          tags.add(tag);
-        }
-      }
-    }
-    return Array.from(tags).sort();
-  }, [prdData]);
+  }, [tasks, searchQuery, statusFilter, priorityFilter, tagFilter]);
 
   const clearFilters = useCallback(() => {
     setSearchQuery("");

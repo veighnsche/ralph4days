@@ -2,10 +2,10 @@ import type { LucideIcon } from "lucide-react";
 import { resolveIcon } from "@/lib/iconRegistry";
 import { useInvoke } from "./useInvoke";
 
-/** Discipline config as returned by the backend */
+/** Discipline config as returned by the backend (now camelCase) */
 interface DisciplineConfigRaw {
   name: string;
-  display_name: string;
+  displayName: string;
   icon: string;
   color: string;
   acronym: string;
@@ -24,20 +24,12 @@ export interface DisciplineConfig {
 function resolveDisciplines(raw: DisciplineConfigRaw[]): DisciplineConfig[] {
   return raw.map((d) => ({
     name: d.name,
-    displayName: d.display_name,
+    displayName: d.displayName,
     acronym: d.acronym,
     icon: resolveIcon(d.icon),
     color: d.color,
     bgColor: `color-mix(in oklch, ${d.color} 15%, transparent)`,
   }));
-}
-
-function buildConfigMap(disciplines: DisciplineConfig[]): Record<string, DisciplineConfig> {
-  const map: Record<string, DisciplineConfig> = {};
-  for (const d of disciplines) {
-    map[d.name] = d;
-  }
-  return map;
 }
 
 /** Fetch discipline configs from the backend, resolve icons, and provide a lookup map */
@@ -48,7 +40,10 @@ export function useDisciplines() {
   });
 
   const disciplines = data ?? [];
-  const configMap = buildConfigMap(disciplines);
+  const configMap: Record<string, DisciplineConfig> = {};
+  for (const d of disciplines) {
+    configMap[d.name] = d;
+  }
 
   return {
     disciplines,
