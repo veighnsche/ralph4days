@@ -6,7 +6,7 @@ import type { PRDTask } from "@/types/prd";
 
 interface TaskIdDisplayProps {
   task: PRDTask;
-  variant?: "default" | "badge";
+  variant?: "default" | "badge" | "full";
   className?: string;
 }
 
@@ -27,6 +27,21 @@ export function TaskIdDisplay({ task, variant = "default", className = "" }: Tas
   const featureAcronym = featureConfig?.acronym || task.feature;
   const disciplineAcronym = disciplineConfig?.acronym || task.discipline;
   const formattedId = formatTaskId(task.id);
+
+  if (variant === "full") {
+    return (
+      <div className={`flex items-center gap-1.5 text-sm text-muted-foreground ${className}`}>
+        <span>{featureConfig?.displayName || task.feature}</span>
+        <span className="opacity-40">/</span>
+        <span className="inline-flex items-center gap-1" style={{ color: disciplineConfig?.color }}>
+          <DisciplineIcon className="w-3.5 h-3.5" />
+          {disciplineConfig?.displayName || task.discipline}
+        </span>
+        <span className="opacity-40">/</span>
+        <span className="font-mono">{formattedId}</span>
+      </div>
+    );
+  }
 
   if (variant === "badge") {
     return (

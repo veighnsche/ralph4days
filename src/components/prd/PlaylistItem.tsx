@@ -30,10 +30,21 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
     <Item
       size="sm"
       variant="default"
-      className="cursor-pointer transition-all duration-200 hover:opacity-80 border-l-4"
+      className="cursor-pointer transition-all duration-200 hover:opacity-80 border-l-4 relative overflow-hidden"
       style={getItemStyle(task.status, statusConfig)}
       onClick={onClick}
     >
+      {/* Priority Color Gradient (upper right corner) */}
+      {priorityConfig && (
+        <div
+          className="absolute top-0 right-0 w-32 h-32 pointer-events-none"
+          style={{
+            background: `radial-gradient(circle at top right, ${priorityConfig.bgColor} 0%, transparent 70%)`,
+            opacity: 1.0,
+          }}
+        />
+      )}
+
       {/* Task ID with Icon */}
       <div className="flex-shrink-0 self-start">
         <TaskIdDisplay task={task} />
