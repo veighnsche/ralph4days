@@ -86,9 +86,7 @@ impl PromptBuilder {
             "Pick ONE incomplete task (status: todo or in-progress) and complete it.\n\n",
         );
         prompt.push_str("After completing the task:\n");
-        prompt.push_str(
-            "1. Update its status to 'done' in .ralph/db/tasks.yaml\n",
-        );
+        prompt.push_str("1. Update its status to 'done' in .ralph/db/tasks.yaml\n");
         prompt.push_str("2. Commit your changes with a descriptive message\n");
         prompt.push_str("3. Append a brief summary to .ralph/progress.txt\n\n");
         prompt.push_str("If ALL tasks are complete, output exactly: ");

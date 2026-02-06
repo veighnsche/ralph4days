@@ -11,12 +11,18 @@ interface TerminalProps {
   fontSize?: number;
   /** Font family */
   fontFamily?: string;
+  /** Enable stdin input (default: false — read-only) */
+  interactive?: boolean;
+  /** Called when terminal dimensions change (only fires when interactive) */
+  onResize?: (dims: { cols: number; rows: number }) => void;
 }
 
 export function Terminal({
   onReady,
   fontSize = 13,
   fontFamily = "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
+  interactive = false,
+  onResize,
 }: TerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<XTerm | null>(null);
@@ -27,9 +33,9 @@ export function Terminal({
 
     // Create terminal instance
     const terminal = new XTerm({
-      cursorBlink: false,
+      cursorBlink: interactive,
       cursorStyle: "block",
-      disableStdin: true, // Read-only terminal
+      disableStdin: !interactive,
       fontSize,
       fontFamily,
       lineHeight: 1.2,
@@ -83,6 +89,13 @@ export function Terminal({
     // Notify parent
     onReady?.(terminal);
 
+    // Forward resize events to parent
+    if (onResize) {
+      terminal.onResize(({ cols, rows }) => {
+        onResize({ cols, rows });
+      });
+    }
+
     // Handle resize
     const resizeObserver = new ResizeObserver(() => {
       // Use requestAnimationFrame to debounce resize events
@@ -100,12 +113,12 @@ export function Terminal({
       terminalRef.current = null;
       fitAddonRef.current = null;
     };
-  }, [fontSize, fontFamily, onReady]);
+  }, [fontSize, fontFamily, onReady, interactive, onResize]);
 
   return (
     <div
       ref={containerRef}
-      className="h-full w-full overflow-hidden border border-[hsl(var(--border))]"
+      className="h-full w-full overflow-hidden [&_.xterm]:p-0 [&_.xterm-viewport]:p-0"
       style={{ backgroundColor: "#0a0a0a" }}
     />
   );

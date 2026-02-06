@@ -55,7 +55,7 @@ impl Default for LoopConfig {
 pub struct LoopStatus {
     pub state: LoopState,
     pub current_iteration: u32, // TODO: Keep for display only, not loop control
-    pub max_iterations: u32, // TODO: Remove, replace with loop_enabled in config
+    pub max_iterations: u32,    // TODO: Remove, replace with loop_enabled in config
     pub stagnant_count: u32,
     pub rate_limit_retries: u32,
     pub last_progress_hash: Option<String>,
@@ -67,7 +67,7 @@ impl Default for LoopStatus {
         Self {
             state: LoopState::Idle,
             current_iteration: 0, // TODO: Keep for display only
-            max_iterations: 0, // TODO: Remove
+            max_iterations: 0,    // TODO: Remove
             stagnant_count: 0,
             rate_limit_retries: 0,
             last_progress_hash: None,

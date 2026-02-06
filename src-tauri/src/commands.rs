@@ -630,9 +630,6 @@ pub fn resize_pty(
 }
 
 #[tauri::command]
-pub fn terminate_pty_session(
-    state: State<'_, AppState>,
-    session_id: String,
-) -> Result<(), String> {
+pub fn terminate_pty_session(state: State<'_, AppState>, session_id: String) -> Result<(), String> {
     state.pty_manager.terminate(&session_id)
 }

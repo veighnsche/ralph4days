@@ -85,8 +85,14 @@ impl MCPGenerator {
         }
 
         // Sanitize paths for JSON too
-        let script_json = script_path.to_string_lossy().replace('\\', "\\\\").replace('"', "\\\"");
-        let db_json = ralph_db_path.to_string_lossy().replace('\\', "\\\\").replace('"', "\\\"");
+        let script_json = script_path
+            .to_string_lossy()
+            .replace('\\', "\\\\")
+            .replace('"', "\\\"");
+        let db_json = ralph_db_path
+            .to_string_lossy()
+            .replace('\\', "\\\\")
+            .replace('"', "\\\"");
 
         let config = format!(
             r#"{{"mcpServers":{{"ralph":{{"command":"{}","args":["{}"]}}}}}}"#,
