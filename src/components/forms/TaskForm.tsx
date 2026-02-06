@@ -17,8 +17,8 @@ export interface TaskFormData {
   description: string;
   priority: string;
   tags: string[];
-  depends_on: number[];
-  acceptance_criteria: string[];
+  dependsOn: number[];
+  acceptanceCriteria: string[];
 }
 
 export interface TaskFormProps {
@@ -42,8 +42,8 @@ export function TaskForm({ initialData, onChange, disabled }: TaskFormProps) {
     description: initialData?.description || "",
     priority: initialData?.priority || "medium",
     tags: initialData?.tags || [],
-    depends_on: initialData?.depends_on || [],
-    acceptance_criteria: initialData?.acceptance_criteria || [],
+    dependsOn: initialData?.dependsOn || [],
+    acceptanceCriteria: initialData?.acceptanceCriteria || [],
   });
 
   const [newTag, setNewTag] = useState("");
@@ -58,8 +58,8 @@ export function TaskForm({ initialData, onChange, disabled }: TaskFormProps) {
         description: initialData.description || "",
         priority: initialData.priority || "medium",
         tags: initialData.tags || [],
-        depends_on: initialData.depends_on || [],
-        acceptance_criteria: initialData.acceptance_criteria || [],
+        dependsOn: initialData.dependsOn || [],
+        acceptanceCriteria: initialData.acceptanceCriteria || [],
       });
     }
   }, [initialData]);
@@ -83,7 +83,7 @@ export function TaskForm({ initialData, onChange, disabled }: TaskFormProps) {
     if (newCriterion.trim()) {
       setFormData({
         ...formData,
-        acceptance_criteria: [...formData.acceptance_criteria, newCriterion.trim()],
+        acceptanceCriteria: [...formData.acceptanceCriteria, newCriterion.trim()],
       });
       setNewCriterion("");
     }
@@ -92,7 +92,7 @@ export function TaskForm({ initialData, onChange, disabled }: TaskFormProps) {
   const removeCriterion = (index: number) => {
     setFormData({
       ...formData,
-      acceptance_criteria: formData.acceptance_criteria.filter((_, i) => i !== index),
+      acceptanceCriteria: formData.acceptanceCriteria.filter((_: string, i: number) => i !== index),
     });
   };
 
@@ -254,10 +254,10 @@ export function TaskForm({ initialData, onChange, disabled }: TaskFormProps) {
             Add
           </Button>
         </div>
-        {formData.acceptance_criteria.length > 0 && (
+        {formData.acceptanceCriteria.length > 0 && (
           <ul className="space-y-1 mt-2">
-            {formData.acceptance_criteria.map((criterion, index) => (
-              <li key={index} className="flex items-start gap-2 text-sm">
+            {formData.acceptanceCriteria.map((criterion, index) => (
+              <li key={criterion} className="flex items-start gap-2 text-sm">
                 <span className="flex-1">{criterion}</span>
                 <button
                   type="button"

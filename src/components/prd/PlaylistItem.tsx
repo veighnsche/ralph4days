@@ -66,9 +66,9 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
         {task.description && <ItemDescription className="truncate">{task.description}</ItemDescription>}
 
         {/* Blocked By Alert */}
-        {task.blocked_by && (
+        {task.blockedBy && (
           <Alert variant="destructive" className="mt-1 py-1.5 px-2">
-            <AlertDescription className="text-xs flex items-center gap-1.5">{task.blocked_by}</AlertDescription>
+            <AlertDescription className="text-xs flex items-center gap-1.5">{task.blockedBy}</AlertDescription>
           </Alert>
         )}
       </ItemContent>
@@ -78,25 +78,25 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
         {/* Top Row: Counts + Priority */}
         <div className="flex items-center gap-2">
           {/* Metadata Badges */}
-          {task.acceptance_criteria && task.acceptance_criteria.length > 0 && (
+          {task.acceptanceCriteria && task.acceptanceCriteria.length > 0 && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5 cursor-help">
-                  {task.acceptance_criteria.length} AC
+                  {task.acceptanceCriteria.length} AC
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent>{task.acceptance_criteria.length} Acceptance Criteria</TooltipContent>
+              <TooltipContent>{task.acceptanceCriteria.length} Acceptance Criteria</TooltipContent>
             </Tooltip>
           )}
 
-          {task.depends_on && task.depends_on.length > 0 && (
+          {task.dependsOn && task.dependsOn.length > 0 && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5 cursor-help">
-                  {task.depends_on.length} deps
+                  {task.dependsOn.length} deps
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent>{task.depends_on.length} Dependencies</TooltipContent>
+              <TooltipContent>{task.dependsOn.length} Dependencies</TooltipContent>
             </Tooltip>
           )}
 

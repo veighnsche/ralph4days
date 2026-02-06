@@ -29,7 +29,7 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
 
   return (
     <div
-      className="h-full p-6 overflow-hidden relative"
+      className="h-full px-3 overflow-hidden relative"
       style={{
         background: `repeating-linear-gradient(
         45deg,
@@ -41,10 +41,10 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
       }}
     >
       {/* Card Wrapper */}
-      <Card className="shadow-lg flex flex-row">
+      <Card className="shadow-lg flex flex-row my-3">
         {/* ── Main Content ── */}
         <ScrollArea className="flex-1 min-w-0">
-          <div className="px-6 py-5 space-y-5">
+          <div className="px-6 py-4 space-y-5">
             {/* Breadcrumb + Title */}
             <div className="space-y-2">
               <TaskIdDisplay task={task} variant="full" />
@@ -52,7 +52,7 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
             </div>
 
             {/* Blocked Alert */}
-            {task.blocked_by && (
+            {task.blockedBy && (
               <div
                 className="flex items-start gap-3 rounded-md px-3 py-2.5 text-sm"
                 style={{
@@ -63,7 +63,7 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
                 <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                 <div>
                   <span className="font-medium">Blocked — </span>
-                  {task.blocked_by}
+                  {task.blockedBy}
                 </div>
               </div>
             )}
@@ -77,11 +77,11 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
             )}
 
             {/* Acceptance Criteria */}
-            {task.acceptance_criteria && task.acceptance_criteria.length > 0 && (
+            {task.acceptanceCriteria && task.acceptanceCriteria.length > 0 && (
               <div className="space-y-2">
                 <h2 className="text-sm font-medium text-muted-foreground">Acceptance Criteria</h2>
                 <ul className="space-y-1.5">
-                  {task.acceptance_criteria.map((criterion) => (
+                  {task.acceptanceCriteria.map((criterion) => (
                     <li key={criterion} className="flex items-start gap-2.5 text-sm">
                       <div
                         className="mt-1 w-4 h-4 rounded-sm border flex items-center justify-center flex-shrink-0"
@@ -107,7 +107,7 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
 
         {/* ── Properties Sidebar ── */}
         <div className="w-56 flex-shrink-0 border-l">
-          <div className="px-4 py-5 space-y-0.5 overflow-y-auto h-full">
+          <div className="px-4 py-4 space-y-0.5 overflow-y-auto h-full">
             {/* Status */}
             <PropertyRow label="Status">
               <div className="flex items-center gap-1.5">
@@ -163,12 +163,12 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
             )}
 
             {/* Dependencies */}
-            {task.depends_on && task.depends_on.length > 0 && (
+            {task.dependsOn && task.dependsOn.length > 0 && (
               <>
                 <FullBleedSeparator className="my-2" />
                 <PropertyRow label="Depends on">
                   <div className="flex flex-wrap gap-1">
-                    {task.depends_on.map((depId) => (
+                    {task.dependsOn.map((depId) => (
                       <Badge key={depId} variant="outline" className="text-xs font-mono px-1.5 py-0 h-5">
                         #{depId.toString().padStart(3, "0")}
                       </Badge>

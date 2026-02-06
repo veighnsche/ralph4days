@@ -74,7 +74,7 @@ const baseTask: EnrichedTask = {
   tags: ["design", "layout"],
   created: "2026-02-01",
   updated: "2026-02-05",
-  acceptance_criteria: ["Responsive on mobile, tablet, desktop", "Sidebar collapses on mobile", "Dark mode support"],
+  acceptanceCriteria: ["Responsive on mobile, tablet, desktop", "Sidebar collapses on mobile", "Dark mode support"],
   ...enrichFields("ui", "frontend"),
 };
 
@@ -126,7 +126,7 @@ export const Blocked: Story = {
       discipline: "testing",
       title: "Add authentication middleware",
       status: "blocked",
-      blocked_by: "Waiting for security review",
+      blockedBy: "Waiting for security review",
       ...enrichFields("tests", "testing"),
     },
     onClick: () => console.log("Task clicked"),
@@ -181,7 +181,7 @@ export const WithDependencies: Story = {
     task: {
       ...baseTask,
       title: "Add task detail sidebar",
-      depends_on: [2, 3],
+      dependsOn: [2, 3],
       tags: ["component", "ui", "depends-on-others"],
     },
     onClick: () => console.log("Task clicked"),

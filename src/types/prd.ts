@@ -7,12 +7,12 @@ export interface PRDTask {
   status: "pending" | "in_progress" | "done" | "blocked" | "skipped";
   priority?: "low" | "medium" | "high" | "critical";
   tags?: string[];
-  depends_on?: number[];
-  blocked_by?: string;
+  dependsOn?: number[];
+  blockedBy?: string;
   created?: string;
   updated?: string;
   completed?: string;
-  acceptance_criteria?: string[];
+  acceptanceCriteria?: string[];
 }
 
 /** Task with pre-joined feature/discipline display data from backend */

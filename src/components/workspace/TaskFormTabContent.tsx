@@ -40,8 +40,8 @@ export function TaskFormTabContent({ tab }: { tab: WorkspaceTab }) {
         description: data.description || null,
         priority: data.priority || null,
         tags: data.tags,
-        dependsOn: data.depends_on.length > 0 ? data.depends_on : null,
-        acceptanceCriteria: data.acceptance_criteria.length > 0 ? data.acceptance_criteria : null,
+        dependsOn: data.dependsOn.length > 0 ? data.dependsOn : null,
+        acceptanceCriteria: data.acceptanceCriteria.length > 0 ? data.acceptanceCriteria : null,
       });
       await queryClient.invalidateQueries({ queryKey: ["get_enriched_tasks"] });
       await queryClient.invalidateQueries({ queryKey: ["get_feature_stats"] });
