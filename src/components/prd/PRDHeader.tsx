@@ -4,13 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import type { FilterSetters, FilterState } from "@/hooks/usePRDFilters";
-import type { PRDProject } from "@/types/prd";
+import type { ProjectInfo } from "@/types/prd";
 import { ActiveFilters } from "./ActiveFilters";
 import { FiltersModal } from "./FiltersModal";
 import { TaskStatsBar } from "./TaskStatsBar";
 
 interface PRDHeaderProps {
-  project: PRDProject;
+  project: ProjectInfo;
   totalTasks: number;
   doneTasks: number;
   progressPercent: number;

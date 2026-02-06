@@ -1,11 +1,9 @@
-import { Circle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useDisciplines } from "@/hooks/useDisciplines";
-import { useFeatures } from "@/hooks/useFeatures";
-import type { PRDTask } from "@/types/prd";
+import { resolveIcon } from "@/lib/iconRegistry";
+import type { EnrichedTask } from "@/types/prd";
 
 interface TaskIdDisplayProps {
-  task: PRDTask;
+  task: EnrichedTask;
   variant?: "default" | "badge" | "full";
   className?: string;
 }
@@ -18,24 +16,18 @@ function formatTaskId(id: number): string {
 }
 
 export function TaskIdDisplay({ task, variant = "default", className = "" }: TaskIdDisplayProps) {
-  const { configMap: disciplineMap } = useDisciplines();
-  const { configMap: featureMap } = useFeatures();
-  const disciplineConfig = disciplineMap[task.discipline];
-  const featureConfig = featureMap.get(task.feature);
-  const DisciplineIcon = disciplineConfig?.icon || Circle;
-
-  const featureAcronym = featureConfig?.acronym || task.feature;
-  const disciplineAcronym = disciplineConfig?.acronym || task.discipline;
+  const DisciplineIcon = resolveIcon(task.disciplineIcon);
+  const bgColor = `color-mix(in oklch, ${task.disciplineColor} 15%, transparent)`;
   const formattedId = formatTaskId(task.id);
 
   if (variant === "full") {
     return (
       <div className={`flex items-center gap-1.5 text-sm text-muted-foreground ${className}`}>
-        <span>{featureConfig?.displayName || task.feature}</span>
+        <span>{task.featureDisplayName}</span>
         <span className="opacity-40">/</span>
-        <span className="inline-flex items-center gap-1" style={{ color: disciplineConfig?.color }}>
+        <span className="inline-flex items-center gap-1" style={{ color: task.disciplineColor }}>
           <DisciplineIcon className="w-3.5 h-3.5" />
-          {disciplineConfig?.displayName || task.discipline}
+          {task.disciplineDisplayName}
         </span>
         <span className="opacity-40">/</span>
         <span className="font-mono">{formattedId}</span>
@@ -50,28 +42,28 @@ export function TaskIdDisplay({ task, variant = "default", className = "" }: Tas
         <div
           className="w-12 h-12 flex items-center justify-center rounded border"
           style={{
-            backgroundColor: disciplineConfig?.bgColor || "transparent",
-            borderColor: disciplineConfig?.color || "transparent",
+            backgroundColor: bgColor,
+            borderColor: task.disciplineColor,
           }}
         >
-          <DisciplineIcon className="w-6 h-6" style={{ color: disciplineConfig?.color }} />
+          <DisciplineIcon className="w-6 h-6" style={{ color: task.disciplineColor }} />
         </div>
 
         {/* Badge variant */}
         <div className="flex flex-col items-start leading-tight">
           <Badge variant="outline" className="font-mono text-xs mb-0.5">
-            {featureAcronym}
+            {task.featureAcronym}
           </Badge>
           <Badge
             variant="outline"
             className="font-mono text-xs mb-0.5"
             style={{
-              borderColor: disciplineConfig?.color,
-              backgroundColor: disciplineConfig?.bgColor,
-              color: disciplineConfig?.color,
+              borderColor: task.disciplineColor,
+              backgroundColor: bgColor,
+              color: task.disciplineColor,
             }}
           >
-            {disciplineAcronym}
+            {task.disciplineAcronym}
           </Badge>
           <Badge variant="outline" className="font-mono text-xs mb-0.5">
             {formattedId}
@@ -88,18 +80,18 @@ export function TaskIdDisplay({ task, variant = "default", className = "" }: Tas
       <div
         className="w-12 h-12 flex items-center justify-center rounded border"
         style={{
-          backgroundColor: disciplineConfig?.bgColor || "transparent",
-          borderColor: disciplineConfig?.color || "transparent",
+          backgroundColor: bgColor,
+          borderColor: task.disciplineColor,
         }}
       >
-        <DisciplineIcon className="w-6 h-6" style={{ color: disciplineConfig?.color }} />
+        <DisciplineIcon className="w-6 h-6" style={{ color: task.disciplineColor }} />
       </div>
 
       {/* Simple text */}
       <div className="flex flex-col items-start leading-tight font-mono">
-        <span className="text-xs text-muted-foreground">{featureAcronym}</span>
-        <span className="text-xs font-medium" style={{ color: disciplineConfig?.color }}>
-          {disciplineAcronym}
+        <span className="text-xs text-muted-foreground">{task.featureAcronym}</span>
+        <span className="text-xs font-medium" style={{ color: task.disciplineColor }}>
+          {task.disciplineAcronym}
         </span>
         <span className="text-xs text-muted-foreground">{formattedId}</span>
       </div>

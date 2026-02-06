@@ -7,7 +7,7 @@ import type { DisciplineConfig } from "@/hooks/useDisciplines";
 
 export interface DisciplineFormData {
   name: string;
-  display_name: string;
+  displayName: string;
   acronym: string;
   icon: string;
   color: string;
@@ -60,7 +60,7 @@ const COMMON_COLORS = [
 export function DisciplineForm({ initialData, onChange, disabled }: DisciplineFormProps) {
   const [formData, setFormData] = useState<DisciplineFormData>({
     name: initialData?.name || "",
-    display_name: initialData?.displayName || "",
+    displayName: initialData?.displayName || "",
     acronym: initialData?.acronym || "",
     icon: initialData?.icon ? String(initialData.icon.displayName || "Code") : "Code",
     color: initialData?.color || "#3b82f6",
@@ -70,7 +70,7 @@ export function DisciplineForm({ initialData, onChange, disabled }: DisciplineFo
     if (initialData) {
       setFormData({
         name: initialData.name || "",
-        display_name: initialData.displayName || "",
+        displayName: initialData.displayName || "",
         acronym: initialData.acronym || "",
         icon: initialData.icon ? String(initialData.icon.displayName || "Code") : "Code",
         color: initialData.color || "#3b82f6",
@@ -89,13 +89,13 @@ export function DisciplineForm({ initialData, onChange, disabled }: DisciplineFo
     <div className="space-y-3">
       {/* Display Name */}
       <div className="space-y-2">
-        <Label htmlFor="display_name">
+        <Label htmlFor="displayName">
           Display Name <span className="text-destructive">*</span>
         </Label>
         <Input
-          id="display_name"
-          value={formData.display_name}
-          onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+          id="displayName"
+          value={formData.displayName}
+          onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
           placeholder="Enter discipline display name"
           required
           disabled={disabled}

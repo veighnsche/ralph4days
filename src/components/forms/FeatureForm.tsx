@@ -6,7 +6,7 @@ import type { Feature } from "@/types/prd";
 
 export interface FeatureFormData {
   name: string;
-  display_name: string;
+  displayName: string;
   acronym: string;
   description: string;
 }
@@ -24,7 +24,7 @@ export interface FeatureFormProps {
 export function FeatureForm({ initialData, onChange, disabled }: FeatureFormProps) {
   const [formData, setFormData] = useState<FeatureFormData>({
     name: initialData?.name || "",
-    display_name: initialData?.display_name || "",
+    displayName: initialData?.displayName || "",
     acronym: initialData?.acronym || "",
     description: initialData?.description || "",
   });
@@ -33,7 +33,7 @@ export function FeatureForm({ initialData, onChange, disabled }: FeatureFormProp
     if (initialData) {
       setFormData({
         name: initialData.name || "",
-        display_name: initialData.display_name || "",
+        displayName: initialData.displayName || "",
         acronym: initialData.acronym || "",
         description: initialData.description || "",
       });
@@ -48,13 +48,13 @@ export function FeatureForm({ initialData, onChange, disabled }: FeatureFormProp
     <div className="space-y-3">
       {/* Display Name */}
       <div className="space-y-2">
-        <Label htmlFor="display_name">
+        <Label htmlFor="displayName">
           Display Name <span className="text-destructive">*</span>
         </Label>
         <Input
-          id="display_name"
-          value={formData.display_name}
-          onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+          id="displayName"
+          value={formData.displayName}
+          onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
           placeholder="Enter feature display name"
           required
           disabled={disabled}

@@ -1,5 +1,4 @@
 import { Brain, MessageCircle, Target } from "lucide-react";
-import { useMemo } from "react";
 import { PageContent, PageHeader, PageLayout } from "@/components/layout/PageLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -10,45 +9,31 @@ import { ItemGroup, ItemSeparator } from "@/components/ui/item";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInvoke } from "@/hooks/useInvoke";
-import { usePRDData } from "@/hooks/usePRDData";
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
-import type { Feature } from "@/types/prd";
+import type { Feature, GroupStats, ProjectProgress } from "@/types/prd";
 
 export function FeaturesPage() {
-  const { prdData, isLoading: prdLoading, error: prdError } = usePRDData();
   const {
     data: features = [],
     isLoading: featuresLoading,
     error: featuresError,
   } = useInvoke<Feature[]>("get_features");
+  const { data: featureStats = [], isLoading: statsLoading } = useInvoke<GroupStats[]>("get_feature_stats");
+  const { data: progress } = useInvoke<ProjectProgress>("get_project_progress");
   const openTab = useWorkspaceStore((s) => s.openTab);
 
-  // Calculate task counts per feature
-  const featureStats = useMemo(() => {
-    if (!prdData) return new Map();
-    const stats = new Map<string, { total: number; done: number; pending: number; inProgress: number }>();
+  const totalTasks = progress?.totalTasks ?? 0;
+  const doneTasks = progress?.doneTasks ?? 0;
+  const progressPercent = progress?.progressPercent ?? 0;
 
-    for (const task of prdData.tasks) {
-      if (!stats.has(task.feature)) {
-        stats.set(task.feature, { total: 0, done: 0, pending: 0, inProgress: 0 });
-      }
-      const stat = stats.get(task.feature)!;
-      stat.total++;
-      if (task.status === "done") stat.done++;
-      if (task.status === "pending") stat.pending++;
-      if (task.status === "in_progress") stat.inProgress++;
-    }
+  const loading = featuresLoading || statsLoading;
+  const error = featuresError ? String(featuresError) : null;
 
-    return stats;
-  }, [prdData]);
-
-  // Calculate overall progress
-  const totalTasks = prdData?.tasks.length ?? 0;
-  const doneTasks = prdData?.tasks.filter((t) => t.status === "done").length ?? 0;
-  const progressPercent = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
-
-  const loading = prdLoading || featuresLoading;
-  const error = prdError || (featuresError ? String(featuresError) : null);
+  // Build lookup map from stats array
+  const statsMap = new Map<string, GroupStats>();
+  for (const stat of featureStats) {
+    statsMap.set(stat.name, stat);
+  }
 
   const handleRambleAboutFeatures = () => {
     openTab({
@@ -161,16 +146,23 @@ export function FeaturesPage() {
         ) : (
           <ItemGroup className="rounded-md border">
             {features.map((feature, index) => {
-              const stats = featureStats.get(feature.name) || { total: 0, done: 0, pending: 0, inProgress: 0 };
-              const progress = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+              const stats = statsMap.get(feature.name) || {
+                total: 0,
+                done: 0,
+                pending: 0,
+                inProgress: 0,
+                blocked: 0,
+                skipped: 0,
+              };
+              const featureProgress = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
 
               return (
-                <>
-                  <div key={feature.name} className="p-4 hover:bg-muted/50 transition-colors">
+                <div key={feature.name}>
+                  <div className="p-4 hover:bg-muted/50 transition-colors">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-medium">{feature.display_name}</h3>
+                          <h3 className="font-medium">{feature.displayName}</h3>
                           <Badge variant="outline" className="text-xs">
                             {stats.total} tasks
                           </Badge>
@@ -185,13 +177,13 @@ export function FeaturesPage() {
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <div className="text-lg font-semibold">{progress}%</div>
+                        <div className="text-lg font-semibold">{featureProgress}%</div>
                         <div className="text-xs text-muted-foreground">complete</div>
                       </div>
                     </div>
                   </div>
                   {index < features.length - 1 && <ItemSeparator />}
-                </>
+                </div>
               );
             })}
           </ItemGroup>

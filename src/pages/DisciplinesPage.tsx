@@ -1,7 +1,5 @@
 import { Layers } from "lucide-react";
-import { useMemo } from "react";
 import { PageContent, PageHeader, PageLayout } from "@/components/layout/PageLayout";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
@@ -9,37 +7,25 @@ import { ItemGroup, ItemSeparator } from "@/components/ui/item";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDisciplines } from "@/hooks/useDisciplines";
-import { usePRDData } from "@/hooks/usePRDData";
+import { useInvoke } from "@/hooks/useInvoke";
+import type { GroupStats, ProjectProgress } from "@/types/prd";
 
 export function DisciplinesPage() {
-  const { prdData, isLoading: prdLoading, error: prdError } = usePRDData();
   const { disciplines } = useDisciplines();
+  const { data: disciplineStats = [], isLoading: statsLoading } = useInvoke<GroupStats[]>("get_discipline_stats");
+  const { data: progress } = useInvoke<ProjectProgress>("get_project_progress");
 
-  // Calculate task counts per discipline
-  const disciplineStats = useMemo(() => {
-    if (!prdData) return new Map();
-    const stats = new Map<string, { total: number; done: number; pending: number; inProgress: number }>();
+  const totalTasks = progress?.totalTasks ?? 0;
+  const doneTasks = progress?.doneTasks ?? 0;
+  const progressPercent = progress?.progressPercent ?? 0;
 
-    for (const task of prdData.tasks) {
-      if (!stats.has(task.discipline)) {
-        stats.set(task.discipline, { total: 0, done: 0, pending: 0, inProgress: 0 });
-      }
-      const stat = stats.get(task.discipline)!;
-      stat.total++;
-      if (task.status === "done") stat.done++;
-      if (task.status === "pending") stat.pending++;
-      if (task.status === "in_progress") stat.inProgress++;
-    }
+  // Build lookup map from stats array
+  const statsMap = new Map<string, GroupStats>();
+  for (const stat of disciplineStats) {
+    statsMap.set(stat.name, stat);
+  }
 
-    return stats;
-  }, [prdData]);
-
-  // Calculate overall progress
-  const totalTasks = prdData?.tasks.length ?? 0;
-  const doneTasks = prdData?.tasks.filter((t) => t.status === "done").length ?? 0;
-  const progressPercent = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
-
-  const loading = prdLoading || disciplines.length === 0;
+  const loading = statsLoading || disciplines.length === 0;
 
   if (loading) {
     return (
@@ -53,18 +39,6 @@ export function DisciplinesPage() {
             <Skeleton className="h-[100px]" />
             <Skeleton className="h-[100px]" />
           </div>
-        </PageContent>
-      </PageLayout>
-    );
-  }
-
-  if (prdError) {
-    return (
-      <PageLayout>
-        <PageContent>
-          <Alert variant="destructive">
-            <AlertDescription>{prdError}</AlertDescription>
-          </Alert>
         </PageContent>
       </PageLayout>
     );
@@ -124,8 +98,15 @@ export function DisciplinesPage() {
           <ItemGroup className="rounded-md border">
             {disciplines.map((discipline, index) => {
               const Icon = discipline.icon;
-              const stats = disciplineStats.get(discipline.name) || { total: 0, done: 0, pending: 0, inProgress: 0 };
-              const progress = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+              const stats = statsMap.get(discipline.name) || {
+                total: 0,
+                done: 0,
+                pending: 0,
+                inProgress: 0,
+                blocked: 0,
+                skipped: 0,
+              };
+              const discProgress = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
 
               return (
                 <div key={discipline.name}>
@@ -156,7 +137,7 @@ export function DisciplinesPage() {
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <div className="text-lg font-semibold">{progress}%</div>
+                        <div className="text-lg font-semibold">{discProgress}%</div>
                         <div className="text-xs text-muted-foreground">complete</div>
                       </div>
                     </div>

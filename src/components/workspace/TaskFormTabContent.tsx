@@ -8,25 +8,15 @@ import { Button } from "@/components/ui/button";
 import { FormDescription, FormHeader, FormTitle } from "@/components/ui/form-header";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { useDisciplines } from "@/hooks/useDisciplines";
-import { useInvoke } from "@/hooks/useInvoke";
 import { useTabMeta } from "@/hooks/useTabMeta";
 import type { WorkspaceTab } from "@/stores/useWorkspaceStore";
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
-
-interface FeatureConfig {
-  name: string;
-  display_name: string;
-  acronym: string;
-}
 
 export function TaskFormTabContent({ tab }: { tab: WorkspaceTab }) {
   const mode = tab.data?.mode ?? "create";
   useTabMeta(tab.id, mode === "create" ? "Create Task" : "Edit Task", ClipboardList);
   const queryClient = useQueryClient();
   const { closeTab } = useWorkspaceStore();
-  const { configMap: disciplineConfigMap } = useDisciplines();
-  const { data: featureConfigs = [] } = useInvoke<FeatureConfig[]>("get_features_config");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const formRef = useRef<TaskFormData | null>(null);
@@ -40,17 +30,6 @@ export function TaskFormTabContent({ tab }: { tab: WorkspaceTab }) {
     if (!formRef.current) return;
 
     const data = formRef.current;
-    const featureConfig = featureConfigs.find((f) => f.name === data.feature);
-    const disciplineConfig = disciplineConfigMap[data.discipline];
-
-    if (!featureConfig) {
-      toast.error(`Feature ${data.feature} not found`);
-      return;
-    }
-    if (!disciplineConfig) {
-      toast.error(`Discipline ${data.discipline} not found`);
-      return;
-    }
 
     setIsSubmitting(true);
     try {
@@ -63,12 +42,12 @@ export function TaskFormTabContent({ tab }: { tab: WorkspaceTab }) {
         tags: data.tags,
         dependsOn: data.depends_on.length > 0 ? data.depends_on : null,
         acceptanceCriteria: data.acceptance_criteria.length > 0 ? data.acceptance_criteria : null,
-        featureAcronym: featureConfig.acronym,
-        disciplineAcronym: disciplineConfig.acronym,
       });
-      await queryClient.invalidateQueries({ queryKey: ["get_prd_content"] });
-      await queryClient.invalidateQueries({ queryKey: ["get_features"] });
-      await queryClient.invalidateQueries({ queryKey: ["get_features_config"] });
+      await queryClient.invalidateQueries({ queryKey: ["get_enriched_tasks"] });
+      await queryClient.invalidateQueries({ queryKey: ["get_feature_stats"] });
+      await queryClient.invalidateQueries({ queryKey: ["get_discipline_stats"] });
+      await queryClient.invalidateQueries({ queryKey: ["get_project_progress"] });
+      await queryClient.invalidateQueries({ queryKey: ["get_all_tags"] });
       toast.success("Task created");
       closeTab(tab.id);
     } catch (error) {

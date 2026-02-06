@@ -1,13 +1,14 @@
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { PageContent, PageHeader, PageLayout } from "@/components/layout/PageLayout";
 import { PRDBody } from "@/components/prd/PRDBody";
 import { PRDHeader } from "@/components/prd/PRDHeader";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useInvoke } from "@/hooks/useInvoke";
 import { usePRDData } from "@/hooks/usePRDData";
 import { usePRDFilters } from "@/hooks/usePRDFilters";
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
-import type { PRDTask } from "@/types/prd";
+import type { EnrichedTask, ProjectInfo, ProjectProgress } from "@/types/prd";
 
 /**
  * PLANNED: Task-Bound Terminal System
@@ -49,14 +50,16 @@ import type { PRDTask } from "@/types/prd";
  */
 
 export function TasksPage() {
-  const { prdData, isLoading: loading, error } = usePRDData();
-  const { filters, setters, filteredTasks, allTags, clearFilters } = usePRDFilters(prdData);
+  const { tasks, isLoading: tasksLoading, error } = usePRDData();
+  const { data: progress } = useInvoke<ProjectProgress>("get_project_progress");
+  const { data: allTags = [] } = useInvoke<string[]>("get_all_tags");
+  const { data: projectInfo } = useInvoke<ProjectInfo>("get_project_info");
+  const { filters, setters, filteredTasks, clearFilters } = usePRDFilters(tasks, allTags);
   const openTab = useWorkspaceStore((s) => s.openTab);
 
-  const doneTasks = useMemo(() => (prdData ? prdData.tasks.filter((t) => t.status === "done") : []), [prdData]);
-
-  const totalTasks = prdData?.tasks.length ?? 0;
-  const progressPercent = totalTasks > 0 ? Math.round((doneTasks.length / totalTasks) * 100) : 0;
+  const totalTasks = progress?.totalTasks ?? 0;
+  const doneTasks = progress?.doneTasks ?? 0;
+  const progressPercent = progress?.progressPercent ?? 0;
 
   const handleBraindumpProject = () => {
     openTab({
@@ -75,7 +78,7 @@ export function TasksPage() {
   };
 
   const handleTaskClick = useCallback(
-    (task: PRDTask) => {
+    (task: EnrichedTask) => {
       openTab({
         type: "task-detail",
         title: task.title,
@@ -85,6 +88,8 @@ export function TasksPage() {
     },
     [openTab]
   );
+
+  const loading = tasksLoading;
 
   if (loading) {
     return (
@@ -115,12 +120,12 @@ export function TasksPage() {
     );
   }
 
-  if (!prdData) {
+  if (!tasks) {
     return (
       <PageLayout>
         <PageContent>
           <Alert>
-            <AlertDescription>No PRD data available</AlertDescription>
+            <AlertDescription>No task data available</AlertDescription>
           </Alert>
         </PageContent>
       </PageLayout>
@@ -131,9 +136,9 @@ export function TasksPage() {
     <PageLayout>
       <PageHeader>
         <PRDHeader
-          project={prdData.project}
+          project={projectInfo ?? { title: "Project" }}
           totalTasks={totalTasks}
-          doneTasks={doneTasks.length}
+          doneTasks={doneTasks}
           progressPercent={progressPercent}
           filteredCount={filteredTasks.length}
           filters={filters}

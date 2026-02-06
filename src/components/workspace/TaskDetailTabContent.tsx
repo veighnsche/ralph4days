@@ -1,20 +1,17 @@
-import { AlertCircle, CheckCircle2, Circle } from "lucide-react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { PRIORITY_CONFIG, STATUS_CONFIG } from "@/constants/prd";
-import { useDisciplines } from "@/hooks/useDisciplines";
-import { useFeatures } from "@/hooks/useFeatures";
 import { useTabMeta } from "@/hooks/useTabMeta";
+import { resolveIcon } from "@/lib/iconRegistry";
 import type { WorkspaceTab } from "@/stores/useWorkspaceStore";
-import type { PRDTask } from "@/types/prd";
+import type { EnrichedTask } from "@/types/prd";
 import { TaskIdDisplay } from "../prd/TaskIdDisplay";
 
 export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
-  const task = tab.data?.entity as PRDTask | undefined;
-  const { configMap: disciplineMap } = useDisciplines();
-  const { configMap: featureMap } = useFeatures();
+  const task = tab.data?.entity as EnrichedTask | undefined;
   useTabMeta(tab.id, task?.title ?? "Task Detail", CheckCircle2);
 
   if (!task) {
@@ -28,9 +25,7 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
   const statusConfig = STATUS_CONFIG[task.status];
   const StatusIcon = statusConfig.icon;
   const priorityConfig = task.priority ? PRIORITY_CONFIG[task.priority] : null;
-  const disciplineConfig = disciplineMap[task.discipline];
-  const featureConfig = featureMap.get(task.feature);
-  const DisciplineIcon = disciplineConfig?.icon || Circle;
+  const DisciplineIcon = resolveIcon(task.disciplineIcon);
 
   return (
     <div
@@ -138,15 +133,15 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
 
             {/* Feature */}
             <PropertyRow label="Feature">
-              <span className="text-sm">{featureConfig?.displayName || task.feature}</span>
+              <span className="text-sm">{task.featureDisplayName}</span>
             </PropertyRow>
 
             {/* Discipline */}
             <PropertyRow label="Discipline">
               <div className="flex items-center gap-1.5">
-                <DisciplineIcon className="h-3.5 w-3.5" style={{ color: disciplineConfig?.color }} />
-                <span className="text-sm" style={{ color: disciplineConfig?.color }}>
-                  {disciplineConfig?.displayName || task.discipline}
+                <DisciplineIcon className="h-3.5 w-3.5" style={{ color: task.disciplineColor }} />
+                <span className="text-sm" style={{ color: task.disciplineColor }}>
+                  {task.disciplineDisplayName}
                 </span>
               </div>
             </PropertyRow>

@@ -3,12 +3,12 @@ import { memo, useMemo, useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ItemGroup, ItemSeparator } from "@/components/ui/item";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import type { PRDTask } from "@/types/prd";
+import type { EnrichedTask } from "@/types/prd";
 import { PlaylistItem } from "./PlaylistItem";
 
 interface PlaylistViewProps {
-  tasks: PRDTask[];
-  onTaskClick: (task: PRDTask) => void;
+  tasks: EnrichedTask[];
+  onTaskClick: (task: EnrichedTask) => void;
 }
 
 export const PlaylistView = memo(function PlaylistView({ tasks, onTaskClick }: PlaylistViewProps) {
@@ -16,10 +16,10 @@ export const PlaylistView = memo(function PlaylistView({ tasks, onTaskClick }: P
 
   const { blockedSkipped, done, inProgress, pending } = useMemo(() => {
     const result = {
-      blockedSkipped: [] as PRDTask[],
-      done: [] as PRDTask[],
-      inProgress: [] as PRDTask[],
-      pending: [] as PRDTask[],
+      blockedSkipped: [] as EnrichedTask[],
+      done: [] as EnrichedTask[],
+      inProgress: [] as EnrichedTask[],
+      pending: [] as EnrichedTask[],
     };
 
     tasks.forEach((task) => {

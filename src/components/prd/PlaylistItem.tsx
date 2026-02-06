@@ -4,17 +4,20 @@ import { Badge } from "@/components/ui/badge";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PRIORITY_CONFIG, STATUS_CONFIG } from "@/constants/prd";
-import type { PRDTask } from "@/types/prd";
+import type { EnrichedTask } from "@/types/prd";
 import { TaskIdDisplay } from "./TaskIdDisplay";
 
 interface PlaylistItemProps {
-  task: PRDTask;
+  task: EnrichedTask;
   isNowPlaying?: boolean;
   isIssue?: boolean;
   onClick: () => void;
 }
 
-function getItemStyle(status: PRDTask["status"], statusConfig: (typeof STATUS_CONFIG)[keyof typeof STATUS_CONFIG]) {
+function getItemStyle(
+  status: EnrichedTask["status"],
+  statusConfig: (typeof STATUS_CONFIG)[keyof typeof STATUS_CONFIG]
+) {
   return {
     borderLeftColor: statusConfig.color,
     backgroundColor: statusConfig.bgColor,

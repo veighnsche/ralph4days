@@ -114,7 +114,7 @@ export function TaskForm({ initialData, onChange, disabled }: TaskFormProps) {
             <option value="">Select a feature...</option>
             {features.map((feature) => (
               <option key={feature.name} value={feature.name}>
-                {feature.display_name}
+                {feature.displayName}
               </option>
             ))}
           </NativeSelect>

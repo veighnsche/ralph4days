@@ -34,13 +34,15 @@ export function DisciplineFormTabContent({ tab }: { tab: WorkspaceTab }) {
     setIsSubmitting(true);
     try {
       await invoke("create_discipline", {
-        name: data.name || data.display_name,
-        displayName: data.display_name,
+        name: data.name || data.displayName,
+        displayName: data.displayName,
         acronym: data.acronym,
         icon: data.icon,
         color: data.color,
       });
       await queryClient.invalidateQueries({ queryKey: ["get_disciplines_config"] });
+      await queryClient.invalidateQueries({ queryKey: ["get_enriched_tasks"] });
+      await queryClient.invalidateQueries({ queryKey: ["get_discipline_stats"] });
       toast.success("Discipline created");
       closeTab(tab.id);
     } catch (error) {

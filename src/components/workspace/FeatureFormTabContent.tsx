@@ -34,13 +34,15 @@ export function FeatureFormTabContent({ tab }: { tab: WorkspaceTab }) {
     setIsSubmitting(true);
     try {
       await invoke("create_feature", {
-        name: data.name || data.display_name,
-        displayName: data.display_name,
+        name: data.name || data.displayName,
+        displayName: data.displayName,
         acronym: data.acronym,
         description: data.description || null,
       });
       await queryClient.invalidateQueries({ queryKey: ["get_features"] });
       await queryClient.invalidateQueries({ queryKey: ["get_features_config"] });
+      await queryClient.invalidateQueries({ queryKey: ["get_enriched_tasks"] });
+      await queryClient.invalidateQueries({ queryKey: ["get_feature_stats"] });
       toast.success("Feature created");
       closeTab(tab.id);
     } catch (error) {
