@@ -1,5 +1,6 @@
 import { AlertCircle, CheckCircle2, Circle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { PRIORITY_CONFIG, STATUS_CONFIG } from "@/constants/prd";
@@ -32,9 +33,19 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
   const DisciplineIcon = disciplineConfig?.icon || Circle;
 
   return (
-    <div className="h-full flex">
-      {/* ── Main Content ── */}
-      <ScrollArea className="flex-1 min-w-0">
+    <div className="h-full p-6 overflow-hidden relative" style={{
+      background: `repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        ${statusConfig.color}15 10px,
+        ${statusConfig.color}15 20px
+      )`
+    }}>
+      {/* Card Wrapper */}
+      <Card className="h-full shadow-lg flex">
+        {/* ── Main Content ── */}
+        <ScrollArea className="flex-1 min-w-0">
         <div className="px-6 py-5 space-y-5">
           {/* Breadcrumb + Title */}
           <div className="space-y-2">
@@ -190,6 +201,7 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
           )}
         </div>
       </div>
+      </Card>
     </div>
   );
 }
