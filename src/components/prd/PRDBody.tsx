@@ -18,7 +18,7 @@ export function PRDBody({ filteredTasks, totalTasks, onTaskClick, onClearFilters
     // No tasks at all - show braindump CTA
     if (totalTasks === 0) {
       return (
-        <div className="p-4">
+        <div className="p-3">
           <Empty>
             <EmptyHeader>
               <EmptyMedia variant="icon">
@@ -70,7 +70,7 @@ export function PRDBody({ filteredTasks, totalTasks, onTaskClick, onClearFilters
   }
 
   return (
-    <div className="p-4">
+    <div className="p-3">
       <PlaylistView tasks={filteredTasks} onTaskClick={onTaskClick} />
     </div>
   );

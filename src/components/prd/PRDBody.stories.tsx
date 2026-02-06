@@ -7,8 +7,11 @@ const meta = {
   component: PRDBody,
   tags: ["autodocs"],
   args: {
+    totalTasks: 0,
     onTaskClick: () => {},
     onClearFilters: () => {},
+    onBraindump: () => {},
+    onYap: () => {},
   },
 } satisfies Meta<typeof PRDBody>;
 
@@ -54,6 +57,7 @@ const mockTasks: PRDTask[] = [
 export const WithTasks: Story = {
   args: {
     filteredTasks: mockTasks,
+    totalTasks: mockTasks.length,
   },
 };
 

@@ -9,6 +9,14 @@ const meta = {
   component: FiltersModal,
   tags: ["autodocs"],
   args: {
+    filters: { searchQuery: "", statusFilter: "all", priorityFilter: "all", tagFilter: "all" },
+    setters: {
+      setSearchQuery: () => {},
+      setStatusFilter: () => {},
+      setPriorityFilter: () => {},
+      setTagFilter: () => {},
+    },
+    allTags: [],
     onClearFilters: () => {},
   },
 } satisfies Meta<typeof FiltersModal>;

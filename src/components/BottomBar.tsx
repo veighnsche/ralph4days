@@ -14,23 +14,23 @@ interface BottomBarProps {
 // TODO: Wire up to new terminal-based loop system
 export function BottomBar({ lockedProject: _lockedProject, currentPage, onPageChange }: BottomBarProps) {
   return (
-    <div className="border-t bg-[hsl(var(--background))] px-4 py-3">
-      <div className="flex items-center justify-between gap-4">
+    <div className="border-t bg-[hsl(var(--background))] px-3 py-1.5">
+      <div className="flex items-center justify-between gap-2">
         {/* Left: Navigation Menu */}
         <div className="flex-1">
           <NavigationMenu currentPage={currentPage} onPageChange={onPageChange} />
         </div>
 
         {/* Center: Transport Controls (disabled stubs) */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5">
           <LoopToggle />
 
-          <Button disabled size="icon" variant="default" title="Start" className="h-10 w-10">
-            <Play className="h-5 w-5" />
+          <Button disabled size="icon" variant="default" title="Start">
+            <Play className="h-4 w-4" />
           </Button>
 
-          <Button disabled size="icon" variant="outline" title="Stop" className="h-10 w-10">
-            <Square className="h-5 w-5" />
+          <Button disabled size="icon" variant="outline" title="Stop">
+            <Square className="h-4 w-4" />
           </Button>
         </div>
 

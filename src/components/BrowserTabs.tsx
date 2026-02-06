@@ -51,7 +51,7 @@ export function BrowserTabs({
               // Active state - browser tab look with strong contrast
               "data-[state=active]:bg-background data-[state=active]:text-foreground",
               "data-[state=active]:border-border data-[state=active]:border-b-background",
-              "data-[state=active]:shadow-md",
+              "data-[state=active]:shadow-xs",
               // Smooth transitions
               "transition-all duration-150"
             )}

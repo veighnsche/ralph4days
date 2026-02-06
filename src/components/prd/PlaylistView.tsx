@@ -41,7 +41,7 @@ export const PlaylistView = memo(function PlaylistView({ tasks, onTaskClick }: P
 
   return (
     <TooltipProvider>
-      <div className="flex flex-col gap-6 pb-4">
+      <div className="flex flex-col gap-3 pb-4">
         {/* Blocked/Skipped Section */}
         {hasBlockedOrSkipped && (
           <Collapsible open={issuesOpen} onOpenChange={setIssuesOpen}>

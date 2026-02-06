@@ -72,8 +72,8 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
 
   return (
     <Dialog open={true}>
-      <DialogContent className="max-w-[900px]" showCloseButton={false}>
-        <div className="grid grid-cols-[1fr_auto_1fr] gap-6">
+      <DialogContent className="max-w-[700px]" showCloseButton={false}>
+        <div className="grid grid-cols-[1fr_auto_1fr] gap-4">
           {/* Left Half - Initialize */}
           <div className="flex flex-col">
             <DialogTitle>Initialize Existing Project</DialogTitle>

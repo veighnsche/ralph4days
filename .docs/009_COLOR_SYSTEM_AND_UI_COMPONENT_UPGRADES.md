@@ -254,6 +254,67 @@ Also updated to use triadic scheme:
 5. **Accessibility first** - All color combos meet WCAG AA minimum
 6. **Triadic harmony** - Hues at 198°, 35°, 280° (~120° apart) create visual balance
 
+## Desktop Density Standards
+
+Ralph is a Tauri desktop app — not a website. All sizing follows desktop-density conventions backed by industry design systems (Carbon, Material Design 3, GitLab Pajamas, Microsoft WinUI, NN/G).
+
+### Control Heights
+| Size | Pixels | Tailwind | When to Use |
+|------|--------|----------|-------------|
+| **Default** | 32px | h-8 | Standard buttons, inputs, selects, tabs |
+| **Small** | 24px | h-6 | Toolbar buttons, compact areas, secondary actions |
+| **Large** | 40px | h-10 | Hero CTAs only — never for standard form controls |
+
+**Never use h-9 (36px) or size="lg" for standard controls.** Those are web-sized.
+
+### Spacing (8px Grid)
+All spacing uses an 8px grid system:
+| Context | Value | Tailwind | Example |
+|---------|-------|----------|---------|
+| Within-component | 4px | gap-1, p-1 | Icon-to-text in buttons |
+| Related elements | 8px | gap-2, p-2 | Form field groups |
+| Horizontal padding | 12px | px-3 | Button/tab horizontal padding |
+| Unrelated elements | 16px | gap-4, p-4 | Card padding, dialog padding |
+| Sub-sections | 24px | gap-6 | Major content sections |
+| Sections | 32px | gap-8 | Page-level separation |
+
+### Shadows
+Desktop apps use minimal elevation:
+- **Level 0**: No shadow (base content, cards use shadow-sm)
+- **Level 1**: shadow-xs or shadow-sm (floating elements, active tabs)
+- **Level 2**: shadow-sm (dropdowns, popovers)
+- **Never**: shadow-md, shadow-lg, shadow-xl
+
+### Transitions
+- Hover/click feedback: instant (<50ms)
+- Simple toggles: ~100ms
+- Modals/panels appearing: 150-200ms
+- Exits faster than entrances (e.g., 150ms in, 100ms out)
+- **Never >300ms** for standard UI transitions
+
+### Icons
+- **Standard**: 16x16 (h-4 w-4) — toolbar buttons, form icons
+- **Compact**: 14x14 (h-3.5 w-3.5) — very dense areas
+- **Large**: 20x20 (h-5 w-5) — only for standalone/prominent icons
+
+### Typography
+- Body text: text-sm (14px) — not text-base (16px)
+- No responsive font switching (md:text-sm) — desktop app, single viewport
+
+### Border Radius
+Base `--radius: 0.375rem` (6px), computed sizes:
+- sm: 2px (subtle control rounding)
+- md: 4px (default control rounding)
+- lg: 6px (cards, containers)
+- xl: 10px (emphasis panels)
+
+### Sources
+- [Carbon Design System](https://carbondesignsystem.com/components/button/style/) — xs=24px, sm=32px, md=40px
+- [Material Design 3](https://m3.material.io/foundations/layout/understanding-layout/density) — -4px per density level
+- [GitLab Pajamas](https://design.gitlab.com/product-foundations/spacing/) — 8px grid
+- [NN/G Animation Duration](https://www.nngroup.com/articles/animation-duration/) — 100-500ms range
+- [Microsoft Win32](https://learn.microsoft.com/en-us/windows/win32/uxguide/vis-animations) — hover <50ms
+
 ## Future Work
 
 - Upgrade unused UI components as they're needed (use this guide)

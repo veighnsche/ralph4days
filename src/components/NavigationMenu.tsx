@@ -52,8 +52,8 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" className="h-10 w-10">
-          <Menu className="h-5 w-5" />
+        <Button variant="outline" size="icon">
+          <Menu className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-48">

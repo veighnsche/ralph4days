@@ -49,12 +49,12 @@ export function FiltersModal({ filters, setters, allTags, onClearFilters }: Filt
           )}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[380px]">
         <DialogHeader>
           <DialogTitle>Filter Tasks</DialogTitle>
           <DialogDescription>Set filters to narrow down your task list</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-3 py-3">
           {/* Search */}
           <div className="grid gap-2">
             <Label htmlFor="search">Search</Label>

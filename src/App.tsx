@@ -65,7 +65,7 @@ function App() {
 
   return (
     <>
-      <ResizablePanelGroup direction="horizontal" className="h-screen">
+      <ResizablePanelGroup orientation="horizontal" className="h-screen">
         {/* Left: Pages */}
         <ResizablePanel defaultSize={50} minSize={40}>
           <div className="h-full flex flex-col overflow-hidden">

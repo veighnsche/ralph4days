@@ -45,7 +45,7 @@ export function FeatureForm({ initialData, onChange, disabled }: FeatureFormProp
   }, [formData, onChange]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Display Name */}
       <div className="space-y-2">
         <Label htmlFor="display_name">

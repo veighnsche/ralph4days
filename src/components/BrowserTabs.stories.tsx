@@ -40,6 +40,11 @@ function BrowserTabsDemo() {
 }
 
 export const Default: Story = {
+  args: {
+    tabs: [],
+    activeTabId: "",
+    onTabChange: () => {},
+  },
   render: () => <BrowserTabsDemo />,
 };
 

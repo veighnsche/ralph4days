@@ -65,10 +65,10 @@ export function FeatureFormTabContent({ tab }: { tab: WorkspaceTab }) {
       </ScrollArea>
       <Separator />
       <div className="px-4 py-3 flex justify-end gap-2 flex-shrink-0">
-        <Button type="button" variant="outline" size="lg" onClick={() => closeTab(tab.id)} disabled={isSubmitting}>
+        <Button type="button" variant="outline" size="default" onClick={() => closeTab(tab.id)} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button type="submit" size="lg" disabled={isSubmitting}>
+        <Button type="submit" size="default" disabled={isSubmitting}>
           {isSubmitting ? "Saving..." : mode === "create" ? "Create" : "Update"}
         </Button>
       </div>

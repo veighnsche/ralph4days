@@ -49,7 +49,7 @@ export function ModelThinkingPicker({
   actionIcon,
   disabled = false,
   variant = "default",
-  size = "lg",
+  size = "default",
   className,
 }: ModelThinkingPickerProps) {
   const { model, setModel, thinking, setThinking } = useModelThinkingPreferences();

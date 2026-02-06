@@ -29,7 +29,7 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
       </div>
       <Separator />
       <ScrollArea className="flex-1 min-h-0">
-        <div className="px-4 space-y-6">
+        <div className="px-4 space-y-4">
           {/* Status and Priority */}
           <div className="flex gap-2 flex-wrap">
             {getStatusBadge(task.status)}

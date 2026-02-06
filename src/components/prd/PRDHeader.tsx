@@ -39,11 +39,11 @@ export function PRDHeader({
     filters.tagFilter !== "all";
 
   return (
-    <div className="flex-shrink-0 p-4 pb-0">
+    <div className="flex-shrink-0 p-3 pb-0">
       <Card className="py-3">
         <CardContent className="space-y-3">
           {/* Title Row */}
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-3">
             <div className="flex-1 min-w-0">
               <CardTitle className="text-base">{project.title}</CardTitle>
               {project.description && (

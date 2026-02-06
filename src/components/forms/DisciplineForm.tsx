@@ -86,7 +86,7 @@ export function DisciplineForm({ initialData, onChange, disabled }: DisciplineFo
   const IconComponent = LucideIcons[formData.icon as keyof typeof LucideIcons] as LucideIcons.LucideIcon;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Display Name */}
       <div className="space-y-2">
         <Label htmlFor="display_name">
@@ -193,7 +193,7 @@ export function DisciplineForm({ initialData, onChange, disabled }: DisciplineFo
             ))}
           </NativeSelect>
           <div
-            className="w-10 h-10 rounded-md border shrink-0"
+            className="w-8 h-8 rounded-md border shrink-0"
             style={{ backgroundColor: formData.color }}
             title={formData.color}
           />

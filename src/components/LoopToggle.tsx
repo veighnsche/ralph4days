@@ -8,8 +8,8 @@ export function LoopToggle() {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button disabled size="icon" variant="outline" title="Loop disabled" className="h-10 w-10">
-            <RotateCw className="h-5 w-5 opacity-50" />
+          <Button disabled size="icon" variant="outline" title="Loop disabled">
+            <RotateCw className="h-4 w-4 opacity-50" />
           </Button>
         </TooltipTrigger>
         <TooltipContent>

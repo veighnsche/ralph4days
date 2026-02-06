@@ -19,7 +19,7 @@ export function Settings() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="icon" className="h-10 w-10">
+        <Button variant="outline" size="icon">
           <SettingsIcon className="h-4 w-4" />
           <span className="sr-only">Settings</span>
         </Button>
@@ -30,7 +30,7 @@ export function Settings() {
           <DialogDescription>Customize your Ralph4days experience</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           <Field orientation="horizontal">
             <div className="flex-1">
               <FieldLabel>Dark Mode</FieldLabel>

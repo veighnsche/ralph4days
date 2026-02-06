@@ -76,7 +76,7 @@ export function TasksPage() {
     // TODO: Invalidate cache and refresh UI when done
     console.log("Yap about tasks clicked - TODO: implement");
     openTab({
-      type: "yap-form", // TODO: Add this tab type
+      type: "braindump-form", // TODO: dedicated yap-form tab type
       title: "Yap about Tasks",
       closeable: true,
     });

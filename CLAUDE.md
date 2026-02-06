@@ -79,7 +79,9 @@ Specs in `.specs/` (read `000_SPECIFICATION_FORMAT.md` first). Tests: `just test
 
 **ALWAYS use components from `src/components/ui/` instead of creating custom divs.** We have 50+ shadcn components (Badge, Button, Card, Dialog, Input, Select, etc.) that save time and tokens. Check `src/components/ui/` before writing custom markup. Key components: Badge (variants: default, secondary, outline, destructive), Button (variants + sizes), Card, Alert, Dialog, Sheet, ScrollArea, Tooltip, Separator.
 
-**When using an unused UI component for the first time:** Read `.docs/009_COLOR_SYSTEM_AND_UI_COMPONENT_UPGRADES.md` for the color system design philosophy and upgrade the component before use. The guide explains when to use primary (main actions), secondary (brand/form states), or accent (hover/focus feedback).
+**Desktop-density sizing:** h-8 default (32px), h-6 sm (24px). Never use h-9/h-10 or size="lg" for standard controls. 8px spacing grid. shadow-sm max. Transitions 100-200ms. See `.docs/009_COLOR_SYSTEM_AND_UI_COMPONENT_UPGRADES.md` for full density standards and color system.
+
+**When using an unused UI component for the first time:** Read `.docs/009_COLOR_SYSTEM_AND_UI_COMPONENT_UPGRADES.md` for the color system design philosophy and desktop density standards. Upgrade the component before use.
 
 ## Environment
 
