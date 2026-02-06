@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import type { PRDTask } from "@/types/prd";
+import type { EnrichedTask } from "@/types/prd";
 import { PlaylistView } from "./PlaylistView";
 
 const meta = {
@@ -14,7 +14,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const mockTasks: PRDTask[] = [
+const mockTasks: EnrichedTask[] = [
   {
     id: 1,
     feature: "authentication",
@@ -26,6 +26,12 @@ const mockTasks: PRDTask[] = [
     tags: ["api", "security"],
     depends_on: [],
     created: "2026-02-01",
+    featureDisplayName: "Authentication",
+    featureAcronym: "AUTH",
+    disciplineDisplayName: "Backend",
+    disciplineAcronym: "BKND",
+    disciplineIcon: "server",
+    disciplineColor: "#8B5CF6",
   },
   {
     id: 2,
@@ -37,6 +43,12 @@ const mockTasks: PRDTask[] = [
     priority: "medium",
     tags: ["ui"],
     depends_on: [1],
+    featureDisplayName: "Authentication",
+    featureAcronym: "AUTH",
+    disciplineDisplayName: "Frontend",
+    disciplineAcronym: "FRNT",
+    disciplineIcon: "code",
+    disciplineColor: "#3B82F6",
   },
   {
     id: 3,
@@ -47,6 +59,12 @@ const mockTasks: PRDTask[] = [
     priority: "low",
     tags: [],
     depends_on: [],
+    featureDisplayName: "User Profile",
+    featureAcronym: "USER",
+    disciplineDisplayName: "Backend",
+    disciplineAcronym: "BKND",
+    disciplineIcon: "server",
+    disciplineColor: "#8B5CF6",
   },
   {
     id: 4,
@@ -57,6 +75,12 @@ const mockTasks: PRDTask[] = [
     priority: "medium",
     tags: ["ui"],
     depends_on: [3],
+    featureDisplayName: "User Profile",
+    featureAcronym: "USER",
+    disciplineDisplayName: "Frontend",
+    disciplineAcronym: "FRNT",
+    disciplineIcon: "code",
+    disciplineColor: "#3B82F6",
   },
 ];
 
@@ -80,6 +104,12 @@ export const WithBlockedTasks: Story = {
         priority: "critical",
         tags: ["payments"],
         depends_on: [],
+        featureDisplayName: "Payments",
+        featureAcronym: "PAYM",
+        disciplineDisplayName: "Backend",
+        disciplineAcronym: "BKND",
+        disciplineIcon: "server",
+        disciplineColor: "#8B5CF6",
       },
       {
         id: 6,
@@ -90,6 +120,12 @@ export const WithBlockedTasks: Story = {
         priority: "low",
         tags: ["email"],
         depends_on: [],
+        featureDisplayName: "Notifications",
+        featureAcronym: "NOTI",
+        disciplineDisplayName: "Backend",
+        disciplineAcronym: "BKND",
+        disciplineIcon: "server",
+        disciplineColor: "#8B5CF6",
       },
     ],
   },

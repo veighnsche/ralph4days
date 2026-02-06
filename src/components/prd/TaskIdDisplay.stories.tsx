@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import type { PRDTask } from "@/types/prd";
+import type { EnrichedTask } from "@/types/prd";
 import { TaskIdDisplay } from "./TaskIdDisplay";
 
 const meta = {
@@ -14,13 +14,52 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const createTask = (id: number, feature: string, discipline: PRDTask["discipline"]): PRDTask => ({
-  id,
-  feature,
-  discipline,
-  title: "Example task",
-  status: "pending",
-});
+/** Discipline defaults for story mocks */
+const DISCIPLINE_DEFAULTS: Record<string, { displayName: string; acronym: string; icon: string; color: string }> = {
+  frontend: { displayName: "Frontend", acronym: "FRNT", icon: "code", color: "#3B82F6" },
+  backend: { displayName: "Backend", acronym: "BKND", icon: "server", color: "#8B5CF6" },
+  database: { displayName: "Database", acronym: "DATA", icon: "database", color: "#F59E0B" },
+  testing: { displayName: "Testing", acronym: "TEST", icon: "flask-conical", color: "#10B981" },
+  infra: { displayName: "Infrastructure", acronym: "INFR", icon: "cloud", color: "#6366F1" },
+  security: { displayName: "Security", acronym: "SECU", icon: "shield", color: "#EF4444" },
+  docs: { displayName: "Documentation", acronym: "DOCS", icon: "book-open", color: "#64748B" },
+  design: { displayName: "Design", acronym: "DSGN", icon: "palette", color: "#EC4899" },
+  wiring: { displayName: "Wiring", acronym: "WIRE", icon: "cable", color: "#A855F7" },
+  api: { displayName: "API", acronym: "API", icon: "plug", color: "#14B8A6" },
+};
+
+function featureDisplayName(feature: string): string {
+  return feature
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+function featureAcronym(feature: string): string {
+  return feature.replace(/-/g, "").slice(0, 4).toUpperCase();
+}
+
+const createTask = (id: number, feature: string, discipline: string): EnrichedTask => {
+  const disc = DISCIPLINE_DEFAULTS[discipline] ?? {
+    displayName: discipline.charAt(0).toUpperCase() + discipline.slice(1),
+    acronym: discipline.slice(0, 4).toUpperCase(),
+    icon: "circle",
+    color: "#6B7280",
+  };
+  return {
+    id,
+    feature,
+    discipline,
+    title: "Example task",
+    status: "pending",
+    featureDisplayName: featureDisplayName(feature),
+    featureAcronym: featureAcronym(feature),
+    disciplineDisplayName: disc.displayName,
+    disciplineAcronym: disc.acronym,
+    disciplineIcon: disc.icon,
+    disciplineColor: disc.color,
+  };
+};
 
 export const Frontend: Story = {
   args: {

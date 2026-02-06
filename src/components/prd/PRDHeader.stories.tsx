@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import type { PRDProject } from "@/types/prd";
+import type { ProjectInfo } from "@/types/prd";
 import { PRDHeader } from "./PRDHeader";
 
 const meta = {
@@ -14,7 +14,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const mockProject: PRDProject = {
+const mockProject: ProjectInfo = {
   title: "Ralph4days Development",
   description: "Autonomous multi-agent build loops with Claude",
   created: "2026-02-01",
