@@ -1,5 +1,6 @@
 import { AlertCircle, Ban, Calendar, CheckCircle2, Circle, ClipboardList, Play, Slash, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { FormHeader, FormTitle } from "@/components/ui/form-header";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useTabMeta } from "@/hooks/useTabMeta";
@@ -21,11 +22,11 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="px-4 py-3 flex-shrink-0">
-        <h2 className="text-lg font-semibold">{task.title}</h2>
-        <div className="mt-1">
+      <div className="px-4 flex-shrink-0">
+        <FormHeader>
+          <FormTitle>{task.title}</FormTitle>
           <TaskIdDisplay task={task} />
-        </div>
+        </FormHeader>
       </div>
       <Separator />
       <ScrollArea className="flex-1 min-h-0">

@@ -3,6 +3,7 @@ import { LoopToggle } from "@/components/LoopToggle";
 import { NavigationMenu } from "@/components/NavigationMenu";
 import { Settings } from "@/components/Settings";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import type { Page } from "@/hooks/useNavigation";
 
 interface BottomBarProps {
@@ -22,7 +23,7 @@ export function BottomBar({ lockedProject: _lockedProject, currentPage, onPageCh
         </div>
 
         {/* Center: Transport Controls (disabled stubs) */}
-        <div className="flex items-center gap-1.5">
+        <ButtonGroup>
           <LoopToggle />
 
           <Button disabled size="icon" variant="default" title="Start">
@@ -32,7 +33,7 @@ export function BottomBar({ lockedProject: _lockedProject, currentPage, onPageCh
           <Button disabled size="icon" variant="outline" title="Stop">
             <Square className="h-4 w-4" />
           </Button>
-        </div>
+        </ButtonGroup>
 
         {/* Right: Settings */}
         <div className="flex-1 flex justify-end">

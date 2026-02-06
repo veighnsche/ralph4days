@@ -1,5 +1,6 @@
-import { Brain, MessageCircle, Plus, Target } from "lucide-react";
+import { Brain, MessageCircle, Target } from "lucide-react";
 import { useMemo } from "react";
+import { PageContent, PageHeader, PageLayout } from "@/components/layout/PageLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,24 +50,9 @@ export function FeaturesPage() {
   const loading = prdLoading || featuresLoading;
   const error = prdError || (featuresError ? String(featuresError) : null);
 
-  const handleCreateFeature = () => {
-    openTab({
-      type: "feature-form",
-      title: "Create Feature",
-      closeable: true,
-      data: { mode: "create" },
-    });
-  };
-
   const handleRambleAboutFeatures = () => {
-    // TODO: Create RambleFormTabContent component (similar to BraindumpFormTabContent)
-    // TODO: Default prompt should be: "I want to discuss these features: [list existing features]"
-    // TODO: User can ramble about what features need, how to organize them, etc.
-    // TODO: Send to Claude terminal with MCP tools to update features
-    // TODO: Invalidate cache and refresh UI when done
-    console.log("Ramble about features clicked - TODO: implement");
     openTab({
-      type: "braindump-form", // TODO: dedicated ramble-form tab type
+      type: "braindump-form",
       title: "Ramble about Features",
       closeable: true,
     });
@@ -82,33 +68,36 @@ export function FeaturesPage() {
 
   if (loading) {
     return (
-      <div className="h-full flex flex-col overflow-hidden">
-        <div className="flex-shrink-0 p-4">
+      <PageLayout>
+        <PageHeader>
           <Skeleton className="h-[120px]" />
-        </div>
-        <div className="flex-1 p-4 space-y-4">
-          <Skeleton className="h-[100px]" />
-          <Skeleton className="h-[100px]" />
-          <Skeleton className="h-[100px]" />
-        </div>
-      </div>
+        </PageHeader>
+        <PageContent>
+          <div className="space-y-4">
+            <Skeleton className="h-[100px]" />
+            <Skeleton className="h-[100px]" />
+            <Skeleton className="h-[100px]" />
+          </div>
+        </PageContent>
+      </PageLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="h-full p-4">
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      </div>
+      <PageLayout>
+        <PageContent>
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </PageContent>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      {/* Features Header */}
-      <div className="flex-shrink-0 p-4 pb-0">
+    <PageLayout>
+      <PageHeader>
         <Card className="py-3">
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between gap-4">
@@ -116,18 +105,6 @@ export function FeaturesPage() {
                 <Target className="h-4 w-4" />
                 <CardTitle className="text-base">Features</CardTitle>
               </div>
-              {features.length > 0 && (
-                <>
-                  <Button onClick={handleCreateFeature} size="sm" variant="outline">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Feature
-                  </Button>
-                  <Button onClick={handleRambleAboutFeatures} size="sm" variant="outline">
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Ramble about Features
-                  </Button>
-                </>
-              )}
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <div className="text-sm font-medium">
@@ -154,10 +131,9 @@ export function FeaturesPage() {
             <CardDescription className="text-xs">Product features and their associated tasks</CardDescription>
           </CardContent>
         </Card>
-      </div>
+      </PageHeader>
 
-      {/* Features List */}
-      <div className="flex-1 min-h-0 overflow-auto p-4">
+      <PageContent>
         {features.length === 0 ? (
           <Empty>
             <EmptyHeader>
@@ -220,7 +196,7 @@ export function FeaturesPage() {
             })}
           </ItemGroup>
         )}
-      </div>
-    </div>
+      </PageContent>
+    </PageLayout>
   );
 }

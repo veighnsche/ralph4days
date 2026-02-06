@@ -1,7 +1,6 @@
 import type { LucideIcon } from "lucide-react";
-import { Plus, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { X } from "lucide-react";
+import { useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 export interface BrowserTab {
@@ -16,96 +15,144 @@ interface BrowserTabsProps {
   activeTabId: string;
   onTabChange: (tabId: string) => void;
   onTabClose?: (tabId: string) => void;
-  onNewTab?: () => void;
   newTabButton?: React.ReactNode;
   className?: string;
 }
 
-export function BrowserTabs({
-  tabs,
-  activeTabId,
-  onTabChange,
-  onTabClose,
-  onNewTab,
-  newTabButton,
-  className,
-}: BrowserTabsProps) {
-  return (
-    <Tabs value={activeTabId} onValueChange={onTabChange} className={cn("w-full", className)}>
-      <TabsList
-        variant="line"
-        className="w-full justify-start rounded-none border-b border-border h-auto p-0 px-1 pt-1 gap-1 bg-muted/30"
-      >
-        {tabs.map((tab) => (
-          <TabsTrigger
-            key={tab.id}
-            value={tab.id}
-            className={cn(
-              "group relative flex-none",
-              "rounded-t-md rounded-b-none px-3 py-1.5 gap-2",
-              // Remove default shadcn tab styling
-              "border after:hidden",
-              // Inactive state - visible but muted
-              "bg-muted/40 text-muted-foreground border-border/50",
-              "hover:bg-muted/60 hover:text-foreground hover:border-border",
-              // Active state - browser tab look with strong contrast
-              "data-[state=active]:bg-background data-[state=active]:text-foreground",
-              "data-[state=active]:border-border data-[state=active]:border-b-background",
-              "data-[state=active]:shadow-xs",
-              // Smooth transitions
-              "transition-all duration-150"
-            )}
-          >
-            {tab.icon && <tab.icon className="h-3.5 w-3.5 shrink-0" />}
-            <span className="truncate max-w-[150px]">{tab.title}</span>
+/**
+ * Accessible tab bar using WAI-ARIA Tabs pattern.
+ *
+ * Keyboard: Arrow keys navigate tabs, Home/End jump to first/last,
+ * Enter/Space activate, Delete closes. Tab key exits the tablist.
+ * Close buttons are mouse-only (tabIndex -1) per desktop convention.
+ */
+export function BrowserTabs({ tabs, activeTabId, onTabChange, onTabClose, newTabButton, className }: BrowserTabsProps) {
+  const tabRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
 
-            {onTabClose && tab.closeable !== false && (
-              // biome-ignore lint/a11y/useSemanticElements: inside TabsTrigger (button), can't nest buttons
-              <span
-                role="button"
-                tabIndex={0}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onTabClose(tab.id);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
+  const focusTab = useCallback(
+    (id: string) => {
+      tabRefs.current.get(id)?.focus();
+      onTabChange(id);
+    },
+    [onTabChange]
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent, tabId: string) => {
+      const idx = tabs.findIndex((t) => t.id === tabId);
+      if (idx === -1) return;
+
+      let handled = true;
+
+      switch (e.key) {
+        case "ArrowRight":
+        case "ArrowDown": {
+          const next = tabs[(idx + 1) % tabs.length];
+          focusTab(next.id);
+          break;
+        }
+        case "ArrowLeft":
+        case "ArrowUp": {
+          const prev = tabs[(idx - 1 + tabs.length) % tabs.length];
+          focusTab(prev.id);
+          break;
+        }
+        case "Home":
+          focusTab(tabs[0].id);
+          break;
+        case "End":
+          focusTab(tabs[tabs.length - 1].id);
+          break;
+        case "Delete": {
+          const tab = tabs[idx];
+          if (onTabClose && tab.closeable !== false) {
+            onTabClose(tabId);
+          }
+          break;
+        }
+        default:
+          handled = false;
+      }
+
+      if (handled) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    },
+    [tabs, focusTab, onTabClose]
+  );
+
+  return (
+    <div className={cn("flex items-end bg-muted/50 border-b border-border", className)}>
+      {/* Tab list — scrolls horizontally when overflowing */}
+      <div
+        role="tablist"
+        aria-label="Workspace tabs"
+        className="flex items-end gap-px min-w-0 flex-1 overflow-x-auto px-1 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {tabs.map((tab) => {
+          const isActive = tab.id === activeTabId;
+          const TabIcon = tab.icon;
+
+          return (
+            <div
+              key={tab.id}
+              role="tab"
+              ref={(el) => {
+                if (el) tabRefs.current.set(tab.id, el as unknown as HTMLButtonElement);
+                else tabRefs.current.delete(tab.id);
+              }}
+              id={`tab-${tab.id}`}
+              aria-selected={isActive}
+              aria-controls={`tabpanel-${tab.id}`}
+              tabIndex={isActive ? 0 : -1}
+              onClick={() => onTabChange(tab.id)}
+              onKeyDown={(e) => handleKeyDown(e, tab.id)}
+              className={cn(
+                "group/tab flex items-center gap-1.5 h-8 min-w-0 max-w-[220px]",
+                "pl-3 text-xs font-medium",
+                "rounded-t-md",
+                "outline-none transition-colors duration-100",
+                "select-none cursor-default",
+                // Focus ring
+                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+                // Right padding: tighter when close button present
+                onTabClose && tab.closeable !== false ? "pr-1" : "pr-3",
+                // Active tab connects to content — overlaps the bottom border
+                isActive && ["-mb-px bg-background text-foreground", "border border-border border-b-background"],
+                // Inactive state
+                !isActive && [
+                  "text-muted-foreground",
+                  "border border-transparent",
+                  "hover:text-foreground hover:bg-accent/50",
+                ]
+              )}
+            >
+              {TabIcon && <TabIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
+              <span className="truncate">{tab.title}</span>
+
+              {/* Close button — mouse-only, keyboard users press Delete */}
+              {onTabClose && tab.closeable !== false && (
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  aria-label={`Close ${tab.title}`}
+                  onClick={(e) => {
                     e.stopPropagation();
                     onTabClose(tab.id);
-                  }
-                }}
-                className={cn(
-                  "ml-1 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity",
-                  "hover:bg-muted-foreground/20 hover:text-foreground",
-                  "h-4 w-4 inline-flex items-center justify-center",
-                  "text-muted-foreground cursor-pointer"
-                )}
-              >
-                <X className="h-3 w-3" />
-                <span className="sr-only">Close {tab.title}</span>
-              </span>
-            )}
-          </TabsTrigger>
-        ))}
+                  }}
+                  className="h-5 w-5 rounded-sm shrink-0 inline-flex items-center justify-center transition-colors duration-100 text-muted-foreground hover:text-foreground hover:bg-muted"
+                >
+                  <X className="h-3 w-3" aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
-        {newTabButton ? (
-          newTabButton
-        ) : onNewTab ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onNewTab}
-            className={cn(
-              "flex-none h-auto px-2 py-1.5 rounded-t-md rounded-b-none",
-              "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-            )}
-          >
-            <Plus className="h-4 w-4" />
-            <span className="sr-only">New tab</span>
-          </Button>
-        ) : null}
-      </TabsList>
-    </Tabs>
+      {/* New tab area — outside the tablist, always accessible */}
+      {newTabButton && <div className="flex items-center shrink-0 px-1 pb-px">{newTabButton}</div>}
+    </div>
   );
 }

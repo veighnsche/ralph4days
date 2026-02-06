@@ -40,7 +40,7 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
       </div>
 
       {/* Main Content: Title + Description */}
-      <ItemContent>
+      <ItemContent className="gap-0">
         <ItemTitle
           className={isNowPlaying ? "text-base" : "text-sm"}
           style={isNowPlaying ? { color: statusConfig.color } : undefined}

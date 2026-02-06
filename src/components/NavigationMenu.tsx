@@ -1,4 +1,4 @@
-import { Layers, ListTodo, Menu, Plus, Target } from "lucide-react";
+import { Layers, ListTodo, Menu, MessageCircle, MessageSquare, Plus, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -49,6 +49,22 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
     });
   };
 
+  const handleYapAboutTasks = () => {
+    openTab({
+      type: "braindump-form",
+      title: "Yap about Tasks",
+      closeable: true,
+    });
+  };
+
+  const handleRambleAboutFeatures = () => {
+    openTab({
+      type: "braindump-form",
+      title: "Ramble about Features",
+      closeable: true,
+    });
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -72,6 +88,10 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
               <Plus className="mr-2 h-4 w-4" />
               Create Task
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleYapAboutTasks}>
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Yap about Tasks
+            </DropdownMenuItem>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
@@ -86,6 +106,10 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
             <DropdownMenuItem onClick={handleCreateFeature}>
               <Plus className="mr-2 h-4 w-4" />
               Create Feature
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleRambleAboutFeatures}>
+              <MessageCircle className="mr-2 h-4 w-4" />
+              Ramble about Features
             </DropdownMenuItem>
           </DropdownMenuSubContent>
         </DropdownMenuSub>

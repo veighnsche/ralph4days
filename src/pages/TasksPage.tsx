@@ -1,9 +1,8 @@
-import { MessageSquare, Plus } from "lucide-react";
 import { useCallback, useMemo } from "react";
+import { PageContent, PageHeader, PageLayout } from "@/components/layout/PageLayout";
 import { PRDBody } from "@/components/prd/PRDBody";
 import { PRDHeader } from "@/components/prd/PRDHeader";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePRDData } from "@/hooks/usePRDData";
 import { usePRDFilters } from "@/hooks/usePRDFilters";
@@ -59,33 +58,18 @@ export function TasksPage() {
   const totalTasks = prdData?.tasks.length ?? 0;
   const progressPercent = totalTasks > 0 ? Math.round((doneTasks.length / totalTasks) * 100) : 0;
 
-  const handleCreateTask = () => {
-    openTab({
-      type: "task-form",
-      title: "Create Task",
-      closeable: true,
-      data: { mode: "create" },
-    });
-  };
-
-  const handleYapAboutTasks = () => {
-    // TODO: Create YapFormTabContent component (similar to BraindumpFormTabContent)
-    // TODO: Default prompt should be: "I want to talk about these tasks: [list existing task IDs]"
-    // TODO: User can ramble about what they want to change/add/refine
-    // TODO: Send to Claude terminal with MCP tools to update tasks
-    // TODO: Invalidate cache and refresh UI when done
-    console.log("Yap about tasks clicked - TODO: implement");
-    openTab({
-      type: "braindump-form", // TODO: dedicated yap-form tab type
-      title: "Yap about Tasks",
-      closeable: true,
-    });
-  };
-
   const handleBraindumpProject = () => {
     openTab({
       type: "braindump-form",
       title: "Braindump Project",
+      closeable: true,
+    });
+  };
+
+  const handleYapAboutTasks = () => {
+    openTab({
+      type: "braindump-form",
+      title: "Yap about Tasks",
       closeable: true,
     });
   };
@@ -104,42 +88,48 @@ export function TasksPage() {
 
   if (loading) {
     return (
-      <div className="h-full flex flex-col overflow-hidden">
-        <div className="flex-shrink-0 p-4">
+      <PageLayout>
+        <PageHeader>
           <Skeleton className="h-[200px]" />
-        </div>
-        <div className="flex-1 p-4 space-y-4">
-          <Skeleton className="h-[60px]" />
-          <Skeleton className="h-[60px]" />
-          <Skeleton className="h-[60px]" />
-        </div>
-      </div>
+        </PageHeader>
+        <PageContent>
+          <div className="space-y-4">
+            <Skeleton className="h-[60px]" />
+            <Skeleton className="h-[60px]" />
+            <Skeleton className="h-[60px]" />
+          </div>
+        </PageContent>
+      </PageLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="h-full p-4">
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      </div>
+      <PageLayout>
+        <PageContent>
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </PageContent>
+      </PageLayout>
     );
   }
 
   if (!prdData) {
     return (
-      <div className="h-full p-4">
-        <Alert>
-          <AlertDescription>No PRD data available</AlertDescription>
-        </Alert>
-      </div>
+      <PageLayout>
+        <PageContent>
+          <Alert>
+            <AlertDescription>No PRD data available</AlertDescription>
+          </Alert>
+        </PageContent>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      <div className="flex-shrink-0">
+    <PageLayout>
+      <PageHeader>
         <PRDHeader
           project={prdData.project}
           totalTasks={totalTasks}
@@ -151,21 +141,9 @@ export function TasksPage() {
           allTags={allTags}
           onClearFilters={clearFilters}
         />
-        {totalTasks > 0 && (
-          <div className="px-4 pb-2 flex gap-2">
-            <Button onClick={handleCreateTask} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Task
-            </Button>
-            <Button onClick={handleYapAboutTasks} size="sm" variant="outline">
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Yap about Tasks
-            </Button>
-          </div>
-        )}
-      </div>
+      </PageHeader>
 
-      <div className="flex-1 min-h-0 overflow-auto">
+      <PageContent>
         <PRDBody
           filteredTasks={filteredTasks}
           totalTasks={totalTasks}
@@ -174,7 +152,7 @@ export function TasksPage() {
           onBraindump={handleBraindumpProject}
           onYap={handleYapAboutTasks}
         />
-      </div>
-    </div>
+      </PageContent>
+    </PageLayout>
   );
 }

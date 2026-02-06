@@ -5,6 +5,7 @@ import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import { TaskForm, type TaskFormData } from "@/components/forms/TaskForm";
 import { Button } from "@/components/ui/button";
+import { FormDescription, FormHeader, FormTitle } from "@/components/ui/form-header";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useDisciplines } from "@/hooks/useDisciplines";
@@ -79,11 +80,13 @@ export function TaskFormTabContent({ tab }: { tab: WorkspaceTab }) {
 
   return (
     <form onSubmit={handleSubmit} className="h-full flex flex-col">
-      <div className="px-4 py-3 flex-shrink-0">
-        <h2 className="text-lg font-semibold">{mode === "create" ? "Create Task" : "Edit Task"}</h2>
-        <p className="text-sm text-muted-foreground">
-          {mode === "create" ? "Add a new task to your project" : "Update task details"}
-        </p>
+      <div className="px-4 flex-shrink-0">
+        <FormHeader>
+          <FormTitle>{mode === "create" ? "Create Task" : "Edit Task"}</FormTitle>
+          <FormDescription>
+            {mode === "create" ? "Add a new task to your project" : "Update task details"}
+          </FormDescription>
+        </FormHeader>
       </div>
       <Separator />
       <ScrollArea className="flex-1 min-h-0">
@@ -92,7 +95,7 @@ export function TaskFormTabContent({ tab }: { tab: WorkspaceTab }) {
         </div>
       </ScrollArea>
       <Separator />
-      <div className="px-4 py-3 flex justify-end gap-2 flex-shrink-0">
+      <div className="px-3 py-1.5 flex justify-end gap-2 flex-shrink-0">
         <Button type="button" variant="outline" size="default" onClick={() => closeTab(tab.id)} disabled={isSubmitting}>
           Cancel
         </Button>

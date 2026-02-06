@@ -33,6 +33,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { type Model, ModelThinkingPicker } from "@/components/ModelThinkingPicker";
 import { Button } from "@/components/ui/button";
+import { FormDescription, FormHeader, FormTitle } from "@/components/ui/form-header";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -142,12 +143,12 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
     <div className="flex h-full flex-col">
       <ScrollArea className="flex-1">
         <form className="px-4 space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold mb-2">Braindump Your Project</h2>
-            <p className="text-sm text-muted-foreground">
+          <FormHeader>
+            <FormTitle>Braindump Your Project</FormTitle>
+            <FormDescription>
               Answer these questions in your own words. Claude will help structure this into features and tasks.
-            </p>
-          </div>
+            </FormDescription>
+          </FormHeader>
 
           <Separator />
 
@@ -169,7 +170,7 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
 
       <Separator />
 
-      <div className="px-4 py-3 flex items-center justify-end gap-2">
+      <div className="px-3 py-1.5 flex items-center justify-end gap-2">
         <Button type="button" variant="outline" size="default" onClick={handleCancel}>
           Cancel
         </Button>

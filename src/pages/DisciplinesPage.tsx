@@ -1,8 +1,8 @@
-import { Layers, Plus } from "lucide-react";
+import { Layers } from "lucide-react";
 import { useMemo } from "react";
+import { PageContent, PageHeader, PageLayout } from "@/components/layout/PageLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { ItemGroup, ItemSeparator } from "@/components/ui/item";
@@ -10,12 +10,10 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDisciplines } from "@/hooks/useDisciplines";
 import { usePRDData } from "@/hooks/usePRDData";
-import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
 
 export function DisciplinesPage() {
   const { prdData, isLoading: prdLoading, error: prdError } = usePRDData();
   const { disciplines } = useDisciplines();
-  const openTab = useWorkspaceStore((s) => s.openTab);
 
   // Calculate task counts per discipline
   const disciplineStats = useMemo(() => {
@@ -43,44 +41,38 @@ export function DisciplinesPage() {
 
   const loading = prdLoading || disciplines.length === 0;
 
-  const handleCreateDiscipline = () => {
-    openTab({
-      type: "discipline-form",
-      title: "Create Discipline",
-      closeable: true,
-      data: { mode: "create" },
-    });
-  };
-
   if (loading) {
     return (
-      <div className="h-full flex flex-col overflow-hidden">
-        <div className="flex-shrink-0 p-4">
+      <PageLayout>
+        <PageHeader>
           <Skeleton className="h-[120px]" />
-        </div>
-        <div className="flex-1 p-4 space-y-4">
-          <Skeleton className="h-[100px]" />
-          <Skeleton className="h-[100px]" />
-          <Skeleton className="h-[100px]" />
-        </div>
-      </div>
+        </PageHeader>
+        <PageContent>
+          <div className="space-y-4">
+            <Skeleton className="h-[100px]" />
+            <Skeleton className="h-[100px]" />
+            <Skeleton className="h-[100px]" />
+          </div>
+        </PageContent>
+      </PageLayout>
     );
   }
 
   if (prdError) {
     return (
-      <div className="h-full p-4">
-        <Alert variant="destructive">
-          <AlertDescription>{prdError}</AlertDescription>
-        </Alert>
-      </div>
+      <PageLayout>
+        <PageContent>
+          <Alert variant="destructive">
+            <AlertDescription>{prdError}</AlertDescription>
+          </Alert>
+        </PageContent>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      {/* Disciplines Header */}
-      <div className="flex-shrink-0 p-4 pb-0">
+    <PageLayout>
+      <PageHeader>
         <Card className="py-3">
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between gap-4">
@@ -88,10 +80,6 @@ export function DisciplinesPage() {
                 <Layers className="h-4 w-4" />
                 <CardTitle className="text-base">Disciplines</CardTitle>
               </div>
-              <Button onClick={handleCreateDiscipline} size="sm" variant="outline">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Discipline
-              </Button>
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <div className="text-sm font-medium">
@@ -118,10 +106,9 @@ export function DisciplinesPage() {
             <CardDescription className="text-xs">Work categories and their task distribution</CardDescription>
           </CardContent>
         </Card>
-      </div>
+      </PageHeader>
 
-      {/* Disciplines List */}
-      <div className="flex-1 min-h-0 overflow-auto p-4">
+      <PageContent>
         {disciplines.length === 0 ? (
           <Empty>
             <EmptyHeader>
@@ -180,7 +167,7 @@ export function DisciplinesPage() {
             })}
           </ItemGroup>
         )}
-      </div>
-    </div>
+      </PageContent>
+    </PageLayout>
   );
 }

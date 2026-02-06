@@ -18,60 +18,52 @@ export function PRDBody({ filteredTasks, totalTasks, onTaskClick, onClearFilters
     // No tasks at all - show braindump CTA
     if (totalTasks === 0) {
       return (
-        <div className="p-3">
-          <Empty>
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <Brain />
-              </EmptyMedia>
-              <EmptyTitle>No tasks yet</EmptyTitle>
-              <EmptyDescription>
-                Get started by braindumping your project ideas. Claude will help structure them into features and tasks.
-              </EmptyDescription>
-            </EmptyHeader>
-            <EmptyContent>
-              <div className="flex flex-col gap-2">
-                <Button onClick={onBraindump}>
-                  <Brain className="h-4 w-4 mr-2" />
-                  Braindump Project
-                </Button>
-                <Button onClick={onYap} variant="outline">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Yap about Tasks
-                </Button>
-              </div>
-            </EmptyContent>
-          </Empty>
-        </div>
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Brain />
+            </EmptyMedia>
+            <EmptyTitle>No tasks yet</EmptyTitle>
+            <EmptyDescription>
+              Get started by braindumping your project ideas. Claude will help structure them into features and tasks.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <div className="flex flex-col gap-2">
+              <Button onClick={onBraindump}>
+                <Brain className="h-4 w-4 mr-2" />
+                Braindump Project
+              </Button>
+              <Button onClick={onYap} variant="outline">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Yap about Tasks
+              </Button>
+            </div>
+          </EmptyContent>
+        </Empty>
       );
     }
 
     // Tasks exist but filtered out
     return (
-      <div className="p-4">
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <FileX />
-            </EmptyMedia>
-            <EmptyTitle>No tasks found</EmptyTitle>
-            <EmptyDescription>
-              No tasks match your current filters. Try adjusting your search criteria or clearing filters.
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Button variant="outline" onClick={onClearFilters}>
-              Clear all filters
-            </Button>
-          </EmptyContent>
-        </Empty>
-      </div>
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <FileX />
+          </EmptyMedia>
+          <EmptyTitle>No tasks found</EmptyTitle>
+          <EmptyDescription>
+            No tasks match your current filters. Try adjusting your search criteria or clearing filters.
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button variant="outline" onClick={onClearFilters}>
+            Clear all filters
+          </Button>
+        </EmptyContent>
+      </Empty>
     );
   }
 
-  return (
-    <div className="p-3">
-      <PlaylistView tasks={filteredTasks} onTaskClick={onTaskClick} />
-    </div>
-  );
+  return <PlaylistView tasks={filteredTasks} onTaskClick={onTaskClick} />;
 }
