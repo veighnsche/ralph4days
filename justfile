@@ -21,11 +21,36 @@ dev-frontend:
 # Start development server with a mock project (skips project picker)
 dev-mock FIXTURE:
     #!/usr/bin/env bash
-    if [ ! -d "mock/{{FIXTURE}}" ]; then
+    # Check if mock directory exists at all
+    if [ ! -d "mock" ]; then
         echo "Mock directory not found. Creating from fixtures..."
         just reset-mock
     fi
-    bun tauri dev -- -- --project {{justfile_directory()}}/mock/{{FIXTURE}}
+
+    # Try exact match first
+    if [ -d "mock/{{FIXTURE}}" ]; then
+        PROJECT_DIR="mock/{{FIXTURE}}"
+    else
+        # Try prefix match (e.g., "01" matches "01-initialized-project")
+        MATCHES=(mock/{{FIXTURE}}*/)
+        if [ ${#MATCHES[@]} -eq 1 ] && [ -d "${MATCHES[0]}" ]; then
+            PROJECT_DIR="${MATCHES[0]}"
+            echo "✓ Found: $(basename "$PROJECT_DIR")"
+        elif [ ${#MATCHES[@]} -gt 1 ]; then
+            echo "❌ Multiple matches found for '{{FIXTURE}}':"
+            for m in "${MATCHES[@]}"; do
+                echo "  - $(basename "$m")"
+            done
+            exit 1
+        else
+            echo "❌ No mock project found matching '{{FIXTURE}}'"
+            echo "Available projects:"
+            ls -1 mock/
+            exit 1
+        fi
+    fi
+
+    bun tauri dev -- -- --project {{justfile_directory()}}/"$PROJECT_DIR"
 
 # Run cargo check (fast compilation check)
 check:
