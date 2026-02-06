@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { TerminalSessionConfig, TerminalSessionHandlers } from "./session";
 import { useTerminalSession } from "./session";
-import type { TerminalSessionConfig, TerminalSessionHandlers } from "./types";
 
 // Mock Tauri API
 const mockInvoke = vi.fn();

@@ -1,6 +1,6 @@
 import type { Terminal as XTerm } from "@xterm/xterm";
 import { TerminalSquare } from "lucide-react";
-import { useCallback, useRef } from "react";
+import { useRef } from "react";
 import { useTabMeta } from "@/hooks/useTabMeta";
 import { Terminal, useTerminalSession } from "@/lib/terminal";
 import type { WorkspaceTab } from "@/stores/useWorkspaceStore";
@@ -32,36 +32,18 @@ export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
     }
   );
 
-  const handleReady = useCallback(
-    (terminal: XTerm) => {
-      terminalRef.current = terminal;
+  // Terminal uses refs for these callbacks (called once at mount, never re-evaluated),
+  // so memoization is unnecessary.
+  const handleReady = (terminal: XTerm) => {
+    terminalRef.current = terminal;
+    requestAnimationFrame(() => session.resize(terminal.cols, terminal.rows));
+    session.markReady();
+    terminal.onData((data) => session.sendInput(data));
+  };
 
-      // Resize PTY to match terminal dimensions after fit
-      requestAnimationFrame(() => {
-        session.resize(terminal.cols, terminal.rows);
-      });
+  const handleResize = ({ cols, rows }: { cols: number; rows: number }) => {
+    session.resize(cols, rows);
+  };
 
-      // Mark session ready (flushes buffered output)
-      session.markReady();
-
-      // Forward keyboard input to PTY
-      terminal.onData((data) => session.sendInput(data));
-    },
-    [session]
-  );
-
-  const handleResize = useCallback(
-    ({ cols, rows }: { cols: number; rows: number }) => {
-      session.resize(cols, rows);
-    },
-    [session]
-  );
-
-  return (
-    <div className="flex-1 flex flex-col min-h-0 h-full">
-      <div className="flex-1 min-h-0">
-        <Terminal onReady={handleReady} interactive={true} onResize={handleResize} />
-      </div>
-    </div>
-  );
+  return <Terminal onReady={handleReady} onResize={handleResize} />;
 }

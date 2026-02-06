@@ -1,3 +1,3 @@
+export type { TerminalSessionConfig, TerminalSessionHandlers } from "./session";
 export { useTerminalSession } from "./session";
-export { Terminal, useTerminal } from "./terminal";
-export type { TerminalSessionConfig, TerminalSessionHandlers } from "./types";
+export { Terminal } from "./terminal";

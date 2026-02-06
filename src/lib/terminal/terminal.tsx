@@ -1,54 +1,43 @@
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { Terminal as XTerm } from "@xterm/xterm";
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import "@xterm/xterm/css/xterm.css";
 
+const TERMINAL_BG = "#0a0a0a";
+
 interface TerminalProps {
-  /** Called when terminal is ready to receive input */
   onReady?: (terminal: XTerm) => void;
-  /** Font size in pixels */
-  fontSize?: number;
-  /** Font family */
-  fontFamily?: string;
-  /** Enable stdin input (default: false — read-only) */
-  interactive?: boolean;
-  /** Called when terminal dimensions change (only fires when interactive) */
   onResize?: (dims: { cols: number; rows: number }) => void;
 }
 
-export function Terminal({
-  onReady,
-  fontSize = 13,
-  fontFamily = "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
-  interactive = false,
-  onResize,
-}: TerminalProps) {
+export function Terminal({ onReady, onResize }: TerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
+  const onReadyRef = useRef(onReady);
+  const onResizeRef = useRef(onResize);
+  onReadyRef.current = onReady;
+  onResizeRef.current = onResize;
 
   useEffect(() => {
     if (!containerRef.current || terminalRef.current) return;
 
-    // Create terminal instance
     const terminal = new XTerm({
-      cursorBlink: interactive,
+      cursorBlink: true,
       cursorStyle: "block",
-      disableStdin: !interactive,
-      fontSize,
-      fontFamily,
+      fontSize: 13,
+      fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
       lineHeight: 1.2,
       scrollback: 10000,
       convertEol: true,
       theme: {
-        background: "#0a0a0a",
+        background: TERMINAL_BG,
         foreground: "#e0e0e0",
         cursor: "#e0e0e0",
-        cursorAccent: "#0a0a0a",
+        cursorAccent: TERMINAL_BG,
         selectionBackground: "#3a3a3a",
         selectionForeground: "#ffffff",
-        // Standard ANSI colors
         black: "#1a1a1a",
         red: "#f87171",
         green: "#4ade80",
@@ -57,7 +46,6 @@ export function Terminal({
         magenta: "#c084fc",
         cyan: "#22d3ee",
         white: "#e0e0e0",
-        // Bright variants
         brightBlack: "#4a4a4a",
         brightRed: "#fca5a5",
         brightGreen: "#86efac",
@@ -69,40 +57,25 @@ export function Terminal({
       },
     });
 
-    // Load addons
     const fitAddon = new FitAddon();
-    const webLinksAddon = new WebLinksAddon();
-
     terminal.loadAddon(fitAddon);
-    terminal.loadAddon(webLinksAddon);
+    terminal.loadAddon(new WebLinksAddon());
 
-    // Open terminal in container
     terminal.open(containerRef.current);
-
-    // Fit to container
     fitAddon.fit();
 
-    // Store refs
     terminalRef.current = terminal;
     fitAddonRef.current = fitAddon;
 
-    // Notify parent
-    onReady?.(terminal);
+    onReadyRef.current?.(terminal);
 
-    // Forward resize events to parent
-    if (onResize) {
-      terminal.onResize(({ cols, rows }) => {
-        onResize({ cols, rows });
-      });
-    }
+    terminal.onResize(({ cols, rows }) => {
+      onResizeRef.current?.({ cols, rows });
+    });
 
-    // Handle resize
     const resizeObserver = new ResizeObserver(() => {
-      // Use requestAnimationFrame to debounce resize events
       requestAnimationFrame(() => {
-        if (fitAddonRef.current && containerRef.current) {
-          fitAddonRef.current.fit();
-        }
+        fitAddonRef.current?.fit();
       });
     });
     resizeObserver.observe(containerRef.current);
@@ -113,49 +86,7 @@ export function Terminal({
       terminalRef.current = null;
       fitAddonRef.current = null;
     };
-  }, [fontSize, fontFamily, onReady, interactive, onResize]);
-
-  return (
-    <div
-      ref={containerRef}
-      className="h-full w-full overflow-hidden [&_.xterm]:h-full [&_.xterm]:w-full"
-      style={{ backgroundColor: "#0a0a0a" }}
-    />
-  );
-}
-
-/**
- * Hook to manage terminal output
- */
-export function useTerminal() {
-  const terminalRef = useRef<XTerm | null>(null);
-
-  const setTerminal = useCallback((terminal: XTerm) => {
-    terminalRef.current = terminal;
   }, []);
 
-  const write = useCallback((text: string) => {
-    terminalRef.current?.write(text);
-  }, []);
-
-  const writeln = useCallback((text: string) => {
-    terminalRef.current?.writeln(text);
-  }, []);
-
-  const clear = useCallback(() => {
-    terminalRef.current?.clear();
-  }, []);
-
-  const scrollToBottom = useCallback(() => {
-    terminalRef.current?.scrollToBottom();
-  }, []);
-
-  return {
-    setTerminal,
-    write,
-    writeln,
-    clear,
-    scrollToBottom,
-    terminal: terminalRef,
-  };
+  return <div ref={containerRef} className="h-full w-full overflow-hidden" style={{ backgroundColor: TERMINAL_BG }} />;
 }

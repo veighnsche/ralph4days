@@ -2,18 +2,12 @@ import { render, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Terminal } from "./terminal";
 
-// Mock functions need to be outside vi.mock for jest hoisting
-const mockTerminalWrite = vi.fn();
-const mockTerminalWriteln = vi.fn();
 const mockTerminalDispose = vi.fn();
 const mockTerminalOpen = vi.fn();
-const mockTerminalOnData = vi.fn();
 const mockTerminalOnResize = vi.fn();
 const mockLoadAddon = vi.fn();
 const mockFitAddonFit = vi.fn();
 
-// Mock xterm - vi.fn() wraps constructor for spy tracking; `function` keyword
-// is required because vi.fn() delegates `new` to the implementation.
 vi.mock("@xterm/xterm", () => {
   return {
     // biome-ignore lint/complexity/useArrowFunction: must use `function` for `new` calls
@@ -21,11 +15,11 @@ vi.mock("@xterm/xterm", () => {
       return {
         cols: 80,
         rows: 24,
-        write: mockTerminalWrite,
-        writeln: mockTerminalWriteln,
+        write: vi.fn(),
+        writeln: vi.fn(),
         dispose: mockTerminalDispose,
         open: mockTerminalOpen,
-        onData: mockTerminalOnData,
+        onData: vi.fn(),
         onResize: mockTerminalOnResize,
         loadAddon: mockLoadAddon,
       };
@@ -51,7 +45,6 @@ vi.mock("@xterm/addon-web-links", () => {
   };
 });
 
-// Mock ResizeObserver
 // biome-ignore lint/complexity/useArrowFunction: must use `function` for `new` calls
 global.ResizeObserver = vi.fn().mockImplementation(function () {
   return { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() };
@@ -72,7 +65,7 @@ describe("Terminal", () => {
     expect(terminalDiv).toBeTruthy();
   });
 
-  it("creates XTerm instance with default config", async () => {
+  it("creates XTerm with hardcoded config", async () => {
     const { Terminal: MockXTerm } = await import("@xterm/xterm");
 
     render(<Terminal />);
@@ -80,48 +73,22 @@ describe("Terminal", () => {
     await waitFor(() => {
       expect(MockXTerm).toHaveBeenCalledWith(
         expect.objectContaining({
-          cursorBlink: false,
-          disableStdin: true,
+          cursorBlink: true,
           fontSize: 13,
-          fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
           scrollback: 10000,
         })
       );
     });
   });
 
-  it("creates XTerm instance with interactive mode", async () => {
-    const { Terminal: MockXTerm } = await import("@xterm/xterm");
-
-    render(<Terminal interactive={true} />);
-
-    await waitFor(() => {
-      expect(MockXTerm).toHaveBeenCalledWith(
-        expect.objectContaining({
-          cursorBlink: true,
-          disableStdin: false,
-        })
-      );
-    });
-  });
-
-  it("loads FitAddon", async () => {
+  it("loads FitAddon and WebLinksAddon", async () => {
     const { FitAddon } = await import("@xterm/addon-fit");
-
-    render(<Terminal />);
-
-    await waitFor(() => {
-      expect(FitAddon).toHaveBeenCalled();
-      expect(mockLoadAddon).toHaveBeenCalled();
-    });
-  });
-
-  it("loads WebLinksAddon", async () => {
     const { WebLinksAddon } = await import("@xterm/addon-web-links");
 
     render(<Terminal />);
 
     await waitFor(() => {
+      expect(FitAddon).toHaveBeenCalled();
       expect(WebLinksAddon).toHaveBeenCalled();
       expect(mockLoadAddon).toHaveBeenCalledTimes(2);
     });
@@ -136,19 +103,20 @@ describe("Terminal", () => {
     });
   });
 
-  it("opens terminal in container", async () => {
+  it("opens terminal in container and fits", async () => {
     render(<Terminal />);
 
     await waitFor(() => {
       expect(mockTerminalOpen).toHaveBeenCalledWith(expect.any(HTMLDivElement));
+      expect(mockFitAddonFit).toHaveBeenCalled();
     });
   });
 
-  it("fits terminal to container on mount", async () => {
+  it("always registers resize handler", async () => {
     render(<Terminal />);
 
     await waitFor(() => {
-      expect(mockFitAddonFit).toHaveBeenCalled();
+      expect(mockTerminalOnResize).toHaveBeenCalledWith(expect.any(Function));
     });
   });
 
@@ -157,56 +125,6 @@ describe("Terminal", () => {
 
     await waitFor(() => {
       expect(global.ResizeObserver).toHaveBeenCalled();
-    });
-  });
-
-  it("forwards resize events when callback provided", async () => {
-    const onResize = vi.fn();
-    render(<Terminal interactive={true} onResize={onResize} />);
-
-    await waitFor(() => {
-      expect(mockTerminalOnResize).toHaveBeenCalledWith(expect.any(Function));
-    });
-  });
-
-  it("does not set up resize callback when not interactive", async () => {
-    const { Terminal: MockXTerm } = await import("@xterm/xterm");
-
-    render(<Terminal interactive={false} />);
-
-    await waitFor(() => {
-      expect(MockXTerm).toHaveBeenCalled();
-    });
-
-    // onResize should not be called for non-interactive terminals
-    expect(mockTerminalOnResize).not.toHaveBeenCalled();
-  });
-
-  it("uses custom font size", async () => {
-    const { Terminal: MockXTerm } = await import("@xterm/xterm");
-
-    render(<Terminal fontSize={16} />);
-
-    await waitFor(() => {
-      expect(MockXTerm).toHaveBeenCalledWith(
-        expect.objectContaining({
-          fontSize: 16,
-        })
-      );
-    });
-  });
-
-  it("uses custom font family", async () => {
-    const { Terminal: MockXTerm } = await import("@xterm/xterm");
-
-    render(<Terminal fontFamily="Courier New" />);
-
-    await waitFor(() => {
-      expect(MockXTerm).toHaveBeenCalledWith(
-        expect.objectContaining({
-          fontFamily: "Courier New",
-        })
-      );
     });
   });
 
@@ -222,7 +140,7 @@ describe("Terminal", () => {
     expect(mockTerminalDispose).toHaveBeenCalled();
   });
 
-  it("does not create duplicate terminals", async () => {
+  it("does not recreate terminal on rerender", async () => {
     const { Terminal: MockXTerm } = await import("@xterm/xterm");
 
     const { rerender } = render(<Terminal />);
@@ -231,7 +149,6 @@ describe("Terminal", () => {
       expect(MockXTerm).toHaveBeenCalledTimes(1);
     });
 
-    // Rerender should not create new terminal
     rerender(<Terminal />);
 
     await waitFor(() => {

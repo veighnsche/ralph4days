@@ -21,8 +21,6 @@ vi.mock("@/lib/terminal", () => ({
     return <div data-testid="terminal">Terminal</div>;
   },
   useTerminalSession: () => ({
-    isConnected: true,
-    isReady: false,
     markReady: vi.fn(),
     sendInput: vi.fn(),
     resize: vi.fn(),
@@ -42,6 +40,7 @@ describe("TerminalTabContent", () => {
     id: "test-terminal-1",
     type: "terminal",
     title: "Terminal 1",
+    closeable: true,
     data: {
       model: "haiku",
       thinking: true,
@@ -66,50 +65,21 @@ describe("TerminalTabContent", () => {
     });
   });
 
-  it("passes interactive mode to Terminal", () => {
-    const { getByTestId } = render(<TerminalTabContent tab={mockTab} />);
-    const terminal = getByTestId("terminal");
-    expect(terminal).toBeTruthy();
-  });
-
   it("handles tab with minimal config", () => {
     const minimalTab: WorkspaceTab = {
       id: "test-terminal-2",
       type: "terminal",
       title: "Terminal 2",
+      closeable: true,
     };
 
     const { getByTestId } = render(<TerminalTabContent tab={minimalTab} />);
     expect(getByTestId("terminal")).toBeTruthy();
   });
 
-  it("uses tab.data.model if provided", async () => {
-    const { useTerminalSession } = await import("@/lib/terminal");
-
-    render(<TerminalTabContent tab={mockTab} />);
-
-    // useTerminalSession should be called with model from tab.data
-    await waitFor(() => {
-      expect(useTerminalSession).toBeDefined();
-    });
-  });
-
-  it("uses tab.data.thinking if provided", async () => {
-    const { useTerminalSession } = await import("@/lib/terminal");
-
-    render(<TerminalTabContent tab={mockTab} />);
-
-    await waitFor(() => {
-      expect(useTerminalSession).toBeDefined();
-    });
-  });
-
-  it("renders with responsive layout classes", () => {
+  it("renders Terminal directly without wrapper", () => {
     const { container } = render(<TerminalTabContent tab={mockTab} />);
-    const wrapper = container.querySelector(".flex-1");
-    expect(wrapper).toBeTruthy();
-    expect(wrapper?.className).toContain("flex");
-    expect(wrapper?.className).toContain("flex-col");
-    expect(wrapper?.className).toContain("min-h-0");
+    // Terminal mock renders a div with data-testid="terminal" — should be the root element
+    expect(container.firstElementChild?.getAttribute("data-testid")).toBe("terminal");
   });
 });

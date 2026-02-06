@@ -1,17 +1,26 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { TerminalSessionConfig, TerminalSessionHandlers } from "./types";
+import { useCallback, useEffect, useRef } from "react";
 
-/**
- * Hook to manage a PTY terminal session with Claude Code.
- * Handles session lifecycle, output buffering, and input forwarding.
- */
+export interface TerminalSessionConfig {
+  sessionId: string;
+  mcpMode?: string;
+  model?: string | null;
+  thinking?: boolean | null;
+}
+
+export interface TerminalSessionHandlers {
+  onOutput?: (data: Uint8Array) => void;
+  onClosed?: (exitCode: number) => void;
+  onError?: (error: string) => void;
+}
+
 export function useTerminalSession(config: TerminalSessionConfig, handlers: TerminalSessionHandlers) {
-  const [isReady, setIsReady] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
+  const isReadyRef = useRef(false);
   const outputBufferRef = useRef<Uint8Array[]>([]);
   const sessionStartedRef = useRef(false);
+  const handlersRef = useRef(handlers);
+  handlersRef.current = handlers;
 
   // Create PTY session on mount, terminate on unmount
   useEffect(() => {
@@ -20,14 +29,12 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
       mcpMode: config.mcpMode || "interactive",
       model: config.model || null,
       thinking: config.thinking ?? null,
-    })
-      .then(() => setIsConnected(true))
-      .catch((err) => handlers.onError?.(String(err)));
+    }).catch((err) => handlersRef.current.onError?.(String(err)));
 
     return () => {
       invoke("terminate_pty_session", { sessionId: config.sessionId }).catch(() => {});
     };
-  }, [config.sessionId, config.mcpMode, config.model, config.thinking, handlers]);
+  }, [config.sessionId, config.mcpMode, config.model, config.thinking]);
 
   // Listen for PTY output
   useEffect(() => {
@@ -36,8 +43,8 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
       sessionStartedRef.current = true;
 
       const bytes = new Uint8Array(event.payload.data);
-      if (isReady) {
-        handlers.onOutput?.(bytes);
+      if (isReadyRef.current) {
+        handlersRef.current.onOutput?.(bytes);
       } else {
         outputBufferRef.current.push(bytes);
       }
@@ -46,43 +53,40 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     return () => {
       unlisten.then((unsub) => unsub());
     };
-  }, [config.sessionId, isReady, handlers]);
+  }, [config.sessionId]);
 
   // Listen for PTY close
   useEffect(() => {
     const unlisten = listen<{ session_id: string; exit_code: number }>("ralph://pty_closed", (event) => {
       if (event.payload.session_id === config.sessionId && sessionStartedRef.current) {
-        handlers.onClosed?.(event.payload.exit_code);
+        handlersRef.current.onClosed?.(event.payload.exit_code);
       }
     });
 
     return () => {
       unlisten.then((unsub) => unsub());
     };
-  }, [config.sessionId, handlers]);
+  }, [config.sessionId]);
 
-  // Mark terminal ready and flush buffered output
   const markReady = useCallback(() => {
-    setIsReady(true);
+    isReadyRef.current = true;
     for (const chunk of outputBufferRef.current) {
-      handlers.onOutput?.(chunk);
+      handlersRef.current.onOutput?.(chunk);
     }
     outputBufferRef.current = [];
-  }, [handlers]);
+  }, []);
 
-  // Send input to PTY
   const sendInput = useCallback(
     (data: string) => {
       const bytes = Array.from(new TextEncoder().encode(data));
       invoke("send_terminal_input", {
         sessionId: config.sessionId,
         data: bytes,
-      }).catch((err) => handlers.onError?.(String(err)));
+      }).catch((err) => handlersRef.current.onError?.(String(err)));
     },
-    [config.sessionId, handlers]
+    [config.sessionId]
   );
 
-  // Resize PTY
   const resize = useCallback(
     (cols: number, rows: number) => {
       invoke("resize_pty", {
@@ -94,11 +98,5 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     [config.sessionId]
   );
 
-  return {
-    isConnected,
-    isReady,
-    markReady,
-    sendInput,
-    resize,
-  };
+  return { markReady, sendInput, resize };
 }
