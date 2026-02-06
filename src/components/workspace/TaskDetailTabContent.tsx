@@ -33,174 +33,177 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
   const DisciplineIcon = disciplineConfig?.icon || Circle;
 
   return (
-    <div className="h-full p-6 overflow-hidden relative" style={{
-      background: `repeating-linear-gradient(
+    <div
+      className="h-full p-6 overflow-hidden relative"
+      style={{
+        background: `repeating-linear-gradient(
         45deg,
         transparent,
         transparent 10px,
         ${statusConfig.color}15 10px,
         ${statusConfig.color}15 20px
-      )`
-    }}>
+      )`,
+      }}
+    >
       {/* Card Wrapper */}
       <Card className="h-full shadow-lg flex">
         {/* ── Main Content ── */}
         <ScrollArea className="flex-1 min-w-0">
-        <div className="px-6 py-5 space-y-5">
-          {/* Breadcrumb + Title */}
-          <div className="space-y-2">
-            <TaskIdDisplay task={task} variant="full" />
-            <h1 className="text-xl font-semibold leading-tight">{task.title}</h1>
-          </div>
+          <div className="px-6 py-5 space-y-5">
+            {/* Breadcrumb + Title */}
+            <div className="space-y-2">
+              <TaskIdDisplay task={task} variant="full" />
+              <h1 className="text-xl font-semibold leading-tight">{task.title}</h1>
+            </div>
 
-          {/* Blocked Alert */}
-          {task.blocked_by && (
-            <div
-              className="flex items-start gap-3 rounded-md px-3 py-2.5 text-sm"
-              style={{
-                backgroundColor: STATUS_CONFIG.blocked.bgColor,
-                color: STATUS_CONFIG.blocked.color,
-              }}
-            >
-              <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <div>
-                <span className="font-medium">Blocked — </span>
-                {task.blocked_by}
+            {/* Blocked Alert */}
+            {task.blocked_by && (
+              <div
+                className="flex items-start gap-3 rounded-md px-3 py-2.5 text-sm"
+                style={{
+                  backgroundColor: STATUS_CONFIG.blocked.bgColor,
+                  color: STATUS_CONFIG.blocked.color,
+                }}
+              >
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <div>
+                  <span className="font-medium">Blocked — </span>
+                  {task.blocked_by}
+                </div>
               </div>
-            </div>
-          )}
-
-          {/* Description */}
-          {task.description && (
-            <div className="space-y-2">
-              <h2 className="text-sm font-medium text-muted-foreground">Description</h2>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{task.description}</p>
-            </div>
-          )}
-
-          {/* Acceptance Criteria */}
-          {task.acceptance_criteria && task.acceptance_criteria.length > 0 && (
-            <div className="space-y-2">
-              <h2 className="text-sm font-medium text-muted-foreground">Acceptance Criteria</h2>
-              <ul className="space-y-1.5">
-                {task.acceptance_criteria.map((criterion) => (
-                  <li key={criterion} className="flex items-start gap-2.5 text-sm">
-                    <div
-                      className="mt-1 w-4 h-4 rounded-sm border flex items-center justify-center flex-shrink-0"
-                      style={{
-                        borderColor: task.status === "done" ? STATUS_CONFIG.done.color : "hsl(var(--border))",
-                        backgroundColor: task.status === "done" ? STATUS_CONFIG.done.bgColor : "transparent",
-                      }}
-                    >
-                      {task.status === "done" && (
-                        <CheckCircle2 className="w-3 h-3" style={{ color: STATUS_CONFIG.done.color }} />
-                      )}
-                    </div>
-                    <span className={task.status === "done" ? "line-through text-muted-foreground" : ""}>
-                      {criterion}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      </ScrollArea>
-
-      {/* ── Properties Sidebar ── */}
-      <div className="w-56 flex-shrink-0 border-l overflow-y-auto">
-        <div className="px-4 py-5 space-y-0.5">
-          {/* Status */}
-          <PropertyRow label="Status">
-            <div className="flex items-center gap-1.5">
-              <StatusIcon className="h-3.5 w-3.5" style={{ color: statusConfig.color }} />
-              <span className="text-sm" style={{ color: statusConfig.color }}>
-                {statusConfig.label}
-              </span>
-            </div>
-          </PropertyRow>
-
-          {/* Priority */}
-          <PropertyRow label="Priority">
-            {priorityConfig ? (
-              <span className="text-sm" style={{ color: priorityConfig.color }}>
-                {priorityConfig.label}
-              </span>
-            ) : (
-              <span className="text-sm text-muted-foreground">None</span>
             )}
-          </PropertyRow>
 
-          <Separator className="my-2" />
+            {/* Description */}
+            {task.description && (
+              <div className="space-y-2">
+                <h2 className="text-sm font-medium text-muted-foreground">Description</h2>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{task.description}</p>
+              </div>
+            )}
 
-          {/* Feature */}
-          <PropertyRow label="Feature">
-            <span className="text-sm">{featureConfig?.displayName || task.feature}</span>
-          </PropertyRow>
-
-          {/* Discipline */}
-          <PropertyRow label="Discipline">
-            <div className="flex items-center gap-1.5">
-              <DisciplineIcon className="h-3.5 w-3.5" style={{ color: disciplineConfig?.color }} />
-              <span className="text-sm" style={{ color: disciplineConfig?.color }}>
-                {disciplineConfig?.displayName || task.discipline}
-              </span>
-            </div>
-          </PropertyRow>
-
-          {/* Tags */}
-          {task.tags && task.tags.length > 0 && (
-            <>
-              <Separator className="my-2" />
-              <PropertyRow label="Tags">
-                <div className="flex flex-wrap gap-1">
-                  {task.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0 h-5">
-                      {tag}
-                    </Badge>
+            {/* Acceptance Criteria */}
+            {task.acceptance_criteria && task.acceptance_criteria.length > 0 && (
+              <div className="space-y-2">
+                <h2 className="text-sm font-medium text-muted-foreground">Acceptance Criteria</h2>
+                <ul className="space-y-1.5">
+                  {task.acceptance_criteria.map((criterion) => (
+                    <li key={criterion} className="flex items-start gap-2.5 text-sm">
+                      <div
+                        className="mt-1 w-4 h-4 rounded-sm border flex items-center justify-center flex-shrink-0"
+                        style={{
+                          borderColor: task.status === "done" ? STATUS_CONFIG.done.color : "hsl(var(--border))",
+                          backgroundColor: task.status === "done" ? STATUS_CONFIG.done.bgColor : "transparent",
+                        }}
+                      >
+                        {task.status === "done" && (
+                          <CheckCircle2 className="w-3 h-3" style={{ color: STATUS_CONFIG.done.color }} />
+                        )}
+                      </div>
+                      <span className={task.status === "done" ? "line-through text-muted-foreground" : ""}>
+                        {criterion}
+                      </span>
+                    </li>
                   ))}
-                </div>
-              </PropertyRow>
-            </>
-          )}
+                </ul>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
 
-          {/* Dependencies */}
-          {task.depends_on && task.depends_on.length > 0 && (
-            <>
-              <Separator className="my-2" />
-              <PropertyRow label="Depends on">
-                <div className="flex flex-wrap gap-1">
-                  {task.depends_on.map((depId) => (
-                    <Badge key={depId} variant="outline" className="text-xs font-mono px-1.5 py-0 h-5">
-                      #{depId.toString().padStart(3, "0")}
-                    </Badge>
-                  ))}
-                </div>
-              </PropertyRow>
-            </>
-          )}
+        {/* ── Properties Sidebar ── */}
+        <div className="w-56 flex-shrink-0 border-l overflow-y-auto">
+          <div className="px-4 py-5 space-y-0.5">
+            {/* Status */}
+            <PropertyRow label="Status">
+              <div className="flex items-center gap-1.5">
+                <StatusIcon className="h-3.5 w-3.5" style={{ color: statusConfig.color }} />
+                <span className="text-sm" style={{ color: statusConfig.color }}>
+                  {statusConfig.label}
+                </span>
+              </div>
+            </PropertyRow>
 
-          {/* Timeline */}
-          <Separator className="my-2" />
-          {task.created && (
-            <PropertyRow label="Created">
-              <span className="text-xs text-muted-foreground">{formatDate(task.created)}</span>
+            {/* Priority */}
+            <PropertyRow label="Priority">
+              {priorityConfig ? (
+                <span className="text-sm" style={{ color: priorityConfig.color }}>
+                  {priorityConfig.label}
+                </span>
+              ) : (
+                <span className="text-sm text-muted-foreground">None</span>
+              )}
             </PropertyRow>
-          )}
-          {task.updated && (
-            <PropertyRow label="Updated">
-              <span className="text-xs text-muted-foreground">{formatDate(task.updated)}</span>
+
+            <Separator className="my-2" />
+
+            {/* Feature */}
+            <PropertyRow label="Feature">
+              <span className="text-sm">{featureConfig?.displayName || task.feature}</span>
             </PropertyRow>
-          )}
-          {task.completed && (
-            <PropertyRow label="Completed">
-              <span className="text-xs" style={{ color: STATUS_CONFIG.done.color }}>
-                {formatDate(task.completed)}
-              </span>
+
+            {/* Discipline */}
+            <PropertyRow label="Discipline">
+              <div className="flex items-center gap-1.5">
+                <DisciplineIcon className="h-3.5 w-3.5" style={{ color: disciplineConfig?.color }} />
+                <span className="text-sm" style={{ color: disciplineConfig?.color }}>
+                  {disciplineConfig?.displayName || task.discipline}
+                </span>
+              </div>
             </PropertyRow>
-          )}
+
+            {/* Tags */}
+            {task.tags && task.tags.length > 0 && (
+              <>
+                <Separator className="my-2" />
+                <PropertyRow label="Tags">
+                  <div className="flex flex-wrap gap-1">
+                    {task.tags.map((tag) => (
+                      <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0 h-5">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </PropertyRow>
+              </>
+            )}
+
+            {/* Dependencies */}
+            {task.depends_on && task.depends_on.length > 0 && (
+              <>
+                <Separator className="my-2" />
+                <PropertyRow label="Depends on">
+                  <div className="flex flex-wrap gap-1">
+                    {task.depends_on.map((depId) => (
+                      <Badge key={depId} variant="outline" className="text-xs font-mono px-1.5 py-0 h-5">
+                        #{depId.toString().padStart(3, "0")}
+                      </Badge>
+                    ))}
+                  </div>
+                </PropertyRow>
+              </>
+            )}
+
+            {/* Timeline */}
+            <Separator className="my-2" />
+            {task.created && (
+              <PropertyRow label="Created">
+                <span className="text-xs text-muted-foreground">{formatDate(task.created)}</span>
+              </PropertyRow>
+            )}
+            {task.updated && (
+              <PropertyRow label="Updated">
+                <span className="text-xs text-muted-foreground">{formatDate(task.updated)}</span>
+              </PropertyRow>
+            )}
+            {task.completed && (
+              <PropertyRow label="Completed">
+                <span className="text-xs" style={{ color: STATUS_CONFIG.done.color }}>
+                  {formatDate(task.completed)}
+                </span>
+              </PropertyRow>
+            )}
+          </div>
         </div>
-      </div>
       </Card>
     </div>
   );
