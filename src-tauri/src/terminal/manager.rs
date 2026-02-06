@@ -1,59 +1,12 @@
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
-use serde::Serialize;
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter};
 
-/// Per-session overrides for Claude Code. Model and thinking are task-configurable.
-pub struct SessionConfig {
-    pub model: Option<String>,
-    pub thinking: Option<bool>,
-}
-
-/// Build the `--settings` JSON for a PTY session.
-/// Fixed settings are always enforced. Model/thinking are optional overrides.
-fn build_settings_json(config: &SessionConfig) -> String {
-    let mut settings = serde_json::Map::new();
-
-    // Always enforced by Ralph
-    settings.insert("promptSuggestionEnabled".into(), false.into());
-    settings.insert("terminalProgressBarEnabled".into(), false.into());
-    settings.insert("respectGitignore".into(), false.into());
-    settings.insert("spinnerTipsEnabled".into(), false.into());
-    settings.insert("prefersReducedMotion".into(), true.into());
-    settings.insert("outputStyle".into(), "default".into());
-    settings.insert("autoUpdatesChannel".into(), "latest".into());
-
-    // Per-task overrides
-    if let Some(thinking) = config.thinking {
-        settings.insert("alwaysThinkingEnabled".into(), thinking.into());
-    }
-
-    serde_json::Value::Object(settings).to_string()
-}
-
-#[derive(Clone, Serialize)]
-pub struct PtyOutputEvent {
-    pub session_id: String,
-    pub data: Vec<u8>,
-}
-
-#[derive(Clone, Serialize)]
-pub struct PtyClosedEvent {
-    pub session_id: String,
-    pub exit_code: u32,
-}
-
-struct PTYSession {
-    writer: Arc<Mutex<Box<dyn Write + Send>>>,
-    master: Box<dyn portable_pty::MasterPty + Send>,
-    child: Arc<Mutex<Box<dyn portable_pty::Child + Send + Sync>>>,
-    // Stored for ownership — reader thread runs until EOF, then self-cleans
-    #[allow(dead_code)]
-    reader_handle: Option<std::thread::JoinHandle<()>>,
-}
+use super::events::{PtyClosedEvent, PtyOutputEvent};
+use super::session::{build_settings_json, PTYSession, SessionConfig};
 
 pub struct PTYManager {
     sessions: Arc<Mutex<HashMap<String, PTYSession>>>,
@@ -245,4 +198,27 @@ impl PTYManager {
         }
         Ok(())
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_pty_manager_new() {
+        let manager = PTYManager::new();
+        let sessions = manager.sessions.lock().unwrap();
+        assert_eq!(sessions.len(), 0);
+    }
+
+    #[test]
+    fn test_pty_manager_default() {
+        let manager = PTYManager::default();
+        let sessions = manager.sessions.lock().unwrap();
+        assert_eq!(sessions.len(), 0);
+    }
+
+    // Note: Full integration tests for create_session, send_input, resize, and terminate
+    // require mocking Tauri AppHandle and spawning actual PTY processes.
+    // These should be covered by Tauri WebDriver E2E tests (see .docs/007_TESTING_STRATEGY.md)
 }

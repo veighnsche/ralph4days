@@ -4,7 +4,7 @@ mod loop_engine;
 mod mcp_generator;
 pub mod prd;
 mod prompt_builder;
-mod pty_session;
+mod terminal;
 mod types;
 
 use commands::AppState;

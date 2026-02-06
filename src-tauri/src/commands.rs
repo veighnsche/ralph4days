@@ -1,7 +1,7 @@
 use crate::loop_engine::LoopEngine;
 use crate::mcp_generator::MCPGenerator;
 use crate::prd::{Priority, PRD};
-use crate::pty_session::{PTYManager, SessionConfig};
+use crate::terminal::{PTYManager, SessionConfig};
 use crate::types::LoopStatus;
 use std::path::PathBuf;
 use std::sync::Mutex;
