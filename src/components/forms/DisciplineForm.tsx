@@ -1,25 +1,10 @@
 import * as LucideIcons from "lucide-react";
-import { useEffect, useState } from "react";
+import { useFormContext } from "react-hook-form";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
-import type { DisciplineConfig } from "@/hooks/useDisciplines";
+import type { DisciplineFormData } from "@/lib/schemas";
 
-export interface DisciplineFormData {
-  name: string;
-  displayName: string;
-  acronym: string;
-  icon: string;
-  color: string;
-}
-
-export interface DisciplineFormProps {
-  initialData?: Partial<DisciplineConfig>;
-  onChange: (data: DisciplineFormData) => void;
-  disabled?: boolean;
-}
-
-// Common icon options for disciplines
 const COMMON_ICONS = [
   "Code",
   "Palette",
@@ -39,7 +24,6 @@ const COMMON_ICONS = [
   "Target",
 ] as const;
 
-// Common color options
 const COMMON_COLORS = [
   { name: "Blue", value: "#3b82f6" },
   { name: "Green", value: "#22c55e" },
@@ -53,152 +37,144 @@ const COMMON_COLORS = [
   { name: "Cyan", value: "#06b6d4" },
 ] as const;
 
-/**
- * Discipline creation/edit form.
- * Used by both create and edit modals (mode determined by initialData presence).
- */
-export function DisciplineForm({ initialData, onChange, disabled }: DisciplineFormProps) {
-  const [formData, setFormData] = useState<DisciplineFormData>({
-    name: initialData?.name || "",
-    displayName: initialData?.displayName || "",
-    acronym: initialData?.acronym || "",
-    icon: initialData?.icon ? String(initialData.icon.displayName || "Code") : "Code",
-    color: initialData?.color || "#3b82f6",
-  });
+export function DisciplineFormFields({ disabled, isEditing }: { disabled?: boolean; isEditing?: boolean }) {
+  const { control, watch } = useFormContext<DisciplineFormData>();
+  const iconName = watch("icon");
+  const colorValue = watch("color");
 
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        name: initialData.name || "",
-        displayName: initialData.displayName || "",
-        acronym: initialData.acronym || "",
-        icon: initialData.icon ? String(initialData.icon.displayName || "Code") : "Code",
-        color: initialData.color || "#3b82f6",
-      });
-    }
-  }, [initialData]);
-
-  useEffect(() => {
-    onChange(formData);
-  }, [formData, onChange]);
-
-  // Get the icon component for preview
-  const IconComponent = LucideIcons[formData.icon as keyof typeof LucideIcons] as LucideIcons.LucideIcon;
+  const IconComponent = LucideIcons[iconName as keyof typeof LucideIcons] as LucideIcons.LucideIcon;
 
   return (
     <div className="space-y-3">
       {/* Display Name */}
-      <div className="space-y-2">
-        <Label htmlFor="displayName">
-          Display Name <span className="text-destructive">*</span>
-        </Label>
-        <Input
-          id="displayName"
-          value={formData.displayName}
-          onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-          placeholder="Enter discipline display name"
-          required
-          disabled={disabled}
-        />
-        <p className="text-xs text-muted-foreground">The human-readable name shown in the UI</p>
-      </div>
+      <FormField
+        control={control}
+        name="displayName"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>
+              Display Name <span className="text-destructive">*</span>
+            </FormLabel>
+            <FormControl>
+              <Input {...field} placeholder="Enter discipline display name" required disabled={disabled} />
+            </FormControl>
+            <p className="text-xs text-muted-foreground">The human-readable name shown in the UI</p>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
       {/* Acronym */}
-      <div className="space-y-2">
-        <Label htmlFor="acronym">
-          Acronym <span className="text-destructive">*</span>
-        </Label>
-        <Input
-          id="acronym"
-          value={formData.acronym}
-          onChange={(e) => setFormData({ ...formData, acronym: e.target.value.toUpperCase() })}
-          placeholder="FRNT (3-4 uppercase letters)"
-          maxLength={4}
-          required
-          className="font-mono"
-          disabled={disabled}
-        />
-        <p className="text-xs text-muted-foreground">3-4 uppercase letters for task IDs (e.g., FRNT, BACK, TEST)</p>
-      </div>
+      <FormField
+        control={control}
+        name="acronym"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>
+              Acronym <span className="text-destructive">*</span>
+            </FormLabel>
+            <FormControl>
+              <Input
+                {...field}
+                onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                placeholder="FRNT (3-4 uppercase letters)"
+                maxLength={4}
+                required
+                className="font-mono"
+                disabled={disabled}
+              />
+            </FormControl>
+            <p className="text-xs text-muted-foreground">3-4 uppercase letters for task IDs (e.g., FRNT, BACK, TEST)</p>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
       {/* Name (Internal ID) */}
-      <div className="space-y-2">
-        <Label htmlFor="name">Internal Name</Label>
-        <Input
-          id="name"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="auto-generated-from-display-name"
-          disabled={disabled || !!initialData?.name}
-        />
-        <p className="text-xs text-muted-foreground">
-          {initialData?.name
-            ? "Internal name cannot be changed after creation"
-            : "Auto-generated from display name (lowercase with hyphens)"}
-        </p>
-      </div>
+      <FormField
+        control={control}
+        name="name"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Internal Name</FormLabel>
+            <FormControl>
+              <Input {...field} placeholder="auto-generated-from-display-name" disabled={disabled || isEditing} />
+            </FormControl>
+            <p className="text-xs text-muted-foreground">
+              {isEditing
+                ? "Internal name cannot be changed after creation"
+                : "Auto-generated from display name (lowercase with hyphens)"}
+            </p>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
       {/* Icon */}
-      <div className="space-y-2">
-        <Label htmlFor="icon">
-          Icon <span className="text-destructive">*</span>
-        </Label>
-        <div className="flex gap-2 items-center">
-          <NativeSelect
-            id="icon"
-            value={formData.icon}
-            onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-            required
-            className="flex-1"
-            disabled={disabled}
-          >
-            {COMMON_ICONS.map((icon) => (
-              <option key={icon} value={icon}>
-                {icon}
-              </option>
-            ))}
-          </NativeSelect>
-          {IconComponent && (
-            <div
-              className="p-2 rounded-md shrink-0"
-              style={{
-                backgroundColor: `color-mix(in oklch, ${formData.color} 15%, transparent)`,
-                color: formData.color,
-              }}
-            >
-              <IconComponent className="h-5 w-5" />
+      <FormField
+        control={control}
+        name="icon"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>
+              Icon <span className="text-destructive">*</span>
+            </FormLabel>
+            <div className="flex gap-2 items-center">
+              <FormControl>
+                <NativeSelect {...field} required className="flex-1" disabled={disabled}>
+                  {COMMON_ICONS.map((icon) => (
+                    <option key={icon} value={icon}>
+                      {icon}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </FormControl>
+              {IconComponent && (
+                <div
+                  className="p-2 rounded-md shrink-0"
+                  style={{
+                    backgroundColor: `color-mix(in oklch, ${colorValue} 15%, transparent)`,
+                    color: colorValue,
+                  }}
+                >
+                  <IconComponent className="h-5 w-5" />
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </div>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
       {/* Color */}
-      <div className="space-y-2">
-        <Label htmlFor="color">
-          Color <span className="text-destructive">*</span>
-        </Label>
-        <div className="flex gap-2 items-center">
-          <NativeSelect
-            id="color"
-            value={formData.color}
-            onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-            required
-            className="flex-1"
-            disabled={disabled}
-          >
-            {COMMON_COLORS.map((color) => (
-              <option key={color.value} value={color.value}>
-                {color.name}
-              </option>
-            ))}
-          </NativeSelect>
-          <div
-            className="w-8 h-8 rounded-md border shrink-0"
-            style={{ backgroundColor: formData.color }}
-            title={formData.color}
-          />
-        </div>
-      </div>
+      <FormField
+        control={control}
+        name="color"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>
+              Color <span className="text-destructive">*</span>
+            </FormLabel>
+            <div className="flex gap-2 items-center">
+              <FormControl>
+                <NativeSelect {...field} required className="flex-1" disabled={disabled}>
+                  {COMMON_COLORS.map((color) => (
+                    <option key={color.value} value={color.value}>
+                      {color.name}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </FormControl>
+              <div
+                className="w-8 h-8 rounded-md border shrink-0"
+                style={{ backgroundColor: field.value }}
+                title={field.value}
+              />
+            </div>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   );
 }
