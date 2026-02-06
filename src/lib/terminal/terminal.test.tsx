@@ -2,46 +2,46 @@ import { render, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Terminal } from "./terminal";
 
-// Mock xterm
+// Mock functions need to be outside vi.mock for jest hoisting
 const mockTerminalWrite = vi.fn();
 const mockTerminalWriteln = vi.fn();
 const mockTerminalDispose = vi.fn();
 const mockTerminalOpen = vi.fn();
 const mockTerminalOnData = vi.fn();
 const mockTerminalOnResize = vi.fn();
-
-const mockFitAddonFit = vi.fn();
 const mockLoadAddon = vi.fn();
+const mockFitAddonFit = vi.fn();
 
-const MockXTerm = vi.fn().mockImplementation(() => ({
-  write: mockTerminalWrite,
-  writeln: mockTerminalWriteln,
-  dispose: mockTerminalDispose,
-  open: mockTerminalOpen,
-  onData: mockTerminalOnData,
-  onResize: mockTerminalOnResize,
-  loadAddon: mockLoadAddon,
-  cols: 80,
-  rows: 24,
-}));
+// Mock xterm - return class constructors directly
+vi.mock("@xterm/xterm", () => {
+  return {
+    Terminal: class MockTerminal {
+      cols = 80;
+      rows = 24;
+      write = mockTerminalWrite;
+      writeln = mockTerminalWriteln;
+      dispose = mockTerminalDispose;
+      open = mockTerminalOpen;
+      onData = mockTerminalOnData;
+      onResize = mockTerminalOnResize;
+      loadAddon = mockLoadAddon;
+    },
+  };
+});
 
-const MockFitAddon = vi.fn().mockImplementation(() => ({
-  fit: mockFitAddonFit,
-}));
+vi.mock("@xterm/addon-fit", () => {
+  return {
+    FitAddon: class MockFitAddon {
+      fit = mockFitAddonFit;
+    },
+  };
+});
 
-const MockWebLinksAddon = vi.fn();
-
-vi.mock("@xterm/xterm", () => ({
-  Terminal: MockXTerm,
-}));
-
-vi.mock("@xterm/addon-fit", () => ({
-  FitAddon: MockFitAddon,
-}));
-
-vi.mock("@xterm/addon-web-links", () => ({
-  WebLinksAddon: MockWebLinksAddon,
-}));
+vi.mock("@xterm/addon-web-links", () => {
+  return {
+    WebLinksAddon: class MockWebLinksAddon {},
+  };
+});
 
 // Mock ResizeObserver
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
@@ -66,6 +66,8 @@ describe("Terminal", () => {
   });
 
   it("creates XTerm instance with default config", async () => {
+    const { Terminal: MockXTerm } = await import("@xterm/xterm");
+
     render(<Terminal />);
 
     await waitFor(() => {
@@ -82,6 +84,8 @@ describe("Terminal", () => {
   });
 
   it("creates XTerm instance with interactive mode", async () => {
+    const { Terminal: MockXTerm } = await import("@xterm/xterm");
+
     render(<Terminal interactive={true} />);
 
     await waitFor(() => {
@@ -95,19 +99,23 @@ describe("Terminal", () => {
   });
 
   it("loads FitAddon", async () => {
+    const { FitAddon } = await import("@xterm/addon-fit");
+
     render(<Terminal />);
 
     await waitFor(() => {
-      expect(MockFitAddon).toHaveBeenCalled();
-      expect(mockLoadAddon).toHaveBeenCalledWith(expect.any(Object));
+      expect(FitAddon).toHaveBeenCalled();
+      expect(mockLoadAddon).toHaveBeenCalled();
     });
   });
 
   it("loads WebLinksAddon", async () => {
+    const { WebLinksAddon } = await import("@xterm/addon-web-links");
+
     render(<Terminal />);
 
     await waitFor(() => {
-      expect(MockWebLinksAddon).toHaveBeenCalled();
+      expect(WebLinksAddon).toHaveBeenCalled();
       expect(mockLoadAddon).toHaveBeenCalledTimes(2);
     });
   });
@@ -155,6 +163,8 @@ describe("Terminal", () => {
   });
 
   it("does not set up resize callback when not interactive", async () => {
+    const { Terminal: MockXTerm } = await import("@xterm/xterm");
+
     render(<Terminal interactive={false} />);
 
     await waitFor(() => {
@@ -166,6 +176,8 @@ describe("Terminal", () => {
   });
 
   it("uses custom font size", async () => {
+    const { Terminal: MockXTerm } = await import("@xterm/xterm");
+
     render(<Terminal fontSize={16} />);
 
     await waitFor(() => {
@@ -178,6 +190,8 @@ describe("Terminal", () => {
   });
 
   it("uses custom font family", async () => {
+    const { Terminal: MockXTerm } = await import("@xterm/xterm");
+
     render(<Terminal fontFamily="Courier New" />);
 
     await waitFor(() => {
@@ -202,6 +216,8 @@ describe("Terminal", () => {
   });
 
   it("does not create duplicate terminals", async () => {
+    const { Terminal: MockXTerm } = await import("@xterm/xterm");
+
     const { rerender } = render(<Terminal />);
 
     await waitFor(() => {
@@ -217,6 +233,8 @@ describe("Terminal", () => {
   });
 
   it("applies dark theme colors", async () => {
+    const { Terminal: MockXTerm } = await import("@xterm/xterm");
+
     render(<Terminal />);
 
     await waitFor(() => {

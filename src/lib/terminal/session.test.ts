@@ -227,10 +227,14 @@ describe("useTerminalSession", () => {
     };
 
     let closedCallback: ((event: { payload: { session_id: string; exit_code: number } }) => void) | undefined;
+    let outputCallback: ((event: { payload: { session_id: string; data: number[] } }) => void) | undefined;
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
       if (eventName === "ralph://pty_closed") {
         closedCallback = callback as typeof closedCallback;
+      }
+      if (eventName === "ralph://pty_output") {
+        outputCallback = callback as typeof outputCallback;
       }
       return Promise.resolve(mockUnlisten);
     });
@@ -238,8 +242,14 @@ describe("useTerminalSession", () => {
     renderHook(() => useTerminalSession(defaultConfig, handlers));
 
     await waitFor(() => expect(closedCallback).toBeDefined());
+    await waitFor(() => expect(outputCallback).toBeDefined());
 
-    // Simulate session close
+    // Simulate output first to mark session as started
+    outputCallback?.({
+      payload: { session_id: "test-session", data: [72, 101] },
+    });
+
+    // Now simulate session close
     closedCallback?.({
       payload: { session_id: "test-session", exit_code: 0 },
     });
