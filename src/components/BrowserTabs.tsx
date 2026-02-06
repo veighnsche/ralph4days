@@ -1,10 +1,14 @@
-import { X } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { Plus, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 export interface BrowserTab {
   id: string;
   title: string;
+  icon?: LucideIcon;
+  closeable?: boolean;
 }
 
 interface BrowserTabsProps {
@@ -12,10 +16,11 @@ interface BrowserTabsProps {
   activeTabId: string;
   onTabChange: (tabId: string) => void;
   onTabClose?: (tabId: string) => void;
+  onNewTab?: () => void;
   className?: string;
 }
 
-export function BrowserTabs({ tabs, activeTabId, onTabChange, onTabClose, className }: BrowserTabsProps) {
+export function BrowserTabs({ tabs, activeTabId, onTabChange, onTabClose, onNewTab, className }: BrowserTabsProps) {
   return (
     <Tabs value={activeTabId} onValueChange={onTabChange} className={cn("w-full", className)}>
       <TabsList
@@ -42,28 +47,53 @@ export function BrowserTabs({ tabs, activeTabId, onTabChange, onTabClose, classN
               "transition-all duration-150"
             )}
           >
+            {tab.icon && <tab.icon className="h-3.5 w-3.5 shrink-0" />}
             <span className="truncate max-w-[150px]">{tab.title}</span>
 
-            {onTabClose && (
-              <button
-                type="button"
+            {onTabClose && tab.closeable !== false && (
+              // biome-ignore lint/a11y/useSemanticElements: inside TabsTrigger (button), can't nest buttons
+              <span
+                role="button"
+                tabIndex={0}
                 onClick={(e) => {
                   e.stopPropagation();
                   onTabClose(tab.id);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onTabClose(tab.id);
+                  }
                 }}
                 className={cn(
                   "ml-1 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity",
                   "hover:bg-muted-foreground/20 hover:text-foreground",
                   "h-4 w-4 inline-flex items-center justify-center",
-                  "text-muted-foreground"
+                  "text-muted-foreground cursor-pointer"
                 )}
               >
                 <X className="h-3 w-3" />
                 <span className="sr-only">Close {tab.title}</span>
-              </button>
+              </span>
             )}
           </TabsTrigger>
         ))}
+
+        {onNewTab && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onNewTab}
+            className={cn(
+              "flex-none h-auto px-2 py-1.5 rounded-t-md rounded-b-none",
+              "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+            )}
+          >
+            <Plus className="h-4 w-4" />
+            <span className="sr-only">New tab</span>
+          </Button>
+        )}
       </TabsList>
     </Tabs>
   );

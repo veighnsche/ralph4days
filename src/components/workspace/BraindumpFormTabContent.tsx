@@ -1,0 +1,272 @@
+/**
+ * BraindumpFormTabContent - Form for braindumping project ideas to Claude
+ *
+ * TODO LIST:
+ * 1. Wire up MCP server generation (mcp_generator.rs)
+ *    - Generate bash MCP server that exposes .ralph/db/ as tools
+ *    - Pass mcp_config to create_pty_session instead of hardcoded "interactive"
+ *    - Claude needs create_task, create_feature, create_discipline commands
+ *
+ * 2. Add context prompt wrapper
+ *    - Prepend system prompt: "You are helping structure a project. Use the tools..."
+ *    - Include instructions to create features/disciplines/tasks from braindump
+ *    - Tell Claude to ask clarifying questions if needed
+ *
+ * 3. Listen for database changes
+ *    - After Claude creates tasks, invalidate React Query cache
+ *    - Auto-refresh tasks/features pages to show new items
+ *    - Show toast notification when items are created
+ *
+ * 4. Handle terminal close gracefully
+ *    - If user closes terminal before Claude finishes, show warning
+ *    - Option to continue in background or cancel operation
+ *
+ * 5. Show progress indicator
+ *    - Parse Claude's stream output to show "Creating tasks..." status
+ *    - Count how many tasks/features were created
+ *    - Show summary when complete
+ */
+
+import { invoke } from "@tauri-apps/api/core";
+import { Brain, ChevronDown } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useTabMeta } from "@/hooks/useTabMeta";
+import type { WorkspaceTab } from "@/stores/useWorkspaceStore";
+import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
+
+const DEFAULT_QUESTIONS = `What is this project about?
+
+What problem does it solve?
+
+Who will use this?
+
+What are the main features you're thinking about?
+
+What's the tech stack (if you know)?
+
+Any constraints or special requirements?
+
+What's your timeline or priorities?`;
+
+const STORAGE_KEY_MODEL = "ralph.preferences.model";
+const STORAGE_KEY_THINKING = "ralph.preferences.thinking";
+
+const VALID_MODELS = ["haiku", "sonnet", "opus"] as const;
+type Model = (typeof VALID_MODELS)[number];
+
+function isValidModel(value: string | null): value is Model {
+  return VALID_MODELS.includes(value as Model);
+}
+
+interface BraindumpFormTabContentProps {
+  tab: WorkspaceTab;
+}
+
+export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
+  useTabMeta(tab.id, "Braindump", Brain);
+  const { closeTab, openTab, tabs } = useWorkspaceStore();
+  const [braindump, setBraindump] = useState(DEFAULT_QUESTIONS);
+  const [model, setModel] = useState<string>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_MODEL);
+    return isValidModel(saved) ? saved : "sonnet";
+  });
+  const [thinking, setThinking] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_THINKING);
+    return saved === "true";
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isMountedRef = useRef(true);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // Persist model preference (validate before saving)
+  useEffect(() => {
+    if (isValidModel(model)) {
+      localStorage.setItem(STORAGE_KEY_MODEL, model);
+    }
+  }, [model]);
+
+  // Persist thinking preference
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_THINKING, String(thinking));
+  }, [thinking]);
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+
+    // Validate input
+    const trimmedBraindump = braindump.trim();
+    if (!trimmedBraindump) {
+      toast.error("Please enter some text before sending");
+      return;
+    }
+
+    if (isSubmitting) return; // Prevent double submission
+
+    setIsSubmitting(true);
+
+    try {
+      // Open new terminal tab with selected model and thinking
+      const terminalId = openTab({
+        type: "terminal",
+        title: `Claude (${model})`,
+        closeable: true,
+        data: {
+          model,
+          thinking,
+        },
+      });
+
+      // Wait for terminal to initialize (increased timeout for reliability)
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Check if component is still mounted
+      if (!isMountedRef.current) return;
+
+      // Verify terminal tab still exists
+      const terminalExists = tabs.some((t) => t.id === terminalId);
+      if (!terminalExists) {
+        throw new Error("Terminal tab was closed before sending");
+      }
+
+      // Send braindump to terminal with auto-send
+      const message = `${trimmedBraindump}\n`; // Auto-send with newline
+      const bytes = Array.from(new TextEncoder().encode(message));
+
+      await invoke("send_terminal_input", { sessionId: terminalId, data: bytes });
+
+      // Check if component is still mounted before closing
+      if (!isMountedRef.current) return;
+
+      // Close the braindump form
+      closeTab(tab.id);
+
+      toast.success("Braindump sent to Claude");
+    } catch (err) {
+      console.error("Failed to send braindump:", err);
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      toast.error(`Failed to send braindump: ${errorMessage}`);
+
+      // Only reset state if component is still mounted
+      if (isMountedRef.current) {
+        setIsSubmitting(false);
+      }
+    }
+  };
+
+  const handleCancel = () => {
+    closeTab(tab.id);
+  };
+
+  return (
+    <div className="flex h-full flex-col">
+      <ScrollArea className="flex-1">
+        <form onSubmit={handleSubmit} className="px-4 space-y-6">
+          <div>
+            <h2 className="text-lg font-semibold mb-2">Braindump Your Project</h2>
+            <p className="text-sm text-muted-foreground">
+              Answer these questions in your own words. Claude will help structure this into features and tasks.
+            </p>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-2">
+            <Label htmlFor="braindump">Your thoughts (edit the questions as you like)</Label>
+            <Textarea
+              id="braindump"
+              value={braindump}
+              onChange={(e) => setBraindump(e.target.value)}
+              className="min-h-[400px] font-mono text-sm"
+              placeholder="Start typing your thoughts..."
+            />
+            <p className="text-xs text-muted-foreground">
+              Tip: Be casual and conversational. Claude understands context and can work with messy notes.
+            </p>
+          </div>
+        </form>
+      </ScrollArea>
+
+      <Separator />
+
+      <div className="px-4 py-3 flex items-center justify-end gap-2">
+        <Button type="button" variant="outline" size="lg" onClick={handleCancel}>
+          Cancel
+        </Button>
+
+        <TooltipProvider>
+          <div className="flex">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="submit"
+                  size="lg"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting || !braindump.trim()}
+                  className="rounded-r-none"
+                >
+                  {isSubmitting ? "Sending..." : "Send to Claude"}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="space-y-1">
+                  <div>
+                    <span className="font-semibold">Model:</span> {model.charAt(0).toUpperCase() + model.slice(1)}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Thinking:</span> {thinking ? "On" : "Off"}
+                  </div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" size="lg" disabled={isSubmitting} className="rounded-l-none border-l px-2">
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>Model</DropdownMenuLabel>
+                <DropdownMenuRadioGroup value={model} onValueChange={setModel}>
+                  <DropdownMenuRadioItem value="haiku">Haiku (fast)</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="sonnet">Sonnet (balanced)</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="opus">Opus (smart)</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuLabel>Options</DropdownMenuLabel>
+                <DropdownMenuCheckboxItem checked={thinking} onCheckedChange={setThinking}>
+                  Extended thinking
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </TooltipProvider>
+      </div>
+    </div>
+  );
+}
