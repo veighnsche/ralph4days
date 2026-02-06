@@ -41,7 +41,7 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
       }}
     >
       {/* Card Wrapper */}
-      <Card className="shadow-lg flex flex-row my-3">
+      <Card className="shadow-lg flex flex-row py-0 my-3">
         {/* ── Main Content ── */}
         <ScrollArea className="flex-1 min-w-0">
           <div className="px-6 py-4 space-y-5">
