@@ -12,43 +12,50 @@ const mockTerminalOnResize = vi.fn();
 const mockLoadAddon = vi.fn();
 const mockFitAddonFit = vi.fn();
 
-// Mock xterm - return class constructors directly
+// Mock xterm - vi.fn() wraps constructor for spy tracking; `function` keyword
+// is required because vi.fn() delegates `new` to the implementation.
 vi.mock("@xterm/xterm", () => {
   return {
-    Terminal: class MockTerminal {
-      cols = 80;
-      rows = 24;
-      write = mockTerminalWrite;
-      writeln = mockTerminalWriteln;
-      dispose = mockTerminalDispose;
-      open = mockTerminalOpen;
-      onData = mockTerminalOnData;
-      onResize = mockTerminalOnResize;
-      loadAddon = mockLoadAddon;
-    },
+    // biome-ignore lint/complexity/useArrowFunction: must use `function` for `new` calls
+    Terminal: vi.fn().mockImplementation(function () {
+      return {
+        cols: 80,
+        rows: 24,
+        write: mockTerminalWrite,
+        writeln: mockTerminalWriteln,
+        dispose: mockTerminalDispose,
+        open: mockTerminalOpen,
+        onData: mockTerminalOnData,
+        onResize: mockTerminalOnResize,
+        loadAddon: mockLoadAddon,
+      };
+    }),
   };
 });
 
 vi.mock("@xterm/addon-fit", () => {
   return {
-    FitAddon: class MockFitAddon {
-      fit = mockFitAddonFit;
-    },
+    // biome-ignore lint/complexity/useArrowFunction: must use `function` for `new` calls
+    FitAddon: vi.fn().mockImplementation(function () {
+      return { fit: mockFitAddonFit };
+    }),
   };
 });
 
 vi.mock("@xterm/addon-web-links", () => {
   return {
-    WebLinksAddon: class MockWebLinksAddon {},
+    // biome-ignore lint/complexity/useArrowFunction: must use `function` for `new` calls
+    WebLinksAddon: vi.fn().mockImplementation(function () {
+      return {};
+    }),
   };
 });
 
 // Mock ResizeObserver
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+// biome-ignore lint/complexity/useArrowFunction: must use `function` for `new` calls
+global.ResizeObserver = vi.fn().mockImplementation(function () {
+  return { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() };
+});
 
 describe("Terminal", () => {
   beforeEach(() => {
