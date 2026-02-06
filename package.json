@@ -10,6 +10,7 @@
     "tauri": "tauri",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:storybook": "vitest run --config vitest.storybook.config.ts",
     "test:e2e": "playwright test",
     "test:visual": "playwright test e2e/visual/",
     "test:monkey": "playwright test e2e/monkey.spec.ts",
