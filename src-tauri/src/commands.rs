@@ -1,11 +1,11 @@
 use crate::loop_engine::LoopEngine;
 use crate::mcp_generator::MCPGenerator;
-use yaml_db::Priority;
 use crate::terminal::{PTYManager, SessionConfig};
 use crate::types::LoopStatus;
 use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::{AppHandle, State};
+use yaml_db::Priority;
 use yaml_db::{TaskInput, YamlDatabase};
 
 // Recursive scan configuration

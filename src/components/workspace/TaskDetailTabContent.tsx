@@ -1,8 +1,8 @@
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { FullBleedSeparator } from "@/components/ui/full-bleed-separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { PRIORITY_CONFIG, STATUS_CONFIG } from "@/constants/prd";
 import { useTabMeta } from "@/hooks/useTabMeta";
 import { resolveIcon } from "@/lib/iconRegistry";
@@ -41,7 +41,7 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
       }}
     >
       {/* Card Wrapper */}
-      <Card className="h-full shadow-lg flex">
+      <Card className="shadow-lg flex flex-row">
         {/* ── Main Content ── */}
         <ScrollArea className="flex-1 min-w-0">
           <div className="px-6 py-5 space-y-5">
@@ -106,8 +106,8 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
         </ScrollArea>
 
         {/* ── Properties Sidebar ── */}
-        <div className="w-56 flex-shrink-0 border-l overflow-y-auto">
-          <div className="px-4 py-5 space-y-0.5">
+        <div className="w-56 flex-shrink-0 border-l">
+          <div className="px-4 py-5 space-y-0.5 overflow-y-auto h-full">
             {/* Status */}
             <PropertyRow label="Status">
               <div className="flex items-center gap-1.5">
@@ -129,7 +129,7 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
               )}
             </PropertyRow>
 
-            <Separator className="my-2" />
+            <FullBleedSeparator className="my-2" />
 
             {/* Feature */}
             <PropertyRow label="Feature">
@@ -149,7 +149,7 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
             {/* Tags */}
             {task.tags && task.tags.length > 0 && (
               <>
-                <Separator className="my-2" />
+                <FullBleedSeparator className="my-2" />
                 <PropertyRow label="Tags">
                   <div className="flex flex-wrap gap-1">
                     {task.tags.map((tag) => (
@@ -165,7 +165,7 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
             {/* Dependencies */}
             {task.depends_on && task.depends_on.length > 0 && (
               <>
-                <Separator className="my-2" />
+                <FullBleedSeparator className="my-2" />
                 <PropertyRow label="Depends on">
                   <div className="flex flex-wrap gap-1">
                     {task.depends_on.map((depId) => (
@@ -179,7 +179,7 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
             )}
 
             {/* Timeline */}
-            <Separator className="my-2" />
+            <FullBleedSeparator className="my-2" />
             {task.created && (
               <PropertyRow label="Created">
                 <span className="text-xs text-muted-foreground">{formatDate(task.created)}</span>
