@@ -207,3 +207,13 @@ body {
   @apply bg-background text-foreground;
 }
 }
+
+/* Hide native scrollbar on xterm viewport — xterm.js v6 uses its own overlay scrollbar.
+   The native overflow-y: scroll reserves gutter space, creating a visible gap on the right. */
+.xterm .xterm-viewport {
+  scrollbar-width: none;
+}
+.xterm .xterm-viewport::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}

@@ -1,5 +1,5 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { BottomBar } from "@/components/BottomBar";
 import { ProjectSelector } from "@/components/ProjectSelector";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
@@ -7,47 +7,12 @@ import { Toaster } from "@/components/ui/sonner";
 import { WorkspacePanel } from "@/components/WorkspacePanel";
 import { useInvoke } from "@/hooks/useInvoke";
 import type { Page } from "@/hooks/useNavigation";
-import { useTauriEvent } from "@/hooks/useTauriEvent";
 import { DisciplinesPage } from "@/pages/DisciplinesPage";
 import { FeaturesPage } from "@/pages/FeaturesPage";
 import { TasksPage } from "@/pages/TasksPage";
-import { type LoopState, useLoopStore } from "@/stores/useLoopStore";
 import "./index.css";
 
-interface StateChangedEvent {
-  event: "state_changed";
-  state: LoopState;
-  iteration: number;
-}
-
-interface OutputChunkEvent {
-  event: "output_chunk";
-  text: string;
-}
-
-interface IterationCompleteEvent {
-  event: "iteration_complete";
-  iteration: number;
-  success: boolean;
-  message: string | null;
-}
-
-interface RateLimitedEvent {
-  event: "rate_limited";
-  retry_in_secs: number;
-  attempt: number;
-  max_attempts: number;
-}
-
-interface ErrorEvent {
-  event: "error";
-  message: string;
-}
-
-type LoopStatus = ReturnType<typeof useLoopStore.getState>["status"];
-
 function App() {
-  const { setStatus, addOutput, setRateLimitInfo } = useLoopStore();
   const [lockedProject, setLockedProject] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<Page>("tasks");
 
@@ -72,82 +37,6 @@ function App() {
         });
     }
   }, [lockedProject]);
-
-  // Bootstrap loop state into Zustand
-  const { data: initialLoopState } = useInvoke<LoopStatus>("get_loop_state", undefined, {
-    staleTime: Number.POSITIVE_INFINITY,
-  });
-
-  useEffect(() => {
-    if (initialLoopState) {
-      setStatus(initialLoopState);
-    }
-  }, [initialLoopState, setStatus]);
-
-  // Event handlers
-  const handleStateChanged = useCallback(
-    (event: StateChangedEvent) => {
-      const current = useLoopStore.getState().status;
-      setStatus({
-        ...current,
-        state: event.state,
-        current_iteration: event.iteration,
-      });
-      if (event.state !== "rate_limited") {
-        setRateLimitInfo(null);
-      }
-    },
-    [setStatus, setRateLimitInfo]
-  );
-
-  const handleOutputChunk = useCallback(
-    (event: OutputChunkEvent) => {
-      if (event.text.trim()) {
-        addOutput(event.text);
-      }
-    },
-    [addOutput]
-  );
-
-  const handleIterationComplete = useCallback(
-    (event: IterationCompleteEvent) => {
-      const msg = event.success
-        ? `Iteration ${event.iteration} complete`
-        : `Iteration ${event.iteration} failed: ${event.message || "Unknown error"}`;
-      addOutput(msg, event.success ? "success" : "error");
-    },
-    [addOutput]
-  );
-
-  const handleRateLimited = useCallback(
-    (event: RateLimitedEvent) => {
-      setRateLimitInfo({
-        retryInSecs: event.retry_in_secs,
-        attempt: event.attempt,
-        maxAttempts: event.max_attempts,
-        startTime: new Date(),
-      });
-      addOutput(
-        `Rate limited. Waiting ${event.retry_in_secs}s before retry (attempt ${event.attempt}/${event.max_attempts})`,
-        "info"
-      );
-    },
-    [setRateLimitInfo, addOutput]
-  );
-
-  const handleError = useCallback(
-    (event: ErrorEvent) => {
-      addOutput(event.message, "error");
-    },
-    [addOutput]
-  );
-
-  // Subscribe to Tauri events
-  useTauriEvent("ralph://state_changed", handleStateChanged);
-  useTauriEvent("ralph://output_chunk", handleOutputChunk);
-  useTauriEvent("ralph://iteration_complete", handleIterationComplete);
-  useTauriEvent("ralph://rate_limited", handleRateLimited);
-  useTauriEvent("ralph://error", handleError);
 
   // Show loading or project picker
   if (isLoadingProject) {

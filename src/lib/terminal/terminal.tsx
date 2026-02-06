@@ -118,7 +118,7 @@ export function Terminal({
   return (
     <div
       ref={containerRef}
-      className="h-full w-full overflow-hidden [&_.xterm]:p-0 [&_.xterm-viewport]:p-0"
+      className="h-full w-full overflow-hidden [&_.xterm]:h-full [&_.xterm]:w-full"
       style={{ backgroundColor: "#0a0a0a" }}
     />
   );
