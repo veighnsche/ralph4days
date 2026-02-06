@@ -1,3 +1,7 @@
+// TODO: DELETE THIS FILE - Replaced by LoopToggle.tsx
+// This component is deprecated and should be removed entirely.
+// The iteration counting UI is being replaced with a simple loop toggle (on/off).
+
 import { RotateCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { LoopState } from "@/stores/useLoopStore";

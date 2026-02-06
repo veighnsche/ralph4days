@@ -1,11 +1,17 @@
+// TODO: DEPRECATED ITERATION LOGIC
+// - Replace maxIterations/setMaxIterations with loopEnabled/setLoopEnabled
+// - start_loop should take loopEnabled: bool instead of maxIterations: number
+// - Remove all references to maxIterations in this component
+
 import { invoke } from "@tauri-apps/api/core";
 import { Pause, Play, Square } from "lucide-react";
-import { LoopCountBadge } from "@/components/LoopCountBadge";
+import { LoopToggle } from "@/components/LoopToggle";
 import { NavigationMenu } from "@/components/NavigationMenu";
 import { Settings } from "@/components/Settings";
 import { Button } from "@/components/ui/button";
 import type { Page } from "@/hooks/useNavigation";
 import { useLoopStore } from "@/stores/useLoopStore";
+import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
 
 interface BottomBarProps {
   lockedProject: string;
@@ -14,7 +20,8 @@ interface BottomBarProps {
 }
 
 export function BottomBar({ lockedProject, currentPage, onPageChange }: BottomBarProps) {
-  const { status, maxIterations, setMaxIterations, addOutput, clearOutput } = useLoopStore();
+  const { status, maxIterations, setMaxIterations, addOutput, createSession } = useLoopStore(); // TODO: Replace maxIterations with loopEnabled
+  const { openTab } = useWorkspaceStore();
 
   // State detection
   const isIdle = status.state === "idle";
@@ -39,10 +46,25 @@ export function BottomBar({ lockedProject, currentPage, onPageChange }: BottomBa
         await invoke("resume_loop");
         addOutput("Loop resumed", "info");
       } else if (isIdle || isComplete || isAborted) {
-        // Idle/complete/aborted → start
-        clearOutput();
+        // Idle/complete/aborted → start new loop
+        const sessionId = createSession();
+        const timestamp = new Date().toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        });
+
+        openTab({
+          type: "terminal",
+          title: `Loop ${timestamp}`,
+          closeable: true,
+          data: { sessionId },
+        });
+
         addOutput(`Starting loop on: ${lockedProject}`, "info");
+        // TODO: Remove this log - iteration count is deprecated
         addOutput(`Max iterations: ${maxIterations}`, "info");
+        // TODO: Replace with: await invoke("start_loop", { loopEnabled: maxIterations > 1 })
         await invoke("start_loop", { maxIterations });
       }
     } catch (e) {
@@ -85,9 +107,13 @@ export function BottomBar({ lockedProject, currentPage, onPageChange }: BottomBa
           <NavigationMenu currentPage={currentPage} onPageChange={onPageChange} />
         </div>
 
-        {/* Center: Transport Controls and Iterations */}
+        {/* Center: Transport Controls and Loop Toggle */}
         <div className="flex items-center gap-3">
-          <LoopCountBadge status={status} maxIterations={maxIterations} setMaxIterations={setMaxIterations} />
+          <LoopToggle
+            maxIterations={maxIterations}
+            setMaxIterations={setMaxIterations}
+            disabled={!isIdle && !isComplete && !isAborted}
+          />
 
           <Button
             onClick={handlePrimaryAction}
@@ -104,7 +130,7 @@ export function BottomBar({ lockedProject, currentPage, onPageChange }: BottomBa
             onClick={handleStop}
             disabled={!canStop}
             size="icon"
-            variant="ghost"
+            variant="outline"
             title="Stop"
             className="h-10 w-10"
           >

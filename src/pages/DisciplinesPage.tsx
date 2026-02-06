@@ -1,9 +1,5 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { invoke } from "@tauri-apps/api/core";
 import { Layers, Plus } from "lucide-react";
-import { useMemo, useState } from "react";
-import type { DisciplineFormData } from "@/components/forms/DisciplineForm";
-import { DisciplineModal } from "@/components/modals/DisciplineModal";
+import { useMemo } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,12 +10,12 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDisciplines } from "@/hooks/useDisciplines";
 import { usePRDData } from "@/hooks/usePRDData";
+import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
 
 export function DisciplinesPage() {
-  const queryClient = useQueryClient();
   const { prdData, isLoading: prdLoading, error: prdError } = usePRDData();
   const { disciplines } = useDisciplines();
-  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const openTab = useWorkspaceStore((s) => s.openTab);
 
   // Calculate task counts per discipline
   const disciplineStats = useMemo(() => {
@@ -47,15 +43,13 @@ export function DisciplinesPage() {
 
   const loading = prdLoading || disciplines.length === 0;
 
-  const handleCreateDiscipline = async (data: DisciplineFormData) => {
-    await invoke("create_discipline", {
-      name: data.name || data.display_name, // Use display_name as fallback for auto-generation
-      displayName: data.display_name,
-      acronym: data.acronym,
-      icon: data.icon,
-      color: data.color,
+  const handleCreateDiscipline = () => {
+    openTab({
+      type: "discipline-form",
+      title: "Create Discipline",
+      closeable: true,
+      data: { mode: "create" },
     });
-    await queryClient.invalidateQueries({ queryKey: ["get_disciplines_config"] });
   };
 
   if (loading) {
@@ -94,7 +88,7 @@ export function DisciplinesPage() {
                 <Layers className="h-5 w-5" />
                 <CardTitle className="text-base">Disciplines</CardTitle>
               </div>
-              <Button onClick={() => setCreateModalOpen(true)} size="sm" variant="outline">
+              <Button onClick={handleCreateDiscipline} size="sm" variant="outline">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Discipline
               </Button>
@@ -147,8 +141,8 @@ export function DisciplinesPage() {
               const progress = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
 
               return (
-                <>
-                  <div key={discipline.name} className="p-4 hover:bg-muted/50 transition-colors">
+                <div key={discipline.name}>
+                  <div className="p-4 hover:bg-muted/50 transition-colors">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         <div
@@ -181,19 +175,12 @@ export function DisciplinesPage() {
                     </div>
                   </div>
                   {index < disciplines.length - 1 && <ItemSeparator />}
-                </>
+                </div>
               );
             })}
           </ItemGroup>
         )}
       </div>
-
-      <DisciplineModal
-        open={createModalOpen}
-        onOpenChange={setCreateModalOpen}
-        onSubmit={handleCreateDiscipline}
-        mode="create"
-      />
     </div>
   );
 }

@@ -1,10 +1,10 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useCallback, useEffect, useState } from "react";
 import { BottomBar } from "@/components/BottomBar";
-import { OutputPanel } from "@/components/OutputPanel";
 import { ProjectSelector } from "@/components/ProjectSelector";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Toaster } from "@/components/ui/sonner";
+import { WorkspacePanel } from "@/components/WorkspacePanel";
 import { useInvoke } from "@/hooks/useInvoke";
 import type { Page } from "@/hooks/useNavigation";
 import { useTauriEvent } from "@/hooks/useTauriEvent";
@@ -201,8 +201,8 @@ function App() {
 
         {/* Right: Output (always visible) */}
         <ResizablePanel defaultSize={50} minSize={20}>
-          <div className="h-full p-4">
-            <OutputPanel />
+          <div className="h-full">
+            <WorkspacePanel />
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>

@@ -19,7 +19,7 @@ export function Settings() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="icon">
+        <Button variant="outline" size="icon" className="h-10 w-10">
           <SettingsIcon className="h-4 w-4" />
           <span className="sr-only">Settings</span>
         </Button>

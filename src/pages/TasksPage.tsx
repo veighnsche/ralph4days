@@ -1,70 +1,106 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { invoke } from "@tauri-apps/api/core";
-import { Plus } from "lucide-react";
-import { useMemo, useState } from "react";
-import type { TaskFormData } from "@/components/forms/TaskForm";
-import { TaskModal } from "@/components/modals/TaskModal";
+import { MessageSquare, Plus } from "lucide-react";
+import { useCallback, useMemo } from "react";
 import { PRDBody } from "@/components/prd/PRDBody";
 import { PRDHeader } from "@/components/prd/PRDHeader";
-import { TaskDetailSidebar } from "@/components/prd/TaskDetailSidebar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDisciplines } from "@/hooks/useDisciplines";
-import { useInvoke } from "@/hooks/useInvoke";
 import { usePRDData } from "@/hooks/usePRDData";
 import { usePRDFilters } from "@/hooks/usePRDFilters";
-import { useSidebarNavigation } from "@/hooks/useSidebarNavigation";
+import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
+import type { PRDTask } from "@/types/prd";
 
-interface FeatureConfig {
-  name: string;
-  display_name: string;
-  acronym: string;
-}
+/**
+ * PLANNED: Task-Bound Terminal System
+ *
+ * Future implementation will bind tasks to specific terminal/output tabs:
+ *
+ * TODO: 1. Add Play Button to Tasks
+ *    - Add play icon button next to each task in PlaylistView
+ *    - onClick: open new terminal, bind to task, send task prompt
+ *    - Store binding in WorkspaceTab.data: { taskId: string }
+ *
+ * TODO: 2. Generate Task Prompt
+ *    - Create prompt_builder function that includes:
+ *      - Task title, description, acceptance criteria
+ *      - Feature context (what feature this belongs to)
+ *      - Discipline context (coding standards, tools)
+ *      - Dependencies (other tasks that are done)
+ *    - Send prompt to bound terminal automatically
+ *
+ * TODO: 3. Terminal Lifecycle Hooks
+ *    - Listen for ralph://pty_closed event
+ *    - When terminal closes, check if it has taskId binding
+ *    - Update task status (in_progress -> pending or done)
+ *    - Clear binding from store
+ *
+ * TODO: 4. Task Status Synchronization
+ *    - Parse terminal output for success/failure indicators
+ *    - Update task status in real-time
+ *    - Show progress in task card (e.g., "Running in Terminal 3")
+ *
+ * TODO: 5. Play Button States
+ *    - Disabled if task is "done"
+ *    - Shows "Resume" if task was interrupted
+ *    - Shows "Running..." if task is active
+ *    - Panics if bound terminal was closed unexpectedly
+ *
+ * Reference: Proof-of-concept tested 2026-02-06 with "Open Claude" + "Type in Bound" buttons
+ * Pattern established: openTab() -> wait -> send_terminal_input() -> closeTab()
+ */
 
 export function TasksPage() {
-  const queryClient = useQueryClient();
   const { prdData, isLoading: loading, error } = usePRDData();
   const { filters, setters, filteredTasks, allTags, clearFilters } = usePRDFilters(prdData);
-  const { selectedTask, sidebarOpen, handleTaskClick, handleNavigateNext, handleNavigatePrev, setSidebarOpen } =
-    useSidebarNavigation(filteredTasks);
-  const { configMap: disciplineConfigMap } = useDisciplines();
-  const { data: featureConfigs = [] } = useInvoke<FeatureConfig[]>("get_features_config");
-  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const openTab = useWorkspaceStore((s) => s.openTab);
 
   const doneTasks = useMemo(() => (prdData ? prdData.tasks.filter((t) => t.status === "done") : []), [prdData]);
 
   const totalTasks = prdData?.tasks.length ?? 0;
   const progressPercent = totalTasks > 0 ? Math.round((doneTasks.length / totalTasks) * 100) : 0;
 
-  const handleCreateTask = async (data: TaskFormData) => {
-    // Get acronyms from configs
-    const featureConfig = featureConfigs.find((f) => f.name === data.feature);
-    const disciplineConfig = disciplineConfigMap[data.discipline];
-
-    if (!featureConfig) {
-      throw new Error(`Feature ${data.feature} not found`);
-    }
-    if (!disciplineConfig) {
-      throw new Error(`Discipline ${data.discipline} not found`);
-    }
-
-    await invoke("create_task", {
-      feature: data.feature,
-      discipline: data.discipline,
-      title: data.title,
-      description: data.description || null,
-      priority: data.priority || null,
-      tags: data.tags,
-      dependsOn: data.depends_on.length > 0 ? data.depends_on : null,
-      acceptanceCriteria: data.acceptance_criteria.length > 0 ? data.acceptance_criteria : null,
-      featureAcronym: featureConfig.acronym,
-      disciplineAcronym: disciplineConfig.acronym,
+  const handleCreateTask = () => {
+    openTab({
+      type: "task-form",
+      title: "Create Task",
+      closeable: true,
+      data: { mode: "create" },
     });
-    await queryClient.invalidateQueries({ queryKey: ["get_prd_content"] });
-    await queryClient.invalidateQueries({ queryKey: ["get_features"] });
-    await queryClient.invalidateQueries({ queryKey: ["get_features_config"] });
   };
+
+  const handleYapAboutTasks = () => {
+    // TODO: Create YapFormTabContent component (similar to BraindumpFormTabContent)
+    // TODO: Default prompt should be: "I want to talk about these tasks: [list existing task IDs]"
+    // TODO: User can ramble about what they want to change/add/refine
+    // TODO: Send to Claude terminal with MCP tools to update tasks
+    // TODO: Invalidate cache and refresh UI when done
+    console.log("Yap about tasks clicked - TODO: implement");
+    openTab({
+      type: "yap-form", // TODO: Add this tab type
+      title: "Yap about Tasks",
+      closeable: true,
+    });
+  };
+
+  const handleBraindumpProject = () => {
+    openTab({
+      type: "braindump-form",
+      title: "Braindump Project",
+      closeable: true,
+    });
+  };
+
+  const handleTaskClick = useCallback(
+    (task: PRDTask) => {
+      openTab({
+        type: "task-detail",
+        title: task.title,
+        closeable: true,
+        data: { entityId: task.id, entity: task },
+      });
+    },
+    [openTab]
+  );
 
   if (loading) {
     return (
@@ -115,27 +151,30 @@ export function TasksPage() {
           allTags={allTags}
           onClearFilters={clearFilters}
         />
-        <div className="px-4 pb-2">
-          <Button onClick={() => setCreateModalOpen(true)} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Create Task
-          </Button>
-        </div>
+        {totalTasks > 0 && (
+          <div className="px-4 pb-2 flex gap-2">
+            <Button onClick={handleCreateTask} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Task
+            </Button>
+            <Button onClick={handleYapAboutTasks} size="sm" variant="outline">
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Yap about Tasks
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 min-h-0 overflow-auto">
-        <PRDBody filteredTasks={filteredTasks} onTaskClick={handleTaskClick} onClearFilters={clearFilters} />
+        <PRDBody
+          filteredTasks={filteredTasks}
+          totalTasks={totalTasks}
+          onTaskClick={handleTaskClick}
+          onClearFilters={clearFilters}
+          onBraindump={handleBraindumpProject}
+          onYap={handleYapAboutTasks}
+        />
       </div>
-
-      <TaskDetailSidebar
-        task={selectedTask}
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        onNavigateNext={handleNavigateNext}
-        onNavigatePrev={handleNavigatePrev}
-      />
-
-      <TaskModal open={createModalOpen} onOpenChange={setCreateModalOpen} onSubmit={handleCreateTask} mode="create" />
     </div>
   );
 }

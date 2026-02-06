@@ -1,9 +1,5 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { invoke } from "@tauri-apps/api/core";
-import { Plus, Target } from "lucide-react";
-import { useMemo, useState } from "react";
-import type { FeatureFormData } from "@/components/forms/FeatureForm";
-import { FeatureModal } from "@/components/modals/FeatureModal";
+import { Brain, MessageCircle, Plus, Target } from "lucide-react";
+import { useMemo } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,17 +10,17 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInvoke } from "@/hooks/useInvoke";
 import { usePRDData } from "@/hooks/usePRDData";
+import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
 import type { Feature } from "@/types/prd";
 
 export function FeaturesPage() {
-  const queryClient = useQueryClient();
   const { prdData, isLoading: prdLoading, error: prdError } = usePRDData();
   const {
     data: features = [],
     isLoading: featuresLoading,
     error: featuresError,
   } = useInvoke<Feature[]>("get_features");
-  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const openTab = useWorkspaceStore((s) => s.openTab);
 
   // Calculate task counts per feature
   const featureStats = useMemo(() => {
@@ -53,15 +49,35 @@ export function FeaturesPage() {
   const loading = prdLoading || featuresLoading;
   const error = prdError || (featuresError ? String(featuresError) : null);
 
-  const handleCreateFeature = async (data: FeatureFormData) => {
-    await invoke("create_feature", {
-      name: data.name || data.display_name, // Use display_name as fallback for auto-generation
-      displayName: data.display_name,
-      acronym: data.acronym,
-      description: data.description || null,
+  const handleCreateFeature = () => {
+    openTab({
+      type: "feature-form",
+      title: "Create Feature",
+      closeable: true,
+      data: { mode: "create" },
     });
-    await queryClient.invalidateQueries({ queryKey: ["get_features"] });
-    await queryClient.invalidateQueries({ queryKey: ["get_features_config"] });
+  };
+
+  const handleRambleAboutFeatures = () => {
+    // TODO: Create RambleFormTabContent component (similar to BraindumpFormTabContent)
+    // TODO: Default prompt should be: "I want to discuss these features: [list existing features]"
+    // TODO: User can ramble about what features need, how to organize them, etc.
+    // TODO: Send to Claude terminal with MCP tools to update features
+    // TODO: Invalidate cache and refresh UI when done
+    console.log("Ramble about features clicked - TODO: implement");
+    openTab({
+      type: "ramble-form", // TODO: Add this tab type
+      title: "Ramble about Features",
+      closeable: true,
+    });
+  };
+
+  const handleBraindumpProject = () => {
+    openTab({
+      type: "braindump-form",
+      title: "Braindump Project",
+      closeable: true,
+    });
   };
 
   if (loading) {
@@ -100,10 +116,18 @@ export function FeaturesPage() {
                 <Target className="h-5 w-5" />
                 <CardTitle className="text-base">Features</CardTitle>
               </div>
-              <Button onClick={() => setCreateModalOpen(true)} size="sm" variant="outline">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Feature
-              </Button>
+              {features.length > 0 && (
+                <>
+                  <Button onClick={handleCreateFeature} size="sm" variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Feature
+                  </Button>
+                  <Button onClick={handleRambleAboutFeatures} size="sm" variant="outline">
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Ramble about Features
+                  </Button>
+                </>
+              )}
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <div className="text-sm font-medium">
@@ -138,12 +162,25 @@ export function FeaturesPage() {
           <Empty>
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <Target />
+                <Brain />
               </EmptyMedia>
               <EmptyTitle>No features yet</EmptyTitle>
-              <EmptyDescription>Features will appear here as you create tasks</EmptyDescription>
+              <EmptyDescription>
+                Get started by braindumping your project ideas. Claude will help structure them into features and tasks.
+              </EmptyDescription>
             </EmptyHeader>
-            <EmptyContent />
+            <EmptyContent>
+              <div className="flex flex-col gap-2">
+                <Button onClick={handleBraindumpProject}>
+                  <Brain className="h-4 w-4 mr-2" />
+                  Braindump Project
+                </Button>
+                <Button onClick={handleRambleAboutFeatures} variant="outline">
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Ramble about Features
+                </Button>
+              </div>
+            </EmptyContent>
           </Empty>
         ) : (
           <ItemGroup className="rounded-md border">
@@ -184,13 +221,6 @@ export function FeaturesPage() {
           </ItemGroup>
         )}
       </div>
-
-      <FeatureModal
-        open={createModalOpen}
-        onOpenChange={setCreateModalOpen}
-        onSubmit={handleCreateFeature}
-        mode="create"
-      />
     </div>
   );
 }
