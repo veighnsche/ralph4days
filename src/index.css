@@ -4,8 +4,8 @@
 
 /* Bundled fonts — no network dependency, no FOUT */
 @font-face {
-  font-family: "Geist";
-  src: url("/fonts/Geist-Variable.woff2") format("woff2");
+  font-family: "Noto Sans";
+  src: url("/fonts/NotoSans-Variable.woff2") format("woff2");
   font-weight: 100 900;
   font-style: normal;
   font-display: block;
@@ -136,8 +136,13 @@
 --radius-4xl: calc(var(--radius) + 16px);
 }
 
+/* Light Mode Color System (Triadic Harmony)
+ * Primary: Deep Teal - professional, trustworthy
+ * Secondary: Claude Orange (#FF6B35) - warm, energetic (FIXED brand color)
+ * Accent: Soft Purple - subtle hover/selection feedback
+ */
 :root {
-  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: "Noto Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: "GeistMono NF", ui-monospace, SFMono-Regular, monospace;
   --background: oklch(1 0 0);
 --foreground: oklch(0.145 0 0);
@@ -145,32 +150,32 @@
 --card-foreground: oklch(0.145 0 0);
 --popover: oklch(1 0 0);
 --popover-foreground: oklch(0.145 0 0);
---primary: oklch(0.59 0.26 323);
---primary-foreground: oklch(0.98 0.02 320);
---secondary: oklch(0.967 0.001 286.375);
---secondary-foreground: oklch(0.21 0.006 285.885);
+--primary: oklch(0.45 0.18 198);
+--primary-foreground: oklch(0.98 0.02 198);
+--secondary: oklch(0.70 0.20 35);
+--secondary-foreground: oklch(0.98 0.02 35);
 --muted: oklch(0.97 0 0);
 --muted-foreground: oklch(0.556 0 0);
---accent: oklch(0.59 0.26 323);
---accent-foreground: oklch(0.98 0.02 320);
+--accent: oklch(0.95 0.03 280);
+--accent-foreground: oklch(0.20 0.08 280);
 --destructive: oklch(0.58 0.22 27);
 --border: oklch(0.922 0 0);
 --input: oklch(0.922 0 0);
---ring: oklch(0.708 0 0);
---chart-1: oklch(0.83 0.13 321);
---chart-2: oklch(0.75 0.21 322);
---chart-3: oklch(0.67 0.26 322);
---chart-4: oklch(0.59 0.26 323);
---chart-5: oklch(0.52 0.23 324);
+--ring: oklch(0.55 0.10 198);
+--chart-1: oklch(0.50 0.16 198);
+--chart-2: oklch(0.65 0.20 35);
+--chart-3: oklch(0.50 0.18 280);
+--chart-4: oklch(0.58 0.14 198);
+--chart-5: oklch(0.60 0.16 35);
 --radius: 0;
 --sidebar: oklch(0.985 0 0);
 --sidebar-foreground: oklch(0.145 0 0);
---sidebar-primary: oklch(0.59 0.26 323);
---sidebar-primary-foreground: oklch(0.98 0.02 320);
---sidebar-accent: oklch(0.59 0.26 323);
---sidebar-accent-foreground: oklch(0.98 0.02 320);
+--sidebar-primary: oklch(0.45 0.18 198);
+--sidebar-primary-foreground: oklch(0.98 0.02 198);
+--sidebar-accent: oklch(0.95 0.03 280);
+--sidebar-accent-foreground: oklch(0.20 0.08 280);
 --sidebar-border: oklch(0.922 0 0);
---sidebar-ring: oklch(0.708 0 0);
+--sidebar-ring: oklch(0.55 0.10 198);
 --success: oklch(0.55 0.15 145);
 --success-foreground: oklch(0.98 0.02 145);
 --warning: oklch(0.65 0.18 70);
@@ -198,10 +203,10 @@
 }
 
 /* Dark Mode Color System (Triadic Harmony)
- * Primary: Teal/Cyan (#06B6D4) - oklch(0.70 0.14 195) - Cool, professional
- * Secondary: Purple (#8B5CF6) - oklch(0.64 0.24 285) - Creative, elegant
- * Accent/Tertiary: Claude Orange (#FF6B35) - oklch(0.68 0.22 35) - FIXED, cannot change
- * These colors are ~120° apart on the color wheel (triadic scheme)
+ * Primary: Deep Teal - oklch(0.58 0.16 198) - Cool, professional, accessible
+ * Secondary: Claude Orange (#FF6B35) - oklch(0.68 0.22 35) - FIXED brand color
+ * Accent: Deep Purple - oklch(0.30 0.12 280) - Subtle hover/selection feedback
+ * Triadic scheme: ~120° apart on the color wheel (hue 198, 35, 280)
  */
 .dark {
   --background: oklch(0.145 0 0);
@@ -210,31 +215,31 @@
 --card-foreground: oklch(0.985 0 0);
 --popover: oklch(0.205 0 0);
 --popover-foreground: oklch(0.985 0 0);
---primary: oklch(0.70 0.14 195);
---primary-foreground: oklch(0.98 0.02 195);
---secondary: oklch(0.64 0.24 285);
---secondary-foreground: oklch(0.98 0.02 285);
+--primary: oklch(0.58 0.16 198);
+--primary-foreground: oklch(0.96 0.02 198);
+--secondary: oklch(0.68 0.22 35);
+--secondary-foreground: oklch(0.98 0.02 35);
 --muted: oklch(0.269 0 0);
 --muted-foreground: oklch(0.708 0 0);
---accent: oklch(0.68 0.22 35);
---accent-foreground: oklch(0.98 0.02 35);
+--accent: oklch(0.30 0.12 280);
+--accent-foreground: oklch(0.95 0.02 280);
 --destructive: oklch(0.704 0.191 22.216);
 --border: oklch(1 0 0 / 10%);
 --input: oklch(1 0 0 / 15%);
---ring: oklch(0.556 0 0);
---chart-1: oklch(0.83 0.13 321);
---chart-2: oklch(0.75 0.21 322);
---chart-3: oklch(0.67 0.26 322);
---chart-4: oklch(0.59 0.26 323);
---chart-5: oklch(0.52 0.23 324);
+--ring: oklch(0.55 0.08 198);
+--chart-1: oklch(0.65 0.14 198);
+--chart-2: oklch(0.68 0.22 35);
+--chart-3: oklch(0.55 0.20 280);
+--chart-4: oklch(0.72 0.12 198);
+--chart-5: oklch(0.75 0.18 35);
 --sidebar: oklch(0.205 0 0);
 --sidebar-foreground: oklch(0.985 0 0);
---sidebar-primary: oklch(0.70 0.14 195);
---sidebar-primary-foreground: oklch(0.98 0.02 195);
---sidebar-accent: oklch(0.68 0.22 35);
---sidebar-accent-foreground: oklch(0.98 0.02 35);
+--sidebar-primary: oklch(0.58 0.16 198);
+--sidebar-primary-foreground: oklch(0.96 0.02 198);
+--sidebar-accent: oklch(0.30 0.12 280);
+--sidebar-accent-foreground: oklch(0.95 0.02 280);
 --sidebar-border: oklch(1 0 0 / 10%);
---sidebar-ring: oklch(0.556 0 0);
+--sidebar-ring: oklch(0.55 0.08 198);
 --success: oklch(0.65 0.18 155);
 --success-foreground: oklch(0.15 0.02 155);
 --warning: oklch(0.75 0.20 75);

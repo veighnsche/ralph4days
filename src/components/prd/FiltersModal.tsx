@@ -43,7 +43,7 @@ export function FiltersModal({ filters, setters, allTags, onClearFilters }: Filt
           <Filter className="h-3.5 w-3.5" />
           Filters
           {hasActiveFilters && (
-            <span className="ml-1 rounded-full bg-primary-foreground text-primary px-1.5 py-0.5 text-[10px] font-semibold">
+            <span className="ml-1 rounded-full bg-secondary-foreground text-secondary px-1.5 py-0.5 text-[10px] font-semibold">
               •
             </span>
           )}

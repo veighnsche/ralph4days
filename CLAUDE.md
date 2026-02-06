@@ -79,6 +79,8 @@ Specs in `.specs/` (read `000_SPECIFICATION_FORMAT.md` first). Tests: `just test
 
 **ALWAYS use components from `src/components/ui/` instead of creating custom divs.** We have 50+ shadcn components (Badge, Button, Card, Dialog, Input, Select, etc.) that save time and tokens. Check `src/components/ui/` before writing custom markup. Key components: Badge (variants: default, secondary, outline, destructive), Button (variants + sizes), Card, Alert, Dialog, Sheet, ScrollArea, Tooltip, Separator.
 
+**When using an unused UI component for the first time:** Read `.docs/009_COLOR_SYSTEM_AND_UI_COMPONENT_UPGRADES.md` for the color system design philosophy and upgrade the component before use. The guide explains when to use primary (main actions), secondary (brand/form states), or accent (hover/focus feedback).
+
 ## Environment
 
 Claude CLI required (`claude --version`). Projects need `.ralph/db/` (new format) or `.ralph/prd.yaml` (legacy, auto-migrates). Loop runs in project dir. Commits happen in Claude CLI sessions (not managed by Ralph).
