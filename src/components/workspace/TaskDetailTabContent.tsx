@@ -82,10 +82,7 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
                       }}
                     >
                       {task.status === "done" && (
-                        <CheckCircle2
-                          className="w-3 h-3"
-                          style={{ color: STATUS_CONFIG.done.color }}
-                        />
+                        <CheckCircle2 className="w-3 h-3" style={{ color: STATUS_CONFIG.done.color }} />
                       )}
                     </div>
                     <span className={task.status === "done" ? "line-through text-muted-foreground" : ""}>
@@ -176,16 +173,12 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
           <Separator className="my-2" />
           {task.created && (
             <PropertyRow label="Created">
-              <span className="text-xs text-muted-foreground">
-                {formatDate(task.created)}
-              </span>
+              <span className="text-xs text-muted-foreground">{formatDate(task.created)}</span>
             </PropertyRow>
           )}
           {task.updated && (
             <PropertyRow label="Updated">
-              <span className="text-xs text-muted-foreground">
-                {formatDate(task.updated)}
-              </span>
+              <span className="text-xs text-muted-foreground">{formatDate(task.updated)}</span>
             </PropertyRow>
           )}
           {task.completed && (
