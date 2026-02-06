@@ -1,0 +1,143 @@
+# Discipline Banner Image Prompts
+
+Z-Image **Base** prompts for each of the 10 default disciplines. Generated at **2000×500 (4:1)** for use as fading card-top banners. Each prompt follows the [6-part Z-Image formula](https://www.z-image.win/blog/z-image-prompt-formula-6-part-template): Subject + Scene + Composition + Lighting + Style + Constraints.
+
+Every discipline is represented by tangible physical objects that metaphorically connect to what the discipline does — card catalogs for databases, chemistry labs for testing, switchboards for APIs, etc.
+
+> **Note:** Use **Z-Image Base**, not Turbo. Turbo [ignores negative prompts entirely](https://gist.github.com/illuminatianon/c42f8e57f1e3ebf037dd58043da9de32) (no CFG). Base supports the `negative_prompt` field needed for consistency.
+
+## Global Prompt (prepend to every discipline prompt)
+
+```
+Ultra-wide panoramic photograph at 4:1 aspect ratio. The scene is shot through a subtle tilt-shift lens giving a miniature-world softness to the edges. The bottom third of the image dissolves into a smooth uninterrupted gradient fade to pure black, with no objects or details visible in that region — only a clean transition from scene to darkness. All subjects and visual weight are concentrated in the upper two-thirds of the frame. The overall mood is quiet, contemplative, and slightly romanticized — like a beautifully lit diorama viewed through glass. Color palette is muted and desaturated with one dominant accent color that ties the scene together. Consistent grain structure throughout, resembling medium-format film stock. Shallow depth of field with a single plane of sharp focus and everything else gently falling off. The image should feel like a still from a Wes Anderson film crossed with a product catalog — precise, intentional, and deeply tactile.
+```
+
+## Global Negative Prompt (use for every discipline)
+
+```
+people, faces, hands, fingers, human figures, crowd, portrait, selfie, text, words, letters, numbers, typography, caption, subtitle, watermark, signature, logo, brand name, icon overlay, UI elements, buttons, menus, screenshot, browser chrome, blurry, out of focus, motion blur, noise, grain clumps, banding, jpeg artifacts, compression, pixelated, low resolution, upscaled, cartoon, anime, illustration, 3D render, CGI, plastic, glossy, oversaturated, neon, garish, HDR tonemapping, lens flare, chromatic aberration, vignette, fisheye distortion, split image, collage, grid, multiple panels, border, frame, matte painting, concept art, sketch, line art, flat color
+```
+
+**Usage:** Copy the global prompt, then append the discipline-specific prompt below it. Use the global negative prompt combined with the discipline-specific negative prompt (comma-separated concatenation). The global handles format, fade, mood, and universal exclusions. The discipline sections handle subject, scene, accent color, and scene-specific exclusions.
+
+---
+
+## Frontend (`#3b82f6` blue)
+
+**Prompt:**
+```
+Dominant accent color: #3b82f6 blue. A sleek ultrawide curved monitor glowing with a vivid blue interface — rows of blue-tinted UI cards, buttons, and toggles on a dark background, the screen casting a strong blue wash across the entire desk. The desk surface is dark walnut bathed in blue monitor light, a white ceramic mug reflecting blue on its rim, a mechanical keyboard with bright blue LED backlighting between every key. The wall behind has a soft blue ambient spill from the screen. Everything in the scene is tinted and touched by this saturated blue light. Shot from slightly above at a shallow angle, wide panoramic framing. Clean editorial photography style where blue is the overwhelmingly dominant color, every surface catching blue reflections.
+```
+
+**Negative:**
+```
+readable text on screen, legible code, actual website, real application, phone, tablet, multiple monitors, RGB rainbow lighting, gaming chair, messy desk, food wrappers, sticky notes, cables on desk, warm tones, orange, red cast
+```
+
+## Backend (`#8b5cf6` purple)
+
+**Prompt:**
+```
+Dominant accent color: #8b5cf6 violet-purple. A row of matte black server rack blades in a dark data center hallway, every status LED glowing rich violet-purple, dozens of small purple lights repeated across each blade face. The floor is perforated steel tiles with purple light pooling beneath the racks and reflecting upward. Thick bundled cables overhead are lit from below by the purple glow. A violet-purple haze hangs in the cold air between the racks, turning the entire corridor into a purple-lit tunnel. The ceiling catches diffused purple reflections. Every metallic surface — rack rails, cable trays, door handles — shows purple highlights on its edges. Wide panoramic composition shot at eye level looking straight down the server aisle. Moody cinematic photography where violet-purple is the only color breaking through the darkness.
+```
+
+**Negative:**
+```
+bright overhead fluorescent lights, office ceiling tiles, visible ceiling, white walls, green LED only, desktop computers, monitors showing content, open laptop, messy cables on floor, exposed wiring, fire, sparks, smoke damage, warm orange lighting
+```
+
+## Wiring (`#06b6d4` cyan)
+
+**Prompt:**
+```
+Dominant accent color: #06b6d4 cyan. A pristine patch panel with dozens of ethernet cables all in vivid cyan — bright cyan cords plugged into every port, each cable following a perfect curved path through cable management rings, creating a wall of flowing cyan lines. The brushed aluminum rack has rows of small cyan LED status lights glowing intensely beside each port, casting cyan pools onto the metal faceplate. Overhead lighting has a cool cyan tint, and every reflective surface — the aluminum rails, the port bezels, the cable clips — catches sharp cyan highlights. The entire scene reads as a field of cyan against dark gunmetal gray. Shot from directly in front, filling the wide frame edge to edge. Technical product photography style where cyan completely dominates the color palette.
+```
+
+**Negative:**
+```
+tangled cables, messy wiring, cable spaghetti, dust, dirty equipment, yellow cables, orange cables, red cables, warm tones, wooden surface, home router, consumer electronics, wall outlet, power strip, zip ties visible, velcro straps
+```
+
+## Database (`#10b981` green)
+
+**Prompt:**
+```
+Dominant accent color: #10b981 emerald green. A long wooden library card catalog cabinet stretching across the frame, dozens of small brass-handled drawers in neat rows, some drawers pulled partially open revealing neatly organized index cards with emerald-green tab dividers. Three emerald-green glass banker's lamps sit evenly spaced along the top of the cabinet, each casting a rich pool of saturated emerald light onto the wood surface and the nearby brick wall. The brass drawer handles catch bright emerald reflections. The index cards inside the open drawers are lit from above by the green lamplight, giving them an emerald tint. The entire warm scene is suffused with this deep emerald green glow mixing with the natural wood tones. Shot at a wide panoramic angle, eye level. Vintage editorial photography where emerald green is the dominant color accent on every surface.
+```
+
+**Negative:**
+```
+modern furniture, computer, monitor, plastic, books on shelves, bookcase, library shelves, reading room, scattered papers on floor, broken drawers, peeling paint, water damage, cobwebs, dust bunnies, fluorescent lighting, blue tones, cold tones
+```
+
+## Testing (`#f59e0b` amber)
+
+**Prompt:**
+```
+Dominant accent color: #f59e0b amber-gold. A chemistry laboratory workbench stretching wide across the frame, lined with Erlenmeyer flasks, graduated cylinders, and beakers all filled with glowing amber-gold liquid, the glass catching and refracting rich golden light throughout the scene. Burner flames underneath several flasks burn bright amber-orange. A rack of test tubes holds liquids in graduating shades of amber from pale honey to deep gold. The overhead lighting is warm amber tungsten, casting golden reflections across every glass surface and pooling amber light on the dark stone benchtop. Steam rising from the flasks is backlit amber. Lab notebooks and safety goggles on the bench are bathed in golden warmth. The entire scene glows as if lit from within by amber light. Shot at bench height, wide and panoramic. Scientific photography where amber-gold saturates every reflective surface.
+```
+
+**Negative:**
+```
+biohazard, toxic waste, spilled chemicals, broken glass, shattered beaker, explosion, fire damage, gas mask, protective suit, syringes, needles, medical equipment, hospital, operating room, microscope slides, petri dishes with bacteria, green slime, blue chemicals, cool tones
+```
+
+## Infrastructure (`#6366f1` indigo)
+
+**Prompt:**
+```
+Dominant accent color: #6366f1 indigo. An aerial view of a vast wind farm at deep twilight, white turbines standing in neat rows across dark rolling hills under an immense indigo sky — the sky is a rich saturated gradient from deep indigo at the zenith down to pale indigo-lavender at the horizon. The turbine blades catch indigo light on their edges. The gravel maintenance roads below reflect the indigo twilight. Small electrical substations have tiny indigo-tinted security lights. The shadows on the hills are deep indigo, the clouds are stained indigo-purple, the entire atmosphere is thick with indigo color. The horizon line sits low, giving most of the frame to this overwhelming indigo sky. Wide panoramic landscape shot. Cinematic photography where indigo completely owns the sky, the shadows, the reflections, and the mood.
+```
+
+**Negative:**
+```
+daytime bright sun, harsh midday light, clear blue sky, clouds covering turbines, fog obscuring view, city skyline, buildings, houses, cars on roads, solar panels, power lines crossing frame, birds, airplanes, contrails, warm sunset orange, red sky, yellow tones, flat terrain, desert
+```
+
+## Security (`#ef4444` red)
+
+**Prompt:**
+```
+Dominant accent color: #ef4444 red. A heavy steel vault door slightly ajar, the entire scene dominated by intense red light. Three red warning lights mounted above the door frame flood the vault face with deep crimson, turning every bolt head, every scratch in the steel, and every locking bar into a study in red light and black shadow. The chrome combination dial reflects bright red. The concrete wall surrounding the door catches red spill light. The narrow gap where the door sits ajar reveals more red emergency lighting from inside the chamber. The floor in front of the vault has red light pooling across it. Every metallic surface — bolts, hinges, handle, locking bars — gleams with red highlights against gunmetal darkness. Shot wide and panoramic at eye level. Industrial photography where red light is the only illumination, painting the entire scene in shades of crimson, scarlet, and deep cherry.
+```
+
+**Negative:**
+```
+padlock, chain link fence, barbed wire, prison cell, jail bars, handcuffs, weapon, gun, knife, blood, danger sign, warning tape, yellow caution tape, bright room inside vault, gold bars, money stacks, jewelry, treasure, bank lobby, marble floor, clean white walls, green tones, blue tones
+```
+
+## Documentation (`#14b8a6` teal)
+
+**Prompt:**
+```
+Dominant accent color: #14b8a6 teal. An old mapmaker's desk seen from above, covered in overlapping blueprints drawn entirely in teal ink — every line, every contour, every annotation rendered in rich teal on cream paper. Open leather-bound journals show pages of teal-inked handwriting. Nautical charts have teal grid lines and teal coastal outlines. The inkwell is filled with vivid teal ink, a dip pen resting beside it with a teal-stained nib. A brass compass sits on teal-printed graph paper. The desk lamp has a teal glass shade casting a warm teal-tinted glow across the papers, making the teal ink lines luminous. Even the leather journal covers have a teal patina on their brass clasps. Wide overhead panoramic shot. Editorial photography where teal ink and teal light unify every element on the desk.
+```
+
+**Negative:**
+```
+readable text, legible writing, modern paper, printed documents, laser printout, computer, tablet, phone, post-it notes, highlighter marks, coffee stain, ring stain, torn paper, crumpled paper, trash, pencil shavings, eraser dust, bright pink, red ink, neon colors, plastic rulers, modern office supplies
+```
+
+## Design (`#ec4899` pink)
+
+**Prompt:**
+```
+Dominant accent color: #ec4899 pink. A designer's drafting table overflowing with pink — fabric swatches in rose, blush, fuchsia, and hot pink layered across the surface. Paint chips fanned out in a long gradient from pale pink to deep magenta dominate the center of the frame. A set of markers in various pink shades arranged by hue. A half-finished watercolor sketch using only pinks and magentas on white paper. A cup of pink-tinted latte, a pink ceramic vase with dried pink pampas grass, pink washi tape rolls. The daylight flooding in from the right has a warm rosy cast, making even the white table surface blush pink. Shadows under each swatch are soft pink. The entire scene is an explosion of pink tones from pastel to vivid. Shot from above at a slight angle, wide panoramic framing. Lifestyle editorial photography where pink is absolutely everywhere — the dominant, secondary, and accent color all at once.
+```
+
+**Negative:**
+```
+computer screen, digital tablet, iPad, Wacom, mouse, keyboard, dark moody lighting, cluttered mess, paint spills, dirty brushes in water, stained table, industrial workspace, concrete floor, brown tones, olive green, dull gray, masculine aesthetic, tools, hardware, screws, nails
+```
+
+## API (`#84cc16` lime)
+
+**Prompt:**
+```
+Dominant accent color: #84cc16 lime green. A vintage telephone switchboard stretching across the full wide frame, rows and rows of brass jack sockets with dozens of patch cords all wrapped in vivid lime-green woven cloth, creating a dense web of bright lime lines draped in graceful curves between connections. Every signal lamp glows intense lime-chartreuse, dozens of them dotting the dark mahogany board like lime-green fireflies. The brass jack sockets catch lime reflections from the indicator lamps. The overhead tungsten light has a warm lime-green tint from bouncing off all the green cords. The mahogany wood surface between the sockets shows lime-green light pooling in its grain. Even the brass nameplate rail along the top reflects the lime glow. The entire switchboard reads as a matrix of bright lime green against rich dark wood. Retro-industrial photography where lime green completely saturates the scene through the cords, the lamps, and their reflections on every surface.
+```
+
+**Negative:**
+```
+modern phone, smartphone, rotary phone handset, telephone receiver, cord tangled mess, broken plugs, exposed copper wire, sparks, electrical damage, bright overhead fluorescent, white walls, plastic housing, beige plastic, faded yellow, pink tones, blue tones, cool lighting, digital display, LED screen
+```
