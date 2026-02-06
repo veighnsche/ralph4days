@@ -60,21 +60,21 @@ check:
 lint:
     cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
     oxlint src
-    bun exec biome lint src
+    bunx biome lint src
 
 # Fix linting issues automatically
 lint-fix:
-    bun exec biome lint --write src
+    bunx biome lint --write src
 
 # Format all code (Rust + TypeScript)
 fmt:
     cargo fmt --manifest-path src-tauri/Cargo.toml
-    bun exec biome format --write src
+    bunx biome format --write src
 
 # Check formatting without writing
 fmt-check:
     cargo fmt --manifest-path src-tauri/Cargo.toml --check
-    bun exec biome format src
+    bunx biome format src
 
 # Run all checks (lint + format)
 check-all: lint fmt-check
@@ -106,7 +106,7 @@ test-monkey:
 
 # Update visual test snapshots
 test-visual-update:
-    bun exec playwright test e2e/visual/ --update-snapshots
+    bunx playwright test e2e/visual/ --update-snapshots
 
 # === Building ===
 
@@ -137,7 +137,7 @@ release-linux:
 
 # Install Playwright browsers
 playwright-install:
-    bun exec playwright install --with-deps
+    bunx playwright install --with-deps
 
 # Check if mold linker is installed
 check-mold:
