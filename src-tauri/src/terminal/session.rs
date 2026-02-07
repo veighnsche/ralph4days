@@ -31,8 +31,7 @@ pub(crate) struct PTYSession {
     pub master: Box<dyn MasterPty + Send>,
     pub child: Arc<Mutex<Box<dyn portable_pty::Child + Send + Sync>>>,
     // Stored for ownership — reader thread runs until EOF, then self-cleans
-    #[allow(dead_code)]
-    pub reader_handle: Option<std::thread::JoinHandle<()>>,
+    pub _reader_handle: Option<std::thread::JoinHandle<()>>,
 }
 
 #[cfg(test)]

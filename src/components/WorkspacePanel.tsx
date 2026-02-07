@@ -3,15 +3,8 @@ import { BrowserTabs } from '@/components/BrowserTabs'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { type Model, ModelThinkingTabButton } from '@/components/ModelThinkingTabButton'
 import { Button } from '@/components/ui/button'
-import {
-  BraindumpFormTabContent,
-  DisciplineFormTabContent,
-  FeatureFormTabContent,
-  TaskDetailTabContent,
-  TaskFormTabContent,
-  TerminalTabContent
-} from '@/components/workspace'
-import { useWorkspaceStore, type WorkspaceTab } from '@/stores/useWorkspaceStore'
+import { TerminalTabContent } from '@/components/workspace'
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
 export function WorkspacePanel() {
   const tabs = useWorkspaceStore(s => s.tabs)
@@ -23,6 +16,7 @@ export function WorkspacePanel() {
   const handleNewTab = (model: Model, thinking: boolean) => {
     openTab({
       type: 'terminal',
+      component: TerminalTabContent,
       title: `Claude (${model})`,
       closeable: true,
       data: {
@@ -58,41 +52,12 @@ export function WorkspacePanel() {
           tabs.map(tab => (
             <div key={tab.id} className={tab.id === activeTabId ? 'absolute inset-0' : 'absolute inset-0 hidden'}>
               <ErrorBoundary>
-                <TabContent tab={tab} />
+                <tab.component tab={tab} />
               </ErrorBoundary>
             </div>
           ))
         )}
       </div>
-    </div>
-  )
-}
-
-function TabContent({ tab }: { tab: WorkspaceTab }) {
-  switch (tab.type) {
-    case 'terminal':
-      return <TerminalTabContent tab={tab} />
-    case 'braindump-form':
-      return <BraindumpFormTabContent tab={tab} />
-    case 'task-form':
-      return <TaskFormTabContent tab={tab} />
-    case 'feature-form':
-      return <FeatureFormTabContent tab={tab} />
-    case 'discipline-form':
-      return <DisciplineFormTabContent tab={tab} />
-    case 'task-detail':
-      return <TaskDetailTabContent tab={tab} />
-    case 'feature-detail':
-      return <PlaceholderTab title={tab.title} />
-    case 'discipline-detail':
-      return <PlaceholderTab title={tab.title} />
-  }
-}
-
-function PlaceholderTab({ title }: { title: string }) {
-  return (
-    <div className="h-full flex items-center justify-center text-muted-foreground">
-      <span>{title} — coming soon</span>
     </div>
   )
 }
@@ -103,6 +68,7 @@ function EmptyWorkspace() {
   const handleCreateTerminal = () => {
     openTab({
       type: 'terminal',
+      component: TerminalTabContent,
       title: 'Terminal 1',
       closeable: true
     })

@@ -8,6 +8,7 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { ItemGroup, ItemSeparator } from '@/components/ui/item'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
+import { BraindumpFormTabContent } from '@/components/workspace'
 import { useInvoke } from '@/hooks/useInvoke'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { Feature, GroupStats, ProjectProgress } from '@/types/prd'
@@ -33,6 +34,7 @@ export function FeaturesPage() {
   const handleRambleAboutFeatures = () => {
     openTab({
       type: 'braindump-form',
+      component: BraindumpFormTabContent,
       title: 'Ramble about Features',
       closeable: true
     })
@@ -41,6 +43,7 @@ export function FeaturesPage() {
   const handleBraindumpProject = () => {
     openTab({
       type: 'braindump-form',
+      component: BraindumpFormTabContent,
       title: 'Braindump Project',
       closeable: true
     })

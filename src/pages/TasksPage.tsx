@@ -4,6 +4,7 @@ import { PRDBody } from '@/components/prd/PRDBody'
 import { PRDHeader } from '@/components/prd/PRDHeader'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
+import { BraindumpFormTabContent, TaskDetailTabContent } from '@/components/workspace'
 import { useInvoke } from '@/hooks/useInvoke'
 import { usePRDData } from '@/hooks/usePRDData'
 import { usePRDFilters } from '@/hooks/usePRDFilters'
@@ -29,6 +30,7 @@ export function TasksPage() {
   const handleBraindumpProject = () => {
     openTab({
       type: 'braindump-form',
+      component: BraindumpFormTabContent,
       title: 'Braindump Project',
       closeable: true
     })
@@ -37,6 +39,7 @@ export function TasksPage() {
   const handleYapAboutTasks = () => {
     openTab({
       type: 'braindump-form',
+      component: BraindumpFormTabContent,
       title: 'Yap about Tasks',
       closeable: true
     })
@@ -46,6 +49,7 @@ export function TasksPage() {
     (task: Task) => {
       openTab({
         type: 'task-detail',
+        component: TaskDetailTabContent,
         title: task.title,
         closeable: true,
         data: { entityId: task.id, entity: task }

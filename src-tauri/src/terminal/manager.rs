@@ -9,6 +9,16 @@ use tauri::{AppHandle, Emitter};
 use super::events::{PtyClosedEvent, PtyOutputEvent};
 use super::session::{build_settings_json, PTYSession, SessionConfig};
 
+trait ToStringErr<T> {
+    fn err_str(self) -> Result<T, String>;
+}
+
+impl<T, E: std::fmt::Display> ToStringErr<T> for Result<T, E> {
+    fn err_str(self) -> Result<T, String> {
+        self.map_err(|e| e.to_string())
+    }
+}
+
 pub struct PTYManager {
     sessions: Arc<Mutex<HashMap<String, PTYSession>>>,
 }
@@ -36,7 +46,7 @@ impl PTYManager {
     ) -> Result<(), String> {
         // Reject duplicate session IDs to prevent leaking the old PTY process
         {
-            let sessions = self.sessions.lock().map_err(|e| e.to_string())?;
+            let sessions = self.sessions.lock().err_str()?;
             if sessions.contains_key(&session_id) {
                 return Err(format!("PTY session already exists: {session_id}"));
             }
@@ -135,12 +145,12 @@ impl PTYManager {
             writer,
             master: pair.master,
             child,
-            reader_handle: Some(reader_handle),
+            _reader_handle: Some(reader_handle),
         };
 
         self.sessions
             .lock()
-            .map_err(|e| e.to_string())?
+            .err_str()?
             .insert(session_id, session);
 
         Ok(())
@@ -148,20 +158,20 @@ impl PTYManager {
 
     pub fn send_input(&self, session_id: &str, data: &[u8]) -> Result<(), String> {
         let writer = {
-            let sessions = self.sessions.lock().map_err(|e| e.to_string())?;
+            let sessions = self.sessions.lock().err_str()?;
             let session = sessions
                 .get(session_id)
                 .ok_or_else(|| format!("No PTY session: {session_id}"))?;
             Arc::clone(&session.writer)
         };
-        let mut guard = writer.lock().map_err(|e| e.to_string())?;
+        let mut guard = writer.lock().err_str()?;
         guard
             .write_all(data)
             .map_err(|e| format!("Failed to write to PTY: {e}"))
     }
 
     pub fn resize(&self, session_id: &str, cols: u16, rows: u16) -> Result<(), String> {
-        let sessions = self.sessions.lock().map_err(|e| e.to_string())?;
+        let sessions = self.sessions.lock().err_str()?;
         let session = sessions
             .get(session_id)
             .ok_or_else(|| format!("No PTY session: {session_id}"))?;
@@ -179,7 +189,7 @@ impl PTYManager {
     pub fn terminate(&self, session_id: &str) -> Result<(), String> {
         // Remove session from map first, then kill outside the lock
         let session = {
-            let mut sessions = self.sessions.lock().map_err(|e| e.to_string())?;
+            let mut sessions = self.sessions.lock().err_str()?;
             sessions.remove(session_id)
         };
 

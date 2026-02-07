@@ -9,9 +9,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { WorkspacePanel } from '@/components/WorkspacePanel'
 import { useInvoke } from '@/hooks/useInvoke'
 import type { Page } from '@/hooks/useNavigation'
-import { DisciplinesPage } from '@/pages/DisciplinesPage'
-import { FeaturesPage } from '@/pages/FeaturesPage'
-import { TasksPage } from '@/pages/TasksPage'
+import { pageRegistry } from '@/pages/pageRegistry'
 import './index.css'
 
 function App() {
@@ -63,15 +61,11 @@ function App() {
         <ResizablePanel defaultSize={50} minSize={40}>
           <div className="h-full flex flex-col overflow-hidden">
             <div className="flex-1 min-h-0 overflow-hidden relative">
-              <div className={currentPage === 'tasks' ? 'h-full' : 'hidden'}>
-                <TasksPage />
-              </div>
-              <div className={currentPage === 'features' ? 'h-full' : 'hidden'}>
-                <FeaturesPage />
-              </div>
-              <div className={currentPage === 'disciplines' ? 'h-full' : 'hidden'}>
-                <DisciplinesPage />
-              </div>
+              {Object.entries(pageRegistry).map(([id, PageComponent]) => (
+                <div key={id} className={currentPage === id ? 'h-full' : 'hidden'}>
+                  <PageComponent />
+                </div>
+              ))}
             </div>
             <BottomBar lockedProject={lockedProject} currentPage={currentPage} onPageChange={setCurrentPage} />
           </div>

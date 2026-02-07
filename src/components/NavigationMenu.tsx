@@ -11,6 +11,12 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
+import {
+  BraindumpFormTabContent,
+  DisciplineFormTabContent,
+  FeatureFormTabContent,
+  TaskFormTabContent
+} from '@/components/workspace'
 import type { Page } from '@/hooks/useNavigation'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
@@ -25,6 +31,7 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
   const handleCreateTask = () => {
     openTab({
       type: 'task-form',
+      component: TaskFormTabContent,
       title: 'Create Task',
       closeable: true,
       data: { mode: 'create' }
@@ -34,6 +41,7 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
   const handleCreateFeature = () => {
     openTab({
       type: 'feature-form',
+      component: FeatureFormTabContent,
       title: 'Create Feature',
       closeable: true,
       data: { mode: 'create' }
@@ -43,6 +51,7 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
   const handleCreateDiscipline = () => {
     openTab({
       type: 'discipline-form',
+      component: DisciplineFormTabContent,
       title: 'Create Discipline',
       closeable: true,
       data: { mode: 'create' }
@@ -52,6 +61,7 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
   const handleYapAboutTasks = () => {
     openTab({
       type: 'braindump-form',
+      component: BraindumpFormTabContent,
       title: 'Yap about Tasks',
       closeable: true
     })
@@ -60,6 +70,7 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
   const handleRambleAboutFeatures = () => {
     openTab({
       type: 'braindump-form',
+      component: BraindumpFormTabContent,
       title: 'Ramble about Features',
       closeable: true
     })

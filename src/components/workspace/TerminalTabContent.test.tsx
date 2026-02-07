@@ -38,6 +38,7 @@ describe('TerminalTabContent', () => {
   const mockTab: WorkspaceTab = {
     id: 'test-terminal-1',
     type: 'terminal',
+    component: TerminalTabContent,
     title: 'Terminal 1',
     closeable: true,
     data: {
@@ -68,6 +69,7 @@ describe('TerminalTabContent', () => {
     const minimalTab: WorkspaceTab = {
       id: 'test-terminal-2',
       type: 'terminal',
+      component: TerminalTabContent,
       title: 'Terminal 2',
       closeable: true
     }

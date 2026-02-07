@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
+import { TerminalTabContent } from '@/components/workspace/TerminalTabContent'
 import { useTabMeta } from '@/hooks/useTabMeta'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
@@ -81,6 +82,7 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
     try {
       const terminalId = openTab({
         type: 'terminal',
+        component: TerminalTabContent,
         title: `Claude (${model})`,
         closeable: true,
         data: { model, thinking }

@@ -57,7 +57,8 @@ fn initialize_project_for_fixture(
     )?;
 
     let claude_path = ralph_dir.join("CLAUDE.RALPH.md");
-    let claude_template = format!("# {project_title} - Ralph Context
+    let claude_template = format!(
+        "# {project_title} - Ralph Context
 
 ## Project Overview
 
@@ -78,7 +79,8 @@ Describe the architecture, tech stack, and key components.
 - Any gotchas or things to watch out for
 - Known issues or limitations
 - Dependencies or external services
-");
+"
+    );
 
     fs::write(&claude_path, claude_template)
         .map_err(|e| format!("Failed to create CLAUDE.RALPH.md: {e}"))?;
@@ -347,8 +349,7 @@ just dev-mock 03-with-tasks-project
     fs::write(fixture_path.join("README.md"), readme).unwrap();
 
     // Initialize
-    initialize_project_for_fixture(fixture_path.clone(), "Tasks Project".to_owned(), true)
-        .unwrap();
+    initialize_project_for_fixture(fixture_path.clone(), "Tasks Project".to_owned(), true).unwrap();
 
     let db = open_fixture_db(&fixture_path);
 
@@ -995,9 +996,7 @@ just dev-mock 04-dev-project
             priority: None,
             tags: vec!["storage".to_owned()],
             depends_on: vec![],
-            acceptance_criteria: Some(
-                vec!["Persists theme preference across sessions".to_owned()],
-            ),
+            acceptance_criteria: Some(vec!["Persists theme preference across sessions".to_owned()]),
             context_files: vec![],
             output_artifacts: vec![],
             hints: None,

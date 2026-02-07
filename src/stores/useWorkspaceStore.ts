@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
+import type { ComponentType } from 'react'
 import { create } from 'zustand'
 import type { DisciplineConfig } from '@/hooks/useDisciplines'
 import type { Feature, Task } from '@/types/prd'
@@ -16,6 +17,7 @@ export type TabType =
 export interface WorkspaceTab {
   id: string
   type: TabType
+  component: ComponentType<{ tab: WorkspaceTab }>
   title: string
   icon?: LucideIcon
   closeable: boolean
