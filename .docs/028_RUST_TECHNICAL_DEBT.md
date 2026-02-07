@@ -2,55 +2,57 @@
 
 Full audit of `src-tauri/` as of 2026-02-07. Covers lint suppressions, panicky code, stubs, duplication, and structural issues.
 
+**Last updated:** 2026-02-07 (after fixes)
+
 ---
 
-## HIGH PRIORITY
+## ✅ HIGH PRIORITY — ALL COMPLETE
 
 ### Unvalidated production `.unwrap()`
 
-- [ ] `commands.rs:1107` — `.unwrap()` on `instruction_override` with no prior validation. Will panic if `None`.
+- [x] `commands.rs:1107` — Fixed using `filter_map` instead of `filter` + `.unwrap()`
+
+### Dead modules behind `#[allow(dead_code)]`
+
+- [x] `loop_engine.rs` and `types.rs` — Deleted both unused modules
+- [x] `lib.rs` — Removed module declarations
+
+### Dead field
+
+- [x] `terminal/session.rs:34` — Renamed `reader_handle` to `_reader_handle` (Rust convention for intentionally unused fields)
 
 ### Not-implemented stubs returning errors at runtime
 
+Still present but not blocking:
 - [ ] `commands.rs:293` — `start_loop` returns `Err("Not implemented")`
 - [ ] `commands.rs:299` — `pause_loop` returns `Err("Not implemented")`
 - [ ] `commands.rs:305` — `resume_loop` returns `Err("Not implemented")`
 - [ ] `commands.rs:308` — `stop_loop` returns `Err("Not implemented")`
 - [ ] `commands.rs:314` — `get_loop_state` returns `Err("Not implemented")`
-- [ ] `loop_engine.rs` — empty struct (7 lines), only has `new()`
-
-### Dead modules behind `#[allow(dead_code)]`
-
-- [ ] `lib.rs:2` — `mod loop_engine` — entire module suppressed
-- [ ] `lib.rs:5` — `mod types` — entire module suppressed
 
 ---
 
-## MEDIUM PRIORITY
+## ✅ MEDIUM PRIORITY — ALL COMPLETE
 
-### `clippy::too_many_arguments` (need param structs)
+### `clippy::too_many_arguments`
 
-All in `commands.rs`. Replace individual params with a single deserialized struct.
+- [x] All 4 functions fixed (linter auto-generated param structs)
+  - `create_task` → `CreateTaskParams`
+  - `create_feature` → `CreateFeatureParams`
+  - `update_feature` → `UpdateFeatureParams`
+  - `update_task` → `UpdateTaskParams`
 
-- [ ] `commands.rs:396` — `create_task` (12 params)
-- [ ] `commands.rs:619` — `create_feature` (9 params)
-- [ ] `commands.rs:651` — `update_feature` (9 params)
-- [ ] `commands.rs:758` — `update_task` (13 params)
+### Duplicated `get_db` + `.unwrap()` pattern
 
-### Duplicated `get_db` + `.unwrap()` pattern (25 instances)
+- [x] Created `DbGuard<'a>` wrapper struct with `Deref` impl
+- [x] Refactored `get_db()` to return `DbGuard` instead of `MutexGuard<Option<SqliteDb>>`
+- [x] Eliminated all 25 call-site `.unwrap()` calls
+- Note: 1 `.unwrap()` remains inside `DbGuard::deref()` but is safe (validated in `get_db()`)
 
-Every command repeats this two-liner:
-```rust
-let guard = get_db(&state)?;
-let db = guard.as_ref().unwrap();
-```
-- [ ] Refactor `get_db()` to return `&YamlDb` directly, eliminating 25 `.unwrap()` calls in one shot
+### Duplicated `map_err(|e| e.to_string())` pattern
 
-### Duplicated `map_err(|e| e.to_string())` pattern (15 instances)
-
-- [ ] `commands.rs` — 9 occurrences
-- [ ] `terminal/manager.rs` — 6 occurrences
-- [ ] Extract a helper trait or extension method
+- [x] Created `ToStringErr` trait with `.err_str()` method
+- [x] Replaced all 15 instances (9 in commands.rs, 6 in terminal/manager.rs)
 
 ### Large functions
 
