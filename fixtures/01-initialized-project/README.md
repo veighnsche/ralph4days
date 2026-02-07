@@ -22,10 +22,7 @@ ralph --project mock/initialized-project
 
 ## Contents
 
-- `.undetect-ralph/db/tasks.yaml` - Empty (AI agents will add tasks)
-- `.undetect-ralph/db/features.yaml` - Empty (AI agents will add features)
-- `.undetect-ralph/db/disciplines.yaml` - 10 default disciplines (reference)
-- `.undetect-ralph/db/metadata.yaml` - Project metadata (no counters yet)
+- `.undetect-ralph/db/ralph.db` - SQLite database (empty tasks/features, 10 default disciplines)
 - `.undetect-ralph/CLAUDE.RALPH.md` - Template for context
 
 ## Expected Behavior

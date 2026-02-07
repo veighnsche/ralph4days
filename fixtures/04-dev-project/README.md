@@ -9,7 +9,7 @@ and varied timestamps.
 ## Usage
 
 ```bash
-cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures generate_all_fixtures -- --nocapture --test-threads=1
+cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures -- --nocapture --test-threads=1
 just reset-mock
 just dev-mock 04-dev-project
 ```

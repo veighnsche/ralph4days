@@ -9,7 +9,7 @@ It has features defined and tasks created.
 
 ```bash
 # Generate fixtures
-cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures generate_all_fixtures -- --nocapture --test-threads=1
+cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures -- --nocapture
 
 # Reset mock and use
 just reset-mock
@@ -18,10 +18,7 @@ just dev-mock 03-with-tasks-project
 
 ## Contents
 
-- `.undetect-ralph/db/tasks.yaml` - 3 tasks across 2 features
-- `.undetect-ralph/db/features.yaml` - 2 features
-- `.undetect-ralph/db/disciplines.yaml` - 10 defaults
-- `.undetect-ralph/db/metadata.yaml` - Project metadata + counters
+- `.undetect-ralph/db/ralph.db` - SQLite database (2 features, 3 tasks)
 
 ## Tasks
 
