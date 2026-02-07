@@ -1,9 +1,0 @@
----
-source: crates/yaml-db/tests/golden_tests.rs
-expression: features_yaml
----
-features:
-- name: user-management
-  display_name: User Management
-  acronym: USRM
-  created: 2026-02-06

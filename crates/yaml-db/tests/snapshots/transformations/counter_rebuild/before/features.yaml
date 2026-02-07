@@ -1,7 +1,0 @@
-features:
-- name: auth
-  display_name: Auth
-  acronym: AUTH
-- name: payments
-  display_name: Payments
-  acronym: PAYM

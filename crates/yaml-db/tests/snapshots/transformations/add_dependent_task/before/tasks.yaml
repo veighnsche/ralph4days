@@ -1,8 +1,0 @@
-tasks:
-- id: 1
-  feature: authentication
-  discipline: backend
-  title: Implement login API
-  status: pending
-  priority: high
-  created: 2026-02-06

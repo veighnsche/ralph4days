@@ -1,8 +1,0 @@
----
-source: crates/yaml-db/tests/golden_tests.rs
-expression: yaml_content
----
-schema_version: '1.0'
-project:
-  title: Untitled Project
-  created: 2026-02-06
