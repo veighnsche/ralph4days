@@ -1,6 +1,7 @@
 import type { DragEndEvent } from '@dnd-kit/core'
 import { invoke } from '@tauri-apps/api/core'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useInvoke } from './useInvoke'
 
 export interface SectionMeta {
   name: string
@@ -43,17 +44,12 @@ function configsToBlocks(configs: SectionConfigWire[], sectionMeta: SectionMeta[
 
 export function useSectionConfiguration(open: boolean) {
   const [sections, setSections] = useState<SectionBlock[]>([])
-  const [sectionMeta, setSectionMeta] = useState<SectionMeta[]>([])
+  const { data: sectionMeta = [] } = useInvoke<SectionMeta[]>('get_section_metadata', undefined, { enabled: open })
 
-  useEffect(() => {
-    if (!open) return
-    invoke<SectionMeta[]>('get_section_metadata').then(setSectionMeta).catch(console.error)
-  }, [open])
-
-  const loadRecipeSections = async (promptType: string) => {
+  const loadRecipeSections = async (promptType: string, meta: SectionMeta[]) => {
     try {
       const configs = await invoke<SectionConfigWire[]>('get_recipe_sections', { promptType })
-      setSections(configsToBlocks(configs, sectionMeta))
+      setSections(configsToBlocks(configs, meta))
       return true
     } catch (err) {
       console.error('Failed to load recipe sections:', err)
@@ -61,8 +57,8 @@ export function useSectionConfiguration(open: boolean) {
     }
   }
 
-  const loadCustomSections = (configs: SectionConfigWire[]) => {
-    setSections(configsToBlocks(configs, sectionMeta))
+  const loadCustomSections = (configs: SectionConfigWire[], meta: SectionMeta[]) => {
+    setSections(configsToBlocks(configs, meta))
   }
 
   const handleDragEnd = (event: DragEndEvent) => {

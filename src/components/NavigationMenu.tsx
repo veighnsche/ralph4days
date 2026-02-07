@@ -11,8 +11,8 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import type { Page } from '@/hooks/useNavigation'
 import { useWorkspaceActions } from '@/hooks/useWorkspaceActions'
+import type { Page } from '@/pages/pageRegistry'
 
 interface NavigationMenuProps {
   currentPage: Page

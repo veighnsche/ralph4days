@@ -4,7 +4,7 @@ import { NavigationMenu } from '@/components/NavigationMenu'
 import { Settings } from '@/components/Settings'
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
-import type { Page } from '@/hooks/useNavigation'
+import type { Page } from '@/pages/pageRegistry'
 
 interface BottomBarProps {
   lockedProject: string

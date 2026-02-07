@@ -6,7 +6,7 @@
 
 import { invoke } from '@tauri-apps/api/core'
 import { Brain, Wrench } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { type Model, ModelThinkingPicker } from '@/components/ModelThinkingPicker'
 import { PromptBuilderModal } from '@/components/PromptBuilderModal'
@@ -46,17 +46,9 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
   const [braindump, setBraindump] = useState(DEFAULT_QUESTIONS)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [promptBuilderOpen, setPromptBuilderOpen] = useState(false)
-  const isMountedRef = useRef(true)
-
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false
-    }
-  }, [])
 
   const sendToTerminal = async (terminalId: string, text: string) => {
     await new Promise(resolve => setTimeout(resolve, 1000))
-    if (!isMountedRef.current) return
 
     const terminalExists = useWorkspaceStore.getState().tabs.some(t => t.id === terminalId)
     if (!terminalExists) throw new Error('Terminal tab was closed before sending')
@@ -64,7 +56,6 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
     const bytes = Array.from(new TextEncoder().encode(`${text}\n`))
     await invoke('send_terminal_input', { sessionId: terminalId, data: bytes })
 
-    if (!isMountedRef.current) return
     closeTab(tab.id)
     toast.success('Braindump sent to Claude')
   }
@@ -86,7 +77,7 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
       console.error('Failed to send braindump:', err)
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       toast.error(`Failed to send braindump: ${errorMessage}`)
-      if (isMountedRef.current) setIsSubmitting(false)
+      setIsSubmitting(false)
     }
   }
 

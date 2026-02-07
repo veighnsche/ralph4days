@@ -11,15 +11,8 @@ export function useFeatures() {
     staleTime: 5 * 60 * 1000
   })
 
-  const features = data ?? []
-  const configMap = new Map<string, FeatureConfig>()
-  for (const f of features) {
-    configMap.set(f.name, f)
-  }
-
   return {
-    features,
-    configMap,
+    features: data ?? [],
     error: error ? String(error) : null
   }
 }

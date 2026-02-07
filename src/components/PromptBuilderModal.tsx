@@ -279,13 +279,13 @@ function SortableSectionBlock({
 
   const [instructionOpen, setInstructionOpen] = useState(!!section.instructionOverride)
   const [localInstruction, setLocalInstruction] = useState(section.instructionOverride ?? '')
+  const [prevOverride, setPrevOverride] = useState(section.instructionOverride)
   const categoryColor = CATEGORY_COLORS[section.category] ?? ''
 
-  // Sync from parent when section data changes externally (recipe load, reset)
-  const parentValue = section.instructionOverride ?? ''
-  useEffect(() => {
-    setLocalInstruction(parentValue)
-  }, [parentValue])
+  if (section.instructionOverride !== prevOverride) {
+    setPrevOverride(section.instructionOverride)
+    setLocalInstruction(section.instructionOverride ?? '')
+  }
 
   const handleBlur = () => {
     const committed = localInstruction || null

@@ -8,8 +8,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { Toaster } from '@/components/ui/sonner'
 import { WorkspacePanel } from '@/components/WorkspacePanel'
 import { useInvoke } from '@/hooks/useInvoke'
-import type { Page } from '@/hooks/useNavigation'
-import { pageRegistry } from '@/pages/pageRegistry'
+import { type Page, pageRegistry } from '@/pages/pageRegistry'
 import './index.css'
 
 function App() {

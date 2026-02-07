@@ -36,15 +36,8 @@ export function useDisciplines() {
     select: resolveDisciplines
   })
 
-  const disciplines = data ?? []
-  const configMap: Record<string, DisciplineConfig> = {}
-  for (const d of disciplines) {
-    configMap[d.name] = d
-  }
-
   return {
-    disciplines,
-    configMap,
+    disciplines: data ?? [],
     error: error ? String(error) : null
   }
 }

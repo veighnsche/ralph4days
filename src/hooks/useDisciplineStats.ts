@@ -3,7 +3,7 @@ import { useInvoke } from '@/hooks/useInvoke'
 import type { GroupStats, ProjectProgress } from '@/types/prd'
 
 export function useDisciplineStats() {
-  const { disciplines } = useDisciplines()
+  const { disciplines, error: disciplinesError } = useDisciplines()
   const { data: disciplineStats = [], isLoading: statsLoading } = useInvoke<GroupStats[]>('get_discipline_stats')
   const { data: progress } = useInvoke<ProjectProgress>('get_project_progress')
 
@@ -20,6 +20,7 @@ export function useDisciplineStats() {
       done: progress?.doneTasks ?? 0,
       percent: progress?.progressPercent ?? 0
     },
-    isLoading: statsLoading || disciplines.length === 0
+    isLoading: disciplines.length === 0 || statsLoading,
+    error: disciplinesError ? String(disciplinesError) : null
   }
 }
