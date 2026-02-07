@@ -295,10 +295,7 @@ pub fn should_exclude_from_auto_accumulation(path: &str) -> bool {
     let filename = path.rsplit('/').next().unwrap_or(path);
 
     // Check filename exclusions
-    if AUTO_ACCUMULATE_EXCLUDE
-        .iter()
-        .any(|exc| filename == *exc)
-    {
+    if AUTO_ACCUMULATE_EXCLUDE.contains(&filename) {
         return true;
     }
 

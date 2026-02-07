@@ -281,7 +281,7 @@ impl FeatureLearning {
 
         // Add provenance context
         let mut meta = Vec::new();
-        meta.push(format!("{}", self.source_label()));
+        meta.push(self.source_label().to_string());
         if let Some(iter) = self.iteration {
             meta.push(format!("iteration {}", iter));
         }
