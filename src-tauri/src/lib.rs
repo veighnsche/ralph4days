@@ -27,17 +27,14 @@ pub fn run() {
         .plugin(tauri_plugin_cli::init())
         .manage(AppState::default())
         .setup(|app| {
-            // Parse CLI arguments
             if let Ok(matches) = app.cli().matches() {
                 if let Some(project_path) = matches.args.get("project") {
                     if let serde_json::Value::String(path_str) = &project_path.value {
-                        // Validate and lock project from CLI arg
                         if let Err(e) = commands::validate_project_path(path_str.clone()) {
                             eprintln!("Failed to lock project: {e}");
                             std::process::exit(1);
                         }
 
-                        // Lock the project
                         let state: tauri::State<AppState> = app.state();
                         if let Err(e) = commands::set_locked_project(state, path_str.clone()) {
                             eprintln!("Error: {e}");

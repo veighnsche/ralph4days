@@ -962,7 +962,6 @@ pub fn preview_prompt(
 ) -> Result<PromptPreview, String> {
     let project_path = get_locked_project_path(&state)?;
     let pt = parse_prompt_type(&prompt_type)?;
-    // Convert single override to per-section HashMap
     let overrides = instruction_override.map_or_else(std::collections::HashMap::new, |text| {
         let section_name = format!("{prompt_type}_instructions");
         let mut map = std::collections::HashMap::new();

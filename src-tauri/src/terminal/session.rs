@@ -19,7 +19,6 @@ pub(crate) fn build_settings_json(config: &SessionConfig) -> String {
     settings.insert("outputStyle".into(), "default".into());
     settings.insert("autoUpdatesChannel".into(), "latest".into());
 
-    // Per-task overrides
     if let Some(thinking) = config.thinking {
         settings.insert("alwaysThinkingEnabled".into(), thinking.into());
     }
@@ -50,7 +49,6 @@ mod tests {
         let json = build_settings_json(&config);
         let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
 
-        // Verify all fixed settings are present
         assert_eq!(parsed["promptSuggestionEnabled"], false);
         assert_eq!(parsed["terminalProgressBarEnabled"], false);
         assert_eq!(parsed["respectGitignore"], false);
@@ -59,7 +57,6 @@ mod tests {
         assert_eq!(parsed["outputStyle"], "default");
         assert_eq!(parsed["autoUpdatesChannel"], "latest");
 
-        // Verify thinking is not set when None
         assert!(parsed.get("alwaysThinkingEnabled").is_none());
     }
 
@@ -113,7 +110,6 @@ mod tests {
 
         let json = build_settings_json(&config);
 
-        // Should parse without error
         let result = serde_json::from_str::<serde_json::Value>(&json);
         assert!(result.is_ok());
     }

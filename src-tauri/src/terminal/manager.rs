@@ -58,17 +58,14 @@ impl PTYManager {
         cmd.cwd(working_dir);
         // Interactive sessions — no -p, no --output-format stream-json
 
-        // Fixed CLI flags
         cmd.args(["--permission-mode", "bypassPermissions"]);
         cmd.arg("--verbose");
         cmd.arg("--no-chrome");
 
-        // Per-task model override (omit to use Claude Code's default)
         if let Some(model) = &config.model {
             cmd.args(["--model", model]);
         }
 
-        // Settings JSON (fixed + per-task overrides)
         let settings_json = build_settings_json(&config);
         cmd.args(["--settings", &settings_json]);
 
@@ -94,7 +91,6 @@ impl PTYManager {
             .try_clone_reader()
             .map_err(|e| format!("Failed to clone PTY reader: {e}"))?;
 
-        // Spawn reader thread to forward PTY output to frontend
         let sid = session_id.clone();
         let app_clone = app;
         let child_clone = Arc::clone(&child);
@@ -103,7 +99,7 @@ impl PTYManager {
             let mut buf = [0u8; 4096];
             loop {
                 match reader.read(&mut buf) {
-                    Ok(0) | Err(_) => break, // EOF or error
+                    Ok(0) | Err(_) => break,
                     Ok(n) => {
                         let _ = app_clone.emit(
                             "ralph://pty_output",
@@ -116,7 +112,6 @@ impl PTYManager {
                 }
             }
 
-            // Process ended — get exit code
             let exit_code = child_clone
                 .lock()
                 .ok()
@@ -131,7 +126,6 @@ impl PTYManager {
                 },
             );
 
-            // Cleanup session from map
             if let Ok(mut sessions) = sessions_ref.lock() {
                 sessions.remove(&sid);
             }
@@ -193,7 +187,6 @@ impl PTYManager {
             if let Ok(mut child) = session.child.lock() {
                 let _ = child.kill();
             }
-            // reader thread will exit on EOF from killed process and clean up
         }
         Ok(())
     }
