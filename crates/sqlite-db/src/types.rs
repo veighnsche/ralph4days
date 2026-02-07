@@ -154,8 +154,10 @@ pub struct McpServerConfig {
     pub env: HashMap<String, String>,
 }
 
-/// Task record
+/// Task record with pre-joined feature/discipline display data.
+/// Uses camelCase for JSON serialization (frontend-ready).
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Task {
     pub id: u32,
     pub feature: String,
@@ -164,61 +166,34 @@ pub struct Task {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     pub status: TaskStatus,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub priority: Option<Priority>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub tags: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub depends_on: Vec<u32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub blocked_by: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub created: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub updated: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub completed: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub acceptance_criteria: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub context_files: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub output_artifacts: Vec<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub hints: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub estimated_turns: Option<u32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub provenance: Option<TaskProvenance>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub comments: Vec<TaskComment>,
-}
-
-/// Task with pre-joined feature/discipline display data for IPC.
-/// Uses camelCase for JSON serialization (frontend-ready).
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct EnrichedTask {
-    pub id: u32,
-    pub feature: String,
-    pub discipline: String,
-    pub title: String,
-    pub description: Option<String>,
-    pub status: TaskStatus,
     pub inferred_status: InferredTaskStatus,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub priority: Option<Priority>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub depends_on: Vec<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub blocked_by: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub updated: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub completed: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub acceptance_criteria: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub context_files: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub output_artifacts: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub hints: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub estimated_turns: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub provenance: Option<TaskProvenance>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub comments: Vec<TaskComment>,
     // Pre-joined display fields
     pub feature_display_name: String,

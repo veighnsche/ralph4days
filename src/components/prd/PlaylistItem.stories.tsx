@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import type { EnrichedTask } from "@/types/prd";
+import type { Task } from "@/types/prd";
 import { PlaylistItem } from "./PlaylistItem";
 
 const meta = {
@@ -63,7 +63,7 @@ function enrichFields(feature: string, discipline: string) {
   };
 }
 
-const baseTask: EnrichedTask = {
+const baseTask: Task = {
   id: 1,
   feature: "ui",
   discipline: "frontend",

@@ -1,9 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import { resolveIcon } from "@/lib/iconRegistry";
-import type { EnrichedTask } from "@/types/prd";
+import type { Task } from "@/types/prd";
 
 interface TaskIdDisplayProps {
-  task: EnrichedTask;
+  task: Task;
   variant?: "default" | "badge" | "full";
   className?: string;
 }

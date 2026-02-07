@@ -29,13 +29,14 @@ export interface TaskComment {
   created?: string;
 }
 
-export interface PRDTask {
+export interface Task {
   id: number;
   feature: string;
   discipline: string;
   title: string;
   description?: string;
   status: TaskStatus;
+  inferredStatus: InferredTaskStatus;
   priority?: "low" | "medium" | "high" | "critical";
   tags?: string[];
   dependsOn?: number[];
@@ -44,19 +45,12 @@ export interface PRDTask {
   updated?: string;
   completed?: string;
   acceptanceCriteria?: string[];
-  // Execution context
   contextFiles?: string[];
   outputArtifacts?: string[];
   hints?: string;
   estimatedTurns?: number;
-  // Provenance & history
   provenance?: TaskProvenance;
   comments?: TaskComment[];
-}
-
-/** Task with pre-joined feature/discipline display data from backend */
-export interface EnrichedTask extends PRDTask {
-  inferredStatus: InferredTaskStatus;
   featureDisplayName: string;
   featureAcronym: string;
   disciplineDisplayName: string;

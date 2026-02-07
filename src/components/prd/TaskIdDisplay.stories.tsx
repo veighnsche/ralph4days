@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import type { EnrichedTask } from "@/types/prd";
+import type { Task } from "@/types/prd";
 import { TaskIdDisplay } from "./TaskIdDisplay";
 
 const meta = {
@@ -39,7 +39,7 @@ function featureAcronym(feature: string): string {
   return feature.replace(/-/g, "").slice(0, 4).toUpperCase();
 }
 
-const createTask = (id: number, feature: string, discipline: string): EnrichedTask => {
+const createTask = (id: number, feature: string, discipline: string): Task => {
   const disc = DISCIPLINE_DEFAULTS[discipline] ?? {
     displayName: discipline.charAt(0).toUpperCase() + discipline.slice(1),
     acronym: discipline.slice(0, 4).toUpperCase(),

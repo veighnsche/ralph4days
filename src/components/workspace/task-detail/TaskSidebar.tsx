@@ -5,7 +5,7 @@ import { INFERRED_STATUS_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from "@/consta
 import { formatDate } from "@/lib/formatDate";
 import { resolveIcon } from "@/lib/iconRegistry";
 import { shouldShowInferredStatus } from "@/lib/taskStatus";
-import type { EnrichedTask } from "@/types/prd";
+import type { Task } from "@/types/prd";
 import { PropertyRow } from "./PropertyRow";
 
 const PROVENANCE_CONFIG = {
@@ -14,7 +14,7 @@ const PROVENANCE_CONFIG = {
   system: { label: "System", icon: Cog },
 } as const;
 
-export function TaskSidebar({ task }: { task: EnrichedTask }) {
+export function TaskSidebar({ task }: { task: Task }) {
   const statusConfig = STATUS_CONFIG[task.status];
   const StatusIcon = statusConfig.icon;
   const priorityConfig = task.priority ? PRIORITY_CONFIG[task.priority] : null;

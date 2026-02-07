@@ -8,7 +8,7 @@ import { useInvoke } from "@/hooks/useInvoke";
 import { usePRDData } from "@/hooks/usePRDData";
 import { usePRDFilters } from "@/hooks/usePRDFilters";
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
-import type { EnrichedTask, ProjectInfo, ProjectProgress } from "@/types/prd";
+import type { ProjectInfo, ProjectProgress, Task } from "@/types/prd";
 
 /**
  * PLANNED: Task-Bound Terminal System
@@ -78,7 +78,7 @@ export function TasksPage() {
   };
 
   const handleTaskClick = useCallback(
-    (task: EnrichedTask) => {
+    (task: Task) => {
       openTab({
         type: "task-detail",
         title: task.title,

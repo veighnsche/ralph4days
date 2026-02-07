@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { create } from "zustand";
 import type { DisciplineConfig } from "@/hooks/useDisciplines";
-import type { EnrichedTask, Feature } from "@/types/prd";
+import type { Feature, Task } from "@/types/prd";
 
 export type TabType =
   | "terminal"
@@ -22,7 +22,7 @@ export interface WorkspaceTab {
   data?: {
     mode?: "create" | "edit";
     entityId?: number | string;
-    entity?: EnrichedTask | Feature | DisciplineConfig;
+    entity?: Task | Feature | DisciplineConfig;
     sessionId?: string; // For output tabs
     model?: string; // For terminal tabs (haiku, sonnet, opus)
     thinking?: boolean; // For terminal tabs (extended thinking)

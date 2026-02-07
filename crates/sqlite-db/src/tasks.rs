@@ -309,58 +309,44 @@ impl SqliteDb {
         Ok(())
     }
 
-    /// Get a task by ID.
+    /// Get a task by ID (with joined display fields and inferred status).
     pub fn get_task_by_id(&self, id: u32) -> Option<Task> {
         let mut stmt = self
             .conn
             .prepare(
-                "SELECT id, feature, discipline, title, description, status, priority, tags, \
-                 depends_on, blocked_by, created, updated, completed, acceptance_criteria, \
-                 context_files, output_artifacts, hints, estimated_turns, provenance \
-                 FROM tasks WHERE id = ?1",
+                "SELECT t.id, t.feature, t.discipline, t.title, t.description, t.status, \
+                 t.priority, t.tags, t.depends_on, t.blocked_by, t.created, t.updated, \
+                 t.completed, t.acceptance_criteria, t.context_files, t.output_artifacts, \
+                 t.hints, t.estimated_turns, t.provenance, \
+                 COALESCE(f.display_name, t.feature), \
+                 COALESCE(f.acronym, t.feature), \
+                 COALESCE(d.display_name, t.discipline), \
+                 COALESCE(d.acronym, t.discipline), \
+                 COALESCE(d.icon, 'Circle'), \
+                 COALESCE(d.color, '#94a3b8') \
+                 FROM tasks t \
+                 LEFT JOIN features f ON t.feature = f.name \
+                 LEFT JOIN disciplines d ON t.discipline = d.name \
+                 WHERE t.id = ?1",
             )
             .ok()?;
 
-        let task = stmt
+        let mut task = stmt
             .query_row([id], |row| Ok(self.row_to_task(row)))
             .ok()?;
 
-        let mut task = task;
         task.comments = self.get_comments_for_task(task.id);
+
+        // Compute inferred status using a status map for this task's deps
+        let status_map = self.get_task_status_map();
+        task.inferred_status =
+            Self::compute_inferred_status(task.status, &task.depends_on, &status_map);
+
         Some(task)
     }
 
-    /// Get all tasks.
+    /// Get all tasks (with joined display fields and inferred status).
     pub fn get_tasks(&self) -> Vec<Task> {
-        let mut stmt = self
-            .conn
-            .prepare(
-                "SELECT id, feature, discipline, title, description, status, priority, tags, \
-                 depends_on, blocked_by, created, updated, completed, acceptance_criteria, \
-                 context_files, output_artifacts, hints, estimated_turns, provenance \
-                 FROM tasks ORDER BY id",
-            )
-            .unwrap();
-
-        let tasks: Vec<Task> = stmt
-            .query_map([], |row| Ok(self.row_to_task(row)))
-            .unwrap()
-            .filter_map(|r| r.ok())
-            .collect();
-
-        // Load comments for each task
-        let comment_map = self.get_all_comments_by_task();
-        tasks
-            .into_iter()
-            .map(|mut t| {
-                t.comments = comment_map.get(&t.id).cloned().unwrap_or_default();
-                t
-            })
-            .collect()
-    }
-
-    /// Get enriched tasks with pre-joined feature/discipline display data.
-    pub fn get_enriched_tasks(&self) -> Vec<EnrichedTask> {
         let mut stmt = self
             .conn
             .prepare(
@@ -381,83 +367,34 @@ impl SqliteDb {
             )
             .unwrap();
 
-        // First collect all raw rows
-        struct RawRow {
-            task: Task,
-            feature_display_name: String,
-            feature_acronym: String,
-            discipline_display_name: String,
-            discipline_acronym: String,
-            discipline_icon: String,
-            discipline_color: String,
-        }
-
-        let raw_rows: Vec<RawRow> = stmt
-            .query_map([], |row| {
-                let task = self.row_to_task(row);
-                Ok(RawRow {
-                    task,
-                    feature_display_name: row.get(19)?,
-                    feature_acronym: row.get(20)?,
-                    discipline_display_name: row.get(21)?,
-                    discipline_acronym: row.get(22)?,
-                    discipline_icon: row.get(23)?,
-                    discipline_color: row.get(24)?,
-                })
-            })
+        let tasks: Vec<Task> = stmt
+            .query_map([], |row| Ok(self.row_to_task(row)))
             .unwrap()
             .filter_map(|r| r.ok())
             .collect();
 
-        // Build task status map for inferred status computation
-        let status_map: std::collections::HashMap<u32, TaskStatus> = raw_rows
+        // Build status map for inferred status computation
+        let status_map: std::collections::HashMap<u32, TaskStatus> = tasks
             .iter()
-            .map(|r| (r.task.id, r.task.status))
+            .map(|t| (t.id, t.status))
             .collect();
+
         // Load all comments
         let comment_map = self.get_all_comments_by_task();
 
-        raw_rows
+        tasks
             .into_iter()
-            .map(|r| {
-                let inferred_status =
-                    Self::compute_inferred_status(r.task.status, &r.task.depends_on, &status_map);
-                let comments = comment_map.get(&r.task.id).cloned().unwrap_or_default();
-
-                EnrichedTask {
-                    id: r.task.id,
-                    feature: r.task.feature,
-                    discipline: r.task.discipline,
-                    title: r.task.title,
-                    description: r.task.description,
-                    status: r.task.status,
-                    inferred_status,
-                    priority: r.task.priority,
-                    tags: r.task.tags,
-                    depends_on: r.task.depends_on,
-                    blocked_by: r.task.blocked_by,
-                    created: r.task.created,
-                    updated: r.task.updated,
-                    completed: r.task.completed,
-                    acceptance_criteria: r.task.acceptance_criteria,
-                    context_files: r.task.context_files,
-                    output_artifacts: r.task.output_artifacts,
-                    hints: r.task.hints,
-                    estimated_turns: r.task.estimated_turns,
-                    provenance: r.task.provenance,
-                    comments,
-                    feature_display_name: r.feature_display_name,
-                    feature_acronym: r.feature_acronym,
-                    discipline_display_name: r.discipline_display_name,
-                    discipline_acronym: r.discipline_acronym,
-                    discipline_icon: r.discipline_icon,
-                    discipline_color: r.discipline_color,
-                }
+            .map(|mut t| {
+                t.inferred_status =
+                    Self::compute_inferred_status(t.status, &t.depends_on, &status_map);
+                t.comments = comment_map.get(&t.id).cloned().unwrap_or_default();
+                t
             })
             .collect()
     }
 
-    /// Convert a rusqlite Row to a Task (without comments).
+    /// Convert a rusqlite Row to a Task (25 columns: 19 task + 6 joined display).
+    /// inferred_status defaults to Ready; caller computes the real value.
     fn row_to_task(&self, row: &rusqlite::Row) -> Task {
         let status_str: String = row.get(5).unwrap();
         let priority_str: Option<String> = row.get(6).unwrap();
@@ -475,6 +412,7 @@ impl SqliteDb {
             title: row.get(3).unwrap(),
             description: row.get(4).unwrap(),
             status: TaskStatus::parse(&status_str).unwrap_or(TaskStatus::Pending),
+            inferred_status: InferredTaskStatus::Ready, // Computed by caller
             priority: priority_str.and_then(|s| Priority::parse(&s)),
             tags: serde_json::from_str(&tags_json).unwrap_or_default(),
             depends_on: serde_json::from_str(&deps_json).unwrap_or_default(),
@@ -489,7 +427,30 @@ impl SqliteDb {
             estimated_turns: row.get(17).unwrap(),
             provenance: provenance_str.and_then(|s| TaskProvenance::parse(&s)),
             comments: vec![], // Loaded separately
+            feature_display_name: row.get(19).unwrap(),
+            feature_acronym: row.get(20).unwrap(),
+            discipline_display_name: row.get(21).unwrap(),
+            discipline_acronym: row.get(22).unwrap(),
+            discipline_icon: row.get(23).unwrap(),
+            discipline_color: row.get(24).unwrap(),
         }
+    }
+
+    /// Build a map of task ID -> TaskStatus for all tasks (used for inferred status).
+    fn get_task_status_map(&self) -> std::collections::HashMap<u32, TaskStatus> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT id, status FROM tasks")
+            .unwrap();
+
+        stmt.query_map([], |row| {
+            let id: u32 = row.get(0)?;
+            let status_str: String = row.get(1)?;
+            Ok((id, TaskStatus::parse(&status_str).unwrap_or(TaskStatus::Pending)))
+        })
+        .unwrap()
+        .filter_map(|r| r.ok())
+        .collect()
     }
 
     /// Compute inferred status from actual status + dependency graph.

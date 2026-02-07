@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import type { EnrichedTask, PriorityFilter, StatusFilter } from "@/types/prd";
+import type { PriorityFilter, StatusFilter, Task } from "@/types/prd";
 
 export interface FilterState {
   searchQuery: string;
@@ -15,7 +15,7 @@ export interface FilterSetters {
   setTagFilter: (tag: string) => void;
 }
 
-export function usePRDFilters(tasks: EnrichedTask[] | null, allTags: string[]) {
+export function usePRDFilters(tasks: Task[] | null, allTags: string[]) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all");

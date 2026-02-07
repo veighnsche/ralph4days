@@ -24,7 +24,7 @@ export function DisciplineFormTabContent({ tab }: { tab: WorkspaceTab }) {
   });
 
   const createDiscipline = useInvokeMutation<Record<string, unknown>>("create_discipline", {
-    invalidateKeys: [["get_disciplines_config"], ["get_enriched_tasks"], ["get_discipline_stats"]],
+    invalidateKeys: [["get_disciplines_config"], ["get_tasks"], ["get_discipline_stats"]],
     onSuccess: () => {
       toast.success("Discipline created");
       closeTab(tab.id);

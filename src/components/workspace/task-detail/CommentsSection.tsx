@@ -5,12 +5,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useInvokeMutation } from "@/hooks/useInvokeMutation";
 import { formatDate } from "@/lib/formatDate";
-import type { EnrichedTask } from "@/types/prd";
+import type { Task } from "@/types/prd";
 import { CommentEditor } from "./CommentEditor";
 
-const INVALIDATE_KEYS = [["get_enriched_tasks"]];
+const INVALIDATE_KEYS = [["get_tasks"]];
 
-export function CommentsSection({ task }: { task: EnrichedTask }) {
+export function CommentsSection({ task }: { task: Task }) {
   const comments = task.comments ?? [];
 
   const [commentInput, setCommentInput] = useState("");

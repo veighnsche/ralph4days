@@ -28,7 +28,7 @@ export function TaskFormTabContent({ tab }: { tab: WorkspaceTab }) {
 
   const createTask = useInvokeMutation<Record<string, unknown>>("create_task", {
     invalidateKeys: [
-      ["get_enriched_tasks"],
+      ["get_tasks"],
       ["get_feature_stats"],
       ["get_discipline_stats"],
       ["get_project_progress"],

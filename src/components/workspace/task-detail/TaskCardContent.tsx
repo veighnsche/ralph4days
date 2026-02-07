@@ -2,10 +2,10 @@ import { AlertCircle, CheckCircle2, FileCode } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { STATUS_CONFIG } from "@/constants/prd";
-import type { EnrichedTask } from "@/types/prd";
+import type { Task } from "@/types/prd";
 import { TaskIdDisplay } from "../../prd/TaskIdDisplay";
 
-export function TaskCardContent({ task }: { task: EnrichedTask }) {
+export function TaskCardContent({ task }: { task: Task }) {
   const sections: React.ReactNode[] = [];
 
   sections.push(

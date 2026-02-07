@@ -1,5 +1,5 @@
 import { AlertCircle, Ban, CheckCircle2, Circle, Clock, type LucideIcon, Play, Slash } from "lucide-react";
-import type { InferredTaskStatus, PRDTask } from "@/types/prd";
+import type { InferredTaskStatus, Task } from "@/types/prd";
 
 export const STATUS_CONFIG = {
   pending: {
@@ -107,23 +107,23 @@ export const PRIORITY_CONFIG = {
 
 export const COLUMN_DEFINITIONS = [
   {
-    status: "pending" as PRDTask["status"],
+    status: "pending" as Task["status"],
     ...STATUS_CONFIG.pending,
   },
   {
-    status: "in_progress" as PRDTask["status"],
+    status: "in_progress" as Task["status"],
     ...STATUS_CONFIG.in_progress,
   },
   {
-    status: "blocked" as PRDTask["status"],
+    status: "blocked" as Task["status"],
     ...STATUS_CONFIG.blocked,
   },
   {
-    status: "done" as PRDTask["status"],
+    status: "done" as Task["status"],
     ...STATUS_CONFIG.done,
   },
   {
-    status: "skipped" as PRDTask["status"],
+    status: "skipped" as Task["status"],
     ...STATUS_CONFIG.skipped,
   },
 ] as const;

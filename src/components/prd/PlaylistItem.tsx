@@ -6,20 +6,17 @@ import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/co
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { INFERRED_STATUS_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from "@/constants/prd";
 import { getInferredStatusExplanation } from "@/lib/taskStatus";
-import type { EnrichedTask } from "@/types/prd";
+import type { Task } from "@/types/prd";
 import { TaskIdDisplay } from "./TaskIdDisplay";
 
 interface PlaylistItemProps {
-  task: EnrichedTask;
+  task: Task;
   isNowPlaying?: boolean;
   isIssue?: boolean;
   onClick: () => void;
 }
 
-function getItemStyle(
-  status: EnrichedTask["status"],
-  statusConfig: (typeof STATUS_CONFIG)[keyof typeof STATUS_CONFIG]
-) {
+function getItemStyle(status: Task["status"], statusConfig: (typeof STATUS_CONFIG)[keyof typeof STATUS_CONFIG]) {
   return {
     borderLeftColor: statusConfig.color,
     backgroundColor: statusConfig.bgColor,

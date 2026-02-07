@@ -1,8 +1,8 @@
-import type { EnrichedTask } from "@/types/prd";
+import type { Task } from "@/types/prd";
 import { useInvoke } from "./useInvoke";
 
 export function usePRDData() {
-  const { data, isLoading, error, refetch } = useInvoke<EnrichedTask[]>("get_enriched_tasks", undefined, {
+  const { data, isLoading, error, refetch } = useInvoke<Task[]>("get_tasks", undefined, {
     staleTime: 0,
   });
 

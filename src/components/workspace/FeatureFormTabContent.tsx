@@ -23,7 +23,7 @@ export function FeatureFormTabContent({ tab }: { tab: WorkspaceTab }) {
   });
 
   const createFeature = useInvokeMutation<Record<string, unknown>>("create_feature", {
-    invalidateKeys: [["get_features"], ["get_features_config"], ["get_enriched_tasks"], ["get_feature_stats"]],
+    invalidateKeys: [["get_features"], ["get_features_config"], ["get_tasks"], ["get_feature_stats"]],
     onSuccess: () => {
       toast.success("Feature created");
       closeTab(tab.id);

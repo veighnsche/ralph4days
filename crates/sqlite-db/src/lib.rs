@@ -10,9 +10,8 @@ pub mod types;
 
 // Re-export public types
 pub use types::{
-    CommentAuthor, Discipline, EnrichedTask, Feature, GroupStats, InferredTaskStatus,
-    McpServerConfig, Priority, ProjectMetadata, ProjectProgress, Task, TaskComment, TaskInput,
-    TaskProvenance, TaskStatus,
+    CommentAuthor, Discipline, Feature, GroupStats, InferredTaskStatus, McpServerConfig, Priority,
+    ProjectMetadata, ProjectProgress, Task, TaskComment, TaskInput, TaskProvenance, TaskStatus,
 };
 
 use rusqlite::Connection;

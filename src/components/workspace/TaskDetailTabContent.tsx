@@ -5,14 +5,14 @@ import { STATUS_CONFIG } from "@/constants/prd";
 import { usePRDData } from "@/hooks/usePRDData";
 import { useTabMeta } from "@/hooks/useTabMeta";
 import type { WorkspaceTab } from "@/stores/useWorkspaceStore";
-import type { EnrichedTask } from "@/types/prd";
+import type { Task } from "@/types/prd";
 import { CommentsSection } from "./task-detail/CommentsSection";
 import { TaskCardContent } from "./task-detail/TaskCardContent";
 import { TaskSidebar } from "./task-detail/TaskSidebar";
 
 export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
   const entityId = tab.data?.entityId as number | undefined;
-  const snapshotTask = tab.data?.entity as EnrichedTask | undefined;
+  const snapshotTask = tab.data?.entity as Task | undefined;
 
   const { tasks } = usePRDData();
   const task = (entityId != null ? tasks?.find((t) => t.id === entityId) : undefined) ?? snapshotTask;

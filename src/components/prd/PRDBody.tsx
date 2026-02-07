@@ -1,13 +1,13 @@
 import { Brain, FileX, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import type { EnrichedTask } from "@/types/prd";
+import type { Task } from "@/types/prd";
 import { PlaylistView } from "./PlaylistView";
 
 interface PRDBodyProps {
-  filteredTasks: EnrichedTask[];
+  filteredTasks: Task[];
   totalTasks: number;
-  onTaskClick: (task: EnrichedTask) => void;
+  onTaskClick: (task: Task) => void;
   onClearFilters: () => void;
   onBraindump: () => void;
   onYap: () => void;

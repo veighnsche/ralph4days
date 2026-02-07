@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import type { EnrichedTask } from "@/types/prd";
+import type { Task } from "@/types/prd";
 import { PRDBody } from "./PRDBody";
 
 const meta = {
@@ -18,7 +18,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const mockTasks: EnrichedTask[] = [
+const mockTasks: Task[] = [
   {
     id: 1,
     feature: "authentication",

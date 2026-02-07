@@ -645,7 +645,7 @@ fn test_enriched_tasks() {
         ..Default::default()
     }).unwrap();
 
-    let enriched = db.get_enriched_tasks();
+    let enriched = db.get_tasks();
     assert_eq!(enriched.len(), 1);
     assert_eq!(enriched[0].feature_display_name, "Authentication");
     assert_eq!(enriched[0].feature_acronym, "AUTH");
@@ -664,7 +664,7 @@ fn test_enriched_tasks_comments_visible() {
     }).unwrap();
     db.add_comment(1, CommentAuthor::Human, None, "Visible in enriched".into()).unwrap();
 
-    let enriched = db.get_enriched_tasks();
+    let enriched = db.get_tasks();
     assert_eq!(enriched[0].comments.len(), 1);
     assert_eq!(enriched[0].comments[0].body, "Visible in enriched");
 }
@@ -680,7 +680,7 @@ fn test_inferred_status_ready() {
         ..Default::default()
     }).unwrap();
 
-    let enriched = db.get_enriched_tasks();
+    let enriched = db.get_tasks();
     assert_eq!(enriched[0].inferred_status, sqlite_db::InferredTaskStatus::Ready);
 }
 
@@ -699,7 +699,7 @@ fn test_inferred_status_waiting_on_deps() {
         ..Default::default()
     }).unwrap();
 
-    let enriched = db.get_enriched_tasks();
+    let enriched = db.get_tasks();
     let b_enriched = enriched.iter().find(|t| t.title == "B").unwrap();
     assert_eq!(b_enriched.inferred_status, sqlite_db::InferredTaskStatus::WaitingOnDeps);
 }
