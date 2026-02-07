@@ -13,16 +13,16 @@ fn build(ctx: &PromptContext) -> Option<String> {
     );
 
     for feature in &ctx.features {
-        let desc = feature
-            .description
-            .as_deref()
-            .unwrap_or("-");
+        let desc = feature.description.as_deref().unwrap_or("-");
         let task_count = ctx
             .tasks
             .iter()
             .filter(|t| t.feature == feature.name)
             .count();
-        out.push_str(&format!("\n| {} | {} | {} |", feature.display_name, desc, task_count));
+        out.push_str(&format!(
+            "\n| {} | {} | {} |",
+            feature.display_name, desc, task_count
+        ));
     }
 
     Some(out)

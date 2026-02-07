@@ -1,9 +1,8 @@
 use crate::context::PromptContext;
 use crate::recipe::Section;
 
-fn build(_ctx: &PromptContext) -> Option<String> {
-    Some(
-        r#"## Instructions
+pub fn default_text() -> String {
+    r#"## Instructions
 
 You are reviewing recent work for quality. Focus on correctness, code quality, and completeness.
 
@@ -28,8 +27,14 @@ You are reviewing recent work for quality. Focus on correctness, code quality, a
 - If you find systemic issues (e.g., a pattern repeated across many files), note it in learnings and fix the instances you find.
 - Do not re-do completed work that is correct. Focus on finding and fixing actual problems.
 - Commit fixes with clear messages explaining what was wrong and how it was fixed."#
-            .to_string(),
-    )
+        .to_string()
+}
+
+fn build(ctx: &PromptContext) -> Option<String> {
+    if let Some(text) = ctx.instruction_overrides.get("opus_review_instructions") {
+        return Some(text.clone());
+    }
+    Some(default_text())
 }
 
 pub fn opus_review_instructions() -> Section {

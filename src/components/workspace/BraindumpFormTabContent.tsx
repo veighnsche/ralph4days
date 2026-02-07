@@ -28,10 +28,11 @@
  */
 
 import { invoke } from "@tauri-apps/api/core";
-import { Brain } from "lucide-react";
+import { Brain, Wrench } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { type Model, ModelThinkingPicker } from "@/components/ModelThinkingPicker";
+import { PromptBuilderModal } from "@/components/PromptBuilderModal";
 import { Button } from "@/components/ui/button";
 import { FormDescription, FormHeader, FormTitle } from "@/components/ui/form-header";
 import { Label } from "@/components/ui/label";
@@ -65,6 +66,7 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
   const { closeTab, openTab, tabs } = useWorkspaceStore();
   const [braindump, setBraindump] = useState(DEFAULT_QUESTIONS);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [promptBuilderOpen, setPromptBuilderOpen] = useState(false);
   const isMountedRef = useRef(true);
 
   // Cleanup on unmount
@@ -74,64 +76,44 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
     };
   }, []);
 
+  const sendToTerminal = async (terminalId: string, text: string) => {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    if (!isMountedRef.current) return;
+
+    const terminalExists = tabs.some((t) => t.id === terminalId);
+    if (!terminalExists) throw new Error("Terminal tab was closed before sending");
+
+    const bytes = Array.from(new TextEncoder().encode(`${text}\n`));
+    await invoke("send_terminal_input", { sessionId: terminalId, data: bytes });
+
+    if (!isMountedRef.current) return;
+    closeTab(tab.id);
+    toast.success("Braindump sent to Claude");
+  };
+
   const handleSubmit = async (model: Model, thinking: boolean) => {
-    // Validate input
     const trimmedBraindump = braindump.trim();
     if (!trimmedBraindump) {
       toast.error("Please enter some text before sending");
       return;
     }
-
-    if (isSubmitting) return; // Prevent double submission
+    if (isSubmitting) return;
 
     setIsSubmitting(true);
 
     try {
-      // Open new terminal tab with selected model and thinking
       const terminalId = openTab({
         type: "terminal",
         title: `Claude (${model})`,
         closeable: true,
-        data: {
-          model,
-          thinking,
-        },
+        data: { model, thinking },
       });
-
-      // Wait for terminal to initialize (increased timeout for reliability)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Check if component is still mounted
-      if (!isMountedRef.current) return;
-
-      // Verify terminal tab still exists
-      const terminalExists = tabs.some((t) => t.id === terminalId);
-      if (!terminalExists) {
-        throw new Error("Terminal tab was closed before sending");
-      }
-
-      // Send braindump to terminal with auto-send
-      const message = `${trimmedBraindump}\n`; // Auto-send with newline
-      const bytes = Array.from(new TextEncoder().encode(message));
-
-      await invoke("send_terminal_input", { sessionId: terminalId, data: bytes });
-
-      // Check if component is still mounted before closing
-      if (!isMountedRef.current) return;
-
-      // Close the braindump form
-      closeTab(tab.id);
-
-      toast.success("Braindump sent to Claude");
+      await sendToTerminal(terminalId, trimmedBraindump);
     } catch (err) {
       console.error("Failed to send braindump:", err);
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
       toast.error(`Failed to send braindump: ${errorMessage}`);
-
-      // Only reset state if component is still mounted
-      if (isMountedRef.current) {
-        setIsSubmitting(false);
-      }
+      if (isMountedRef.current) setIsSubmitting(false);
     }
   };
 
@@ -171,6 +153,18 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
       <Separator />
 
       <div className="px-3 py-1.5 flex items-center justify-end gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="default"
+          onClick={() => setPromptBuilderOpen(true)}
+          title="Prompt Builder"
+          className="mr-auto"
+        >
+          <Wrench className="size-3.5" />
+          Prompt Builder
+        </Button>
+
         <Button type="button" variant="outline" size="default" onClick={handleCancel}>
           Cancel
         </Button>
@@ -181,6 +175,8 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
           disabled={isSubmitting || !braindump.trim()}
         />
       </div>
+
+      <PromptBuilderModal open={promptBuilderOpen} onOpenChange={setPromptBuilderOpen} />
     </div>
   );
 }

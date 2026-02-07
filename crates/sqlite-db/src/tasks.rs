@@ -331,9 +331,7 @@ impl SqliteDb {
             )
             .ok()?;
 
-        let mut task = stmt
-            .query_row([id], |row| Ok(self.row_to_task(row)))
-            .ok()?;
+        let mut task = stmt.query_row([id], |row| Ok(self.row_to_task(row))).ok()?;
 
         task.comments = self.get_comments_for_task(task.id);
 
@@ -374,10 +372,8 @@ impl SqliteDb {
             .collect();
 
         // Build status map for inferred status computation
-        let status_map: std::collections::HashMap<u32, TaskStatus> = tasks
-            .iter()
-            .map(|t| (t.id, t.status))
-            .collect();
+        let status_map: std::collections::HashMap<u32, TaskStatus> =
+            tasks.iter().map(|t| (t.id, t.status)).collect();
 
         // Load all comments
         let comment_map = self.get_all_comments_by_task();
@@ -438,15 +434,15 @@ impl SqliteDb {
 
     /// Build a map of task ID -> TaskStatus for all tasks (used for inferred status).
     fn get_task_status_map(&self) -> std::collections::HashMap<u32, TaskStatus> {
-        let mut stmt = self
-            .conn
-            .prepare("SELECT id, status FROM tasks")
-            .unwrap();
+        let mut stmt = self.conn.prepare("SELECT id, status FROM tasks").unwrap();
 
         stmt.query_map([], |row| {
             let id: u32 = row.get(0)?;
             let status_str: String = row.get(1)?;
-            Ok((id, TaskStatus::parse(&status_str).unwrap_or(TaskStatus::Pending)))
+            Ok((
+                id,
+                TaskStatus::parse(&status_str).unwrap_or(TaskStatus::Pending),
+            ))
         })
         .unwrap()
         .filter_map(|r| r.ok())

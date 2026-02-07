@@ -1,6 +1,6 @@
 use crate::terminal::{PTYManager, SessionConfig};
-use prompt_builder::PromptContext;
-use sqlite_db::{Priority, SqliteDb, TaskInput};
+use prompt_builder::{CodebaseSnapshot, PromptContext};
+use sqlite_db::{FeatureInput, Priority, SqliteDb, TaskInput};
 use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::{AppHandle, State};
@@ -38,6 +38,7 @@ pub struct RalphProject {
 pub struct AppState {
     pub locked_project: Mutex<Option<PathBuf>>,
     pub db: Mutex<Option<SqliteDb>>,
+    pub codebase_snapshot: Mutex<Option<CodebaseSnapshot>>,
     pub pty_manager: PTYManager,
     mcp_dir: PathBuf,
 }
@@ -47,6 +48,7 @@ impl Default for AppState {
         Self {
             locked_project: Mutex::new(None),
             db: Mutex::new(None),
+            codebase_snapshot: Mutex::new(None),
             pty_manager: PTYManager::new(),
             mcp_dir: std::env::temp_dir().join(format!("ralph-mcp-{}", std::process::id())),
         }
@@ -60,23 +62,24 @@ impl Drop for AppState {
 }
 
 impl AppState {
-    /// Generate MCP config for a terminal session by writing scripts to disk.
-    fn generate_mcp_config(
+    /// Build a PromptContext from current app state. Shared by MCP config generation and prompt preview.
+    fn build_prompt_context(
         &self,
-        mode: &str,
         project_path: &std::path::Path,
-    ) -> Result<PathBuf, String> {
+        user_input: Option<String>,
+        instruction_overrides: std::collections::HashMap<String, String>,
+    ) -> Result<PromptContext, String> {
         let ralph_dir = project_path.join(".ralph");
         let db_path = ralph_dir.join("db").join("ralph.db");
-        let db = SqliteDb::open(&db_path)?;
+        let db = sqlite_db::SqliteDb::open(&db_path)?;
 
-        let prompt_type = match mode {
-            "task_creation" => prompt_builder::PromptType::Braindump,
-            _ => prompt_builder::PromptType::Discuss,
-        };
+        let snapshot = self
+            .codebase_snapshot
+            .lock()
+            .map_err(|e| e.to_string())?
+            .clone();
 
-        let recipe = prompt_builder::recipes::get(prompt_type);
-        let ctx = PromptContext {
+        Ok(PromptContext {
             features: db.get_features(),
             tasks: db.get_tasks(),
             disciplines: db.get_disciplines(),
@@ -88,13 +91,41 @@ impl AppState {
             project_path: project_path.to_string_lossy().to_string(),
             db_path: db_path.to_string_lossy().to_string(),
             script_dir: self.mcp_dir.to_string_lossy().to_string(),
-            user_input: None,
+            user_input,
             target_task_id: None,
             target_feature: None,
+            codebase_snapshot: snapshot,
+            instruction_overrides,
+        })
+    }
+
+    /// Generate MCP config for a terminal session by writing scripts to disk.
+    fn generate_mcp_config(
+        &self,
+        mode: &str,
+        project_path: &std::path::Path,
+    ) -> Result<PathBuf, String> {
+        let prompt_type = match mode {
+            "task_creation" => prompt_builder::PromptType::Braindump,
+            _ => prompt_builder::PromptType::Discuss,
         };
 
-        let (scripts, config_json) =
-            prompt_builder::mcp::generate(&ctx, &recipe.mcp_tools);
+        // Auto-load instruction overrides from .ralph/prompts/
+        let mut overrides = std::collections::HashMap::new();
+        let override_path = project_path
+            .join(".ralph")
+            .join("prompts")
+            .join(format!("{}_instructions.md", mode));
+        if let Ok(text) = std::fs::read_to_string(&override_path) {
+            // Determine the instruction section name for this mode
+            let section_name = format!("{}_instructions", mode);
+            overrides.insert(section_name, text);
+        }
+
+        let recipe = prompt_builder::recipes::get(prompt_type);
+        let ctx = self.build_prompt_context(project_path, None, overrides)?;
+
+        let (scripts, config_json) = prompt_builder::mcp::generate(&ctx, &recipe.mcp_tools);
 
         std::fs::create_dir_all(&self.mcp_dir)
             .map_err(|e| format!("Failed to create MCP dir: {}", e))?;
@@ -106,11 +137,8 @@ impl AppState {
             #[cfg(unix)]
             {
                 use std::os::unix::fs::PermissionsExt;
-                std::fs::set_permissions(
-                    &script_path,
-                    std::fs::Permissions::from_mode(0o755),
-                )
-                .map_err(|e| format!("Failed to chmod MCP script: {}", e))?;
+                std::fs::set_permissions(&script_path, std::fs::Permissions::from_mode(0o755))
+                    .map_err(|e| format!("Failed to chmod MCP script: {}", e))?;
             }
         }
 
@@ -123,7 +151,9 @@ impl AppState {
 }
 
 /// Get a reference to the opened database. Fails if no project locked.
-fn get_db<'a>(state: &'a State<'a, AppState>) -> Result<std::sync::MutexGuard<'a, Option<SqliteDb>>, String> {
+fn get_db<'a>(
+    state: &'a State<'a, AppState>,
+) -> Result<std::sync::MutexGuard<'a, Option<SqliteDb>>, String> {
     let guard = state.db.lock().map_err(|e| e.to_string())?;
     if guard.is_none() {
         return Err("No project locked (database not open)".to_string());
@@ -257,6 +287,11 @@ pub fn set_locked_project(state: State<'_, AppState>, path: String) -> Result<()
     // Open the SQLite database
     let db_path = canonical_path.join(".ralph").join("db").join("ralph.db");
     let db = SqliteDb::open(&db_path)?;
+
+    // Analyze the codebase for braindump prompts
+    let snapshot = prompt_builder::snapshot::analyze(&canonical_path);
+    let mut snap_guard = state.codebase_snapshot.lock().map_err(|e| e.to_string())?;
+    *snap_guard = Some(snapshot);
 
     // Store the database connection
     let mut db_guard = state.db.lock().map_err(|e| e.to_string())?;
@@ -542,6 +577,23 @@ pub fn get_features_config(state: State<'_, AppState>) -> Result<Vec<FeatureConf
 
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct FeatureLearningData {
+    pub text: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    pub source: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub task_id: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub iteration: Option<u32>,
+    pub created: String,
+    pub hit_count: u32,
+    pub reviewed: bool,
+    pub review_count: u32,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FeatureData {
     pub name: String,
     pub display_name: String,
@@ -550,6 +602,33 @@ pub struct FeatureData {
     pub created: Option<String>,
     pub knowledge_paths: Vec<String>,
     pub context_files: Vec<String>,
+    pub architecture: Option<String>,
+    pub boundaries: Option<String>,
+    pub learnings: Vec<FeatureLearningData>,
+    pub dependencies: Vec<String>,
+}
+
+fn learning_source_str(source: sqlite_db::LearningSource) -> String {
+    match source {
+        sqlite_db::LearningSource::Auto => "auto".into(),
+        sqlite_db::LearningSource::Agent => "agent".into(),
+        sqlite_db::LearningSource::Human => "human".into(),
+        sqlite_db::LearningSource::OpusReviewed => "opus_reviewed".into(),
+    }
+}
+
+fn to_learning_data(l: &sqlite_db::FeatureLearning) -> FeatureLearningData {
+    FeatureLearningData {
+        text: l.text.clone(),
+        reason: l.reason.clone(),
+        source: learning_source_str(l.source),
+        task_id: l.task_id,
+        iteration: l.iteration,
+        created: l.created.clone(),
+        hit_count: l.hit_count,
+        reviewed: l.reviewed,
+        review_count: l.review_count,
+    }
 }
 
 #[tauri::command]
@@ -567,38 +646,73 @@ pub fn get_features(state: State<'_, AppState>) -> Result<Vec<FeatureData>, Stri
             created: f.created.clone(),
             knowledge_paths: f.knowledge_paths.clone(),
             context_files: f.context_files.clone(),
+            architecture: f.architecture.clone(),
+            boundaries: f.boundaries.clone(),
+            learnings: f.learnings.iter().map(to_learning_data).collect(),
+            dependencies: f.dependencies.clone(),
         })
         .collect())
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn create_feature(
     state: State<'_, AppState>,
     name: String,
     display_name: String,
     acronym: String,
     description: Option<String>,
+    architecture: Option<String>,
+    boundaries: Option<String>,
+    knowledge_paths: Option<Vec<String>>,
+    context_files: Option<Vec<String>>,
+    dependencies: Option<Vec<String>>,
 ) -> Result<(), String> {
     let guard = get_db(&state)?;
     let db = guard.as_ref().unwrap();
 
-    // Normalize name (lowercase with hyphens)
     let normalized_name = normalize_feature_name(&name)?;
 
-    db.create_feature(normalized_name, display_name, acronym, description)
+    db.create_feature(FeatureInput {
+        name: normalized_name,
+        display_name,
+        acronym,
+        description,
+        architecture,
+        boundaries,
+        knowledge_paths: knowledge_paths.unwrap_or_default(),
+        context_files: context_files.unwrap_or_default(),
+        dependencies: dependencies.unwrap_or_default(),
+    })
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn update_feature(
     state: State<'_, AppState>,
     name: String,
     display_name: String,
     acronym: String,
     description: Option<String>,
+    architecture: Option<String>,
+    boundaries: Option<String>,
+    knowledge_paths: Option<Vec<String>>,
+    context_files: Option<Vec<String>>,
+    dependencies: Option<Vec<String>>,
 ) -> Result<(), String> {
     let guard = get_db(&state)?;
     let db = guard.as_ref().unwrap();
-    db.update_feature(name, display_name, acronym, description)
+    db.update_feature(FeatureInput {
+        name,
+        display_name,
+        acronym,
+        description,
+        architecture,
+        boundaries,
+        knowledge_paths: knowledge_paths.unwrap_or_default(),
+        context_files: context_files.unwrap_or_default(),
+        dependencies: dependencies.unwrap_or_default(),
+    })
 }
 
 #[tauri::command]
@@ -631,6 +745,53 @@ pub fn update_discipline(
     let guard = get_db(&state)?;
     let db = guard.as_ref().unwrap();
     db.update_discipline(name, display_name, acronym, icon, color)
+}
+
+#[tauri::command]
+pub fn append_feature_learning(
+    state: State<'_, AppState>,
+    feature_name: String,
+    text: String,
+    reason: Option<String>,
+    source: Option<String>,
+    task_id: Option<u32>,
+    iteration: Option<u32>,
+) -> Result<bool, String> {
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
+
+    let learning = match source.as_deref() {
+        Some("human") => sqlite_db::FeatureLearning::from_human(text, reason),
+        Some("agent") => sqlite_db::FeatureLearning::from_agent(text, reason, task_id),
+        Some("auto") | None => {
+            sqlite_db::FeatureLearning::auto_extracted(text, iteration.unwrap_or(0), task_id)
+        }
+        Some(other) => return Err(format!("Invalid learning source: {}", other)),
+    };
+
+    db.append_feature_learning(&feature_name, learning, 50)
+}
+
+#[tauri::command]
+pub fn remove_feature_learning(
+    state: State<'_, AppState>,
+    feature_name: String,
+    index: usize,
+) -> Result<(), String> {
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
+    db.remove_feature_learning(&feature_name, index)
+}
+
+#[tauri::command]
+pub fn add_feature_context_file(
+    state: State<'_, AppState>,
+    feature_name: String,
+    file_path: String,
+) -> Result<bool, String> {
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
+    db.add_feature_context_file(&feature_name, &file_path, 100)
 }
 
 #[tauri::command]
@@ -675,11 +836,7 @@ pub fn update_task(
 }
 
 #[tauri::command]
-pub fn set_task_status(
-    state: State<'_, AppState>,
-    id: u32,
-    status: String,
-) -> Result<(), String> {
+pub fn set_task_status(state: State<'_, AppState>, id: u32, status: String) -> Result<(), String> {
     let guard = get_db(&state)?;
     let db = guard.as_ref().unwrap();
     let status = sqlite_db::TaskStatus::parse(&status)
@@ -752,9 +909,7 @@ pub fn delete_task_comment(
 // --- Query Commands ---
 
 #[tauri::command]
-pub fn get_tasks(
-    state: State<'_, AppState>,
-) -> Result<Vec<sqlite_db::Task>, String> {
+pub fn get_tasks(state: State<'_, AppState>) -> Result<Vec<sqlite_db::Task>, String> {
     let guard = get_db(&state)?;
     let db = guard.as_ref().unwrap();
     Ok(db.get_tasks())
@@ -810,6 +965,293 @@ pub fn get_project_info(state: State<'_, AppState>) -> Result<ProjectInfo, Strin
         description: info.description.clone(),
         created: info.created.clone(),
     })
+}
+
+// --- Prompt Builder Commands ---
+
+fn get_locked_project_path(state: &State<'_, AppState>) -> Result<PathBuf, String> {
+    let locked = state.locked_project.lock().map_err(|e| e.to_string())?;
+    locked
+        .as_ref()
+        .cloned()
+        .ok_or_else(|| "No project locked".to_string())
+}
+
+fn parse_prompt_type(s: &str) -> Result<prompt_builder::PromptType, String> {
+    prompt_builder::PromptType::parse(s).ok_or_else(|| format!("Unknown prompt type: {}", s))
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PromptPreviewSection {
+    pub name: String,
+    pub content: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PromptPreview {
+    pub sections: Vec<PromptPreviewSection>,
+    pub full_prompt: String,
+}
+
+#[tauri::command]
+pub fn preview_prompt(
+    state: State<'_, AppState>,
+    prompt_type: String,
+    instruction_override: Option<String>,
+    user_input: Option<String>,
+) -> Result<PromptPreview, String> {
+    let project_path = get_locked_project_path(&state)?;
+    let pt = parse_prompt_type(&prompt_type)?;
+    // Convert single override to per-section HashMap
+    let overrides = if let Some(text) = instruction_override {
+        let section_name = format!("{}_instructions", prompt_type);
+        let mut map = std::collections::HashMap::new();
+        map.insert(section_name, text);
+        map
+    } else {
+        std::collections::HashMap::new()
+    };
+    let ctx = state.build_prompt_context(&project_path, user_input, overrides)?;
+
+    let sections: Vec<PromptPreviewSection> = prompt_builder::build_sections(pt, &ctx)
+        .into_iter()
+        .map(|s| PromptPreviewSection {
+            name: s.name,
+            content: s.content,
+        })
+        .collect();
+
+    let full_prompt = sections
+        .iter()
+        .map(|s| s.content.as_str())
+        .collect::<Vec<_>>()
+        .join("\n\n");
+
+    Ok(PromptPreview {
+        sections,
+        full_prompt,
+    })
+}
+
+#[tauri::command]
+pub fn get_default_instructions(prompt_type: String) -> Result<String, String> {
+    let pt = parse_prompt_type(&prompt_type)?;
+    Ok(prompt_builder::default_instructions(pt))
+}
+
+#[tauri::command]
+pub fn save_prompt_instructions(
+    state: State<'_, AppState>,
+    prompt_type: String,
+    text: String,
+) -> Result<(), String> {
+    let project_path = get_locked_project_path(&state)?;
+    let prompts_dir = project_path.join(".ralph").join("prompts");
+    std::fs::create_dir_all(&prompts_dir)
+        .map_err(|e| format!("Failed to create prompts dir: {}", e))?;
+    let file_path = prompts_dir.join(format!("{}_instructions.md", prompt_type));
+    std::fs::write(&file_path, &text).map_err(|e| format!("Failed to save instructions: {}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn load_prompt_instructions(
+    state: State<'_, AppState>,
+    prompt_type: String,
+) -> Result<Option<String>, String> {
+    let project_path = get_locked_project_path(&state)?;
+    let file_path = project_path
+        .join(".ralph")
+        .join("prompts")
+        .join(format!("{}_instructions.md", prompt_type));
+    match std::fs::read_to_string(&file_path) {
+        Ok(text) => Ok(Some(text)),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(e) => Err(format!("Failed to read instructions: {}", e)),
+    }
+}
+
+#[tauri::command]
+pub fn reset_prompt_instructions(
+    state: State<'_, AppState>,
+    prompt_type: String,
+) -> Result<(), String> {
+    let project_path = get_locked_project_path(&state)?;
+    let file_path = project_path
+        .join(".ralph")
+        .join("prompts")
+        .join(format!("{}_instructions.md", prompt_type));
+    match std::fs::remove_file(&file_path) {
+        Ok(()) => Ok(()),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(e) => Err(format!("Failed to delete instructions: {}", e)),
+    }
+}
+
+// --- Recipe Editor Commands ---
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SectionConfig {
+    pub name: String,
+    pub enabled: bool,
+    pub instruction_override: Option<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CustomRecipe {
+    pub name: String,
+    pub base_recipe: Option<String>,
+    pub sections: Vec<SectionConfig>,
+}
+
+#[tauri::command]
+pub fn get_section_metadata() -> Vec<prompt_builder::SectionInfo> {
+    prompt_builder::sections::metadata::all_sections()
+}
+
+#[tauri::command]
+pub fn get_recipe_sections(prompt_type: String) -> Result<Vec<SectionConfig>, String> {
+    let pt = parse_prompt_type(&prompt_type)?;
+    let names = prompt_builder::get_recipe_section_names(pt);
+    let all_meta = prompt_builder::sections::metadata::all_sections();
+
+    Ok(names
+        .iter()
+        .map(|name| SectionConfig {
+            name: name.to_string(),
+            enabled: true,
+            instruction_override: None,
+        })
+        .chain(
+            // Include sections NOT in this recipe as disabled
+            all_meta
+                .iter()
+                .filter(|info| !names.contains(&info.name))
+                .map(|info| SectionConfig {
+                    name: info.name.to_string(),
+                    enabled: false,
+                    instruction_override: None,
+                }),
+        )
+        .collect())
+}
+
+#[tauri::command]
+pub fn preview_custom_recipe(
+    state: State<'_, AppState>,
+    sections: Vec<SectionConfig>,
+    user_input: Option<String>,
+) -> Result<PromptPreview, String> {
+    let project_path = get_locked_project_path(&state)?;
+
+    // Build instruction overrides HashMap from enabled instruction sections
+    let overrides: std::collections::HashMap<String, String> = sections
+        .iter()
+        .filter(|s| s.enabled && s.instruction_override.is_some())
+        .map(|s| (s.name.clone(), s.instruction_override.clone().unwrap()))
+        .collect();
+
+    let ctx = state.build_prompt_context(&project_path, user_input, overrides)?;
+
+    // Build only enabled sections in order
+    let enabled_names: Vec<&str> = sections
+        .iter()
+        .filter(|s| s.enabled)
+        .map(|s| s.name.as_str())
+        .collect();
+
+    let built_sections: Vec<PromptPreviewSection> =
+        prompt_builder::build_custom_sections(&enabled_names, &ctx)
+            .into_iter()
+            .map(|s| PromptPreviewSection {
+                name: s.name,
+                content: s.content,
+            })
+            .collect();
+
+    let full_prompt = built_sections
+        .iter()
+        .map(|s| s.content.as_str())
+        .collect::<Vec<_>>()
+        .join("\n\n");
+
+    Ok(PromptPreview {
+        sections: built_sections,
+        full_prompt,
+    })
+}
+
+#[tauri::command]
+pub fn list_saved_recipes(state: State<'_, AppState>) -> Result<Vec<String>, String> {
+    let project_path = get_locked_project_path(&state)?;
+    let prompts_dir = project_path.join(".ralph").join("prompts");
+
+    if !prompts_dir.exists() {
+        return Ok(vec![]);
+    }
+
+    let mut names = Vec::new();
+    let entries =
+        std::fs::read_dir(&prompts_dir).map_err(|e| format!("Failed to read prompts dir: {e}"))?;
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) == Some("json") {
+            if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                names.push(stem.to_string());
+            }
+        }
+    }
+
+    names.sort();
+    Ok(names)
+}
+
+#[tauri::command]
+pub fn load_saved_recipe(state: State<'_, AppState>, name: String) -> Result<CustomRecipe, String> {
+    let project_path = get_locked_project_path(&state)?;
+    let file_path = project_path
+        .join(".ralph")
+        .join("prompts")
+        .join(format!("{name}.json"));
+
+    let content =
+        std::fs::read_to_string(&file_path).map_err(|e| format!("Failed to read recipe: {e}"))?;
+
+    serde_json::from_str(&content).map_err(|e| format!("Failed to parse recipe: {e}"))
+}
+
+#[tauri::command]
+pub fn save_recipe(state: State<'_, AppState>, recipe: CustomRecipe) -> Result<(), String> {
+    let project_path = get_locked_project_path(&state)?;
+    let prompts_dir = project_path.join(".ralph").join("prompts");
+    std::fs::create_dir_all(&prompts_dir)
+        .map_err(|e| format!("Failed to create prompts dir: {e}"))?;
+
+    let file_path = prompts_dir.join(format!("{}.json", recipe.name));
+    let content =
+        serde_json::to_string_pretty(&recipe).map_err(|e| format!("Failed to serialize: {e}"))?;
+
+    std::fs::write(&file_path, content).map_err(|e| format!("Failed to write recipe: {e}"))
+}
+
+#[tauri::command]
+pub fn delete_recipe(state: State<'_, AppState>, name: String) -> Result<(), String> {
+    let project_path = get_locked_project_path(&state)?;
+    let file_path = project_path
+        .join(".ralph")
+        .join("prompts")
+        .join(format!("{name}.json"));
+
+    match std::fs::remove_file(&file_path) {
+        Ok(()) => Ok(()),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(e) => Err(format!("Failed to delete recipe: {e}")),
+    }
 }
 
 // --- PTY Commands ---

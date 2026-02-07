@@ -34,7 +34,9 @@ mod tests {
 
     #[test]
     fn completion_marker_detected() {
-        assert!(check_completion("some text <promise>COMPLETE</promise> more text"));
+        assert!(check_completion(
+            "some text <promise>COMPLETE</promise> more text"
+        ));
         assert!(!check_completion("some text without marker"));
     }
 }

@@ -98,6 +98,20 @@ export type StatusFilter =
   | "waiting_on_deps"; // Inferred: pending + unmet deps
 export type PriorityFilter = "all" | "low" | "medium" | "high" | "critical";
 
+export type LearningSource = "auto" | "agent" | "human" | "opus_reviewed";
+
+export interface FeatureLearning {
+  text: string;
+  reason?: string;
+  source: LearningSource;
+  taskId?: number;
+  iteration?: number;
+  created: string;
+  hitCount: number;
+  reviewed: boolean;
+  reviewCount: number;
+}
+
 export interface Feature {
   name: string;
   displayName: string;
@@ -107,4 +121,9 @@ export interface Feature {
   // Knowledge context
   knowledgePaths?: string[];
   contextFiles?: string[];
+  // RAG fields
+  architecture?: string;
+  boundaries?: string;
+  learnings?: FeatureLearning[];
+  dependencies?: string[];
 }

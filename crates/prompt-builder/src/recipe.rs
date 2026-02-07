@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 use crate::context::PromptContext;
 use crate::error::PromptError;
 use crate::mcp;
@@ -15,6 +17,44 @@ pub struct Recipe {
     pub name: &'static str,
     pub sections: Vec<Section>,
     pub mcp_tools: Vec<McpTool>,
+}
+
+/// A rendered prompt section with its name and content.
+#[derive(Debug, Clone, Serialize)]
+pub struct PromptSection {
+    pub name: String,
+    pub content: String,
+}
+
+/// Build sections from an arbitrary list of section names.
+pub fn build_sections_from_names(
+    section_names: &[&str],
+    ctx: &PromptContext,
+) -> Vec<PromptSection> {
+    section_names
+        .iter()
+        .filter_map(|name| {
+            let section = crate::sections::get_section(name)?;
+            (section.build)(ctx).map(|c| PromptSection {
+                name: name.to_string(),
+                content: c,
+            })
+        })
+        .collect()
+}
+
+/// Build each section individually, returning name+content pairs.
+pub fn build_sections(recipe: &Recipe, ctx: &PromptContext) -> Vec<PromptSection> {
+    recipe
+        .sections
+        .iter()
+        .filter_map(|s| {
+            (s.build)(ctx).map(|c| PromptSection {
+                name: s.name.to_string(),
+                content: c,
+            })
+        })
+        .collect()
 }
 
 /// Execute a recipe: run each section, concatenate non-None results.

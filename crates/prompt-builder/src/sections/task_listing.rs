@@ -13,14 +13,14 @@ fn build(ctx: &PromptContext) -> Option<String> {
     );
 
     for task in &ctx.tasks {
-        let priority = task
-            .priority
-            .as_ref()
-            .map(|p| p.as_str())
-            .unwrap_or("-");
+        let priority = task.priority.as_ref().map(|p| p.as_str()).unwrap_or("-");
         out.push_str(&format!(
             "\n| {} | {} | {} | {} | {} |",
-            task.id, task.feature, task.title, task.status.as_str(), priority,
+            task.id,
+            task.feature,
+            task.title,
+            task.status.as_str(),
+            priority,
         ));
     }
 

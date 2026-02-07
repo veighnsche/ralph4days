@@ -187,10 +187,7 @@ pub fn read_journal(project_path: &Path, feature_name: &str) -> Vec<JournalEntry
 pub fn count_entries(project_path: &Path, feature_name: &str) -> usize {
     let path = journal_path(project_path, feature_name);
     match std::fs::read_to_string(&path) {
-        Ok(content) => content
-            .lines()
-            .filter(|l| !l.trim().is_empty())
-            .count(),
+        Ok(content) => content.lines().filter(|l| !l.trim().is_empty()).count(),
         Err(_) => 0,
     }
 }

@@ -1,3 +1,4 @@
+use crate::snapshot::CodebaseSnapshot;
 use sqlite_db::{Discipline, Feature, ProjectMetadata, Task};
 use std::collections::HashMap;
 
@@ -28,6 +29,12 @@ pub struct PromptContext {
     pub user_input: Option<String>,
     pub target_task_id: Option<u32>,
     pub target_feature: Option<String>,
+
+    // Filesystem snapshot (populated for braindump prompts)
+    pub codebase_snapshot: Option<CodebaseSnapshot>,
+
+    // Per-section instruction overrides keyed by section name (e.g. "braindump_instructions")
+    pub instruction_overrides: HashMap<String, String>,
 }
 
 impl PromptContext {
@@ -76,5 +83,7 @@ pub fn test_context() -> PromptContext {
         user_input: None,
         target_task_id: None,
         target_feature: None,
+        codebase_snapshot: None,
+        instruction_overrides: HashMap::new(),
     }
 }

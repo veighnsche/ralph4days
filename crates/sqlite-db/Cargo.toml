@@ -8,6 +8,7 @@ rust-version.workspace = true
 [dependencies]
 rusqlite = { version = "0.31", features = ["bundled"] }
 rusqlite_migration = "1"
+ralph-rag = { path = "../ralph-rag" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 chrono = { workspace = true }

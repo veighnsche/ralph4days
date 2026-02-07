@@ -8,6 +8,7 @@ pub fn recipe() -> Recipe {
         sections: vec![
             sections::project_context(),
             sections::project_metadata(),
+            sections::codebase_state(),
             sections::feature_listing(),
             sections::discipline_listing(),
             sections::user_input(),

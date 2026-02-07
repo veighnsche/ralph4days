@@ -308,10 +308,7 @@ pub fn should_exclude_from_auto_accumulation(path: &str) -> bool {
     }
 
     // Exclude lockfiles, logs, sourcemaps
-    if filename.ends_with(".lock")
-        || filename.ends_with(".log")
-        || filename.ends_with(".map")
-    {
+    if filename.ends_with(".lock") || filename.ends_with(".log") || filename.ends_with(".map") {
         return true;
     }
 
@@ -368,14 +365,20 @@ mod tests {
     #[test]
     fn excludes_infrastructure_files() {
         assert!(should_exclude_from_auto_accumulation("package.json"));
-        assert!(should_exclude_from_auto_accumulation("node_modules/foo/bar.js"));
-        assert!(should_exclude_from_auto_accumulation(".ralph/db/tasks.yaml"));
+        assert!(should_exclude_from_auto_accumulation(
+            "node_modules/foo/bar.js"
+        ));
+        assert!(should_exclude_from_auto_accumulation(
+            ".ralph/db/tasks.yaml"
+        ));
         assert!(should_exclude_from_auto_accumulation("some/path/file.log"));
     }
 
     #[test]
     fn includes_source_files() {
-        assert!(!should_exclude_from_auto_accumulation("src/components/LoginForm.tsx"));
+        assert!(!should_exclude_from_auto_accumulation(
+            "src/components/LoginForm.tsx"
+        ));
         assert!(!should_exclude_from_auto_accumulation("src/lib/auth.ts"));
         assert!(!should_exclude_from_auto_accumulation("tests/auth.test.ts"));
     }

@@ -178,10 +178,17 @@ fn generate_config(ctx: &PromptContext, filename: &str) -> String {
         for mcp in &discipline.mcp_servers {
             let name = json_escape(&mcp.name);
             let command = json_escape(&mcp.command);
-            let args: Vec<String> = mcp.args.iter().map(|a| format!("\"{}\"", json_escape(a))).collect();
+            let args: Vec<String> = mcp
+                .args
+                .iter()
+                .map(|a| format!("\"{}\"", json_escape(a)))
+                .collect();
             let args_str = args.join(",");
 
-            let mut server = format!("\"{}\":{{\"command\":\"{}\",\"args\":[{}]", name, command, args_str);
+            let mut server = format!(
+                "\"{}\":{{\"command\":\"{}\",\"args\":[{}]",
+                name, command, args_str
+            );
 
             if !mcp.env.is_empty() {
                 let env_entries: Vec<String> = mcp
@@ -267,6 +274,7 @@ mod tests {
             title: "Build login".to_string(),
             description: None,
             status: sqlite_db::TaskStatus::Pending,
+            inferred_status: sqlite_db::InferredTaskStatus::Ready,
             priority: Some(sqlite_db::Priority::Medium),
             tags: vec![],
             depends_on: vec![],
@@ -281,6 +289,12 @@ mod tests {
             estimated_turns: None,
             provenance: None,
             comments: vec![],
+            feature_display_name: "Auth".to_string(),
+            feature_acronym: "AU".to_string(),
+            discipline_display_name: "Frontend".to_string(),
+            discipline_acronym: "FE".to_string(),
+            discipline_icon: "code".to_string(),
+            discipline_color: "blue".to_string(),
         }];
         let mut env = HashMap::new();
         env.insert("NODE_ENV".to_string(), "development".to_string());

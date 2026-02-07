@@ -1,3 +1,4 @@
+use ralph_rag::FeatureLearning;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -242,6 +243,28 @@ pub struct Feature {
     pub knowledge_paths: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub context_files: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub architecture: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub boundaries: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub learnings: Vec<FeatureLearning>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub dependencies: Vec<String>,
+}
+
+/// Input for creating or updating a feature (excludes learnings — those are append-only).
+#[derive(Default)]
+pub struct FeatureInput {
+    pub name: String,
+    pub display_name: String,
+    pub acronym: String,
+    pub description: Option<String>,
+    pub architecture: Option<String>,
+    pub boundaries: Option<String>,
+    pub knowledge_paths: Vec<String>,
+    pub context_files: Vec<String>,
+    pub dependencies: Vec<String>,
 }
 
 /// Discipline definition
@@ -290,4 +313,3 @@ pub struct TaskInput {
     pub estimated_turns: Option<u32>,
     pub provenance: Option<TaskProvenance>,
 }
-

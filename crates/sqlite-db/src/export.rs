@@ -60,6 +60,44 @@ impl SqliteDb {
                         output.push_str(&format!("  - \"{}\"\n", yaml_escape(cf)));
                     }
                 }
+                if let Some(arch) = &f.architecture {
+                    output.push_str(&format!("  architecture: \"{}\"\n", yaml_escape(arch)));
+                }
+                if let Some(bounds) = &f.boundaries {
+                    output.push_str(&format!("  boundaries: \"{}\"\n", yaml_escape(bounds)));
+                }
+                if !f.learnings.is_empty() {
+                    output.push_str("  learnings:\n");
+                    for l in &f.learnings {
+                        output.push_str(&format!("  - text: \"{}\"\n", yaml_escape(&l.text)));
+                        let source_str = match l.source {
+                            ralph_rag::LearningSource::Auto => "auto",
+                            ralph_rag::LearningSource::Agent => "agent",
+                            ralph_rag::LearningSource::Human => "human",
+                            ralph_rag::LearningSource::OpusReviewed => "opus_reviewed",
+                        };
+                        output.push_str(&format!("    source: \"{}\"\n", source_str));
+                        if let Some(reason) = &l.reason {
+                            output.push_str(&format!("    reason: \"{}\"\n", yaml_escape(reason)));
+                        }
+                        if let Some(task_id) = l.task_id {
+                            output.push_str(&format!("    task_id: {}\n", task_id));
+                        }
+                        if let Some(iteration) = l.iteration {
+                            output.push_str(&format!("    iteration: {}\n", iteration));
+                        }
+                        output.push_str(&format!("    hit_count: {}\n", l.hit_count));
+                        if l.reviewed {
+                            output.push_str("    reviewed: true\n");
+                        }
+                    }
+                }
+                if !f.dependencies.is_empty() {
+                    output.push_str("  dependencies:\n");
+                    for dep in &f.dependencies {
+                        output.push_str(&format!("  - \"{}\"\n", yaml_escape(dep)));
+                    }
+                }
             }
             output.push('\n');
         }
@@ -115,10 +153,7 @@ impl SqliteDb {
                     }
                 }
                 if let Some(blocked_by) = &t.blocked_by {
-                    output.push_str(&format!(
-                        "  blocked_by: \"{}\"\n",
-                        yaml_escape(blocked_by)
-                    ));
+                    output.push_str(&format!("  blocked_by: \"{}\"\n", yaml_escape(blocked_by)));
                 }
                 if let Some(created) = &t.created {
                     output.push_str(&format!("  created: \"{}\"\n", created));
@@ -159,17 +194,11 @@ impl SqliteDb {
                 if !t.comments.is_empty() {
                     output.push_str("  comments:\n");
                     for c in &t.comments {
-                        output.push_str(&format!(
-                            "  - author: \"{}\"\n",
-                            c.author.as_str()
-                        ));
+                        output.push_str(&format!("  - author: \"{}\"\n", c.author.as_str()));
                         if let Some(atid) = c.agent_task_id {
                             output.push_str(&format!("    agent_task_id: {}\n", atid));
                         }
-                        output.push_str(&format!(
-                            "    body: \"{}\"\n",
-                            yaml_escape(&c.body)
-                        ));
+                        output.push_str(&format!("    body: \"{}\"\n", yaml_escape(&c.body)));
                         if let Some(created) = &c.created {
                             output.push_str(&format!("    created: \"{}\"\n", created));
                         }

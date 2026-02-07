@@ -133,8 +133,23 @@ pub enum DeduplicationResult {
 
 // Negation words that flip the meaning of a learning (F21)
 const NEGATION_WORDS: &[&str] = &[
-    "don't", "dont", "do not", "never", "not", "avoid", "instead of", "rather than", "shouldn't",
-    "should not", "can't", "cannot", "won't", "will not", "stop", "remove", "delete",
+    "don't",
+    "dont",
+    "do not",
+    "never",
+    "not",
+    "avoid",
+    "instead of",
+    "rather than",
+    "shouldn't",
+    "should not",
+    "can't",
+    "cannot",
+    "won't",
+    "will not",
+    "stop",
+    "remove",
+    "delete",
 ];
 
 // Prompt injection patterns to sanitize on write (F20)
@@ -345,10 +360,7 @@ impl FeatureLearning {
 /// let result = check_deduplication("Database pool should be sized to 10", &existing);
 /// assert!(matches!(result, DeduplicationResult::Unique));
 /// ```
-pub fn check_deduplication(
-    new_text: &str,
-    existing: &[FeatureLearning],
-) -> DeduplicationResult {
+pub fn check_deduplication(new_text: &str, existing: &[FeatureLearning]) -> DeduplicationResult {
     let new_words = normalize_words(new_text);
 
     if new_words.is_empty() {
@@ -482,7 +494,11 @@ pub fn select_for_pruning(learnings: &[FeatureLearning], max_count: usize) -> Ve
     // Sort by created date ascending (oldest first → prune oldest)
     prunable.sort_by(|a, b| a.1.cmp(b.1));
 
-    prunable.into_iter().take(overflow).map(|(i, _)| i).collect()
+    prunable
+        .into_iter()
+        .take(overflow)
+        .map(|(i, _)| i)
+        .collect()
 }
 
 // Custom deserialization for FeatureLearning (F36: no serde(untagged))
@@ -541,7 +557,10 @@ impl<'de> Deserialize<'de> for FeatureLearning {
                     })
                     .unwrap_or(LearningSource::Auto);
 
-                let task_id = map.get("task_id").and_then(|v| v.as_u64()).map(|n| n as u32);
+                let task_id = map
+                    .get("task_id")
+                    .and_then(|v| v.as_u64())
+                    .map(|n| n as u32);
                 let iteration = map
                     .get("iteration")
                     .and_then(|v| v.as_u64())
@@ -551,10 +570,7 @@ impl<'de> Deserialize<'de> for FeatureLearning {
                     .and_then(|v| v.as_str())
                     .unwrap_or("")
                     .to_string();
-                let hit_count = map
-                    .get("hit_count")
-                    .and_then(|v| v.as_u64())
-                    .unwrap_or(1) as u32;
+                let hit_count = map.get("hit_count").and_then(|v| v.as_u64()).unwrap_or(1) as u32;
                 let reviewed = map
                     .get("reviewed")
                     .and_then(|v| v.as_bool())
@@ -680,11 +696,8 @@ mod tests {
 
     #[test]
     fn learning_prompt_format_includes_provenance() {
-        let learning = FeatureLearning::auto_extracted(
-            "Auth middleware expects User object".into(),
-            7,
-            None,
-        );
+        let learning =
+            FeatureLearning::auto_extracted("Auth middleware expects User object".into(), 7, None);
         let formatted = learning.format_for_prompt();
         assert!(formatted.contains("auto"));
         assert!(formatted.contains("iteration 7"));

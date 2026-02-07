@@ -1,9 +1,8 @@
 use crate::context::PromptContext;
 use crate::recipe::Section;
 
-fn build(_ctx: &PromptContext) -> Option<String> {
-    Some(
-        r#"## Instructions
+pub fn default_text() -> String {
+    r#"## Instructions
 
 You are executing a specific task. Complete it thoroughly, following the discipline conventions and acceptance criteria.
 
@@ -24,8 +23,14 @@ You are executing a specific task. Complete it thoroughly, following the discipl
 - If ALL tasks in the project are now complete, output `<promise>COMPLETE</promise>` at the end of your response.
 - Do not modify files outside the scope of your assigned task unless absolutely necessary.
 - If a dependency task is not yet complete, do not proceed -- mark yourself as blocked."#
-            .to_string(),
-    )
+        .to_string()
+}
+
+fn build(ctx: &PromptContext) -> Option<String> {
+    if let Some(text) = ctx.instruction_overrides.get("task_exec_instructions") {
+        return Some(text.clone());
+    }
+    Some(default_text())
 }
 
 pub fn task_exec_instructions() -> Section {

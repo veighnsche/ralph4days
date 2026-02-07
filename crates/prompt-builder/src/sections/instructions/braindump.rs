@@ -1,9 +1,8 @@
 use crate::context::PromptContext;
 use crate::recipe::Section;
 
-fn build(_ctx: &PromptContext) -> Option<String> {
-    Some(
-        r#"## Instructions
+pub fn default_text() -> String {
+    r#"## Instructions
 
 You are receiving a raw braindump from the user. Your job is to analyze it and create structured project data.
 
@@ -29,8 +28,14 @@ You are receiving a raw braindump from the user. Your job is to analyze it and c
 - Use `context_files` to point tasks at the relevant source files
 - Use `hints` to give the executing agent useful tips
 - Create dependencies between tasks when one must complete before another can start"#
-            .to_string(),
-    )
+        .to_string()
+}
+
+fn build(ctx: &PromptContext) -> Option<String> {
+    if let Some(text) = ctx.instruction_overrides.get("braindump_instructions") {
+        return Some(text.clone());
+    }
+    Some(default_text())
 }
 
 pub fn braindump_instructions() -> Section {

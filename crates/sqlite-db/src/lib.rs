@@ -10,8 +10,15 @@ pub mod types;
 
 // Re-export public types
 pub use types::{
-    CommentAuthor, Discipline, Feature, GroupStats, InferredTaskStatus, McpServerConfig, Priority,
-    ProjectMetadata, ProjectProgress, Task, TaskComment, TaskInput, TaskProvenance, TaskStatus,
+    CommentAuthor, Discipline, Feature, FeatureInput, GroupStats, InferredTaskStatus,
+    McpServerConfig, Priority, ProjectMetadata, ProjectProgress, Task, TaskComment, TaskInput,
+    TaskProvenance, TaskStatus,
+};
+
+// Re-export ralph-rag learning types used by consumers
+pub use ralph_rag::{
+    check_deduplication, sanitize_learning_text, select_for_pruning, DeduplicationResult,
+    FeatureLearning, LearningSource,
 };
 
 use rusqlite::Connection;
@@ -39,7 +46,10 @@ impl SqliteDb {
         .map_err(|e| format!("Failed to set PRAGMAs: {}", e))?;
 
         // Run migrations
-        let migrations = Migrations::new(vec![M::up(include_str!("migrations/001_initial.sql"))]);
+        let migrations = Migrations::new(vec![
+            M::up(include_str!("migrations/001_initial.sql")),
+            M::up(include_str!("migrations/002_feature_rag_fields.sql")),
+        ]);
 
         migrations
             .to_latest(&mut conn)
@@ -60,12 +70,13 @@ impl SqliteDb {
         let mut conn = Connection::open_in_memory()
             .map_err(|e| format!("Failed to open in-memory database: {}", e))?;
 
-        conn.execute_batch(
-            "PRAGMA foreign_keys = ON;",
-        )
-        .map_err(|e| format!("Failed to set PRAGMAs: {}", e))?;
+        conn.execute_batch("PRAGMA foreign_keys = ON;")
+            .map_err(|e| format!("Failed to set PRAGMAs: {}", e))?;
 
-        let migrations = Migrations::new(vec![M::up(include_str!("migrations/001_initial.sql"))]);
+        let migrations = Migrations::new(vec![
+            M::up(include_str!("migrations/001_initial.sql")),
+            M::up(include_str!("migrations/002_feature_rag_fields.sql")),
+        ]);
 
         migrations
             .to_latest(&mut conn)

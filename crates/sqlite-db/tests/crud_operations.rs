@@ -1,4 +1,6 @@
-use sqlite_db::{CommentAuthor, Priority, SqliteDb, TaskInput, TaskStatus};
+use sqlite_db::{
+    CommentAuthor, FeatureInput, FeatureLearning, Priority, SqliteDb, TaskInput, TaskStatus,
+};
 
 fn create_test_db() -> SqliteDb {
     let db = SqliteDb::open_in_memory().unwrap();
@@ -6,24 +8,35 @@ fn create_test_db() -> SqliteDb {
     db
 }
 
+fn feature(name: &str, display_name: &str, acronym: &str) -> FeatureInput {
+    FeatureInput {
+        name: name.into(),
+        display_name: display_name.into(),
+        acronym: acronym.into(),
+        ..Default::default()
+    }
+}
+
 // === CREATE tests ===
 
 #[test]
 fn test_create_task() {
     let db = create_test_db();
-    db.create_feature("auth".into(), "Auth".into(), "AUTH".into(), None).unwrap();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
 
-    let task_id = db.create_task(TaskInput {
-        feature: "auth".into(),
-        discipline: "backend".into(),
-        title: "Implement login".into(),
-        description: Some("Login API".into()),
-        priority: Some(Priority::High),
-        tags: vec!["api".into()],
-        depends_on: vec![],
-        acceptance_criteria: Some(vec!["Works".into()]),
-        ..Default::default()
-    }).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "auth".into(),
+            discipline: "backend".into(),
+            title: "Implement login".into(),
+            description: Some("Login API".into()),
+            priority: Some(Priority::High),
+            tags: vec!["api".into()],
+            depends_on: vec![],
+            acceptance_criteria: Some(vec!["Works".into()]),
+            ..Default::default()
+        })
+        .unwrap();
 
     assert_eq!(task_id, 1);
     assert_eq!(db.get_tasks().len(), 1);
@@ -52,7 +65,9 @@ fn test_create_task_empty_discipline_rejected() {
         ..Default::default()
     });
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("Discipline name cannot be empty"));
+    assert!(result
+        .unwrap_err()
+        .contains("Discipline name cannot be empty"));
 }
 
 #[test]
@@ -84,7 +99,7 @@ fn test_create_task_nonexistent_feature_rejected() {
 #[test]
 fn test_create_task_nonexistent_discipline_rejected() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
     let result = db.create_task(TaskInput {
         feature: "test".into(),
         discipline: "nope".into(),
@@ -100,15 +115,17 @@ fn test_create_task_nonexistent_discipline_rejected() {
 #[test]
 fn test_get_task_by_id() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
 
-    let task_id = db.create_task(TaskInput {
-        feature: "test".into(),
-        discipline: "backend".into(),
-        title: "Test Task".into(),
-        priority: Some(Priority::Medium),
-        ..Default::default()
-    }).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "Test Task".into(),
+            priority: Some(Priority::Medium),
+            ..Default::default()
+        })
+        .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
     assert_eq!(task.id, task_id);
@@ -127,28 +144,34 @@ fn test_get_task_by_id_not_found() {
 #[test]
 fn test_update_task() {
     let db = create_test_db();
-    db.create_feature("auth".into(), "Auth".into(), "AUTH".into(), None).unwrap();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
 
-    let task_id = db.create_task(TaskInput {
-        feature: "auth".into(),
-        discipline: "backend".into(),
-        title: "Old Title".into(),
-        description: Some("Old description".into()),
-        priority: Some(Priority::Low),
-        tags: vec!["old".into()],
-        ..Default::default()
-    }).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "auth".into(),
+            discipline: "backend".into(),
+            title: "Old Title".into(),
+            description: Some("Old description".into()),
+            priority: Some(Priority::Low),
+            tags: vec!["old".into()],
+            ..Default::default()
+        })
+        .unwrap();
 
-    db.update_task(task_id, TaskInput {
-        feature: "auth".into(),
-        discipline: "backend".into(),
-        title: "New Title".into(),
-        description: Some("New description".into()),
-        priority: Some(Priority::High),
-        tags: vec!["new".into()],
-        acceptance_criteria: Some(vec!["Updated criteria".into()]),
-        ..Default::default()
-    }).unwrap();
+    db.update_task(
+        task_id,
+        TaskInput {
+            feature: "auth".into(),
+            discipline: "backend".into(),
+            title: "New Title".into(),
+            description: Some("New description".into()),
+            priority: Some(Priority::High),
+            tags: vec!["new".into()],
+            acceptance_criteria: Some(vec!["Updated criteria".into()]),
+            ..Default::default()
+        },
+    )
+    .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
     assert_eq!(task.title, "New Title");
@@ -163,13 +186,16 @@ fn test_update_task() {
 #[test]
 fn test_update_nonexistent_task() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
-    let result = db.update_task(999, TaskInput {
-        feature: "test".into(),
-        discipline: "backend".into(),
-        title: "Title".into(),
-        ..Default::default()
-    });
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    let result = db.update_task(
+        999,
+        TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "Title".into(),
+            ..Default::default()
+        },
+    );
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("does not exist"));
 }
@@ -177,22 +203,27 @@ fn test_update_nonexistent_task() {
 #[test]
 fn test_update_task_self_dependency_rejected() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
 
-    let task_id = db.create_task(TaskInput {
-        feature: "test".into(),
-        discipline: "backend".into(),
-        title: "Task".into(),
-        ..Default::default()
-    }).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "Task".into(),
+            ..Default::default()
+        })
+        .unwrap();
 
-    let result = db.update_task(task_id, TaskInput {
-        feature: "test".into(),
-        discipline: "backend".into(),
-        title: "Task".into(),
-        depends_on: vec![task_id],
-        ..Default::default()
-    });
+    let result = db.update_task(
+        task_id,
+        TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "Task".into(),
+            depends_on: vec![task_id],
+            ..Default::default()
+        },
+    );
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("cannot depend on itself"));
 }
@@ -200,25 +231,38 @@ fn test_update_task_self_dependency_rejected() {
 #[test]
 fn test_update_task_circular_dependency_rejected() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
 
-    let a = db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "A".into(),
-        ..Default::default()
-    }).unwrap();
+    let a = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "A".into(),
+            ..Default::default()
+        })
+        .unwrap();
 
-    let b = db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "B".into(),
-        depends_on: vec![a],
-        ..Default::default()
-    }).unwrap();
+    let b = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "B".into(),
+            depends_on: vec![a],
+            ..Default::default()
+        })
+        .unwrap();
 
     // Try to make A depend on B (cycle: A->B->A)
-    let result = db.update_task(a, TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "A".into(),
-        depends_on: vec![b],
-        ..Default::default()
-    });
+    let result = db.update_task(
+        a,
+        TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "A".into(),
+            depends_on: vec![b],
+            ..Default::default()
+        },
+    );
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("Circular dependency"));
 }
@@ -226,29 +270,46 @@ fn test_update_task_circular_dependency_rejected() {
 #[test]
 fn test_update_task_complex_circular_dependency() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
 
-    let a = db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "A".into(),
-        ..Default::default()
-    }).unwrap();
-    let b = db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "B".into(),
-        depends_on: vec![a],
-        ..Default::default()
-    }).unwrap();
-    let c = db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "C".into(),
-        depends_on: vec![b],
-        ..Default::default()
-    }).unwrap();
+    let a = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "A".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    let b = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "B".into(),
+            depends_on: vec![a],
+            ..Default::default()
+        })
+        .unwrap();
+    let c = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "C".into(),
+            depends_on: vec![b],
+            ..Default::default()
+        })
+        .unwrap();
 
     // Try A->C (cycle: A->B->C->A)
-    let result = db.update_task(a, TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "A".into(),
-        depends_on: vec![c],
-        ..Default::default()
-    });
+    let result = db.update_task(
+        a,
+        TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "A".into(),
+            depends_on: vec![c],
+            ..Default::default()
+        },
+    );
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("Circular dependency"));
 }
@@ -256,22 +317,32 @@ fn test_update_task_complex_circular_dependency() {
 #[test]
 fn test_update_task_preserves_status() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
 
-    let task_id = db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "Original".into(),
-        ..Default::default()
-    }).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "Original".into(),
+            ..Default::default()
+        })
+        .unwrap();
 
     // Status is "pending" by default
     let task = db.get_task_by_id(task_id).unwrap();
     assert_eq!(task.status, TaskStatus::Pending);
 
     // Update should preserve status
-    db.update_task(task_id, TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "Updated".into(),
-        ..Default::default()
-    }).unwrap();
+    db.update_task(
+        task_id,
+        TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "Updated".into(),
+            ..Default::default()
+        },
+    )
+    .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
     assert_eq!(task.status, TaskStatus::Pending);
@@ -283,12 +354,16 @@ fn test_update_task_preserves_status() {
 #[test]
 fn test_delete_task() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
 
-    let task_id = db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "To delete".into(),
-        ..Default::default()
-    }).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "To delete".into(),
+            ..Default::default()
+        })
+        .unwrap();
 
     assert_eq!(db.get_tasks().len(), 1);
     db.delete_task(task_id).unwrap();
@@ -307,17 +382,24 @@ fn test_delete_nonexistent_task() {
 #[test]
 fn test_delete_task_with_dependents_rejected() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
 
-    let a = db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "A".into(),
-        ..Default::default()
-    }).unwrap();
+    let a = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "A".into(),
+            ..Default::default()
+        })
+        .unwrap();
     db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "B".into(),
+        feature: "test".into(),
+        discipline: "backend".into(),
+        title: "B".into(),
         depends_on: vec![a],
         ..Default::default()
-    }).unwrap();
+    })
+    .unwrap();
 
     let result = db.delete_task(a);
     assert!(result.is_err());
@@ -327,17 +409,25 @@ fn test_delete_task_with_dependents_rejected() {
 #[test]
 fn test_delete_dependent_then_dependency() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
 
-    let a = db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "A".into(),
-        ..Default::default()
-    }).unwrap();
-    let b = db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "B".into(),
-        depends_on: vec![a],
-        ..Default::default()
-    }).unwrap();
+    let a = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "A".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    let b = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "B".into(),
+            depends_on: vec![a],
+            ..Default::default()
+        })
+        .unwrap();
 
     db.delete_task(b).unwrap();
     db.delete_task(a).unwrap();
@@ -349,7 +439,14 @@ fn test_delete_dependent_then_dependency() {
 #[test]
 fn test_create_feature() {
     let db = create_test_db();
-    db.create_feature("auth".into(), "Auth".into(), "AUTH".into(), Some("Auth feature".into())).unwrap();
+    db.create_feature(FeatureInput {
+        name: "auth".into(),
+        display_name: "Auth".into(),
+        acronym: "AUTH".into(),
+        description: Some("Auth feature".into()),
+        ..Default::default()
+    })
+    .unwrap();
     let features = db.get_features();
     assert!(features.iter().any(|f| f.name == "auth"));
 }
@@ -357,8 +454,8 @@ fn test_create_feature() {
 #[test]
 fn test_create_duplicate_feature_rejected() {
     let db = create_test_db();
-    db.create_feature("auth".into(), "Auth".into(), "AUTH".into(), None).unwrap();
-    let result = db.create_feature("auth".into(), "Auth2".into(), "AUT2".into(), None);
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    let result = db.create_feature(feature("auth", "Auth2", "AUT2"));
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("already exists"));
 }
@@ -366,8 +463,8 @@ fn test_create_duplicate_feature_rejected() {
 #[test]
 fn test_create_feature_duplicate_acronym_rejected() {
     let db = create_test_db();
-    db.create_feature("auth".into(), "Auth".into(), "AUTH".into(), None).unwrap();
-    let result = db.create_feature("other".into(), "Other".into(), "AUTH".into(), None);
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    let result = db.create_feature(feature("other", "Other", "AUTH"));
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("already used"));
 }
@@ -375,8 +472,15 @@ fn test_create_feature_duplicate_acronym_rejected() {
 #[test]
 fn test_update_feature() {
     let db = create_test_db();
-    db.create_feature("auth".into(), "Auth".into(), "AUTH".into(), None).unwrap();
-    db.update_feature("auth".into(), "Authentication".into(), "AUTH".into(), Some("Updated".into())).unwrap();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    db.update_feature(FeatureInput {
+        name: "auth".into(),
+        display_name: "Authentication".into(),
+        acronym: "AUTH".into(),
+        description: Some("Updated".into()),
+        ..Default::default()
+    })
+    .unwrap();
 
     let features = db.get_features();
     let f = features.iter().find(|f| f.name == "auth").unwrap();
@@ -388,7 +492,7 @@ fn test_update_feature() {
 #[test]
 fn test_delete_feature() {
     let db = create_test_db();
-    db.create_feature("auth".into(), "Auth".into(), "AUTH".into(), None).unwrap();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
     let initial = db.get_features().len();
     db.delete_feature("auth".into()).unwrap();
     assert_eq!(db.get_features().len(), initial - 1);
@@ -405,15 +509,254 @@ fn test_delete_feature_nonexistent() {
 #[test]
 fn test_delete_feature_with_tasks_rejected() {
     let db = create_test_db();
-    db.create_feature("auth".into(), "Auth".into(), "AUTH".into(), None).unwrap();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
     db.create_task(TaskInput {
-        feature: "auth".into(), discipline: "backend".into(), title: "Task".into(),
+        feature: "auth".into(),
+        discipline: "backend".into(),
+        title: "Task".into(),
         ..Default::default()
-    }).unwrap();
+    })
+    .unwrap();
 
     let result = db.delete_feature("auth".into());
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("Cannot delete feature"));
+}
+
+// === FEATURE RAG FIELDS tests ===
+
+#[test]
+fn test_create_feature_with_rag_fields() {
+    let db = create_test_db();
+    db.create_feature(FeatureInput {
+        name: "auth".into(),
+        display_name: "Auth".into(),
+        acronym: "AUTH".into(),
+        description: Some("Authentication feature".into()),
+        architecture: Some("OAuth2 + JWT".into()),
+        boundaries: Some("No direct DB access".into()),
+        dependencies: vec!["user-profile".into()],
+        ..Default::default()
+    })
+    .unwrap();
+
+    let features = db.get_features();
+    let f = features.iter().find(|f| f.name == "auth").unwrap();
+    assert_eq!(f.architecture, Some("OAuth2 + JWT".into()));
+    assert_eq!(f.boundaries, Some("No direct DB access".into()));
+    assert_eq!(f.dependencies, vec!["user-profile"]);
+    assert!(f.learnings.is_empty()); // Always empty on create
+}
+
+#[test]
+fn test_update_feature_rag_fields() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+
+    db.update_feature(FeatureInput {
+        name: "auth".into(),
+        display_name: "Auth".into(),
+        acronym: "AUTH".into(),
+        architecture: Some("Session-based".into()),
+        boundaries: Some("Frontend only".into()),
+        dependencies: vec!["settings".into()],
+        ..Default::default()
+    })
+    .unwrap();
+
+    let features = db.get_features();
+    let f = features.iter().find(|f| f.name == "auth").unwrap();
+    assert_eq!(f.architecture, Some("Session-based".into()));
+    assert_eq!(f.boundaries, Some("Frontend only".into()));
+    assert_eq!(f.dependencies, vec!["settings"]);
+}
+
+#[test]
+fn test_update_feature_preserves_learnings() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+
+    // Add a learning
+    let learning = FeatureLearning::from_human("Use bcrypt not SHA256".into(), None);
+    db.append_feature_learning("auth", learning, 50).unwrap();
+
+    // Update feature (should NOT touch learnings)
+    db.update_feature(FeatureInput {
+        name: "auth".into(),
+        display_name: "Authentication".into(),
+        acronym: "AUTH".into(),
+        architecture: Some("New arch".into()),
+        ..Default::default()
+    })
+    .unwrap();
+
+    let features = db.get_features();
+    let f = features.iter().find(|f| f.name == "auth").unwrap();
+    assert_eq!(f.display_name, "Authentication");
+    assert_eq!(f.architecture, Some("New arch".into()));
+    assert_eq!(f.learnings.len(), 1);
+    assert_eq!(f.learnings[0].text, "Use bcrypt not SHA256");
+}
+
+// === FEATURE LEARNING tests ===
+
+#[test]
+fn test_append_feature_learning_basic() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+
+    let learning = FeatureLearning::auto_extracted("Auth expects User object".into(), 7, Some(42));
+    let added = db.append_feature_learning("auth", learning, 50).unwrap();
+    assert!(added);
+
+    let features = db.get_features();
+    let f = features.iter().find(|f| f.name == "auth").unwrap();
+    assert_eq!(f.learnings.len(), 1);
+    assert_eq!(f.learnings[0].text, "Auth expects User object");
+    assert_eq!(f.learnings[0].iteration, Some(7));
+    assert_eq!(f.learnings[0].task_id, Some(42));
+}
+
+#[test]
+fn test_append_feature_learning_dedup() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+
+    let learning1 = FeatureLearning::auto_extracted(
+        "Auth middleware expects User object not userId string".into(),
+        5,
+        None,
+    );
+    db.append_feature_learning("auth", learning1, 50).unwrap();
+
+    // Near-duplicate → should dedup (return false, increment hit_count)
+    let learning2 = FeatureLearning::auto_extracted(
+        "Auth middleware expects User object instead of userId string".into(),
+        8,
+        None,
+    );
+    let added = db.append_feature_learning("auth", learning2, 50).unwrap();
+    assert!(!added); // Deduped
+
+    let features = db.get_features();
+    let f = features.iter().find(|f| f.name == "auth").unwrap();
+    assert_eq!(f.learnings.len(), 1); // Still 1
+    assert_eq!(f.learnings[0].hit_count, 2); // Incremented
+}
+
+#[test]
+fn test_append_feature_learning_nonexistent_feature() {
+    let db = create_test_db();
+    let learning = FeatureLearning::from_human("test".into(), None);
+    let result = db.append_feature_learning("nope", learning, 50);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("not found"));
+}
+
+// === REMOVE LEARNING tests ===
+
+#[test]
+fn test_remove_feature_learning_basic() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+
+    db.append_feature_learning(
+        "auth",
+        FeatureLearning::from_human("First".into(), None),
+        50,
+    )
+    .unwrap();
+    db.append_feature_learning(
+        "auth",
+        FeatureLearning::from_human("Second".into(), None),
+        50,
+    )
+    .unwrap();
+
+    db.remove_feature_learning("auth", 0).unwrap();
+
+    let features = db.get_features();
+    let f = features.iter().find(|f| f.name == "auth").unwrap();
+    assert_eq!(f.learnings.len(), 1);
+    assert_eq!(f.learnings[0].text, "Second");
+}
+
+#[test]
+fn test_remove_feature_learning_out_of_range() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+
+    let result = db.remove_feature_learning("auth", 0);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("out of range"));
+}
+
+// === CONTEXT FILE tests ===
+
+#[test]
+fn test_add_feature_context_file_basic() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+
+    let added = db
+        .add_feature_context_file("auth", "src/auth/mod.rs", 100)
+        .unwrap();
+    assert!(added);
+
+    let features = db.get_features();
+    let f = features.iter().find(|f| f.name == "auth").unwrap();
+    assert_eq!(f.context_files, vec!["src/auth/mod.rs"]);
+}
+
+#[test]
+fn test_add_feature_context_file_idempotent() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+
+    db.add_feature_context_file("auth", "src/auth/mod.rs", 100)
+        .unwrap();
+    let added = db
+        .add_feature_context_file("auth", "src/auth/mod.rs", 100)
+        .unwrap();
+    assert!(!added); // Already present
+
+    let features = db.get_features();
+    let f = features.iter().find(|f| f.name == "auth").unwrap();
+    assert_eq!(f.context_files.len(), 1); // Still 1
+}
+
+#[test]
+fn test_add_feature_context_file_cap() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+
+    // Fill to cap of 2
+    db.add_feature_context_file("auth", "a.rs", 2).unwrap();
+    db.add_feature_context_file("auth", "b.rs", 2).unwrap();
+
+    let result = db.add_feature_context_file("auth", "c.rs", 2);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("limit"));
+}
+
+#[test]
+fn test_add_feature_context_file_rejects_absolute_path() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+
+    let result = db.add_feature_context_file("auth", "/etc/passwd", 100);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("relative"));
+}
+
+#[test]
+fn test_add_feature_context_file_rejects_parent_traversal() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+
+    let result = db.add_feature_context_file("auth", "../secret.txt", 100);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains(".."));
 }
 
 // === DISCIPLINE tests ===
@@ -421,7 +764,14 @@ fn test_delete_feature_with_tasks_rejected() {
 #[test]
 fn test_create_discipline() {
     let db = create_test_db();
-    db.create_discipline("custom".into(), "Custom".into(), "CUST".into(), "Wrench".into(), "#ff0000".into()).unwrap();
+    db.create_discipline(
+        "custom".into(),
+        "Custom".into(),
+        "CUST".into(),
+        "Wrench".into(),
+        "#ff0000".into(),
+    )
+    .unwrap();
     let disciplines = db.get_disciplines();
     assert!(disciplines.iter().any(|d| d.name == "custom"));
 }
@@ -430,7 +780,13 @@ fn test_create_discipline() {
 fn test_create_duplicate_discipline_rejected() {
     let db = create_test_db();
     // "backend" already seeded
-    let result = db.create_discipline("backend".into(), "Backend2".into(), "BAC2".into(), "Server".into(), "#000".into());
+    let result = db.create_discipline(
+        "backend".into(),
+        "Backend2".into(),
+        "BAC2".into(),
+        "Server".into(),
+        "#000".into(),
+    );
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("already exists"));
 }
@@ -438,8 +794,22 @@ fn test_create_duplicate_discipline_rejected() {
 #[test]
 fn test_update_discipline() {
     let db = create_test_db();
-    db.create_discipline("custom".into(), "Custom".into(), "CUST".into(), "Wrench".into(), "#ff0000".into()).unwrap();
-    db.update_discipline("custom".into(), "Custom Updated".into(), "CUST".into(), "Star".into(), "#00ff00".into()).unwrap();
+    db.create_discipline(
+        "custom".into(),
+        "Custom".into(),
+        "CUST".into(),
+        "Wrench".into(),
+        "#ff0000".into(),
+    )
+    .unwrap();
+    db.update_discipline(
+        "custom".into(),
+        "Custom Updated".into(),
+        "CUST".into(),
+        "Star".into(),
+        "#00ff00".into(),
+    )
+    .unwrap();
 
     let disciplines = db.get_disciplines();
     let d = disciplines.iter().find(|d| d.name == "custom").unwrap();
@@ -451,7 +821,14 @@ fn test_update_discipline() {
 #[test]
 fn test_delete_discipline() {
     let db = create_test_db();
-    db.create_discipline("custom".into(), "Custom".into(), "CUST".into(), "Wrench".into(), "#ff0000".into()).unwrap();
+    db.create_discipline(
+        "custom".into(),
+        "Custom".into(),
+        "CUST".into(),
+        "Wrench".into(),
+        "#ff0000".into(),
+    )
+    .unwrap();
     let initial = db.get_disciplines().len();
     db.delete_discipline("custom".into()).unwrap();
     assert_eq!(db.get_disciplines().len(), initial - 1);
@@ -468,11 +845,14 @@ fn test_delete_discipline_nonexistent() {
 #[test]
 fn test_delete_discipline_with_tasks_rejected() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
     db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "Task".into(),
+        feature: "test".into(),
+        discipline: "backend".into(),
+        title: "Task".into(),
         ..Default::default()
-    }).unwrap();
+    })
+    .unwrap();
 
     let result = db.delete_discipline("backend".into());
     assert!(result.is_err());
@@ -484,13 +864,18 @@ fn test_delete_discipline_with_tasks_rejected() {
 #[test]
 fn test_add_human_comment() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
-    let task_id = db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "Task".into(),
-        ..Default::default()
-    }).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "Task".into(),
+            ..Default::default()
+        })
+        .unwrap();
 
-    db.add_comment(task_id, CommentAuthor::Human, None, "Use bcrypt".into()).unwrap();
+    db.add_comment(task_id, CommentAuthor::Human, None, "Use bcrypt".into())
+        .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
     assert_eq!(task.comments.len(), 1);
@@ -503,13 +888,23 @@ fn test_add_human_comment() {
 #[test]
 fn test_add_agent_comment() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
-    let task_id = db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "Task".into(),
-        ..Default::default()
-    }).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "Task".into(),
+            ..Default::default()
+        })
+        .unwrap();
 
-    db.add_comment(task_id, CommentAuthor::Agent, Some(5), "Failed: missing .env".into()).unwrap();
+    db.add_comment(
+        task_id,
+        CommentAuthor::Agent,
+        Some(5),
+        "Failed: missing .env".into(),
+    )
+    .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
     assert_eq!(task.comments[0].author, CommentAuthor::Agent);
@@ -519,11 +914,15 @@ fn test_add_agent_comment() {
 #[test]
 fn test_add_comment_empty_body_rejected() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
-    let task_id = db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "Task".into(),
-        ..Default::default()
-    }).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "Task".into(),
+            ..Default::default()
+        })
+        .unwrap();
 
     let result = db.add_comment(task_id, CommentAuthor::Human, None, "   ".into());
     assert!(result.is_err());
@@ -533,11 +932,15 @@ fn test_add_comment_empty_body_rejected() {
 #[test]
 fn test_add_comment_agent_missing_task_id_rejected() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
-    let task_id = db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "Task".into(),
-        ..Default::default()
-    }).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "Task".into(),
+            ..Default::default()
+        })
+        .unwrap();
 
     let result = db.add_comment(task_id, CommentAuthor::Agent, None, "Note".into());
     assert!(result.is_err());
@@ -547,11 +950,15 @@ fn test_add_comment_agent_missing_task_id_rejected() {
 #[test]
 fn test_add_comment_human_with_task_id_rejected() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
-    let task_id = db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "Task".into(),
-        ..Default::default()
-    }).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "Task".into(),
+            ..Default::default()
+        })
+        .unwrap();
 
     let result = db.add_comment(task_id, CommentAuthor::Human, Some(1), "Note".into());
     assert!(result.is_err());
@@ -569,18 +976,24 @@ fn test_add_comment_nonexistent_task() {
 #[test]
 fn test_update_comment_by_id() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
-    let task_id = db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "Task".into(),
-        ..Default::default()
-    }).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "Task".into(),
+            ..Default::default()
+        })
+        .unwrap();
 
-    db.add_comment(task_id, CommentAuthor::Human, None, "Original".into()).unwrap();
+    db.add_comment(task_id, CommentAuthor::Human, None, "Original".into())
+        .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
     let comment_id = task.comments[0].id;
 
-    db.update_comment(task_id, comment_id, "Edited".into()).unwrap();
+    db.update_comment(task_id, comment_id, "Edited".into())
+        .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
     assert_eq!(task.comments[0].body, "Edited");
@@ -590,15 +1003,22 @@ fn test_update_comment_by_id() {
 #[test]
 fn test_delete_comment_by_id() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
-    let task_id = db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "Task".into(),
-        ..Default::default()
-    }).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "Task".into(),
+            ..Default::default()
+        })
+        .unwrap();
 
-    db.add_comment(task_id, CommentAuthor::Human, None, "First".into()).unwrap();
-    db.add_comment(task_id, CommentAuthor::Human, None, "Second".into()).unwrap();
-    db.add_comment(task_id, CommentAuthor::Human, None, "Third".into()).unwrap();
+    db.add_comment(task_id, CommentAuthor::Human, None, "First".into())
+        .unwrap();
+    db.add_comment(task_id, CommentAuthor::Human, None, "Second".into())
+        .unwrap();
+    db.add_comment(task_id, CommentAuthor::Human, None, "Third".into())
+        .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
     let second_id = task.comments[1].id;
@@ -615,18 +1035,29 @@ fn test_delete_comment_by_id() {
 #[test]
 fn test_update_task_preserves_comments() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
-    let task_id = db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "Original".into(),
-        ..Default::default()
-    }).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "Original".into(),
+            ..Default::default()
+        })
+        .unwrap();
 
-    db.add_comment(task_id, CommentAuthor::Human, None, "Keep me".into()).unwrap();
+    db.add_comment(task_id, CommentAuthor::Human, None, "Keep me".into())
+        .unwrap();
 
-    db.update_task(task_id, TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "Updated".into(),
-        ..Default::default()
-    }).unwrap();
+    db.update_task(
+        task_id,
+        TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "Updated".into(),
+            ..Default::default()
+        },
+    )
+    .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
     assert_eq!(task.title, "Updated");
@@ -639,11 +1070,20 @@ fn test_update_task_preserves_comments() {
 #[test]
 fn test_enriched_tasks() {
     let db = create_test_db();
-    db.create_feature("auth".into(), "Authentication".into(), "AUTH".into(), None).unwrap();
-    db.create_task(TaskInput {
-        feature: "auth".into(), discipline: "backend".into(), title: "Login".into(),
+    db.create_feature(FeatureInput {
+        name: "auth".into(),
+        display_name: "Authentication".into(),
+        acronym: "AUTH".into(),
         ..Default::default()
-    }).unwrap();
+    })
+    .unwrap();
+    db.create_task(TaskInput {
+        feature: "auth".into(),
+        discipline: "backend".into(),
+        title: "Login".into(),
+        ..Default::default()
+    })
+    .unwrap();
 
     let enriched = db.get_tasks();
     assert_eq!(enriched.len(), 1);
@@ -657,12 +1097,16 @@ fn test_enriched_tasks() {
 #[test]
 fn test_enriched_tasks_comments_visible() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
     db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "Task".into(),
+        feature: "test".into(),
+        discipline: "backend".into(),
+        title: "Task".into(),
         ..Default::default()
-    }).unwrap();
-    db.add_comment(1, CommentAuthor::Human, None, "Visible in enriched".into()).unwrap();
+    })
+    .unwrap();
+    db.add_comment(1, CommentAuthor::Human, None, "Visible in enriched".into())
+        .unwrap();
 
     let enriched = db.get_tasks();
     assert_eq!(enriched[0].comments.len(), 1);
@@ -674,34 +1118,50 @@ fn test_enriched_tasks_comments_visible() {
 #[test]
 fn test_inferred_status_ready() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
     db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "Task".into(),
+        feature: "test".into(),
+        discipline: "backend".into(),
+        title: "Task".into(),
         ..Default::default()
-    }).unwrap();
+    })
+    .unwrap();
 
     let enriched = db.get_tasks();
-    assert_eq!(enriched[0].inferred_status, sqlite_db::InferredTaskStatus::Ready);
+    assert_eq!(
+        enriched[0].inferred_status,
+        sqlite_db::InferredTaskStatus::Ready
+    );
 }
 
 #[test]
 fn test_inferred_status_waiting_on_deps() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
 
-    let a = db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "A".into(),
-        ..Default::default()
-    }).unwrap();
+    let a = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "A".into(),
+            ..Default::default()
+        })
+        .unwrap();
     db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "B".into(),
+        feature: "test".into(),
+        discipline: "backend".into(),
+        title: "B".into(),
         depends_on: vec![a],
         ..Default::default()
-    }).unwrap();
+    })
+    .unwrap();
 
     let enriched = db.get_tasks();
     let b_enriched = enriched.iter().find(|t| t.title == "B").unwrap();
-    assert_eq!(b_enriched.inferred_status, sqlite_db::InferredTaskStatus::WaitingOnDeps);
+    assert_eq!(
+        b_enriched.inferred_status,
+        sqlite_db::InferredTaskStatus::WaitingOnDeps
+    );
 }
 
 // === STATS tests ===
@@ -709,17 +1169,24 @@ fn test_inferred_status_waiting_on_deps() {
 #[test]
 fn test_feature_stats() {
     let db = create_test_db();
-    db.create_feature("auth".into(), "Auth".into(), "AUTH".into(), None).unwrap();
-    db.create_feature("search".into(), "Search".into(), "SRCH".into(), None).unwrap();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    db.create_feature(feature("search", "Search", "SRCH"))
+        .unwrap();
 
     db.create_task(TaskInput {
-        feature: "auth".into(), discipline: "backend".into(), title: "T1".into(),
+        feature: "auth".into(),
+        discipline: "backend".into(),
+        title: "T1".into(),
         ..Default::default()
-    }).unwrap();
+    })
+    .unwrap();
     db.create_task(TaskInput {
-        feature: "auth".into(), discipline: "backend".into(), title: "T2".into(),
+        feature: "auth".into(),
+        discipline: "backend".into(),
+        title: "T2".into(),
         ..Default::default()
-    }).unwrap();
+    })
+    .unwrap();
 
     let stats = db.get_feature_stats();
     let auth_stats = stats.iter().find(|s| s.name == "auth").unwrap();
@@ -740,18 +1207,24 @@ fn test_project_progress() {
 #[test]
 fn test_get_all_tags() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test".into(), "TEST".into(), None).unwrap();
+    db.create_feature(feature("test", "Test", "TEST")).unwrap();
 
     db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "T1".into(),
+        feature: "test".into(),
+        discipline: "backend".into(),
+        title: "T1".into(),
         tags: vec!["api".into(), "auth".into()],
         ..Default::default()
-    }).unwrap();
+    })
+    .unwrap();
     db.create_task(TaskInput {
-        feature: "test".into(), discipline: "backend".into(), title: "T2".into(),
+        feature: "test".into(),
+        discipline: "backend".into(),
+        title: "T2".into(),
         tags: vec!["auth".into(), "db".into()],
         ..Default::default()
-    }).unwrap();
+    })
+    .unwrap();
 
     let tags = db.get_all_tags();
     assert_eq!(tags, vec!["api", "auth", "db"]); // Sorted, deduplicated
@@ -762,7 +1235,8 @@ fn test_get_all_tags() {
 #[test]
 fn test_project_info() {
     let db = create_test_db();
-    db.initialize_metadata("My Project".into(), Some("Description".into())).unwrap();
+    db.initialize_metadata("My Project".into(), Some("Description".into()))
+        .unwrap();
 
     let info = db.get_project_info();
     assert_eq!(info.title, "My Project");
@@ -776,11 +1250,14 @@ fn test_project_info() {
 fn test_export_prd_yaml_deterministic() {
     let db = create_test_db();
     db.initialize_metadata("Test".into(), None).unwrap();
-    db.create_feature("auth".into(), "Auth".into(), "AUTH".into(), None).unwrap();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
     db.create_task(TaskInput {
-        feature: "auth".into(), discipline: "backend".into(), title: "Login".into(),
+        feature: "auth".into(),
+        discipline: "backend".into(),
+        title: "Login".into(),
         ..Default::default()
-    }).unwrap();
+    })
+    .unwrap();
 
     let export1 = db.export_prd_yaml().unwrap();
     let export2 = db.export_prd_yaml().unwrap();
@@ -794,24 +1271,34 @@ fn test_export_prd_yaml_deterministic() {
 #[test]
 fn test_crud_lifecycle() {
     let db = create_test_db();
-    db.create_feature("auth".into(), "Auth".into(), "AUTH".into(), None).unwrap();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
 
-    let task_id = db.create_task(TaskInput {
-        feature: "auth".into(), discipline: "backend".into(), title: "Initial".into(),
-        priority: Some(Priority::Low),
-        ..Default::default()
-    }).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "auth".into(),
+            discipline: "backend".into(),
+            title: "Initial".into(),
+            priority: Some(Priority::Low),
+            ..Default::default()
+        })
+        .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
     assert_eq!(task.title, "Initial");
     assert_eq!(task.status, TaskStatus::Pending);
 
-    db.update_task(task_id, TaskInput {
-        feature: "auth".into(), discipline: "frontend".into(), title: "Updated".into(),
-        priority: Some(Priority::High),
-        tags: vec!["updated".into()],
-        ..Default::default()
-    }).unwrap();
+    db.update_task(
+        task_id,
+        TaskInput {
+            feature: "auth".into(),
+            discipline: "frontend".into(),
+            title: "Updated".into(),
+            priority: Some(Priority::High),
+            tags: vec!["updated".into()],
+            ..Default::default()
+        },
+    )
+    .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
     assert_eq!(task.title, "Updated");
@@ -826,18 +1313,15 @@ fn test_crud_lifecycle() {
 #[test]
 fn test_set_task_status() {
     let db = create_test_db();
-    db.create_feature("auth".into(), "Auth".into(), "AUTH".into(), None).unwrap();
-    let task_id = db.create_task(TaskInput {
-        feature: "auth".into(),
-        discipline: "backend".into(),
-        title: "Login flow".into(),
-        description: None,
-        priority: None,
-        tags: vec![],
-        depends_on: vec![],
-        acceptance_criteria: None,
-        context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
-    }).unwrap();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "auth".into(),
+            discipline: "backend".into(),
+            title: "Login flow".into(),
+            ..Default::default()
+        })
+        .unwrap();
 
     // Default is pending
     let task = db.get_task_by_id(task_id).unwrap();
@@ -871,19 +1355,38 @@ fn test_set_task_status_nonexistent() {
 #[test]
 fn test_export_yaml_escapes_special_chars() {
     let db = create_test_db();
-    db.create_feature("test".into(), "Test \"Feature\"".into(), "TSTF".into(), Some("A description with \"quotes\" and\nnewlines".into())).unwrap();
-    let task_id = db.create_task(TaskInput {
-        feature: "test".into(),
-        discipline: "backend".into(),
-        title: "Fix the \"bug\" in code".into(),
-        description: Some("Line 1\nLine 2\tTabbed".into()),
-        priority: None,
-        tags: vec!["tag with \"quotes\"".into()],
-        depends_on: vec![],
-        acceptance_criteria: Some(vec!["Check \"output\" is correct".into()]),
-        context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
-    }).unwrap();
-    db.add_comment(task_id, CommentAuthor::Human, None, "Comment with \"quotes\" and\nnewlines".into()).unwrap();
+    db.create_feature(FeatureInput {
+        name: "test".into(),
+        display_name: "Test \"Feature\"".into(),
+        acronym: "TSTF".into(),
+        description: Some("A description with \"quotes\" and\nnewlines".into()),
+        ..Default::default()
+    })
+    .unwrap();
+    let task_id = db
+        .create_task(TaskInput {
+            feature: "test".into(),
+            discipline: "backend".into(),
+            title: "Fix the \"bug\" in code".into(),
+            description: Some("Line 1\nLine 2\tTabbed".into()),
+            priority: None,
+            tags: vec!["tag with \"quotes\"".into()],
+            depends_on: vec![],
+            acceptance_criteria: Some(vec!["Check \"output\" is correct".into()]),
+            context_files: vec![],
+            output_artifacts: vec![],
+            hints: None,
+            estimated_turns: None,
+            provenance: None,
+        })
+        .unwrap();
+    db.add_comment(
+        task_id,
+        CommentAuthor::Human,
+        None,
+        "Comment with \"quotes\" and\nnewlines".into(),
+    )
+    .unwrap();
 
     let yaml = db.export_prd_yaml().unwrap();
 

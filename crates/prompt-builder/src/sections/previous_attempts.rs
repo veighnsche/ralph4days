@@ -11,7 +11,10 @@ fn build(ctx: &PromptContext) -> Option<String> {
     let mut out = String::from("## Previous Attempts\n\n");
     for comment in &task.comments {
         let author = comment.author.as_str();
-        out.push_str(&format!("### Attempt (by {author})\n\n{}\n\n", comment.body));
+        out.push_str(&format!(
+            "### Attempt (by {author})\n\n{}\n\n",
+            comment.body
+        ));
     }
 
     Some(out.trim_end().to_string())

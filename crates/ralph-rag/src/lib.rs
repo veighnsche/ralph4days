@@ -105,7 +105,10 @@ pub mod qdrant_schema;
 pub use config::RagConfig;
 pub use extraction::ExtractionResult;
 pub use journal::JournalEntry;
-pub use learning::{sanitize_learning_text, FeatureLearning, LearningSource};
+pub use learning::{
+    check_deduplication, sanitize_learning_text, select_for_pruning, DeduplicationResult,
+    FeatureLearning, LearningSource,
+};
 pub use model::{
     DecisionEntry, ErrorEntry, ErrorType, FileAction, FileTouched, IterationOutcome,
     IterationRecord,

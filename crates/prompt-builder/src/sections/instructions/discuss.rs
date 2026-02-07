@@ -1,9 +1,8 @@
 use crate::context::PromptContext;
 use crate::recipe::Section;
 
-fn build(_ctx: &PromptContext) -> Option<String> {
-    Some(
-        r#"## Instructions
+pub fn default_text() -> String {
+    r#"## Instructions
 
 You are receiving input from the user about disciplines. Review the existing disciplines and the user's input, then update discipline configurations as needed.
 
@@ -27,8 +26,14 @@ You are receiving input from the user about disciplines. Review the existing dis
 - Skills should be specific and actionable, not vague
 - Conventions should be concrete rules, not aspirational statements
 - Keep discipline scope focused -- one discipline should not cover everything"#
-            .to_string(),
-    )
+        .to_string()
+}
+
+fn build(ctx: &PromptContext) -> Option<String> {
+    if let Some(text) = ctx.instruction_overrides.get("discuss_instructions") {
+        return Some(text.clone());
+    }
+    Some(default_text())
 }
 
 pub fn discuss_instructions() -> Section {

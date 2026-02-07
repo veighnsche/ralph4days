@@ -34,9 +34,7 @@ impl SqliteDb {
             return Err(format!("Task {} does not exist", task_id));
         }
 
-        let now = chrono::Utc::now()
-            .format("%Y-%m-%dT%H:%M:%SZ")
-            .to_string();
+        let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
 
         self.conn
             .execute(
@@ -50,7 +48,12 @@ impl SqliteDb {
     }
 
     /// Update a comment's body by stable ID (not array index).
-    pub fn update_comment(&self, task_id: u32, comment_id: u32, body: String) -> Result<(), String> {
+    pub fn update_comment(
+        &self,
+        task_id: u32,
+        comment_id: u32,
+        body: String,
+    ) -> Result<(), String> {
         if body.trim().is_empty() {
             return Err("Comment body cannot be empty".to_string());
         }
@@ -163,8 +166,7 @@ impl SqliteDb {
                     row.get::<_, u32>(1)?,
                     TaskComment {
                         id: row.get(0)?,
-                        author: CommentAuthor::parse(&author_str)
-                            .unwrap_or(CommentAuthor::Human),
+                        author: CommentAuthor::parse(&author_str).unwrap_or(CommentAuthor::Human),
                         agent_task_id: row.get(3)?,
                         body: row.get(4)?,
                         created: row.get(5)?,

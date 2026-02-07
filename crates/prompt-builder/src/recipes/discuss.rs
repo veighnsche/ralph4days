@@ -12,9 +12,6 @@ pub fn recipe() -> Recipe {
             sections::user_input(),
             sections::discuss_instructions(),
         ],
-        mcp_tools: vec![
-            McpTool::UpdateDiscipline,
-            McpTool::ListDisciplines,
-        ],
+        mcp_tools: vec![McpTool::UpdateDiscipline, McpTool::ListDisciplines],
     }
 }

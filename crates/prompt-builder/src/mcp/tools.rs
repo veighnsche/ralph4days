@@ -41,12 +41,16 @@ impl McpTool {
             Self::CreateDiscipline => "Create a new discipline in the project database",
             Self::CreateTask => "Create a new task in the project database",
             Self::UpdateTask => "Update an existing task's title, description, or priority",
-            Self::SetTaskStatus => "Set the status of a task (pending, in_progress, done, blocked, skipped)",
+            Self::SetTaskStatus => {
+                "Set the status of a task (pending, in_progress, done, blocked, skipped)"
+            }
             Self::ListFeatures => "List all features in the project",
             Self::ListDisciplines => "List all disciplines in the project",
             Self::ListTasks => "List all tasks in the project",
             Self::UpdateFeature => "Update an existing feature's display name or description",
-            Self::UpdateDiscipline => "Update an existing discipline's system prompt or conventions",
+            Self::UpdateDiscipline => {
+                "Update an existing discipline's system prompt or conventions"
+            }
             Self::AppendLearning => "Append a learning entry to the project's learnings.txt",
             Self::AddContextFile => "Add a context file path to a task",
         }
@@ -55,15 +59,25 @@ impl McpTool {
     /// JSON schema string for the tool's `inputSchema` in MCP tools/list.
     pub fn tool_schema(&self) -> &'static str {
         match self {
-            Self::CreateFeature => r#"{"type":"object","properties":{"name":{"type":"string","description":"Unique snake_case feature name"},"display_name":{"type":"string","description":"Human-readable feature name"},"description":{"type":"string","description":"Feature description"}},"required":["name","display_name"]}"#,
+            Self::CreateFeature => {
+                r#"{"type":"object","properties":{"name":{"type":"string","description":"Unique snake_case feature name"},"display_name":{"type":"string","description":"Human-readable feature name"},"description":{"type":"string","description":"Feature description"}},"required":["name","display_name"]}"#
+            }
 
-            Self::CreateDiscipline => r#"{"type":"object","properties":{"name":{"type":"string","description":"Unique snake_case discipline name"},"display_name":{"type":"string","description":"Human-readable discipline name"},"icon":{"type":"string","description":"Lucide icon name"},"color":{"type":"string","description":"Tailwind color class"}},"required":["name","display_name","icon","color"]}"#,
+            Self::CreateDiscipline => {
+                r#"{"type":"object","properties":{"name":{"type":"string","description":"Unique snake_case discipline name"},"display_name":{"type":"string","description":"Human-readable discipline name"},"icon":{"type":"string","description":"Lucide icon name"},"color":{"type":"string","description":"Tailwind color class"}},"required":["name","display_name","icon","color"]}"#
+            }
 
-            Self::CreateTask => r#"{"type":"object","properties":{"feature":{"type":"string","description":"Feature name this task belongs to"},"discipline":{"type":"string","description":"Discipline name for this task"},"title":{"type":"string","description":"Task title"},"description":{"type":"string","description":"Detailed task description"},"priority":{"type":"string","description":"Priority: critical, high, medium, low"},"acceptance_criteria":{"type":"string","description":"Semicolon-separated acceptance criteria"}},"required":["feature","discipline","title"]}"#,
+            Self::CreateTask => {
+                r#"{"type":"object","properties":{"feature":{"type":"string","description":"Feature name this task belongs to"},"discipline":{"type":"string","description":"Discipline name for this task"},"title":{"type":"string","description":"Task title"},"description":{"type":"string","description":"Detailed task description"},"priority":{"type":"string","description":"Priority: critical, high, medium, low"},"acceptance_criteria":{"type":"string","description":"Semicolon-separated acceptance criteria"}},"required":["feature","discipline","title"]}"#
+            }
 
-            Self::UpdateTask => r#"{"type":"object","properties":{"id":{"type":"number","description":"Task ID to update"},"title":{"type":"string","description":"New task title"},"description":{"type":"string","description":"New task description"},"priority":{"type":"string","description":"New priority: critical, high, medium, low"}},"required":["id"]}"#,
+            Self::UpdateTask => {
+                r#"{"type":"object","properties":{"id":{"type":"number","description":"Task ID to update"},"title":{"type":"string","description":"New task title"},"description":{"type":"string","description":"New task description"},"priority":{"type":"string","description":"New priority: critical, high, medium, low"}},"required":["id"]}"#
+            }
 
-            Self::SetTaskStatus => r#"{"type":"object","properties":{"id":{"type":"number","description":"Task ID"},"status":{"type":"string","enum":["pending","in_progress","done","blocked","skipped"],"description":"New task status"}},"required":["id","status"]}"#,
+            Self::SetTaskStatus => {
+                r#"{"type":"object","properties":{"id":{"type":"number","description":"Task ID"},"status":{"type":"string","enum":["pending","in_progress","done","blocked","skipped"],"description":"New task status"}},"required":["id","status"]}"#
+            }
 
             Self::ListFeatures => r#"{"type":"object","properties":{}}"#,
 
@@ -71,13 +85,21 @@ impl McpTool {
 
             Self::ListTasks => r#"{"type":"object","properties":{}}"#,
 
-            Self::UpdateFeature => r#"{"type":"object","properties":{"name":{"type":"string","description":"Feature name to update"},"display_name":{"type":"string","description":"New display name"},"description":{"type":"string","description":"New description"}},"required":["name"]}"#,
+            Self::UpdateFeature => {
+                r#"{"type":"object","properties":{"name":{"type":"string","description":"Feature name to update"},"display_name":{"type":"string","description":"New display name"},"description":{"type":"string","description":"New description"}},"required":["name"]}"#
+            }
 
-            Self::UpdateDiscipline => r#"{"type":"object","properties":{"name":{"type":"string","description":"Discipline name to update"},"system_prompt":{"type":"string","description":"New system prompt"},"conventions":{"type":"string","description":"New conventions text"}},"required":["name"]}"#,
+            Self::UpdateDiscipline => {
+                r#"{"type":"object","properties":{"name":{"type":"string","description":"Discipline name to update"},"system_prompt":{"type":"string","description":"New system prompt"},"conventions":{"type":"string","description":"New conventions text"}},"required":["name"]}"#
+            }
 
-            Self::AppendLearning => r#"{"type":"object","properties":{"text":{"type":"string","description":"Learning text to append"}},"required":["text"]}"#,
+            Self::AppendLearning => {
+                r#"{"type":"object","properties":{"text":{"type":"string","description":"Learning text to append"}},"required":["text"]}"#
+            }
 
-            Self::AddContextFile => r#"{"type":"object","properties":{"task_id":{"type":"number","description":"Task ID to add context file to"},"file_path":{"type":"string","description":"Relative file path to add as context"}},"required":["task_id","file_path"]}"#,
+            Self::AddContextFile => {
+                r#"{"type":"object","properties":{"task_id":{"type":"number","description":"Task ID to add context file to"},"file_path":{"type":"string","description":"Relative file path to add as context"}},"required":["task_id","file_path"]}"#
+            }
         }
     }
 
@@ -87,7 +109,8 @@ impl McpTool {
     /// script top.
     pub fn tool_handler(&self) -> &'static str {
         match self {
-            Self::CreateFeature => r#"
+            Self::CreateFeature => {
+                r#"
         name=$(echo "$line" | sed -n 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
         display_name=$(echo "$line" | sed -n 's/.*"display_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
         description=$(echo "$line" | sed -n 's/.*"description"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
@@ -98,9 +121,11 @@ impl McpTool {
         result="Created feature: $name"
         e_result=$(json_escape "$result")
         printf '{"jsonrpc":"2.0","id":%s,"result":{"content":[{"type":"text","text":"%s"}]}}\n' "$id" "$e_result"
-"#,
+"#
+            }
 
-            Self::CreateDiscipline => r#"
+            Self::CreateDiscipline => {
+                r#"
         name=$(echo "$line" | sed -n 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
         display_name=$(echo "$line" | sed -n 's/.*"display_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
         icon=$(echo "$line" | sed -n 's/.*"icon"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
@@ -113,9 +138,11 @@ impl McpTool {
         result="Created discipline: $name"
         e_result=$(json_escape "$result")
         printf '{"jsonrpc":"2.0","id":%s,"result":{"content":[{"type":"text","text":"%s"}]}}\n' "$id" "$e_result"
-"#,
+"#
+            }
 
-            Self::CreateTask => r#"
+            Self::CreateTask => {
+                r#"
         feature=$(echo "$line" | sed -n 's/.*"feature"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
         discipline=$(echo "$line" | sed -n 's/.*"discipline"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
         title=$(echo "$line" | sed -n 's/.*"title"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
@@ -133,9 +160,11 @@ impl McpTool {
         result="Created task #${new_id}: $title"
         e_result=$(json_escape "$result")
         printf '{"jsonrpc":"2.0","id":%s,"result":{"content":[{"type":"text","text":"%s"}]}}\n' "$id" "$e_result"
-"#,
+"#
+            }
 
-            Self::UpdateTask => r#"
+            Self::UpdateTask => {
+                r#"
         task_id=$(echo "$line" | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*\([0-9]*\).*/\1/p')
         title=$(echo "$line" | sed -n 's/.*"title"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
         description=$(echo "$line" | sed -n 's/.*"description"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
@@ -161,9 +190,11 @@ impl McpTool {
         result="Updated task #${task_id}"
         e_result=$(json_escape "$result")
         printf '{"jsonrpc":"2.0","id":%s,"result":{"content":[{"type":"text","text":"%s"}]}}\n' "$id" "$e_result"
-"#,
+"#
+            }
 
-            Self::SetTaskStatus => r#"
+            Self::SetTaskStatus => {
+                r#"
         task_id=$(echo "$line" | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*\([0-9]*\).*/\1/p')
         status=$(echo "$line" | sed -n 's/.*"status"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
         e_status=$(json_escape "$status")
@@ -175,30 +206,38 @@ impl McpTool {
         result="Task #${task_id} status set to: $status"
         e_result=$(json_escape "$result")
         printf '{"jsonrpc":"2.0","id":%s,"result":{"content":[{"type":"text","text":"%s"}]}}\n' "$id" "$e_result"
-"#,
+"#
+            }
 
-            Self::ListFeatures => r#"
+            Self::ListFeatures => {
+                r#"
         rows=$(sqlite3 -separator '|' "$RALPH_DB" "SELECT name, display_name, description FROM features ORDER BY name;")
         result="name|display_name|description"$'\n'"$rows"
         e_result=$(json_escape "$result")
         printf '{"jsonrpc":"2.0","id":%s,"result":{"content":[{"type":"text","text":"%s"}]}}\n' "$id" "$e_result"
-"#,
+"#
+            }
 
-            Self::ListDisciplines => r#"
+            Self::ListDisciplines => {
+                r#"
         rows=$(sqlite3 -separator '|' "$RALPH_DB" "SELECT name, display_name, icon, color FROM disciplines ORDER BY name;")
         result="name|display_name|icon|color"$'\n'"$rows"
         e_result=$(json_escape "$result")
         printf '{"jsonrpc":"2.0","id":%s,"result":{"content":[{"type":"text","text":"%s"}]}}\n' "$id" "$e_result"
-"#,
+"#
+            }
 
-            Self::ListTasks => r#"
+            Self::ListTasks => {
+                r#"
         rows=$(sqlite3 -separator '|' "$RALPH_DB" "SELECT id, feature, discipline, title, status, priority FROM tasks ORDER BY id;")
         result="id|feature|discipline|title|status|priority"$'\n'"$rows"
         e_result=$(json_escape "$result")
         printf '{"jsonrpc":"2.0","id":%s,"result":{"content":[{"type":"text","text":"%s"}]}}\n' "$id" "$e_result"
-"#,
+"#
+            }
 
-            Self::UpdateFeature => r#"
+            Self::UpdateFeature => {
+                r#"
         name=$(echo "$line" | sed -n 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
         display_name=$(echo "$line" | sed -n 's/.*"display_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
         description=$(echo "$line" | sed -n 's/.*"description"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
@@ -219,9 +258,11 @@ impl McpTool {
         result="Updated feature: $name"
         e_result=$(json_escape "$result")
         printf '{"jsonrpc":"2.0","id":%s,"result":{"content":[{"type":"text","text":"%s"}]}}\n' "$id" "$e_result"
-"#,
+"#
+            }
 
-            Self::UpdateDiscipline => r#"
+            Self::UpdateDiscipline => {
+                r#"
         name=$(echo "$line" | sed -n 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
         system_prompt=$(echo "$line" | sed -n 's/.*"system_prompt"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
         conventions=$(echo "$line" | sed -n 's/.*"conventions"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
@@ -242,17 +283,21 @@ impl McpTool {
         result="Updated discipline: $name"
         e_result=$(json_escape "$result")
         printf '{"jsonrpc":"2.0","id":%s,"result":{"content":[{"type":"text","text":"%s"}]}}\n' "$id" "$e_result"
-"#,
+"#
+            }
 
-            Self::AppendLearning => r#"
+            Self::AppendLearning => {
+                r#"
         text=$(echo "$line" | sed -n 's/.*"text"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
         echo "$text" >> "$PROJECT_PATH/.ralph/learnings.txt"
         result="Appended learning entry"
         e_result=$(json_escape "$result")
         printf '{"jsonrpc":"2.0","id":%s,"result":{"content":[{"type":"text","text":"%s"}]}}\n' "$id" "$e_result"
-"#,
+"#
+            }
 
-            Self::AddContextFile => r#"
+            Self::AddContextFile => {
+                r#"
         task_id=$(echo "$line" | sed -n 's/.*"task_id"[[:space:]]*:[[:space:]]*\([0-9]*\).*/\1/p')
         file_path=$(echo "$line" | sed -n 's/.*"file_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
         e_path=$(json_escape "$file_path")
@@ -260,7 +305,8 @@ impl McpTool {
         result="Added context file '$file_path' to task #${task_id}"
         e_result=$(json_escape "$result")
         printf '{"jsonrpc":"2.0","id":%s,"result":{"content":[{"type":"text","text":"%s"}]}}\n' "$id" "$e_result"
-"#,
+"#
+            }
         }
     }
 }
