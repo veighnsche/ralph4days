@@ -407,12 +407,13 @@ Small status badge in the loop control area:
                                           │
                     ┌─────────────────────┼──────────────────────┐
                     │                     │                      │
-              .ralph/db/           Qdrant (Docker)         /tmp/ralph-mcp/
+              .ralph/db/           Qdrant (sidecar)        /tmp/ralph-mcp/
            tasks.yaml            localhost:6333           feature-memory sidecar
-           features.yaml         Collections:             mcp-config.json
-           disciplines.yaml        feature-<hash1>
-           metadata.yaml           feature-<hash2>
-                                   ...
+           features.yaml         ~/.ralph/qdrant_storage  mcp-config.json
+           disciplines.yaml      Collections:
+           metadata.yaml           feature-<hash1>
+                                    feature-<hash2>
+                                    ...
                                                      Ollama (localhost:11434)
                                                        nomic-embed-text
 ```
@@ -616,17 +617,17 @@ If needed later: prune points where `outcome = "success"` and `age > 30 days` �
 | "Why did it fail?" | Rediscovers same errors | Errors from prior iterations surfaced |
 | File discovery | Manual `context_files` only | Auto-enriched from `files_touched` history |
 | Prompt size scaling | Grows with feature complexity | Constant — Haiku pulls on demand via MCP |
-| Required infrastructure | None | Qdrant (Docker) + Ollama — **optional** |
+| Required infrastructure | None | Qdrant (vendored sidecar) + Ollama — **optional** |
 | Degradation | N/A — this IS the baseline | Falls back to Doc 015 behavior seamlessly |
 
 ## Risks and Mitigations
 
 | Risk | Mitigation |
 |---|---|
-| Qdrant Docker not running | RAG disabled gracefully. Log once, run without. |
+| Qdrant sidecar fails to start | RAG disabled gracefully. Log error with details. Loop runs without memory. |
 | Ollama model not pulled | Health check provides actionable error: "Run: ollama pull nomic-embed-text" |
 | Ollama embedding latency | One embed per iteration (~100ms on GPU). Not on hot path. Fire-and-forget. |
-| Qdrant storage grows | Local Docker volume. Feature collections are tiny. Pruning strategy if needed. |
+| Qdrant storage grows | Persisted to `~/.ralph/qdrant_storage`. Feature collections are tiny. Pruning strategy if needed. |
 | MCP sidecar binary distribution | Built as part of `cargo build`. Tauri bundles it as a sidecar. |
 | gRPC dependency from qdrant-client | Pulls in tonic + prost. Compile time increase ~30s. One-time cost. |
 | Memory extraction is noisy/inaccurate | Start conservative — only extract file paths from tool_use (high confidence). Summaries from result events. |
@@ -706,7 +707,7 @@ curl http://localhost:11434/api/embed -d '{"model": "nomic-embed-text", "input":
 
 ### Without RAG (default if not set up)
 
-Just run Ralph normally. No Docker, no Ollama needed. Loop works exactly as before. RAG badge shows gray "RAG off".
+Just run Ralph normally. No Ollama needed. Qdrant sidecar won't start without Ollama anyway. Loop works exactly as before. RAG badge shows gray "RAG off".
 
 ## Open Questions (for future resolution)
 
@@ -716,7 +717,7 @@ Just run Ralph normally. No Docker, no Ollama needed. Loop works exactly as befo
 
 3. **Glob patterns in `context_files`?** Doc 015 parked this. Feature memory's auto-enrichment (Phase 3a) might make this unnecessary.
 
-4. **Memory portability?** Qdrant data is in Docker volume. Not portable by default. Could add export/import via Qdrant snapshots if needed.
+4. **Memory portability?** Qdrant data is in `~/.ralph/qdrant_storage`. Not portable by default. Could add export/import via Qdrant snapshots if needed.
 
 5. **Multiple embedding models?** Currently hardcoded to `nomic-embed-text`. Could make configurable later. But "one path" policy says: not now.
 
