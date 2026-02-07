@@ -1,5 +1,6 @@
 use crate::terminal::{PTYManager, SessionConfig};
 use prompt_builder::{CodebaseSnapshot, PromptContext};
+use serde::Deserialize;
 use sqlite_db::{FeatureInput, Priority, SqliteDb, TaskInput};
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -392,41 +393,45 @@ pub fn get_current_dir() -> Result<String, String> {
     Ok(path.to_string_lossy().to_string())
 }
 
+#[derive(Deserialize)]
+pub struct CreateTaskParams {
+    pub feature: String,
+    pub discipline: String,
+    pub title: String,
+    pub description: Option<String>,
+    pub priority: Option<String>,
+    pub tags: Vec<String>,
+    pub depends_on: Option<Vec<u32>>,
+    pub acceptance_criteria: Option<Vec<String>>,
+    pub context_files: Option<Vec<String>>,
+    pub output_artifacts: Option<Vec<String>>,
+    pub hints: Option<String>,
+    pub estimated_turns: Option<u32>,
+    pub provenance: Option<String>,
+}
+
 #[tauri::command]
-#[allow(clippy::too_many_arguments)]
 pub fn create_task(
     state: State<'_, AppState>,
-    feature: String,
-    discipline: String,
-    title: String,
-    description: Option<String>,
-    priority: Option<String>,
-    tags: Vec<String>,
-    depends_on: Option<Vec<u32>>,
-    acceptance_criteria: Option<Vec<String>>,
-    context_files: Option<Vec<String>>,
-    output_artifacts: Option<Vec<String>>,
-    hints: Option<String>,
-    estimated_turns: Option<u32>,
-    provenance: Option<String>,
+    params: CreateTaskParams,
 ) -> Result<String, String> {
     let guard = get_db(&state)?;
     let db = guard.as_ref().unwrap();
 
     let task_input = TaskInput {
-        feature: normalize_feature_name(&feature)?,
-        discipline,
-        title,
-        description,
-        priority: parse_priority(priority.as_deref()),
-        tags,
-        depends_on: depends_on.unwrap_or_default(),
-        acceptance_criteria,
-        context_files: context_files.unwrap_or_default(),
-        output_artifacts: output_artifacts.unwrap_or_default(),
-        hints,
-        estimated_turns,
-        provenance: parse_provenance(provenance.as_deref()),
+        feature: normalize_feature_name(&params.feature)?,
+        discipline: params.discipline,
+        title: params.title,
+        description: params.description,
+        priority: parse_priority(params.priority.as_deref()),
+        tags: params.tags,
+        depends_on: params.depends_on.unwrap_or_default(),
+        acceptance_criteria: params.acceptance_criteria,
+        context_files: params.context_files.unwrap_or_default(),
+        output_artifacts: params.output_artifacts.unwrap_or_default(),
+        hints: params.hints,
+        estimated_turns: params.estimated_turns,
+        provenance: parse_provenance(params.provenance.as_deref()),
     };
 
     let task_id = db.create_task(task_input)?;
@@ -615,64 +620,72 @@ pub fn get_features(state: State<'_, AppState>) -> Result<Vec<FeatureData>, Stri
         .collect())
 }
 
+#[derive(Deserialize)]
+pub struct CreateFeatureParams {
+    pub name: String,
+    pub display_name: String,
+    pub acronym: String,
+    pub description: Option<String>,
+    pub architecture: Option<String>,
+    pub boundaries: Option<String>,
+    pub knowledge_paths: Option<Vec<String>>,
+    pub context_files: Option<Vec<String>>,
+    pub dependencies: Option<Vec<String>>,
+}
+
 #[tauri::command]
-#[allow(clippy::too_many_arguments)]
 pub fn create_feature(
     state: State<'_, AppState>,
-    name: String,
-    display_name: String,
-    acronym: String,
-    description: Option<String>,
-    architecture: Option<String>,
-    boundaries: Option<String>,
-    knowledge_paths: Option<Vec<String>>,
-    context_files: Option<Vec<String>>,
-    dependencies: Option<Vec<String>>,
+    params: CreateFeatureParams,
 ) -> Result<(), String> {
     let guard = get_db(&state)?;
     let db = guard.as_ref().unwrap();
 
-    let normalized_name = normalize_feature_name(&name)?;
+    let normalized_name = normalize_feature_name(&params.name)?;
 
     db.create_feature(FeatureInput {
         name: normalized_name,
-        display_name,
-        acronym,
-        description,
-        architecture,
-        boundaries,
-        knowledge_paths: knowledge_paths.unwrap_or_default(),
-        context_files: context_files.unwrap_or_default(),
-        dependencies: dependencies.unwrap_or_default(),
+        display_name: params.display_name,
+        acronym: params.acronym,
+        description: params.description,
+        architecture: params.architecture,
+        boundaries: params.boundaries,
+        knowledge_paths: params.knowledge_paths.unwrap_or_default(),
+        context_files: params.context_files.unwrap_or_default(),
+        dependencies: params.dependencies.unwrap_or_default(),
     })
 }
 
+#[derive(Deserialize)]
+pub struct UpdateFeatureParams {
+    pub name: String,
+    pub display_name: String,
+    pub acronym: String,
+    pub description: Option<String>,
+    pub architecture: Option<String>,
+    pub boundaries: Option<String>,
+    pub knowledge_paths: Option<Vec<String>>,
+    pub context_files: Option<Vec<String>>,
+    pub dependencies: Option<Vec<String>>,
+}
+
 #[tauri::command]
-#[allow(clippy::too_many_arguments)]
 pub fn update_feature(
     state: State<'_, AppState>,
-    name: String,
-    display_name: String,
-    acronym: String,
-    description: Option<String>,
-    architecture: Option<String>,
-    boundaries: Option<String>,
-    knowledge_paths: Option<Vec<String>>,
-    context_files: Option<Vec<String>>,
-    dependencies: Option<Vec<String>>,
+    params: UpdateFeatureParams,
 ) -> Result<(), String> {
     let guard = get_db(&state)?;
     let db = guard.as_ref().unwrap();
     db.update_feature(FeatureInput {
-        name,
-        display_name,
-        acronym,
-        description,
-        architecture,
-        boundaries,
-        knowledge_paths: knowledge_paths.unwrap_or_default(),
-        context_files: context_files.unwrap_or_default(),
-        dependencies: dependencies.unwrap_or_default(),
+        name: params.name,
+        display_name: params.display_name,
+        acronym: params.acronym,
+        description: params.description,
+        architecture: params.architecture,
+        boundaries: params.boundaries,
+        knowledge_paths: params.knowledge_paths.unwrap_or_default(),
+        context_files: params.context_files.unwrap_or_default(),
+        dependencies: params.dependencies.unwrap_or_default(),
     })
 }
 
@@ -754,45 +767,49 @@ pub fn add_feature_context_file(
     db.add_feature_context_file(&feature_name, &file_path, 100)
 }
 
+#[derive(Deserialize)]
+pub struct UpdateTaskParams {
+    pub id: u32,
+    pub feature: String,
+    pub discipline: String,
+    pub title: String,
+    pub description: Option<String>,
+    pub priority: Option<String>,
+    pub tags: Vec<String>,
+    pub depends_on: Option<Vec<u32>>,
+    pub acceptance_criteria: Option<Vec<String>>,
+    pub context_files: Option<Vec<String>>,
+    pub output_artifacts: Option<Vec<String>>,
+    pub hints: Option<String>,
+    pub estimated_turns: Option<u32>,
+    pub provenance: Option<String>,
+}
+
 #[tauri::command]
-#[allow(clippy::too_many_arguments)]
 pub fn update_task(
     state: State<'_, AppState>,
-    id: u32,
-    feature: String,
-    discipline: String,
-    title: String,
-    description: Option<String>,
-    priority: Option<String>,
-    tags: Vec<String>,
-    depends_on: Option<Vec<u32>>,
-    acceptance_criteria: Option<Vec<String>>,
-    context_files: Option<Vec<String>>,
-    output_artifacts: Option<Vec<String>>,
-    hints: Option<String>,
-    estimated_turns: Option<u32>,
-    provenance: Option<String>,
+    params: UpdateTaskParams,
 ) -> Result<(), String> {
     let guard = get_db(&state)?;
     let db = guard.as_ref().unwrap();
 
     let task_input = TaskInput {
-        feature: normalize_feature_name(&feature)?,
-        discipline,
-        title,
-        description,
-        priority: parse_priority(priority.as_deref()),
-        tags,
-        depends_on: depends_on.unwrap_or_default(),
-        acceptance_criteria,
-        context_files: context_files.unwrap_or_default(),
-        output_artifacts: output_artifacts.unwrap_or_default(),
-        hints,
-        estimated_turns,
-        provenance: parse_provenance(provenance.as_deref()),
+        feature: normalize_feature_name(&params.feature)?,
+        discipline: params.discipline,
+        title: params.title,
+        description: params.description,
+        priority: parse_priority(params.priority.as_deref()),
+        tags: params.tags,
+        depends_on: params.depends_on.unwrap_or_default(),
+        acceptance_criteria: params.acceptance_criteria,
+        context_files: params.context_files.unwrap_or_default(),
+        output_artifacts: params.output_artifacts.unwrap_or_default(),
+        hints: params.hints,
+        estimated_turns: params.estimated_turns,
+        provenance: parse_provenance(params.provenance.as_deref()),
     };
 
-    db.update_task(id, task_input)
+    db.update_task(params.id, task_input)
 }
 
 #[tauri::command]
@@ -1103,8 +1120,15 @@ pub fn preview_custom_recipe(
 
     let overrides: std::collections::HashMap<String, String> = sections
         .iter()
-        .filter(|s| s.enabled && s.instruction_override.is_some())
-        .map(|s| (s.name.clone(), s.instruction_override.clone().unwrap()))
+        .filter_map(|s| {
+            if s.enabled {
+                s.instruction_override.as_ref().map(|override_val| {
+                    (s.name.clone(), override_val.clone())
+                })
+            } else {
+                None
+            }
+        })
         .collect();
 
     let ctx = state.build_prompt_context(&project_path, user_input, overrides)?;
