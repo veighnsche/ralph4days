@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BottomBar } from '@/components/BottomBar'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ProjectSelector } from '@/components/ProjectSelector'
@@ -30,18 +30,15 @@ function App() {
     }
   }, [lockedProject])
 
-  const handleProjectSelected = useCallback(
-    async (project: string) => {
-      queryClient.setQueryData(['get_locked_project'], project)
-      const projectName = project.split('/').pop() || 'Unknown'
-      try {
-        await getCurrentWindow().setTitle(`Ralph4days - ${projectName}`)
-      } catch (err) {
-        console.error('Failed to set window title:', err)
-      }
-    },
-    [queryClient]
-  )
+  const handleProjectSelected = async (project: string) => {
+    queryClient.setQueryData(['get_locked_project'], project)
+    const projectName = project.split('/').pop() || 'Unknown'
+    try {
+      await getCurrentWindow().setTitle(`Ralph4days - ${projectName}`)
+    } catch (err) {
+      console.error('Failed to set window title:', err)
+    }
+  }
 
   if (isLoadingProject) {
     return (

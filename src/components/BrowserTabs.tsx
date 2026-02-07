@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import { X } from 'lucide-react'
-import { useCallback, useRef } from 'react'
+import { useRef } from 'react'
 import { cn } from '@/lib/utils'
 
 export interface BrowserTab {
@@ -23,58 +23,52 @@ interface BrowserTabsProps {
 export function BrowserTabs({ tabs, activeTabId, onTabChange, onTabClose, newTabButton, className }: BrowserTabsProps) {
   const tabRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
 
-  const focusTab = useCallback(
-    (id: string) => {
-      tabRefs.current.get(id)?.focus()
-      onTabChange(id)
-    },
-    [onTabChange]
-  )
+  const focusTab = (id: string) => {
+    tabRefs.current.get(id)?.focus()
+    onTabChange(id)
+  }
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent, tabId: string) => {
-      const idx = tabs.findIndex(t => t.id === tabId)
-      if (idx === -1) return
+  const handleKeyDown = (e: React.KeyboardEvent, tabId: string) => {
+    const idx = tabs.findIndex(t => t.id === tabId)
+    if (idx === -1) return
 
-      let handled = true
+    let handled = true
 
-      switch (e.key) {
-        case 'ArrowRight':
-        case 'ArrowDown': {
-          const next = tabs[(idx + 1) % tabs.length]
-          focusTab(next.id)
-          break
-        }
-        case 'ArrowLeft':
-        case 'ArrowUp': {
-          const prev = tabs[(idx - 1 + tabs.length) % tabs.length]
-          focusTab(prev.id)
-          break
-        }
-        case 'Home':
-          focusTab(tabs[0].id)
-          break
-        case 'End':
-          focusTab(tabs[tabs.length - 1].id)
-          break
-        case 'Delete': {
-          const tab = tabs[idx]
-          if (onTabClose && tab.closeable !== false) {
-            onTabClose(tabId)
-          }
-          break
-        }
-        default:
-          handled = false
+    switch (e.key) {
+      case 'ArrowRight':
+      case 'ArrowDown': {
+        const next = tabs[(idx + 1) % tabs.length]
+        focusTab(next.id)
+        break
       }
-
-      if (handled) {
-        e.preventDefault()
-        e.stopPropagation()
+      case 'ArrowLeft':
+      case 'ArrowUp': {
+        const prev = tabs[(idx - 1 + tabs.length) % tabs.length]
+        focusTab(prev.id)
+        break
       }
-    },
-    [tabs, focusTab, onTabClose]
-  )
+      case 'Home':
+        focusTab(tabs[0].id)
+        break
+      case 'End':
+        focusTab(tabs[tabs.length - 1].id)
+        break
+      case 'Delete': {
+        const tab = tabs[idx]
+        if (onTabClose && tab.closeable !== false) {
+          onTabClose(tabId)
+        }
+        break
+      }
+      default:
+        handled = false
+    }
+
+    if (handled) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+  }
 
   return (
     <div className={cn('flex items-end bg-muted/50 border-b border-border', className)}>

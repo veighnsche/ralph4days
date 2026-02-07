@@ -6,27 +6,12 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { ItemGroup, ItemSeparator } from '@/components/ui/item'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useDisciplines } from '@/hooks/useDisciplines'
-import { useInvoke } from '@/hooks/useInvoke'
-import type { GroupStats, ProjectProgress } from '@/types/prd'
+import { useDisciplineStats } from '@/hooks/useDisciplineStats'
 
 export function DisciplinesPage() {
-  const { disciplines } = useDisciplines()
-  const { data: disciplineStats = [], isLoading: statsLoading } = useInvoke<GroupStats[]>('get_discipline_stats')
-  const { data: progress } = useInvoke<ProjectProgress>('get_project_progress')
+  const { disciplines, statsMap, progress, isLoading } = useDisciplineStats()
 
-  const totalTasks = progress?.totalTasks ?? 0
-  const doneTasks = progress?.doneTasks ?? 0
-  const progressPercent = progress?.progressPercent ?? 0
-
-  const statsMap = new Map<string, GroupStats>()
-  for (const stat of disciplineStats) {
-    statsMap.set(stat.name, stat)
-  }
-
-  const loading = statsLoading || disciplines.length === 0
-
-  if (loading) {
+  if (isLoading) {
     return (
       <PageLayout>
         <PageHeader>
@@ -61,21 +46,21 @@ export function DisciplinesPage() {
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-medium">
-                    Done: <span style={{ color: 'var(--status-done)' }}>{doneTasks}</span>
+                    Done: <span style={{ color: 'var(--status-done)' }}>{progress.done}</span>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-medium">
-                    Remaining: <span className="text-muted-foreground">{totalTasks - doneTasks}</span>
+                    Remaining: <span className="text-muted-foreground">{progress.total - progress.done}</span>
                   </div>
                 </div>
                 <div className="text-right min-w-[60px]">
-                  <div className="text-lg font-semibold leading-none">{progressPercent}%</div>
+                  <div className="text-lg font-semibold leading-none">{progress.percent}%</div>
                   <div className="text-[10px] text-muted-foreground">Complete</div>
                 </div>
               </div>
             </div>
-            <Progress value={progressPercent} className="h-1.5" />
+            <Progress value={progress.percent} className="h-1.5" />
             <CardDescription className="text-xs">Work categories and their task distribution</CardDescription>
           </CardContent>
         </Card>

@@ -1,12 +1,4 @@
-import {
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors
-} from '@dnd-kit/core'
+import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import {
   SortableContext,
   sortableKeyboardCoordinates,
@@ -14,10 +6,8 @@ import {
   verticalListSortingStrategy
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { invoke } from '@tauri-apps/api/core'
 import { ChevronDown, ChevronUp, ClipboardCopy, GripVertical, Save, Trash2 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { toast } from 'sonner'
+import { useEffect, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
@@ -36,6 +26,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import { usePromptPreview } from '@/hooks/usePromptPreview'
+import { useRecipeManagement } from '@/hooks/useRecipeManagement'
+import { type SectionBlock, useSectionConfiguration } from '@/hooks/useSectionConfiguration'
 
 const BUILT_IN_RECIPES = [
   { value: 'braindump', label: 'Braindump' },
@@ -56,252 +49,43 @@ const CATEGORY_COLORS: Record<string, string> = {
   instructions: 'bg-orange-500/15 text-orange-700 dark:text-orange-400'
 }
 
-interface SectionMeta {
-  name: string
-  display_name: string
-  description: string
-  category: string
-  is_instruction: boolean
-}
-
-interface SectionBlock {
-  name: string
-  displayName: string
-  description: string
-  category: string
-  isInstruction: boolean
-  enabled: boolean
-  instructionOverride: string | null
-}
-
-interface PromptPreviewSection {
-  name: string
-  content: string
-}
-
-interface PromptPreview {
-  sections: PromptPreviewSection[]
-  fullPrompt: string
-}
-
-interface SectionConfigWire {
-  name: string
-  enabled: boolean
-  instructionOverride: string | null
-}
-
-interface CustomRecipeWire {
-  name: string
-  baseRecipe: string | null
-  sections: SectionConfigWire[]
-}
-
 interface PromptBuilderModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
 export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalProps) {
-  const [baseRecipe, setBaseRecipe] = useState('braindump')
-  const [recipeName, setRecipeName] = useState<string | null>(null)
-  const [sections, setSections] = useState<SectionBlock[]>([])
-  const [preview, setPreview] = useState<PromptPreview | null>(null)
-  const [customRecipeNames, setCustomRecipeNames] = useState<string[]>([])
-  const [sectionMeta, setSectionMeta] = useState<SectionMeta[]>([])
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false)
-  const [saveNameInput, setSaveNameInput] = useState('')
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const userInputRef = useRef('')
+  const {
+    sections,
+    sectionMeta,
+    enabledCount,
+    loadRecipeSections,
+    loadCustomSections,
+    handleDragEnd,
+    toggleSection,
+    commitInstructionOverride
+  } = useSectionConfiguration(open)
 
-  const enabledCount = sections.filter(s => s.enabled).length
+  const {
+    recipeName,
+    customRecipeNames,
+    currentPickerValue,
+    saveDialogOpen,
+    setSaveDialogOpen,
+    saveNameInput,
+    setSaveNameInput,
+    handleRecipeChange,
+    handleSave,
+    doSave,
+    handleDelete
+  } = useRecipeManagement(open, sectionMeta, sections, loadRecipeSections, loadCustomSections)
+
+  const { preview, handleUserInputChange, handleCopy } = usePromptPreview(open, sections)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
-
-  const schedulePreview = useCallback(
-    (currentSections: SectionBlock[]) => {
-      if (!open || currentSections.length === 0) return
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-      debounceRef.current = setTimeout(async () => {
-        try {
-          const wireSections: SectionConfigWire[] = currentSections.map(s => ({
-            name: s.name,
-            enabled: s.enabled,
-            instructionOverride: s.instructionOverride
-          }))
-          const result = await invoke<PromptPreview>('preview_custom_recipe', {
-            sections: wireSections,
-            userInput: userInputRef.current || null
-          })
-          setPreview(result)
-        } catch (err) {
-          console.error('Failed to preview:', err)
-        }
-      }, 500)
-    },
-    [open]
-  )
-
-  useEffect(() => {
-    if (!open) return
-    invoke<SectionMeta[]>('get_section_metadata').then(setSectionMeta).catch(console.error)
-    invoke<string[]>('list_saved_recipes').then(setCustomRecipeNames).catch(console.error)
-  }, [open])
-
-  const loadRecipeSections = useCallback(
-    async (promptType: string) => {
-      try {
-        const configs = await invoke<SectionConfigWire[]>('get_recipe_sections', { promptType })
-        const blocks: SectionBlock[] = configs.map(cfg => {
-          const meta = sectionMeta.find(m => m.name === cfg.name)
-          return {
-            name: cfg.name,
-            displayName: meta?.display_name ?? cfg.name,
-            description: meta?.description ?? '',
-            category: meta?.category ?? 'unknown',
-            isInstruction: meta?.is_instruction ?? false,
-            enabled: cfg.enabled,
-            instructionOverride: cfg.instructionOverride
-          }
-        })
-        setSections(blocks)
-        setRecipeName(null)
-      } catch (err) {
-        console.error('Failed to load recipe sections:', err)
-      }
-    },
-    [sectionMeta]
-  )
-
-  useEffect(() => {
-    if (open && sectionMeta.length > 0) {
-      loadRecipeSections(baseRecipe)
-    }
-  }, [open, sectionMeta, baseRecipe, loadRecipeSections])
-
-  useEffect(() => {
-    schedulePreview(sections)
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-    }
-  }, [sections, schedulePreview])
-
-  const handleUserInputChange = useCallback(
-    (value: string) => {
-      userInputRef.current = value
-      schedulePreview(sections)
-    },
-    [sections, schedulePreview]
-  )
-
-  const handleRecipeChange = async (value: string) => {
-    if (customRecipeNames.includes(value)) {
-      try {
-        const custom = await invoke<CustomRecipeWire>('load_saved_recipe', { name: value })
-        setBaseRecipe(custom.baseRecipe ?? 'braindump')
-        setRecipeName(custom.name)
-        const blocks: SectionBlock[] = custom.sections.map(cfg => {
-          const meta = sectionMeta.find(m => m.name === cfg.name)
-          return {
-            name: cfg.name,
-            displayName: meta?.display_name ?? cfg.name,
-            description: meta?.description ?? '',
-            category: meta?.category ?? 'unknown',
-            isInstruction: meta?.is_instruction ?? false,
-            enabled: cfg.enabled,
-            instructionOverride: cfg.instructionOverride
-          }
-        })
-        setSections(blocks)
-      } catch (err) {
-        toast.error(`Failed to load recipe: ${err}`)
-      }
-    } else {
-      setBaseRecipe(value)
-      loadRecipeSections(value)
-    }
-  }
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
-    if (!over || active.id === over.id) return
-
-    setSections(prev => {
-      const oldIndex = prev.findIndex(s => s.name === active.id)
-      const newIndex = prev.findIndex(s => s.name === over.id)
-      if (oldIndex === -1 || newIndex === -1) return prev
-
-      const next = [...prev]
-      const [moved] = next.splice(oldIndex, 1)
-      next.splice(newIndex, 0, moved)
-      return next
-    })
-  }
-
-  const toggleSection = (name: string) => {
-    setSections(prev => prev.map(s => (s.name === name ? { ...s, enabled: !s.enabled } : s)))
-  }
-
-  const commitInstructionOverride = (name: string, text: string | null) => {
-    setSections(prev => prev.map(s => (s.name === name ? { ...s, instructionOverride: text } : s)))
-  }
-
-  const handleSave = async () => {
-    if (!recipeName) {
-      setSaveDialogOpen(true)
-      return
-    }
-    await doSave(recipeName)
-  }
-
-  const doSave = async (name: string) => {
-    try {
-      const wireSections: SectionConfigWire[] = sections.map(s => ({
-        name: s.name,
-        enabled: s.enabled,
-        instructionOverride: s.instructionOverride
-      }))
-      await invoke('save_recipe', {
-        recipe: {
-          name,
-          baseRecipe: baseRecipe,
-          sections: wireSections
-        }
-      })
-      setRecipeName(name)
-      setSaveDialogOpen(false)
-      const names = await invoke<string[]>('list_saved_recipes')
-      setCustomRecipeNames(names)
-      toast.success(`Recipe "${name}" saved`)
-    } catch (err) {
-      toast.error(`Failed to save: ${err}`)
-    }
-  }
-
-  const handleDelete = async () => {
-    if (!recipeName) return
-    try {
-      await invoke('delete_recipe', { name: recipeName })
-      const names = await invoke<string[]>('list_saved_recipes')
-      setCustomRecipeNames(names)
-      toast.success(`Recipe "${recipeName}" deleted`)
-      setRecipeName(null)
-      loadRecipeSections(baseRecipe)
-    } catch (err) {
-      toast.error(`Failed to delete: ${err}`)
-    }
-  }
-
-  const handleCopy = () => {
-    if (preview?.fullPrompt) {
-      navigator.clipboard.writeText(preview.fullPrompt)
-      toast.success('Copied to clipboard')
-    }
-  }
-
-  const currentPickerValue = recipeName ?? baseRecipe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -412,7 +196,6 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
         </DialogFooter>
       </DialogContent>
 
-      {/* Save-as name dialog */}
       <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>

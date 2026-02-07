@@ -1,15 +1,13 @@
-import { useCallback } from 'react'
 import { PageContent, PageHeader, PageLayout } from '@/components/layout/PageLayout'
 import { PRDBody } from '@/components/prd/PRDBody'
 import { PRDHeader } from '@/components/prd/PRDHeader'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
-import { BraindumpFormTabContent, TaskDetailTabContent } from '@/components/workspace'
 import { useInvoke } from '@/hooks/useInvoke'
 import { usePRDData } from '@/hooks/usePRDData'
 import { usePRDFilters } from '@/hooks/usePRDFilters'
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
-import type { ProjectInfo, ProjectProgress, Task } from '@/types/prd'
+import { useWorkspaceActions } from '@/hooks/useWorkspaceActions'
+import type { ProjectInfo, ProjectProgress } from '@/types/prd'
 
 // TODO: Implement task-bound terminal system (POC tested 2026-02-06)
 // - Add play button to tasks, bind to terminal, generate task prompt
@@ -21,42 +19,11 @@ export function TasksPage() {
   const { data: allTags = [] } = useInvoke<string[]>('get_all_tags')
   const { data: projectInfo } = useInvoke<ProjectInfo>('get_project_info')
   const { filters, setters, filteredTasks, clearFilters } = usePRDFilters(tasks, allTags)
-  const openTab = useWorkspaceStore(s => s.openTab)
+  const { openBraindumpTab, openTaskDetailTab } = useWorkspaceActions()
 
   const totalTasks = progress?.totalTasks ?? 0
   const doneTasks = progress?.doneTasks ?? 0
   const progressPercent = progress?.progressPercent ?? 0
-
-  const handleBraindumpProject = () => {
-    openTab({
-      type: 'braindump-form',
-      component: BraindumpFormTabContent,
-      title: 'Braindump Project',
-      closeable: true
-    })
-  }
-
-  const handleYapAboutTasks = () => {
-    openTab({
-      type: 'braindump-form',
-      component: BraindumpFormTabContent,
-      title: 'Yap about Tasks',
-      closeable: true
-    })
-  }
-
-  const handleTaskClick = useCallback(
-    (task: Task) => {
-      openTab({
-        type: 'task-detail',
-        component: TaskDetailTabContent,
-        title: task.title,
-        closeable: true,
-        data: { entityId: task.id, entity: task }
-      })
-    },
-    [openTab]
-  )
 
   const loading = tasksLoading
 
@@ -121,10 +88,10 @@ export function TasksPage() {
         <PRDBody
           filteredTasks={filteredTasks}
           totalTasks={totalTasks}
-          onTaskClick={handleTaskClick}
+          onTaskClick={openTaskDetailTab}
           onClearFilters={clearFilters}
-          onBraindump={handleBraindumpProject}
-          onYap={handleYapAboutTasks}
+          onBraindump={() => openBraindumpTab('Braindump Project')}
+          onYap={() => openBraindumpTab('Yap about Tasks')}
         />
       </PageContent>
     </PageLayout>

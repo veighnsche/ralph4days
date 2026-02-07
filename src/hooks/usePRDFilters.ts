@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useState } from 'react'
 import type { PriorityFilter, StatusFilter, Task } from '@/types/prd'
 
 export interface FilterState {
@@ -21,7 +21,7 @@ export function usePRDFilters(tasks: Task[] | null, allTags: string[]) {
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all')
   const [tagFilter, setTagFilter] = useState<string>('all')
 
-  const filteredTasks = useMemo(() => {
+  const filteredTasks = (() => {
     if (!tasks) return []
 
     let filtered = [...tasks]
@@ -52,14 +52,14 @@ export function usePRDFilters(tasks: Task[] | null, allTags: string[]) {
     }
 
     return filtered
-  }, [tasks, searchQuery, statusFilter, priorityFilter, tagFilter])
+  })()
 
-  const clearFilters = useCallback(() => {
+  const clearFilters = () => {
     setSearchQuery('')
     setStatusFilter('all')
     setPriorityFilter('all')
     setTagFilter('all')
-  }, [])
+  }
 
   const filters: FilterState = {
     searchQuery,

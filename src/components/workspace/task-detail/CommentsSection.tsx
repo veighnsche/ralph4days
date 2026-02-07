@@ -1,67 +1,26 @@
 import { Bot, MessageSquare, Pencil, Trash2, User } from 'lucide-react'
 import { useState } from 'react'
-import { toast } from 'sonner'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { useInvokeMutation } from '@/hooks/useInvokeMutation'
+import { useCommentMutations } from '@/hooks/useCommentMutations'
 import { formatDate } from '@/lib/formatDate'
 import type { Task } from '@/types/prd'
 import { CommentEditor } from './CommentEditor'
 
-const INVALIDATE_KEYS = [['get_tasks']]
-
 export function CommentsSection({ task }: { task: Task }) {
   const comments = task.comments ?? []
-
   const [commentInput, setCommentInput] = useState('')
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [editBody, setEditBody] = useState('')
 
-  const addComment = useInvokeMutation<{ taskId: number; author: string; body: string }>('add_task_comment', {
-    invalidateKeys: INVALIDATE_KEYS,
-    onSuccess: () => {
-      setCommentInput('')
-      toast.success('Comment added')
-    },
-    onError: err => toast.error(err.message)
-  })
-
-  const editComment = useInvokeMutation<{ taskId: number; commentId: number; body: string }>('update_task_comment', {
-    invalidateKeys: INVALIDATE_KEYS,
-    onSuccess: () => {
-      setEditingId(null)
-      setEditBody('')
-    },
-    onError: err => toast.error(err.message)
-  })
-
-  const deleteComment = useInvokeMutation<{ taskId: number; commentId: number }>('delete_task_comment', {
-    invalidateKeys: INVALIDATE_KEYS,
-    onSuccess: () => toast.success('Comment deleted'),
-    onError: err => toast.error(err.message)
-  })
+  const { addComment, startEdit, cancelEdit, submitEdit, deleteComment, editingId, editBody, setEditBody, isPending } =
+    useCommentMutations(task.id)
 
   const handleAddComment = () => {
     if (!commentInput.trim()) return
-    addComment.mutate({ taskId: task.id, author: 'human', body: commentInput.trim() })
+    addComment.mutate(
+      { taskId: task.id, author: 'human', body: commentInput.trim() },
+      { onSuccess: () => setCommentInput('') }
+    )
   }
-
-  const startEdit = (commentId: number, body: string) => {
-    setEditingId(commentId)
-    setEditBody(body)
-  }
-
-  const cancelEdit = () => {
-    setEditingId(null)
-    setEditBody('')
-  }
-
-  const submitEdit = () => {
-    if (editingId === null || !editBody.trim()) return
-    editComment.mutate({ taskId: task.id, commentId: editingId, body: editBody.trim() })
-  }
-
-  const isPending = addComment.isPending || editComment.isPending || deleteComment.isPending
 
   return (
     <div className="px-3 pb-1">
@@ -97,11 +56,7 @@ export function CommentsSection({ task }: { task: Task }) {
                       onClick={() => startEdit(comment.id, comment.body)}>
                       <Pencil className="h-3 w-3 text-muted-foreground" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-5 w-5 p-0"
-                      onClick={() => deleteComment.mutate({ taskId: task.id, commentId: comment.id })}>
+                    <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={() => deleteComment(comment.id)}>
                       <Trash2 className="h-3 w-3 text-muted-foreground" />
                     </Button>
                   </div>

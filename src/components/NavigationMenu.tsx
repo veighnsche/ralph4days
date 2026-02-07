@@ -11,14 +11,8 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import {
-  BraindumpFormTabContent,
-  DisciplineFormTabContent,
-  FeatureFormTabContent,
-  TaskFormTabContent
-} from '@/components/workspace'
 import type { Page } from '@/hooks/useNavigation'
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
+import { useWorkspaceActions } from '@/hooks/useWorkspaceActions'
 
 interface NavigationMenuProps {
   currentPage: Page
@@ -26,55 +20,7 @@ interface NavigationMenuProps {
 }
 
 export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProps) {
-  const openTab = useWorkspaceStore(s => s.openTab)
-
-  const handleCreateTask = () => {
-    openTab({
-      type: 'task-form',
-      component: TaskFormTabContent,
-      title: 'Create Task',
-      closeable: true,
-      data: { mode: 'create' }
-    })
-  }
-
-  const handleCreateFeature = () => {
-    openTab({
-      type: 'feature-form',
-      component: FeatureFormTabContent,
-      title: 'Create Feature',
-      closeable: true,
-      data: { mode: 'create' }
-    })
-  }
-
-  const handleCreateDiscipline = () => {
-    openTab({
-      type: 'discipline-form',
-      component: DisciplineFormTabContent,
-      title: 'Create Discipline',
-      closeable: true,
-      data: { mode: 'create' }
-    })
-  }
-
-  const handleYapAboutTasks = () => {
-    openTab({
-      type: 'braindump-form',
-      component: BraindumpFormTabContent,
-      title: 'Yap about Tasks',
-      closeable: true
-    })
-  }
-
-  const handleRambleAboutFeatures = () => {
-    openTab({
-      type: 'braindump-form',
-      component: BraindumpFormTabContent,
-      title: 'Ramble about Features',
-      closeable: true
-    })
-  }
+  const { openCreateTaskTab, openCreateFeatureTab, openCreateDisciplineTab, openBraindumpTab } = useWorkspaceActions()
 
   return (
     <DropdownMenu>
@@ -94,11 +40,11 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
             {currentPage === 'tasks' && <span className="ml-2 text-xs text-muted-foreground">•</span>}
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-48">
-            <DropdownMenuItem onClick={handleCreateTask}>
+            <DropdownMenuItem onClick={openCreateTaskTab}>
               <Plus className="mr-2 h-4 w-4" />
               Create Task
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleYapAboutTasks}>
+            <DropdownMenuItem onClick={() => openBraindumpTab('Yap about Tasks')}>
               <MessageSquare className="mr-2 h-4 w-4" />
               Yap about Tasks
             </DropdownMenuItem>
@@ -112,11 +58,11 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
             {currentPage === 'features' && <span className="ml-2 text-xs text-muted-foreground">•</span>}
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-48">
-            <DropdownMenuItem onClick={handleCreateFeature}>
+            <DropdownMenuItem onClick={openCreateFeatureTab}>
               <Plus className="mr-2 h-4 w-4" />
               Create Feature
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleRambleAboutFeatures}>
+            <DropdownMenuItem onClick={() => openBraindumpTab('Ramble about Features')}>
               <MessageCircle className="mr-2 h-4 w-4" />
               Ramble about Features
             </DropdownMenuItem>
@@ -130,7 +76,7 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
             {currentPage === 'disciplines' && <span className="ml-2 text-xs text-muted-foreground">•</span>}
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-48">
-            <DropdownMenuItem onClick={handleCreateDiscipline}>
+            <DropdownMenuItem onClick={openCreateDisciplineTab}>
               <Plus className="mr-2 h-4 w-4" />
               Create Discipline
             </DropdownMenuItem>

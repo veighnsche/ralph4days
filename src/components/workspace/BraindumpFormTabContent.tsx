@@ -16,8 +16,8 @@ import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
-import { TerminalTabContent } from '@/components/workspace/TerminalTabContent'
 import { useTabMeta } from '@/hooks/useTabMeta'
+import { useWorkspaceActions } from '@/hooks/useWorkspaceActions'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
@@ -42,7 +42,7 @@ interface BraindumpFormTabContentProps {
 export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
   useTabMeta(tab.id, 'Braindump', Brain)
   const closeTab = useWorkspaceStore(s => s.closeTab)
-  const openTab = useWorkspaceStore(s => s.openTab)
+  const { openTerminalTab } = useWorkspaceActions()
   const [braindump, setBraindump] = useState(DEFAULT_QUESTIONS)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [promptBuilderOpen, setPromptBuilderOpen] = useState(false)
@@ -80,13 +80,7 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
     setIsSubmitting(true)
 
     try {
-      const terminalId = openTab({
-        type: 'terminal',
-        component: TerminalTabContent,
-        title: `Claude (${model})`,
-        closeable: true,
-        data: { model, thinking }
-      })
+      const terminalId = openTerminalTab(model, thinking)
       await sendToTerminal(terminalId, trimmedBraindump)
     } catch (err) {
       console.error('Failed to send braindump:', err)

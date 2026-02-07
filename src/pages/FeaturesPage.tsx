@@ -8,48 +8,14 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { ItemGroup, ItemSeparator } from '@/components/ui/item'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
-import { BraindumpFormTabContent } from '@/components/workspace'
-import { useInvoke } from '@/hooks/useInvoke'
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
-import type { Feature, GroupStats, ProjectProgress } from '@/types/prd'
+import { useFeatureStats } from '@/hooks/useFeatureStats'
+import { useWorkspaceActions } from '@/hooks/useWorkspaceActions'
 
 export function FeaturesPage() {
-  const { data: features = [], isLoading: featuresLoading, error: featuresError } = useInvoke<Feature[]>('get_features')
-  const { data: featureStats = [], isLoading: statsLoading } = useInvoke<GroupStats[]>('get_feature_stats')
-  const { data: progress } = useInvoke<ProjectProgress>('get_project_progress')
-  const openTab = useWorkspaceStore(s => s.openTab)
+  const { features, statsMap, progress, isLoading, error } = useFeatureStats()
+  const { openBraindumpTab } = useWorkspaceActions()
 
-  const totalTasks = progress?.totalTasks ?? 0
-  const doneTasks = progress?.doneTasks ?? 0
-  const progressPercent = progress?.progressPercent ?? 0
-
-  const loading = featuresLoading || statsLoading
-  const error = featuresError ? String(featuresError) : null
-
-  const statsMap = new Map<string, GroupStats>()
-  for (const stat of featureStats) {
-    statsMap.set(stat.name, stat)
-  }
-
-  const handleRambleAboutFeatures = () => {
-    openTab({
-      type: 'braindump-form',
-      component: BraindumpFormTabContent,
-      title: 'Ramble about Features',
-      closeable: true
-    })
-  }
-
-  const handleBraindumpProject = () => {
-    openTab({
-      type: 'braindump-form',
-      component: BraindumpFormTabContent,
-      title: 'Braindump Project',
-      closeable: true
-    })
-  }
-
-  if (loading) {
+  if (isLoading) {
     return (
       <PageLayout>
         <PageHeader>
@@ -96,21 +62,21 @@ export function FeaturesPage() {
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-medium">
-                    Done: <span style={{ color: 'var(--status-done)' }}>{doneTasks}</span>
+                    Done: <span style={{ color: 'var(--status-done)' }}>{progress.done}</span>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-medium">
-                    Remaining: <span className="text-muted-foreground">{totalTasks - doneTasks}</span>
+                    Remaining: <span className="text-muted-foreground">{progress.total - progress.done}</span>
                   </div>
                 </div>
                 <div className="text-right min-w-[60px]">
-                  <div className="text-lg font-semibold leading-none">{progressPercent}%</div>
+                  <div className="text-lg font-semibold leading-none">{progress.percent}%</div>
                   <div className="text-[10px] text-muted-foreground">Complete</div>
                 </div>
               </div>
             </div>
-            <Progress value={progressPercent} className="h-1.5" />
+            <Progress value={progress.percent} className="h-1.5" />
             <CardDescription className="text-xs">Product features and their associated tasks</CardDescription>
           </CardContent>
         </Card>
@@ -130,11 +96,11 @@ export function FeaturesPage() {
             </EmptyHeader>
             <EmptyContent>
               <div className="flex flex-col gap-2">
-                <Button onClick={handleBraindumpProject}>
+                <Button onClick={() => openBraindumpTab('Braindump Project')}>
                   <Brain className="h-4 w-4 mr-2" />
                   Braindump Project
                 </Button>
-                <Button onClick={handleRambleAboutFeatures} variant="outline">
+                <Button onClick={() => openBraindumpTab('Ramble about Features')} variant="outline">
                   <MessageCircle className="h-4 w-4 mr-2" />
                   Ramble about Features
                 </Button>

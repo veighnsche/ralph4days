@@ -1,5 +1,5 @@
 import { AlertCircle, ChevronDown } from 'lucide-react'
-import { Fragment, memo, useMemo, useState } from 'react'
+import { Fragment, useState } from 'react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { ItemGroup, ItemSeparator } from '@/components/ui/item'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -11,10 +11,10 @@ interface PlaylistViewProps {
   onTaskClick: (task: Task) => void
 }
 
-export const PlaylistView = memo(function PlaylistView({ tasks, onTaskClick }: PlaylistViewProps) {
+export function PlaylistView({ tasks, onTaskClick }: PlaylistViewProps) {
   const [issuesOpen, setIssuesOpen] = useState(true)
 
-  const { blockedSkipped, done, inProgress, pending } = useMemo(() => {
+  const { blockedSkipped, done, inProgress, pending } = (() => {
     const result = {
       blockedSkipped: [] as Task[],
       done: [] as Task[],
@@ -35,7 +35,7 @@ export const PlaylistView = memo(function PlaylistView({ tasks, onTaskClick }: P
     })
 
     return result
-  }, [tasks])
+  })()
 
   const hasBlockedOrSkipped = blockedSkipped.length > 0
 
@@ -101,4 +101,4 @@ export const PlaylistView = memo(function PlaylistView({ tasks, onTaskClick }: P
       </div>
     </TooltipProvider>
   )
-})
+}

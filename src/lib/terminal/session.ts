@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
-import { useCallback, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 export interface TerminalSessionConfig {
   sessionId: string
@@ -67,35 +67,29 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     }
   }, [config.sessionId])
 
-  const markReady = useCallback(() => {
+  const markReady = () => {
     isReadyRef.current = true
     for (const chunk of outputBufferRef.current) {
       handlersRef.current.onOutput?.(chunk)
     }
     outputBufferRef.current = []
-  }, [])
+  }
 
-  const sendInput = useCallback(
-    (data: string) => {
-      const bytes = Array.from(new TextEncoder().encode(data))
-      invoke('send_terminal_input', {
-        sessionId: config.sessionId,
-        data: bytes
-      }).catch(err => handlersRef.current.onError?.(String(err)))
-    },
-    [config.sessionId]
-  )
+  const sendInput = (data: string) => {
+    const bytes = Array.from(new TextEncoder().encode(data))
+    invoke('send_terminal_input', {
+      sessionId: config.sessionId,
+      data: bytes
+    }).catch(err => handlersRef.current.onError?.(String(err)))
+  }
 
-  const resize = useCallback(
-    (cols: number, rows: number) => {
-      invoke('resize_pty', {
-        sessionId: config.sessionId,
-        cols,
-        rows
-      }).catch(() => {})
-    },
-    [config.sessionId]
-  )
+  const resize = (cols: number, rows: number) => {
+    invoke('resize_pty', {
+      sessionId: config.sessionId,
+      cols,
+      rows
+    }).catch(() => {})
+  }
 
   return { markReady, sendInput, resize }
 }

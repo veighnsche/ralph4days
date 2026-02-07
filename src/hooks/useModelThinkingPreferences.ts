@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 
 const STORAGE_KEY_MODEL = 'ralph.preferences.model'
 const STORAGE_KEY_THINKING = 'ralph.preferences.thinking'
@@ -21,17 +21,17 @@ export function useModelThinkingPreferences() {
     return saved === 'true'
   })
 
-  const setModel = useCallback((value: Model) => {
+  const setModel = (value: Model) => {
     setModelState(value)
     if (isValidModel(value)) {
       localStorage.setItem(STORAGE_KEY_MODEL, value)
     }
-  }, [])
+  }
 
-  const setThinking = useCallback((value: boolean) => {
+  const setThinking = (value: boolean) => {
     setThinkingState(value)
     localStorage.setItem(STORAGE_KEY_THINKING, String(value))
-  }, [])
+  }
 
   return {
     model,
