@@ -1,6 +1,4 @@
-use crate::loop_engine::LoopEngine;
 use crate::terminal::{PTYManager, SessionConfig};
-use crate::types::LoopStatus;
 use prompt_builder::PromptContext;
 use sqlite_db::{Priority, SqliteDb, TaskInput};
 use std::path::PathBuf;
@@ -38,7 +36,6 @@ pub struct RalphProject {
 }
 
 pub struct AppState {
-    pub engine: Mutex<LoopEngine>,
     pub locked_project: Mutex<Option<PathBuf>>,
     pub db: Mutex<Option<SqliteDb>>,
     pub pty_manager: PTYManager,
@@ -48,7 +45,6 @@ pub struct AppState {
 impl Default for AppState {
     fn default() -> Self {
         Self {
-            engine: Mutex::new(LoopEngine::new()),
             locked_project: Mutex::new(None),
             db: Mutex::new(None),
             pty_manager: PTYManager::new(),
@@ -277,47 +273,28 @@ pub fn get_locked_project(state: State<'_, AppState>) -> Result<Option<String>, 
 }
 
 #[tauri::command]
-pub fn start_loop(
-    app: AppHandle,
-    state: State<'_, AppState>,
-    max_iterations: u32,
-) -> Result<(), String> {
-    // Get locked project from state
-    let locked = state.locked_project.lock().map_err(|e| e.to_string())?;
-    let project_path = locked
-        .as_ref()
-        .ok_or("No project locked (bug, restart app)")?
-        .clone();
-    drop(locked);
-
-    let engine = state.engine.lock().map_err(|e| e.to_string())?;
-    engine
-        .start(app, project_path, max_iterations)
-        .map_err(|e| e.to_string())
+pub fn start_loop() -> Result<(), String> {
+    Err("Not implemented".to_string())
 }
 
 #[tauri::command]
-pub fn pause_loop(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
-    let engine = state.engine.lock().map_err(|e| e.to_string())?;
-    engine.pause(&app).map_err(|e| e.to_string())
+pub fn pause_loop() -> Result<(), String> {
+    Err("Not implemented".to_string())
 }
 
 #[tauri::command]
-pub fn resume_loop(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
-    let engine = state.engine.lock().map_err(|e| e.to_string())?;
-    engine.resume(&app).map_err(|e| e.to_string())
+pub fn resume_loop() -> Result<(), String> {
+    Err("Not implemented".to_string())
 }
 
 #[tauri::command]
-pub fn stop_loop(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
-    let engine = state.engine.lock().map_err(|e| e.to_string())?;
-    engine.stop(&app).map_err(|e| e.to_string())
+pub fn stop_loop() -> Result<(), String> {
+    Err("Not implemented".to_string())
 }
 
 #[tauri::command]
-pub fn get_loop_state(state: State<'_, AppState>) -> Result<LoopStatus, String> {
-    let engine = state.engine.lock().map_err(|e| e.to_string())?;
-    Ok(engine.get_status())
+pub fn get_loop_state() -> Result<(), String> {
+    Err("Not implemented".to_string())
 }
 
 #[tauri::command]
@@ -772,15 +749,15 @@ pub fn delete_task_comment(
     db.delete_comment(task_id, comment_id)
 }
 
-// --- Enriched Query Commands ---
+// --- Query Commands ---
 
 #[tauri::command]
-pub fn get_enriched_tasks(
+pub fn get_tasks(
     state: State<'_, AppState>,
-) -> Result<Vec<sqlite_db::EnrichedTask>, String> {
+) -> Result<Vec<sqlite_db::Task>, String> {
     let guard = get_db(&state)?;
     let db = guard.as_ref().unwrap();
-    Ok(db.get_enriched_tasks())
+    Ok(db.get_tasks())
 }
 
 #[tauri::command]

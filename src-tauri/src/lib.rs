@@ -1,7 +1,8 @@
-mod claude_client;
 mod commands;
+#[allow(dead_code)]
 mod loop_engine;
 mod terminal;
+#[allow(dead_code)]
 mod types;
 
 use commands::AppState;
@@ -73,7 +74,7 @@ pub fn run() {
             commands::add_task_comment,
             commands::update_task_comment,
             commands::delete_task_comment,
-            commands::get_enriched_tasks,
+            commands::get_tasks,
             commands::get_feature_stats,
             commands::get_discipline_stats,
             commands::get_project_progress,
