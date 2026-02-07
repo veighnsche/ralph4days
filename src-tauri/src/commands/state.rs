@@ -1,0 +1,188 @@
+use crate::terminal::PTYManager;
+use prompt_builder::{CodebaseSnapshot, PromptContext};
+use sqlite_db::SqliteDb;
+use std::path::PathBuf;
+use std::sync::Mutex;
+use tauri::State;
+
+pub(super) trait ToStringErr<T> {
+    fn err_str(self) -> Result<T, String>;
+}
+
+impl<T, E: std::fmt::Display> ToStringErr<T> for Result<T, E> {
+    fn err_str(self) -> Result<T, String> {
+        self.map_err(|e| e.to_string())
+    }
+}
+
+pub struct AppState {
+    pub locked_project: Mutex<Option<PathBuf>>,
+    pub db: Mutex<Option<SqliteDb>>,
+    pub codebase_snapshot: Mutex<Option<CodebaseSnapshot>>,
+    pub pty_manager: PTYManager,
+    pub(super) mcp_dir: PathBuf,
+}
+
+impl Default for AppState {
+    fn default() -> Self {
+        Self {
+            locked_project: Mutex::new(None),
+            db: Mutex::new(None),
+            codebase_snapshot: Mutex::new(None),
+            pty_manager: PTYManager::new(),
+            mcp_dir: std::env::temp_dir().join(format!("ralph-mcp-{}", std::process::id())),
+        }
+    }
+}
+
+impl Drop for AppState {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.mcp_dir);
+    }
+}
+
+impl AppState {
+    pub(super) fn build_prompt_context(
+        &self,
+        project_path: &std::path::Path,
+        user_input: Option<String>,
+        instruction_overrides: std::collections::HashMap<String, String>,
+    ) -> Result<PromptContext, String> {
+        let ralph_dir = project_path.join(".ralph");
+        let db_path = ralph_dir.join("db").join("ralph.db");
+
+        let db_guard = self.db.lock().err_str()?;
+        let db = db_guard
+            .as_ref()
+            .ok_or_else(|| "No project locked (database not open)".to_owned())?;
+
+        let snapshot = self
+            .codebase_snapshot
+            .lock()
+            .err_str()?
+            .clone();
+
+        Ok(PromptContext {
+            features: db.get_features(),
+            tasks: db.get_tasks(),
+            disciplines: db.get_disciplines(),
+            metadata: db.get_project_info(),
+            file_contents: std::collections::HashMap::new(),
+            progress_txt: None,
+            learnings_txt: None,
+            claude_ralph_md: None,
+            project_path: project_path.to_string_lossy().to_string(),
+            db_path: db_path.to_string_lossy().to_string(),
+            script_dir: self.mcp_dir.to_string_lossy().to_string(),
+            user_input,
+            target_task_id: None,
+            target_feature: None,
+            codebase_snapshot: snapshot,
+            instruction_overrides,
+        })
+    }
+
+    pub(super) fn generate_mcp_config(
+        &self,
+        mode: &str,
+        project_path: &std::path::Path,
+    ) -> Result<PathBuf, String> {
+        let prompt_type = match mode {
+            "task_creation" => prompt_builder::PromptType::Braindump,
+            _ => prompt_builder::PromptType::Discuss,
+        };
+
+        let mut overrides = std::collections::HashMap::new();
+        let override_path = project_path
+            .join(".ralph")
+            .join("prompts")
+            .join(format!("{mode}_instructions.md"));
+        if let Ok(text) = std::fs::read_to_string(&override_path) {
+            let section_name = format!("{mode}_instructions");
+            overrides.insert(section_name, text);
+        }
+
+        let recipe = prompt_builder::recipes::get(prompt_type);
+        let ctx = self.build_prompt_context(project_path, None, overrides)?;
+
+        let (scripts, config_json) = prompt_builder::mcp::generate(&ctx, &recipe.mcp_tools);
+
+        std::fs::create_dir_all(&self.mcp_dir)
+            .map_err(|e| format!("Failed to create MCP dir: {e}"))?;
+
+        for script in &scripts {
+            let script_path = self.mcp_dir.join(&script.filename);
+            std::fs::write(&script_path, &script.content)
+                .map_err(|e| format!("Failed to write MCP script: {e}"))?;
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                std::fs::set_permissions(&script_path, std::fs::Permissions::from_mode(0o755))
+                    .map_err(|e| format!("Failed to chmod MCP script: {e}"))?;
+            }
+        }
+
+        let config_path = self.mcp_dir.join(format!("mcp-{mode}.json"));
+        std::fs::write(&config_path, &config_json)
+            .map_err(|e| format!("Failed to write MCP config: {e}"))?;
+
+        Ok(config_path)
+    }
+}
+
+pub(super) struct DbGuard<'a>(std::sync::MutexGuard<'a, Option<SqliteDb>>);
+
+impl std::ops::Deref for DbGuard<'_> {
+    type Target = SqliteDb;
+
+    fn deref(&self) -> &Self::Target {
+        self.0.as_ref().unwrap()
+    }
+}
+
+pub(super) fn get_db<'a>(state: &'a State<'a, AppState>) -> Result<DbGuard<'a>, String> {
+    let guard = state.db.lock().err_str()?;
+    if guard.is_none() {
+        return Err("No project locked (database not open)".to_owned());
+    }
+    Ok(DbGuard(guard))
+}
+
+pub(super) fn get_locked_project_path(state: &State<'_, AppState>) -> Result<PathBuf, String> {
+    let locked = state.locked_project.lock().err_str()?;
+    locked
+        .as_ref()
+        .cloned()
+        .ok_or_else(|| "No project locked".to_owned())
+}
+
+pub(super) fn normalize_feature_name(name: &str) -> Result<String, String> {
+    if name.contains('/') || name.contains(':') || name.contains('\\') {
+        return Err("Feature name cannot contain /, :, or \\".to_owned());
+    }
+
+    Ok(name.to_lowercase().trim().replace(char::is_whitespace, "-"))
+}
+
+pub(super) fn parse_priority(priority: Option<&str>) -> Option<sqlite_db::Priority> {
+    priority.and_then(|p| match p {
+        "low" => Some(sqlite_db::Priority::Low),
+        "medium" => Some(sqlite_db::Priority::Medium),
+        "high" => Some(sqlite_db::Priority::High),
+        "critical" => Some(sqlite_db::Priority::Critical),
+        _ => None,
+    })
+}
+
+pub(super) fn parse_provenance(provenance: Option<&str>) -> Option<sqlite_db::TaskProvenance> {
+    provenance.and_then(|p| match p {
+        "agent" => Some(sqlite_db::TaskProvenance::Agent),
+        "human" => Some(sqlite_db::TaskProvenance::Human),
+        "system" => Some(sqlite_db::TaskProvenance::System),
+        _ => None,
+    })
+}
+
+pub(super) fn parse_prompt_type(s: &str) -> Result<prompt_builder::PromptType, String> {
+    prompt_builder::PromptType::parse(s).ok_or_else(|| format!("Unknown prompt type: {s}"))
+}
