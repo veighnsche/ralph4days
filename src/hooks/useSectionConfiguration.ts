@@ -1,11 +1,6 @@
 import type { DragEndEvent } from '@dnd-kit/core'
-import { invoke } from '@tauri-apps/api/core'
 import { useState } from 'react'
-import type { SectionConfig, SectionInfo } from '@/types/generated'
-import { useInvoke } from './useInvoke'
-
-export type SectionMeta = SectionInfo
-export type SectionConfigWire = SectionConfig
+import { getDefaultRecipeConfig, SECTION_REGISTRY } from '@/lib/recipe-registry'
 
 export interface SectionBlock {
   name: string
@@ -17,29 +12,42 @@ export interface SectionBlock {
   instructionOverride: string | null | undefined
 }
 
-function configsToBlocks(configs: SectionConfigWire[], sectionMeta: SectionMeta[]): SectionBlock[] {
+function configsToBlocks(
+  configs: { name: string; enabled: boolean; instructionOverride?: string | null }[]
+): SectionBlock[] {
   return configs.map(cfg => {
-    const meta = sectionMeta.find(m => m.name === cfg.name)
+    const meta = SECTION_REGISTRY.find(m => m.name === cfg.name)
     return {
       name: cfg.name,
-      displayName: meta?.display_name ?? cfg.name,
+      displayName: meta?.displayName ?? cfg.name,
       description: meta?.description ?? '',
       category: meta?.category ?? 'unknown',
-      isInstruction: meta?.is_instruction ?? false,
+      isInstruction: meta?.isInstruction ?? false,
       enabled: cfg.enabled,
       instructionOverride: cfg.instructionOverride
     }
   })
 }
 
-export function useSectionConfiguration(open: boolean) {
+export function useSectionConfiguration(_open: boolean) {
   const [sections, setSections] = useState<SectionBlock[]>([])
-  const { data: sectionMeta = [] } = useInvoke<SectionMeta[]>('get_section_metadata', undefined, { enabled: open })
 
-  const loadRecipeSections = async (promptType: string, meta: SectionMeta[]) => {
+  const loadRecipeSections = async (promptType: string) => {
     try {
-      const configs = await invoke<SectionConfigWire[]>('get_recipe_sections', { promptType })
-      setSections(configsToBlocks(configs, meta))
+      const config = getDefaultRecipeConfig(promptType)
+      const blocks = config.sectionOrder.map(name => {
+        const meta = SECTION_REGISTRY.find(m => m.name === name)
+        return {
+          name,
+          displayName: meta?.displayName ?? name,
+          description: meta?.description ?? '',
+          category: meta?.category ?? 'unknown',
+          isInstruction: meta?.isInstruction ?? false,
+          enabled: config.sections[name]?.enabled ?? false,
+          instructionOverride: undefined as string | null | undefined
+        }
+      })
+      setSections(blocks)
       return true
     } catch (err) {
       console.error('Failed to load recipe sections:', err)
@@ -47,8 +55,8 @@ export function useSectionConfiguration(open: boolean) {
     }
   }
 
-  const loadCustomSections = (configs: SectionConfigWire[], meta: SectionMeta[]) => {
-    setSections(configsToBlocks(configs, meta))
+  const loadCustomSections = (configs: { name: string; enabled: boolean; instructionOverride?: string | null }[]) => {
+    setSections(configsToBlocks(configs))
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -79,7 +87,6 @@ export function useSectionConfiguration(open: boolean) {
 
   return {
     sections,
-    sectionMeta,
     enabledCount,
     loadRecipeSections,
     loadCustomSections,

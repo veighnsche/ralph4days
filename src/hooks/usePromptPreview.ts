@@ -1,8 +1,8 @@
 import { invoke } from '@tauri-apps/api/core'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import type { PromptPreview } from '@/types/generated'
-import type { SectionBlock, SectionConfigWire } from './useSectionConfiguration'
+import type { PromptPreview, SectionConfig } from '@/types/generated'
+import type { SectionBlock } from './useSectionConfiguration'
 
 export type { PromptPreview }
 
@@ -11,13 +11,20 @@ export function usePromptPreview(open: boolean, sections: SectionBlock[]) {
   const [previewTrigger, setPreviewTrigger] = useState(0)
   const userInputRef = useRef('')
 
+  useEffect(() => {
+    if (!open) {
+      userInputRef.current = ''
+      return
+    }
+  }, [open])
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: previewTrigger is an intentional re-fire signal for userInputRef changes without making every keystroke a state update
   useEffect(() => {
     if (!open || sections.length === 0) return
     let ignore = false
     const timer = setTimeout(async () => {
       try {
-        const wireSections: SectionConfigWire[] = sections.map(s => ({
+        const wireSections: SectionConfig[] = sections.map(s => ({
           name: s.name,
           enabled: s.enabled,
           instructionOverride: s.instructionOverride ?? undefined

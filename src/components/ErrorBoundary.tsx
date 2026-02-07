@@ -15,6 +15,7 @@ export class ErrorBoundary extends Component<Props, State> {
   state: State = { error: null }
 
   static getDerivedStateFromError(error: Error): State {
+    if (import.meta.env.DEV) throw error
     return { error }
   }
 

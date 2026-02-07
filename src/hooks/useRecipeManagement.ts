@@ -1,26 +1,27 @@
 import { invoke } from '@tauri-apps/api/core'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import type { CustomRecipe } from '@/types/generated'
+import { SECTION_REGISTRY } from '@/lib/recipe-registry'
+import type { RecipeConfigData, RecipeConfigInput } from '@/types/generated'
 import { useInvoke } from './useInvoke'
 import { useInvokeMutation } from './useInvokeMutation'
-import type { SectionBlock, SectionConfigWire, SectionMeta } from './useSectionConfiguration'
+import type { SectionBlock } from './useSectionConfiguration'
 
-const RECIPE_LIST_KEY = [['list_saved_recipes']]
+const RECIPE_LIST_KEY = [['list_recipe_configs']]
 
 export function useRecipeManagement(
   open: boolean,
-  sectionMeta: SectionMeta[],
   sections: SectionBlock[],
-  loadRecipeSections: (promptType: string, meta: SectionMeta[]) => Promise<boolean>,
-  loadCustomSections: (configs: SectionConfigWire[], meta: SectionMeta[]) => void
+  loadRecipeSections: (promptType: string) => Promise<boolean>,
+  loadCustomSections: (configs: { name: string; enabled: boolean; instructionOverride?: string | null }[]) => void
 ) {
   const [baseRecipe, setBaseRecipe] = useState('braindump')
   const [recipeName, setRecipeName] = useState<string | null>(null)
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [saveNameInput, setSaveNameInput] = useState('')
+  const recipeChangeGenRef = useRef(0)
 
-  const { data: customRecipeNames = [] } = useInvoke<string[]>('list_saved_recipes', undefined, { enabled: open })
+  const { data: customRecipeNames = [] } = useInvoke<string[]>('list_recipe_configs', undefined, { enabled: open })
 
   const initializedRef = useRef(false)
   // biome-ignore lint/correctness/useExhaustiveDependencies: baseRecipe and loadRecipeSections intentionally excluded — recipe switching is handled by handleRecipeChange, not this init effect
@@ -29,45 +30,69 @@ export function useRecipeManagement(
       initializedRef.current = false
       return
     }
-    if (sectionMeta.length > 0 && !initializedRef.current) {
+    if (!initializedRef.current) {
       initializedRef.current = true
-      loadRecipeSections(baseRecipe, sectionMeta)
+      loadRecipeSections(baseRecipe)
     }
-  }, [open, sectionMeta])
+  }, [open])
 
-  const saveMutation = useInvokeMutation<{ recipe: CustomRecipe }>('save_recipe', {
+  const saveMutation = useInvokeMutation<{ config: RecipeConfigInput }>('save_recipe_config', {
     invalidateKeys: RECIPE_LIST_KEY,
     onSuccess: (_data, variables) => {
-      setRecipeName(variables.recipe.name)
+      setRecipeName(variables.config.name)
       setSaveDialogOpen(false)
-      toast.success(`Recipe "${variables.recipe.name}" saved`)
+      toast.success(`Recipe "${variables.config.name}" saved`)
     },
     onError: err => toast.error(`Failed to save: ${err.message}`)
   })
 
-  const deleteMutation = useInvokeMutation<{ name: string }>('delete_recipe', {
+  const deleteMutation = useInvokeMutation<{ name: string }>('delete_recipe_config', {
     invalidateKeys: RECIPE_LIST_KEY,
     onSuccess: (_data, variables) => {
       toast.success(`Recipe "${variables.name}" deleted`)
       setRecipeName(null)
-      loadRecipeSections(baseRecipe, sectionMeta)
+      loadRecipeSections(baseRecipe)
     },
     onError: err => toast.error(`Failed to delete: ${err.message}`)
   })
 
+  const loadCustomRecipe = async (name: string, gen: number) => {
+    const data = await invoke<RecipeConfigData>('get_recipe_config', { name })
+    if (gen !== recipeChangeGenRef.current) return
+    if (!data) {
+      toast.error(`Recipe "${name}" not found`)
+      return
+    }
+    setBaseRecipe(data.baseRecipe)
+    setRecipeName(data.name)
+    const configs = data.sectionOrder.map(sectionName => {
+      const settings = data.sections[sectionName]
+      const meta = SECTION_REGISTRY.find(m => m.name === sectionName)
+      return {
+        name: sectionName,
+        enabled: settings?.enabled ?? false,
+        instructionOverride: settings?.instructionOverride ?? null,
+        displayName: meta?.displayName ?? sectionName,
+        description: meta?.description ?? '',
+        category: meta?.category ?? 'unknown',
+        isInstruction: meta?.isInstruction ?? false
+      }
+    })
+    loadCustomSections(configs)
+  }
+
   const handleRecipeChange = async (value: string) => {
+    const gen = ++recipeChangeGenRef.current
     if (customRecipeNames.includes(value)) {
       try {
-        const custom = await invoke<CustomRecipe>('load_saved_recipe', { name: value })
-        setBaseRecipe(custom.baseRecipe ?? 'braindump')
-        setRecipeName(custom.name)
-        loadCustomSections(custom.sections, sectionMeta)
+        await loadCustomRecipe(value, gen)
       } catch (err) {
+        if (gen !== recipeChangeGenRef.current) return
         toast.error(`Failed to load recipe: ${err}`)
       }
     } else {
       setBaseRecipe(value)
-      await loadRecipeSections(value, sectionMeta)
+      await loadRecipeSections(value)
       setRecipeName(null)
     }
   }
@@ -81,12 +106,21 @@ export function useRecipeManagement(
   }
 
   const doSave = (name: string) => {
-    const wireSections: SectionConfigWire[] = sections.map(s => ({
-      name: s.name,
-      enabled: s.enabled,
-      instructionOverride: s.instructionOverride ?? undefined
-    }))
-    saveMutation.mutate({ recipe: { name, baseRecipe: baseRecipe ?? undefined, sections: wireSections } })
+    const config: RecipeConfigInput = {
+      name,
+      baseRecipe: baseRecipe,
+      sectionOrder: sections.map(s => s.name),
+      sections: Object.fromEntries(
+        sections.map(s => [
+          s.name,
+          {
+            enabled: s.enabled,
+            instructionOverride: s.instructionOverride ?? undefined
+          }
+        ])
+      )
+    }
+    saveMutation.mutate({ config })
   }
 
   const handleDelete = () => {

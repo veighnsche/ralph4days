@@ -9,10 +9,11 @@ export function useInvoke<TResult, TSelected = TResult>(
   args?: Record<string, unknown>,
   options?: Omit<UseQueryOptions<TResult, Error, TSelected>, 'queryKey' | 'queryFn'>
 ) {
+  const { enabled: callerEnabled, ...rest } = options ?? {}
   return useQuery<TResult, Error, TSelected>({
     queryKey: args ? [command, args] : [command],
     queryFn: () => invoke<TResult>(command, args),
-    enabled: isTauri,
-    ...options
+    enabled: isTauri && (callerEnabled ?? true),
+    ...rest
   })
 }

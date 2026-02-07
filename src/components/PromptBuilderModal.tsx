@@ -6,11 +6,11 @@ import {
   verticalListSortingStrategy
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { ChevronDown, ChevronUp, ClipboardCopy, GripVertical, Save, Trash2 } from 'lucide-react'
+import { ClipboardCopy, GripVertical, Save, Trash2, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { HighlightedPrompt } from '@/components/HighlightedPrompt'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
   Dialog,
   DialogContent,
@@ -29,25 +29,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { usePromptPreview } from '@/hooks/usePromptPreview'
 import { useRecipeManagement } from '@/hooks/useRecipeManagement'
 import { type SectionBlock, useSectionConfiguration } from '@/hooks/useSectionConfiguration'
-
-const BUILT_IN_RECIPES = [
-  { value: 'braindump', label: 'Braindump' },
-  { value: 'yap', label: 'Yap' },
-  { value: 'ramble', label: 'Ramble' },
-  { value: 'discuss', label: 'Discuss' },
-  { value: 'task_execution', label: 'Task Execution' },
-  { value: 'opus_review', label: 'Opus Review' }
-] as const
-
-const CATEGORY_COLORS: Record<string, string> = {
-  project: 'bg-blue-500/15 text-blue-700 dark:text-blue-400',
-  feature: 'bg-violet-500/15 text-violet-700 dark:text-violet-400',
-  task: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
-  discipline: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
-  state: 'bg-slate-500/15 text-slate-700 dark:text-slate-400',
-  user: 'bg-rose-500/15 text-rose-700 dark:text-rose-400',
-  instructions: 'bg-orange-500/15 text-orange-700 dark:text-orange-400'
-}
+import { BUILT_IN_RECIPES, CATEGORY_COLORS } from '@/lib/recipe-registry'
 
 interface PromptBuilderModalProps {
   open: boolean
@@ -57,7 +39,6 @@ interface PromptBuilderModalProps {
 export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalProps) {
   const {
     sections,
-    sectionMeta,
     enabledCount,
     loadRecipeSections,
     loadCustomSections,
@@ -78,9 +59,12 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
     handleSave,
     doSave,
     handleDelete
-  } = useRecipeManagement(open, sectionMeta, sections, loadRecipeSections, loadCustomSections)
+  } = useRecipeManagement(open, sections, loadRecipeSections, loadCustomSections)
 
   const { preview, handleUserInputChange, handleCopy } = usePromptPreview(open, sections)
+
+  const [selectedSection, setSelectedSection] = useState<string | null>(null)
+  const selectedBlock = sections.find(s => s.name === selectedSection)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -89,8 +73,11 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] h-[90vh] p-0 flex flex-col !max-w-[95vw]">
-        <DialogHeader className="px-4 pt-3 pb-0">
+      <DialogContent
+        className="!max-w-none w-screen h-screen p-0 flex flex-col gap-0 rounded-none border-0"
+        onPointerDownOutside={e => e.preventDefault()}
+        showCloseButton={false}>
+        <DialogHeader className="px-4 pt-3 pb-3">
           <div className="flex items-center gap-3">
             <div className="flex-1 min-w-0">
               <DialogTitle className="text-sm">Prompt Recipe Editor</DialogTitle>
@@ -122,7 +109,7 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
         <Separator />
 
         <ResizablePanelGroup orientation="horizontal" className="flex-1 min-h-0">
-          <ResizablePanel defaultSize={40} minSize={25}>
+          <ResizablePanel defaultSize={33} minSize={18}>
             <ScrollArea className="h-full">
               <div className="p-3 space-y-1.5">
                 <DebouncedUserInput onDebouncedChange={handleUserInputChange} />
@@ -139,8 +126,9 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
                       <SortableSectionBlock
                         key={section.name}
                         section={section}
+                        selected={section.name === selectedSection}
+                        onSelect={() => setSelectedSection(section.name === selectedSection ? null : section.name)}
                         onToggle={() => toggleSection(section.name)}
-                        onInstructionCommit={text => commitInstructionOverride(section.name, text)}
                       />
                     ))}
                   </SortableContext>
@@ -151,22 +139,25 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
 
           <ResizableHandle withHandle />
 
-          <ResizablePanel defaultSize={60} minSize={35}>
-            <ScrollArea className="h-full">
-              <div className="p-3 space-y-2">
-                {preview?.sections.map(section => (
-                  <div key={section.name} className="rounded-md border">
-                    <div className="bg-muted/50 px-3 py-1 border-b">
-                      <span className="text-[11px] font-medium text-muted-foreground">{section.name}</span>
-                    </div>
-                    <pre className="p-3 text-xs font-mono whitespace-pre-wrap break-words leading-relaxed">
-                      {section.content}
-                    </pre>
-                  </div>
-                ))}
-                {!preview && <p className="text-sm text-muted-foreground text-center py-8">Loading preview...</p>}
-              </div>
-            </ScrollArea>
+          <ResizablePanel defaultSize={34} minSize={18}>
+            <SectionSettingsPanel
+              section={selectedBlock ?? null}
+              onInstructionCommit={text => {
+                if (selectedSection) commitInstructionOverride(selectedSection, text)
+              }}
+            />
+          </ResizablePanel>
+
+          <ResizableHandle withHandle />
+
+          <ResizablePanel defaultSize={33} minSize={18}>
+            <div className="h-full p-3">
+              {preview?.fullPrompt ? (
+                <HighlightedPrompt text={preview.fullPrompt} className="h-full overflow-y-auto" />
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">Loading preview...</p>
+              )}
+            </div>
           </ResizablePanel>
         </ResizablePanelGroup>
 
@@ -192,6 +183,11 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
           <Button size="default" onClick={handleSave}>
             <Save className="size-3.5" />
             {recipeName ? 'Save' : 'Save As...'}
+          </Button>
+
+          <Button variant="outline" size="default" onClick={() => onOpenChange(false)}>
+            <X className="size-3.5" />
+            Close
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -261,12 +257,14 @@ function DebouncedUserInput({ onDebouncedChange }: { onDebouncedChange: (value: 
 
 function SortableSectionBlock({
   section,
-  onToggle,
-  onInstructionCommit
+  selected,
+  onSelect,
+  onToggle
 }: {
   section: SectionBlock
+  selected: boolean
+  onSelect: () => void
   onToggle: () => void
-  onInstructionCommit: (text: string | null) => void
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: section.name
@@ -277,44 +275,34 @@ function SortableSectionBlock({
     transition
   }
 
-  const [instructionOpen, setInstructionOpen] = useState(!!section.instructionOverride)
-  const [localInstruction, setLocalInstruction] = useState(section.instructionOverride ?? '')
-  const [prevOverride, setPrevOverride] = useState(section.instructionOverride)
   const categoryColor = CATEGORY_COLORS[section.category] ?? ''
 
-  if (section.instructionOverride !== prevOverride) {
-    setPrevOverride(section.instructionOverride)
-    setLocalInstruction(section.instructionOverride ?? '')
-  }
-
-  const handleBlur = () => {
-    const committed = localInstruction || null
-    if (committed !== section.instructionOverride) {
-      onInstructionCommit(committed)
-    }
-  }
-
-  const handleReset = () => {
-    setLocalInstruction('')
-    onInstructionCommit(null)
-  }
-
   return (
-    <div
+    <button
       ref={setNodeRef}
       style={style}
-      className={`rounded-md border transition-opacity duration-100 ${section.enabled ? 'opacity-100' : 'opacity-50'} ${isDragging ? 'z-50 shadow-md bg-background' : ''}`}>
+      type="button"
+      className={`rounded-md border transition-all duration-100 cursor-pointer ${section.enabled ? 'opacity-100' : 'opacity-50'} ${isDragging ? 'z-50 shadow-md bg-background' : ''} ${selected ? 'ring-2 ring-ring' : 'hover:bg-muted/30'}`}
+      onClick={onSelect}>
       <div className="flex items-center gap-2 px-2.5 py-1.5">
         <button
           type="button"
           ref={setActivatorNodeRef}
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground transition-colors">
+          className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground transition-colors"
+          onClick={e => e.stopPropagation()}>
           <GripVertical className="size-3.5" />
         </button>
 
-        <Switch checked={section.enabled} onCheckedChange={onToggle} className="scale-75" />
+        <button
+          type="button"
+          onClick={e => e.stopPropagation()}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') e.stopPropagation()
+          }}>
+          <Switch checked={section.enabled} onCheckedChange={onToggle} className="scale-75" />
+        </button>
 
         <Badge variant="secondary" className={`text-[9px] px-1.5 py-0 font-normal ${categoryColor}`}>
           {section.category}
@@ -325,34 +313,80 @@ function SortableSectionBlock({
           <p className="text-[10px] text-muted-foreground truncate">{section.description}</p>
         </div>
       </div>
+    </button>
+  )
+}
 
-      {section.isInstruction && section.enabled && (
-        <Collapsible open={instructionOpen} onOpenChange={setInstructionOpen}>
-          <CollapsibleTrigger asChild>
-            <button
-              type="button"
-              className="w-full text-left px-2.5 py-1 border-t text-[10px] text-muted-foreground hover:bg-muted/30 transition-colors flex items-center gap-1">
-              {instructionOpen ? <ChevronUp className="size-2.5" /> : <ChevronDown className="size-2.5" />}
-              {localInstruction ? 'Custom instructions' : 'Edit instructions'}
-            </button>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="px-2.5 pb-2 pt-1 border-t space-y-1">
-              <Textarea
-                value={localInstruction}
-                onChange={e => setLocalInstruction(e.target.value)}
-                onBlur={handleBlur}
-                placeholder="Leave empty to use default instructions..."
-                className="min-h-[120px] font-mono text-[11px] leading-relaxed"
-              />
-              {localInstruction && (
-                <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={handleReset}>
-                  Reset to default
-                </Button>
-              )}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+function SectionSettingsPanel({
+  section,
+  onInstructionCommit
+}: {
+  section: SectionBlock | null
+  onInstructionCommit: (text: string | null) => void
+}) {
+  const [localInstruction, setLocalInstruction] = useState('')
+  const [trackedSection, setTrackedSection] = useState<string | null>(null)
+
+  const sectionName = section?.name ?? null
+  if (sectionName !== trackedSection) {
+    setTrackedSection(sectionName)
+    setLocalInstruction(section?.instructionOverride ?? '')
+  }
+
+  const handleBlur = () => {
+    const committed = localInstruction || null
+    if (committed !== (section?.instructionOverride ?? null)) {
+      onInstructionCommit(committed)
+    }
+  }
+
+  const handleReset = () => {
+    setLocalInstruction('')
+    onInstructionCommit(null)
+  }
+
+  if (!section) {
+    return (
+      <div className="h-full flex items-center justify-center p-4">
+        <p className="text-sm text-muted-foreground">Select a section to edit</p>
+      </div>
+    )
+  }
+
+  if (!(section.isInstruction && section.enabled)) {
+    return (
+      <div className="h-full flex flex-col p-3 gap-3">
+        <div>
+          <p className="text-xs font-medium">{section.displayName}</p>
+          <p className="text-[10px] text-muted-foreground">{section.description}</p>
+        </div>
+        <Separator />
+        <p className="text-sm text-muted-foreground">
+          {section.enabled ? 'No editable settings for this section.' : 'This section is disabled.'}
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="h-full flex flex-col p-3 gap-3">
+      <div>
+        <p className="text-xs font-medium">{section.displayName}</p>
+        <p className="text-[10px] text-muted-foreground">{section.description}</p>
+      </div>
+      <Separator />
+      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Instruction Override</p>
+      <Textarea
+        value={localInstruction}
+        onChange={e => setLocalInstruction(e.target.value)}
+        onBlur={handleBlur}
+        placeholder="Leave empty to use default instructions..."
+        className="flex-1 font-mono text-[11px] leading-relaxed resize-none"
+      />
+      {localInstruction && (
+        <Button variant="ghost" size="sm" className="h-6 text-[10px] self-start" onClick={handleReset}>
+          Reset to default
+        </Button>
       )}
     </div>
   )

@@ -182,7 +182,3 @@ pub(super) fn parse_provenance(provenance: Option<&str>) -> Option<sqlite_db::Ta
         _ => None,
     })
 }
-
-pub(super) fn parse_prompt_type(s: &str) -> Result<prompt_builder::PromptType, String> {
-    prompt_builder::PromptType::parse(s).ok_or_else(|| format!("Unknown prompt type: {s}"))
-}

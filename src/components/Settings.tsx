@@ -1,29 +1,19 @@
-import { Settings as SettingsIcon } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Switch } from '@/components/ui/switch'
 import { useTheme } from '@/lib/theme-provider'
 
-export function Settings() {
+interface SettingsProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
+
+export function Settings({ open, onOpenChange }: SettingsProps) {
   const { theme, setTheme } = useTheme()
   const isDark = theme === 'dark'
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="icon">
-          <SettingsIcon className="h-4 w-4" />
-          <span className="sr-only">Settings</span>
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>

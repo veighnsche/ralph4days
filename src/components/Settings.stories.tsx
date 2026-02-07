@@ -4,6 +4,7 @@ import { Settings } from './Settings'
 const meta = {
   title: 'Components/Settings',
   component: Settings,
+  args: { open: true, onOpenChange: () => {} },
   tags: ['autodocs']
 } satisfies Meta<typeof Settings>
 

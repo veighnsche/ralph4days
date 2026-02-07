@@ -5,11 +5,10 @@
 // TODO: Show progress indicator & creation summary
 
 import { invoke } from '@tauri-apps/api/core'
-import { Brain, Wrench } from 'lucide-react'
+import { Brain } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { type Model, ModelThinkingPicker } from '@/components/ModelThinkingPicker'
-import { PromptBuilderModal } from '@/components/PromptBuilderModal'
 import { Button } from '@/components/ui/button'
 import { FormDescription, FormHeader, FormTitle } from '@/components/ui/form-header'
 import { Label } from '@/components/ui/label'
@@ -45,8 +44,6 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
   const { openTerminalTab } = useWorkspaceActions()
   const [braindump, setBraindump] = useState(DEFAULT_QUESTIONS)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [promptBuilderOpen, setPromptBuilderOpen] = useState(false)
-
   const sendToTerminal = async (terminalId: string, text: string) => {
     await new Promise(resolve => setTimeout(resolve, 1000))
 
@@ -117,17 +114,6 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
       <Separator />
 
       <div className="px-3 py-1.5 flex items-center justify-end gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="default"
-          onClick={() => setPromptBuilderOpen(true)}
-          title="Prompt Builder"
-          className="mr-auto">
-          <Wrench className="size-3.5" />
-          Prompt Builder
-        </Button>
-
         <Button type="button" variant="outline" size="default" onClick={handleCancel}>
           Cancel
         </Button>
@@ -138,8 +124,6 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
           disabled={isSubmitting || !braindump.trim()}
         />
       </div>
-
-      <PromptBuilderModal open={promptBuilderOpen} onOpenChange={setPromptBuilderOpen} />
     </div>
   )
 }

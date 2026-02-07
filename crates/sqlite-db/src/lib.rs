@@ -4,11 +4,13 @@ mod disciplines;
 mod export;
 mod features;
 mod metadata;
+mod recipe_configs;
 mod stats;
 mod tasks;
 pub mod types;
 
 // Re-export public types
+pub use recipe_configs::{RecipeConfigData, RecipeConfigInput, SectionSettingsData};
 pub use types::{
     CommentAuthor, Discipline, Feature, FeatureInput, GroupStats, InferredTaskStatus,
     McpServerConfig, Priority, ProjectMetadata, ProjectProgress, Task, TaskComment, TaskInput,
@@ -49,6 +51,7 @@ impl SqliteDb {
         let migrations = Migrations::new(vec![
             M::up(include_str!("migrations/001_initial.sql")),
             M::up(include_str!("migrations/002_feature_rag_fields.sql")),
+            M::up(include_str!("migrations/003_recipe_configs.sql")),
         ]);
 
         migrations
@@ -76,6 +79,7 @@ impl SqliteDb {
         let migrations = Migrations::new(vec![
             M::up(include_str!("migrations/001_initial.sql")),
             M::up(include_str!("migrations/002_feature_rag_fields.sql")),
+            M::up(include_str!("migrations/003_recipe_configs.sql")),
         ]);
 
         migrations
