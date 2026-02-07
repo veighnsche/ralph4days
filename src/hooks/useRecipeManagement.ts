@@ -1,6 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
 import { useEffect, useRef, useState } from 'react'
-import { toast } from 'sonner'
 import { SECTION_REGISTRY } from '@/lib/recipe-registry'
 import type { RecipeConfigData, RecipeConfigInput } from '@/types/generated'
 import { useInvoke } from './useInvoke'
@@ -19,6 +18,7 @@ export function useRecipeManagement(
   const [recipeName, setRecipeName] = useState<string | null>(null)
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [saveNameInput, setSaveNameInput] = useState('')
+  const [loadError, setLoadError] = useState<string | null>(null)
   const recipeChangeGenRef = useRef(0)
 
   const { data: customRecipeNames = [] } = useInvoke<string[]>('list_recipe_configs', undefined, { enabled: open })
@@ -41,26 +41,22 @@ export function useRecipeManagement(
     onSuccess: (_data, variables) => {
       setRecipeName(variables.config.name)
       setSaveDialogOpen(false)
-      toast.success(`Recipe "${variables.config.name}" saved`)
-    },
-    onError: err => toast.error(`Failed to save: ${err.message}`)
+    }
   })
 
   const deleteMutation = useInvokeMutation<{ name: string }>('delete_recipe_config', {
     invalidateKeys: RECIPE_LIST_KEY,
-    onSuccess: (_data, variables) => {
-      toast.success(`Recipe "${variables.name}" deleted`)
+    onSuccess: () => {
       setRecipeName(null)
       loadRecipeSections(baseRecipe)
-    },
-    onError: err => toast.error(`Failed to delete: ${err.message}`)
+    }
   })
 
   const loadCustomRecipe = async (name: string, gen: number) => {
     const data = await invoke<RecipeConfigData>('get_recipe_config', { name })
     if (gen !== recipeChangeGenRef.current) return
     if (!data) {
-      toast.error(`Recipe "${name}" not found`)
+      setLoadError(`Recipe "${name}" not found`)
       return
     }
     setBaseRecipe(data.baseRecipe)
@@ -88,7 +84,7 @@ export function useRecipeManagement(
         await loadCustomRecipe(value, gen)
       } catch (err) {
         if (gen !== recipeChangeGenRef.current) return
-        toast.error(`Failed to load recipe: ${err}`)
+        setLoadError(`Failed to load recipe: ${err}`)
       }
     } else {
       setBaseRecipe(value)
@@ -129,6 +125,12 @@ export function useRecipeManagement(
   }
 
   const currentPickerValue = recipeName ?? baseRecipe
+  const error = saveMutation.error ?? deleteMutation.error ?? loadError
+  const resetError = () => {
+    saveMutation.reset()
+    deleteMutation.reset()
+    setLoadError(null)
+  }
 
   return {
     baseRecipe,
@@ -142,6 +144,8 @@ export function useRecipeManagement(
     handleRecipeChange,
     handleSave,
     doSave,
-    handleDelete
+    handleDelete,
+    error,
+    resetError
   }
 }

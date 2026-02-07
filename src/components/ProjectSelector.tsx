@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import { FolderOpen } from 'lucide-react'
 import { useState } from 'react'
+import { InlineError } from '@/components/InlineError'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -18,8 +19,14 @@ interface ProjectSelectorProps {
 export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
   const [initPath, setInitPath] = useState('')
   const [initializing, setInitializing] = useState(false)
+  const [initError, setInitError] = useState<string | null>(null)
+  const [openError, setOpenError] = useState<string | null>(null)
 
-  const { data: projects = [], isLoading: scanning } = useInvoke<RalphProject[]>('scan_for_ralph_projects')
+  const {
+    data: projects = [],
+    isLoading: scanning,
+    error: scanError
+  } = useInvoke<RalphProject[]>('scan_for_ralph_projects')
   const [selectedProject, setSelectedProject] = useState('')
 
   const handleBrowseInit = async () => {
@@ -39,7 +46,7 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
 
   const handleInitialize = async () => {
     if (!initPath) return
-
+    setInitError(null)
     setInitializing(true)
     try {
       const title = initPath.split('/').pop() || 'Project'
@@ -47,7 +54,7 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
       await invoke('set_locked_project', { path: initPath })
       onProjectSelected(initPath)
     } catch (err) {
-      alert(`Failed to initialize: ${err}`)
+      setInitError(`Failed to initialize: ${err}`)
     } finally {
       setInitializing(false)
     }
@@ -55,12 +62,12 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
 
   const handleOpenProject = async () => {
     if (!selectedProject) return
-
+    setOpenError(null)
     try {
       await invoke('set_locked_project', { path: selectedProject })
       onProjectSelected(selectedProject)
     } catch (err) {
-      alert(`Failed to open: ${err}`)
+      setOpenError(`Failed to open: ${err}`)
     }
   }
 
@@ -90,6 +97,7 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
                 </Field>
               </div>
 
+              <InlineError error={initError} onDismiss={() => setInitError(null)} />
               <Button onClick={handleInitialize} disabled={!initPath || initializing} className="w-full">
                 {initializing ? 'Initializing...' : 'Initialize Ralph'}
               </Button>
@@ -123,6 +131,8 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
                     </Field>
                   </div>
 
+                  <InlineError error={scanError} />
+                  <InlineError error={openError} onDismiss={() => setOpenError(null)} />
                   <Button onClick={handleOpenProject} disabled={!selectedProject} className="w-full">
                     Open Project
                   </Button>

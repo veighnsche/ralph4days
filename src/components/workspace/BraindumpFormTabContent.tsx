@@ -8,6 +8,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { Brain } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { InlineError } from '@/components/InlineError'
 import { type Model, ModelThinkingPicker } from '@/components/ModelThinkingPicker'
 import { Button } from '@/components/ui/button'
 import { FormDescription, FormHeader, FormTitle } from '@/components/ui/form-header'
@@ -44,6 +45,7 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
   const { openTerminalTab } = useWorkspaceActions()
   const [braindump, setBraindump] = useState(DEFAULT_QUESTIONS)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const sendToTerminal = async (terminalId: string, text: string) => {
     await new Promise(resolve => setTimeout(resolve, 1000))
 
@@ -58,9 +60,10 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
   }
 
   const handleSubmit = async (model: Model, thinking: boolean) => {
+    setError(null)
     const trimmedBraindump = braindump.trim()
     if (!trimmedBraindump) {
-      toast.error('Please enter some text before sending')
+      setError('Please enter some text before sending')
       return
     }
     if (isSubmitting) return
@@ -71,9 +74,8 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
       const terminalId = openTerminalTab(model, thinking)
       await sendToTerminal(terminalId, trimmedBraindump)
     } catch (err) {
-      console.error('Failed to send braindump:', err)
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-      toast.error(`Failed to send braindump: ${errorMessage}`)
+      setError(`Failed to send braindump: ${errorMessage}`)
       setIsSubmitting(false)
     }
   }
@@ -112,6 +114,12 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
       </ScrollArea>
 
       <Separator />
+
+      {error && (
+        <div className="px-3 pt-1.5">
+          <InlineError error={error} onDismiss={() => setError(null)} />
+        </div>
+      )}
 
       <div className="px-3 py-1.5 flex items-center justify-end gap-2">
         <Button type="button" variant="outline" size="default" onClick={handleCancel}>

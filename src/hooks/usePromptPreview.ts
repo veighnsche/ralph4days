@@ -1,6 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
 import { useEffect, useRef, useState } from 'react'
-import { toast } from 'sonner'
 import type { PromptPreview, SectionConfig } from '@/types/generated'
 import type { SectionBlock } from './useSectionConfiguration'
 
@@ -9,6 +8,7 @@ export type { PromptPreview }
 export function usePromptPreview(open: boolean, sections: SectionBlock[]) {
   const [preview, setPreview] = useState<PromptPreview | null>(null)
   const [previewTrigger, setPreviewTrigger] = useState(0)
+  const [previewError, setPreviewError] = useState<string | null>(null)
   const userInputRef = useRef('')
 
   useEffect(() => {
@@ -33,9 +33,15 @@ export function usePromptPreview(open: boolean, sections: SectionBlock[]) {
           sections: wireSections,
           userInput: userInputRef.current || null
         })
-        if (!ignore) setPreview(result)
+        if (!ignore) {
+          setPreview(result)
+          setPreviewError(null)
+        }
       } catch (err) {
-        if (!ignore) console.error('Failed to preview:', err)
+        if (!ignore) {
+          const message = err instanceof Error ? err.message : String(err)
+          setPreviewError(`Failed to preview: ${message}`)
+        }
       }
     }, 500)
     return () => {
@@ -49,12 +55,16 @@ export function usePromptPreview(open: boolean, sections: SectionBlock[]) {
     setPreviewTrigger(n => n + 1)
   }
 
-  const handleCopy = () => {
-    if (preview?.fullPrompt) {
-      navigator.clipboard.writeText(preview.fullPrompt)
-      toast.success('Copied to clipboard')
+  const handleCopy = async () => {
+    if (!preview?.fullPrompt) return
+    try {
+      await navigator.clipboard.writeText(preview.fullPrompt)
+      setPreviewError(null)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setPreviewError(`Failed to copy: ${message}`)
     }
   }
 
-  return { preview, handleUserInputChange, handleCopy }
+  return { preview, handleUserInputChange, handleCopy, previewError, resetPreviewError: () => setPreviewError(null) }
 }

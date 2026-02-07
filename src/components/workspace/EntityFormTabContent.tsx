@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import type { FieldValues, UseFormReturn } from 'react-hook-form'
+import { InlineError } from '@/components/InlineError'
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
 import { FormDescription, FormHeader, FormTitle } from '@/components/ui/form-header'
@@ -16,6 +17,8 @@ export function EntityFormTabContent<T extends FieldValues>({
   form,
   onSubmit,
   isPending,
+  error,
+  onErrorDismiss,
   children
 }: {
   tab: WorkspaceTab
@@ -24,6 +27,8 @@ export function EntityFormTabContent<T extends FieldValues>({
   form: UseFormReturn<T>
   onSubmit: (data: T) => void
   isPending: boolean
+  error?: Error | null
+  onErrorDismiss?: () => void
   children: React.ReactNode
 }) {
   const mode = tab.data?.mode ?? 'create'
@@ -49,6 +54,11 @@ export function EntityFormTabContent<T extends FieldValues>({
           <div className="px-4">{children}</div>
         </ScrollArea>
         <Separator />
+        {error && (
+          <div className="px-3 pt-1.5">
+            <InlineError error={error} onDismiss={onErrorDismiss} />
+          </div>
+        )}
         <div className="px-3 py-1.5 flex justify-end gap-2 flex-shrink-0">
           <Button type="button" variant="outline" size="default" onClick={() => closeTab(tab.id)} disabled={isPending}>
             Cancel

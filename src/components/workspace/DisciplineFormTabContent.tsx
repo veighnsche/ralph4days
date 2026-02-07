@@ -28,8 +28,7 @@ export function DisciplineFormTabContent({ tab }: { tab: WorkspaceTab }) {
     onSuccess: () => {
       toast.success('Discipline created')
       closeTab(tab.id)
-    },
-    onError: err => toast.error(err.message)
+    }
   })
 
   const handleSubmit = (data: DisciplineFormData) => {
@@ -49,7 +48,9 @@ export function DisciplineFormTabContent({ tab }: { tab: WorkspaceTab }) {
       entityName="Discipline"
       form={form}
       onSubmit={handleSubmit}
-      isPending={createDiscipline.isPending}>
+      isPending={createDiscipline.isPending}
+      error={createDiscipline.error}
+      onErrorDismiss={createDiscipline.reset}>
       <DisciplineFormFields disabled={createDiscipline.isPending} />
     </EntityFormTabContent>
   )

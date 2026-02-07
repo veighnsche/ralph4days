@@ -37,8 +37,7 @@ export function TaskFormTabContent({ tab }: { tab: WorkspaceTab }) {
     onSuccess: () => {
       toast.success('Task created')
       closeTab(tab.id)
-    },
-    onError: err => toast.error(err.message)
+    }
   })
 
   const handleSubmit = (data: TaskFormData) => {
@@ -61,7 +60,9 @@ export function TaskFormTabContent({ tab }: { tab: WorkspaceTab }) {
       entityName="Task"
       form={form}
       onSubmit={handleSubmit}
-      isPending={createTask.isPending}>
+      isPending={createTask.isPending}
+      error={createTask.error}
+      onErrorDismiss={createTask.reset}>
       <TaskFormFields disabled={createTask.isPending} />
     </EntityFormTabContent>
   )

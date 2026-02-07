@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { toast } from 'sonner'
 import { useInvokeMutation } from '@/hooks/useInvokeMutation'
 
 const INVALIDATE_KEYS = [['get_tasks']]
@@ -9,9 +8,7 @@ export function useCommentMutations(taskId: number) {
   const [editBody, setEditBody] = useState('')
 
   const addCommentMutation = useInvokeMutation<{ taskId: number; author: string; body: string }>('add_task_comment', {
-    invalidateKeys: INVALIDATE_KEYS,
-    onSuccess: () => toast.success('Comment added'),
-    onError: err => toast.error(err.message)
+    invalidateKeys: INVALIDATE_KEYS
   })
 
   const editComment = useInvokeMutation<{ taskId: number; commentId: number; body: string }>('update_task_comment', {
@@ -19,15 +16,19 @@ export function useCommentMutations(taskId: number) {
     onSuccess: () => {
       setEditingId(null)
       setEditBody('')
-    },
-    onError: err => toast.error(err.message)
+    }
   })
 
   const deleteComment = useInvokeMutation<{ taskId: number; commentId: number }>('delete_task_comment', {
-    invalidateKeys: INVALIDATE_KEYS,
-    onSuccess: () => toast.success('Comment deleted'),
-    onError: err => toast.error(err.message)
+    invalidateKeys: INVALIDATE_KEYS
   })
+
+  const error = addCommentMutation.error ?? editComment.error ?? deleteComment.error
+  const resetError = () => {
+    addCommentMutation.reset()
+    editComment.reset()
+    deleteComment.reset()
+  }
 
   return {
     addComment: addCommentMutation,
@@ -47,6 +48,8 @@ export function useCommentMutations(taskId: number) {
     editingId,
     editBody,
     setEditBody,
-    isPending: addCommentMutation.isPending || editComment.isPending || deleteComment.isPending
+    isPending: addCommentMutation.isPending || editComment.isPending || deleteComment.isPending,
+    error,
+    resetError
   }
 }

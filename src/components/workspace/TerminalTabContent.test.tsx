@@ -78,8 +78,10 @@ describe('TerminalTabContent', () => {
     expect(getByTestId('terminal')).toBeTruthy()
   })
 
-  it('renders Terminal directly without wrapper', () => {
+  it('renders Terminal inside flex layout wrapper', () => {
     const { container } = render(<TerminalTabContent tab={mockTab} />)
-    expect(container.firstElementChild?.getAttribute('data-testid')).toBe('terminal')
+    const wrapper = container.firstElementChild
+    expect(wrapper?.classList.contains('flex')).toBe(true)
+    expect(wrapper?.querySelector('[data-testid="terminal"]')).toBeTruthy()
   })
 })

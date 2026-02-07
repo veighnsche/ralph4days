@@ -1,6 +1,7 @@
 import type { Terminal as XTerm } from '@xterm/xterm'
 import { TerminalSquare } from 'lucide-react'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
+import { InlineError } from '@/components/InlineError'
 import { useTabMeta } from '@/hooks/useTabMeta'
 import { Terminal, useTerminalSession } from '@/lib/terminal'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
@@ -11,6 +12,7 @@ import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
   useTabMeta(tab.id, tab.title, TerminalSquare)
   const terminalRef = useRef<XTerm | null>(null)
+  const [sessionError, setSessionError] = useState<string | null>(null)
 
   const session = useTerminalSession(
     {
@@ -24,7 +26,7 @@ export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
       onClosed: () => {
         terminalRef.current?.writeln('\r\n\x1b[2m[Session ended]\x1b[0m')
       },
-      onError: err => console.error('Terminal error:', err)
+      onError: err => setSessionError(err)
     }
   )
 
@@ -56,5 +58,12 @@ export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
     session.resize(cols, rows)
   }
 
-  return <Terminal onReady={handleReady} onResize={handleResize} />
+  return (
+    <div className="h-full flex flex-col">
+      <InlineError error={sessionError} onDismiss={() => setSessionError(null)} />
+      <div className="flex-1 min-h-0">
+        <Terminal onReady={handleReady} onResize={handleResize} />
+      </div>
+    </div>
+  )
 }

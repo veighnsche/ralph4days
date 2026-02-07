@@ -9,6 +9,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { ClipboardCopy, GripVertical, Save, Trash2, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { HighlightedPrompt } from '@/components/HighlightedPrompt'
+import { InlineError } from '@/components/InlineError'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -44,7 +45,9 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
     loadCustomSections,
     handleDragEnd,
     toggleSection,
-    commitInstructionOverride
+    commitInstructionOverride,
+    loadError: sectionLoadError,
+    resetLoadError: resetSectionLoadError
   } = useSectionConfiguration(open)
 
   const {
@@ -58,10 +61,15 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
     handleRecipeChange,
     handleSave,
     doSave,
-    handleDelete
+    handleDelete,
+    error: recipeError,
+    resetError: resetRecipeError
   } = useRecipeManagement(open, sections, loadRecipeSections, loadCustomSections)
 
-  const { preview, handleUserInputChange, handleCopy } = usePromptPreview(open, sections)
+  const { preview, handleUserInputChange, handleCopy, previewError, resetPreviewError } = usePromptPreview(
+    open,
+    sections
+  )
 
   const [selectedSection, setSelectedSection] = useState<string | null>(null)
   const selectedBlock = sections.find(s => s.name === selectedSection)
@@ -112,6 +120,7 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
           <ResizablePanel defaultSize={33} minSize={18}>
             <ScrollArea className="h-full">
               <div className="p-3 space-y-1.5">
+                <InlineError error={sectionLoadError} onDismiss={resetSectionLoadError} />
                 <DebouncedUserInput onDebouncedChange={handleUserInputChange} />
 
                 <Separator />
@@ -151,9 +160,10 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
           <ResizableHandle withHandle />
 
           <ResizablePanel defaultSize={33} minSize={18}>
-            <div className="h-full p-3">
+            <div className="h-full p-3 flex flex-col gap-2">
+              <InlineError error={previewError} onDismiss={resetPreviewError} />
               {preview?.fullPrompt ? (
-                <HighlightedPrompt text={preview.fullPrompt} className="h-full overflow-y-auto" />
+                <HighlightedPrompt text={preview.fullPrompt} className="flex-1 min-h-0 overflow-y-auto" />
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-8">Loading preview...</p>
               )}
@@ -164,6 +174,7 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
         <Separator />
 
         <DialogFooter className="px-4 pb-2.5 pt-1.5">
+          <InlineError error={recipeError} onDismiss={resetRecipeError} className="w-full" />
           <Badge variant="outline" className="text-[10px] mr-auto">
             {enabledCount} / {sections.length} sections
           </Badge>

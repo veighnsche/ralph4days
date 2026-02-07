@@ -31,6 +31,7 @@ function configsToBlocks(
 
 export function useSectionConfiguration(_open: boolean) {
   const [sections, setSections] = useState<SectionBlock[]>([])
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const loadRecipeSections = async (promptType: string) => {
     try {
@@ -48,9 +49,11 @@ export function useSectionConfiguration(_open: boolean) {
         }
       })
       setSections(blocks)
+      setLoadError(null)
       return true
     } catch (err) {
-      console.error('Failed to load recipe sections:', err)
+      const message = err instanceof Error ? err.message : String(err)
+      setLoadError(`Failed to load recipe sections: ${message}`)
       return false
     }
   }
@@ -92,6 +95,8 @@ export function useSectionConfiguration(_open: boolean) {
     loadCustomSections,
     handleDragEnd,
     toggleSection,
-    commitInstructionOverride
+    commitInstructionOverride,
+    loadError,
+    resetLoadError: () => setLoadError(null)
   }
 }

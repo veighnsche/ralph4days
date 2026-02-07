@@ -1,5 +1,6 @@
 import { Bot, MessageSquare, Pencil, Trash2, User } from 'lucide-react'
 import { useState } from 'react'
+import { InlineError } from '@/components/InlineError'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { useCommentMutations } from '@/hooks/useCommentMutations'
@@ -11,8 +12,19 @@ export function CommentsSection({ task }: { task: Task }) {
   const comments = task.comments ?? []
   const [commentInput, setCommentInput] = useState('')
 
-  const { addComment, startEdit, cancelEdit, submitEdit, deleteComment, editingId, editBody, setEditBody, isPending } =
-    useCommentMutations(task.id)
+  const {
+    addComment,
+    startEdit,
+    cancelEdit,
+    submitEdit,
+    deleteComment,
+    editingId,
+    editBody,
+    setEditBody,
+    isPending,
+    error,
+    resetError
+  } = useCommentMutations(task.id)
 
   const handleAddComment = () => {
     if (!commentInput.trim()) return
@@ -30,6 +42,8 @@ export function CommentsSection({ task }: { task: Task }) {
           Comments{comments.length > 0 && ` (${comments.length})`}
         </span>
       </div>
+
+      <InlineError error={error} onDismiss={resetError} className="mb-3" />
 
       {comments.length > 0 && (
         <div className="space-y-3 mb-4">

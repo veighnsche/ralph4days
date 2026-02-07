@@ -27,8 +27,7 @@ export function FeatureFormTabContent({ tab }: { tab: WorkspaceTab }) {
     onSuccess: () => {
       toast.success('Feature created')
       closeTab(tab.id)
-    },
-    onError: err => toast.error(err.message)
+    }
   })
 
   const handleSubmit = (data: FeatureFormData) => {
@@ -47,7 +46,9 @@ export function FeatureFormTabContent({ tab }: { tab: WorkspaceTab }) {
       entityName="Feature"
       form={form}
       onSubmit={handleSubmit}
-      isPending={createFeature.isPending}>
+      isPending={createFeature.isPending}
+      error={createFeature.error}
+      onErrorDismiss={createFeature.reset}>
       <FeatureFormFields disabled={createFeature.isPending} />
     </EntityFormTabContent>
   )
