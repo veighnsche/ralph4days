@@ -5,7 +5,7 @@ import { INFERRED_STATUS_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from '@/consta
 import { formatDate } from '@/lib/formatDate'
 import { resolveIcon } from '@/lib/iconRegistry'
 import { shouldShowInferredStatus } from '@/lib/taskStatus'
-import type { Task } from '@/types/prd'
+import type { Task } from '@/types/generated'
 import { PropertyRow } from './PropertyRow'
 
 const PROVENANCE_CONFIG = {

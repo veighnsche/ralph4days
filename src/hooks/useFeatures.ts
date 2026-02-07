@@ -1,10 +1,7 @@
+import type { FeatureConfig } from '@/types/generated'
 import { useInvoke } from './useInvoke'
 
-export interface FeatureConfig {
-  name: string
-  displayName: string
-  acronym: string
-}
+export type { FeatureConfig }
 
 export function useFeatures() {
   const { data, error } = useInvoke<FeatureConfig[]>('get_features_config', undefined, {

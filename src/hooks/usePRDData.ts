@@ -1,4 +1,4 @@
-import type { Task } from '@/types/prd'
+import type { Task } from '@/types/generated'
 import { useInvoke } from './useInvoke'
 
 export function usePRDData() {

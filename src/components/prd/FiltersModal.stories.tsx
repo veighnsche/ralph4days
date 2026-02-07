@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { useState } from 'react'
-import type { FilterSetters, FilterState } from '@/hooks/usePRDFilters'
-import type { PriorityFilter, StatusFilter } from '@/types/prd'
+import type { FilterSetters, FilterState, PriorityFilter, StatusFilter } from '@/hooks/usePRDFilters'
 import { FiltersModal } from './FiltersModal'
 
 const meta = {

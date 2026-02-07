@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { create } from 'zustand'
 import type { DisciplineConfig } from '@/hooks/useDisciplines'
-import type { Feature, Task } from '@/types/prd'
+import type { FeatureData as Feature, Task } from '@/types/generated'
 
 export type TabType =
   | 'terminal'

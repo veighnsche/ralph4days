@@ -7,7 +7,7 @@ import { useInvoke } from '@/hooks/useInvoke'
 import { usePRDData } from '@/hooks/usePRDData'
 import { usePRDFilters } from '@/hooks/usePRDFilters'
 import { useWorkspaceActions } from '@/hooks/useWorkspaceActions'
-import type { ProjectInfo, ProjectProgress } from '@/types/prd'
+import type { ProjectInfo, ProjectProgress } from '@/types/generated'
 
 // TODO: Implement task-bound terminal system (POC tested 2026-02-06)
 // - Add play button to tasks, bind to terminal, generate task prompt

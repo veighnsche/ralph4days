@@ -7,7 +7,7 @@ import {
   TerminalTabContent
 } from '@/components/workspace'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
-import type { Task } from '@/types/prd'
+import type { Task } from '@/types/generated'
 
 export function useWorkspaceActions() {
   const openTab = useWorkspaceStore(s => s.openTab)

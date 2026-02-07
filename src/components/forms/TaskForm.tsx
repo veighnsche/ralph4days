@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useDisciplines } from '@/hooks/useDisciplines'
 import { useInvoke } from '@/hooks/useInvoke'
 import type { TaskFormData } from '@/lib/schemas'
-import type { Feature } from '@/types/prd'
+import type { FeatureData as Feature } from '@/types/generated'
 
 export function TaskFormFields({ disabled }: { disabled?: boolean }) {
   const { control, getValues, setValue } = useFormContext<TaskFormData>()

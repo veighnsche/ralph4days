@@ -1,6 +1,6 @@
 import { useDisciplines } from '@/hooks/useDisciplines'
 import { useInvoke } from '@/hooks/useInvoke'
-import type { GroupStats, ProjectProgress } from '@/types/prd'
+import type { GroupStats, ProjectProgress } from '@/types/generated'
 
 export function useDisciplineStats() {
   const { disciplines, error: disciplinesError } = useDisciplines()

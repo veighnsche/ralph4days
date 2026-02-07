@@ -1,17 +1,10 @@
 import { invoke } from '@tauri-apps/api/core'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import type { PromptPreview } from '@/types/generated'
 import type { SectionBlock, SectionConfigWire } from './useSectionConfiguration'
 
-interface PromptPreviewSection {
-  name: string
-  content: string
-}
-
-export interface PromptPreview {
-  sections: PromptPreviewSection[]
-  fullPrompt: string
-}
+export type { PromptPreview }
 
 export function usePromptPreview(open: boolean, sections: SectionBlock[]) {
   const [preview, setPreview] = useState<PromptPreview | null>(null)
@@ -27,7 +20,7 @@ export function usePromptPreview(open: boolean, sections: SectionBlock[]) {
         const wireSections: SectionConfigWire[] = sections.map(s => ({
           name: s.name,
           enabled: s.enabled,
-          instructionOverride: s.instructionOverride
+          instructionOverride: s.instructionOverride ?? undefined
         }))
         const result = await invoke<PromptPreview>('preview_custom_recipe', {
           sections: wireSections,

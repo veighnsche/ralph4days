@@ -1,5 +1,5 @@
 import { useInvoke } from '@/hooks/useInvoke'
-import type { Feature, GroupStats, ProjectProgress } from '@/types/prd'
+import type { FeatureData as Feature, GroupStats, ProjectProgress } from '@/types/generated'
 
 export function useFeatureStats() {
   const { data: features = [], isLoading: featuresLoading, error: featuresError } = useInvoke<Feature[]>('get_features')

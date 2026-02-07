@@ -1,7 +1,9 @@
 use super::state::{get_db, normalize_feature_name, AppState};
+use ralph_macros::ipc_type;
 use serde::Deserialize;
 use tauri::State;
 
+#[ipc_type]
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct McpServerConfigData {
@@ -11,6 +13,7 @@ pub struct McpServerConfigData {
     pub env: std::collections::HashMap<String, String>,
 }
 
+#[ipc_type]
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DisciplineConfig {
@@ -54,6 +57,7 @@ pub fn get_disciplines_config(state: State<'_, AppState>) -> Result<Vec<Discipli
         .collect())
 }
 
+#[ipc_type]
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FeatureConfig {
@@ -76,6 +80,7 @@ pub fn get_features_config(state: State<'_, AppState>) -> Result<Vec<FeatureConf
         .collect())
 }
 
+#[ipc_type]
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FeatureLearningData {
@@ -93,6 +98,7 @@ pub struct FeatureLearningData {
     pub review_count: u32,
 }
 
+#[ipc_type]
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FeatureData {

@@ -1,15 +1,11 @@
 import type { DragEndEvent } from '@dnd-kit/core'
 import { invoke } from '@tauri-apps/api/core'
 import { useState } from 'react'
+import type { SectionConfig, SectionInfo } from '@/types/generated'
 import { useInvoke } from './useInvoke'
 
-export interface SectionMeta {
-  name: string
-  display_name: string
-  description: string
-  category: string
-  is_instruction: boolean
-}
+export type SectionMeta = SectionInfo
+export type SectionConfigWire = SectionConfig
 
 export interface SectionBlock {
   name: string
@@ -18,13 +14,7 @@ export interface SectionBlock {
   category: string
   isInstruction: boolean
   enabled: boolean
-  instructionOverride: string | null
-}
-
-export interface SectionConfigWire {
-  name: string
-  enabled: boolean
-  instructionOverride: string | null
+  instructionOverride: string | null | undefined
 }
 
 function configsToBlocks(configs: SectionConfigWire[], sectionMeta: SectionMeta[]): SectionBlock[] {

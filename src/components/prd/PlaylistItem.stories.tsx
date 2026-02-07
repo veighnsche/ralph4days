@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import type { Task } from '@/types/prd'
+import type { Task } from '@/types/generated'
 import { PlaylistItem } from './PlaylistItem'
 
 const meta = {
@@ -73,9 +73,13 @@ const baseTask: Task = {
   inferredStatus: 'ready',
   priority: 'high',
   tags: ['design', 'layout'],
+  dependsOn: [],
+  acceptanceCriteria: ['Responsive on mobile, tablet, desktop', 'Sidebar collapses on mobile', 'Dark mode support'],
+  contextFiles: [],
+  outputArtifacts: [],
+  comments: [],
   created: '2026-02-01',
   updated: '2026-02-05',
-  acceptanceCriteria: ['Responsive on mobile, tablet, desktop', 'Sidebar collapses on mobile', 'Dark mode support'],
   ...enrichFields('ui', 'frontend')
 }
 
@@ -205,6 +209,12 @@ export const NoDescription: Story = {
       status: 'pending' as const,
       inferredStatus: 'ready' as const,
       priority: 'medium' as const,
+      tags: [],
+      dependsOn: [],
+      acceptanceCriteria: [],
+      contextFiles: [],
+      outputArtifacts: [],
+      comments: [],
       ...enrichFields('docs', 'docs')
     },
     onClick: () => console.log('Task clicked')

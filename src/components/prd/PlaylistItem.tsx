@@ -6,7 +6,7 @@ import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from '@/co
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { INFERRED_STATUS_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from '@/constants/prd'
 import { getInferredStatusExplanation } from '@/lib/taskStatus'
-import type { Task } from '@/types/prd'
+import type { Task } from '@/types/generated'
 import { TaskIdDisplay } from './TaskIdDisplay'
 
 interface PlaylistItemProps {

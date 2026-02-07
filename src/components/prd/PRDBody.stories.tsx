@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import type { Task } from '@/types/prd'
+import type { Task } from '@/types/generated'
 import { PRDBody } from './PRDBody'
 
 const meta = {
@@ -30,6 +30,10 @@ const mockTasks: Task[] = [
     priority: 'high',
     tags: ['api', 'security'],
     dependsOn: [],
+    acceptanceCriteria: [],
+    contextFiles: [],
+    outputArtifacts: [],
+    comments: [],
     created: '2026-02-01',
     featureDisplayName: 'Authentication',
     featureAcronym: 'AUTH',
@@ -49,6 +53,10 @@ const mockTasks: Task[] = [
     priority: 'medium',
     tags: ['ui'],
     dependsOn: [1],
+    acceptanceCriteria: [],
+    contextFiles: [],
+    outputArtifacts: [],
+    comments: [],
     featureDisplayName: 'Authentication',
     featureAcronym: 'AUTH',
     disciplineDisplayName: 'Frontend',
@@ -66,6 +74,10 @@ const mockTasks: Task[] = [
     priority: 'low',
     tags: [],
     dependsOn: [],
+    acceptanceCriteria: [],
+    contextFiles: [],
+    outputArtifacts: [],
+    comments: [],
     featureDisplayName: 'User Profile',
     featureAcronym: 'USER',
     disciplineDisplayName: 'Backend',

@@ -1,15 +1,10 @@
 import { invoke } from '@tauri-apps/api/core'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import type { CustomRecipe } from '@/types/generated'
 import { useInvoke } from './useInvoke'
 import { useInvokeMutation } from './useInvokeMutation'
 import type { SectionBlock, SectionConfigWire, SectionMeta } from './useSectionConfiguration'
-
-interface CustomRecipeWire {
-  name: string
-  baseRecipe: string | null
-  sections: SectionConfigWire[]
-}
 
 const RECIPE_LIST_KEY = [['list_saved_recipes']]
 
@@ -40,7 +35,7 @@ export function useRecipeManagement(
     }
   }, [open, sectionMeta])
 
-  const saveMutation = useInvokeMutation<{ recipe: CustomRecipeWire }>('save_recipe', {
+  const saveMutation = useInvokeMutation<{ recipe: CustomRecipe }>('save_recipe', {
     invalidateKeys: RECIPE_LIST_KEY,
     onSuccess: (_data, variables) => {
       setRecipeName(variables.recipe.name)
@@ -63,7 +58,7 @@ export function useRecipeManagement(
   const handleRecipeChange = async (value: string) => {
     if (customRecipeNames.includes(value)) {
       try {
-        const custom = await invoke<CustomRecipeWire>('load_saved_recipe', { name: value })
+        const custom = await invoke<CustomRecipe>('load_saved_recipe', { name: value })
         setBaseRecipe(custom.baseRecipe ?? 'braindump')
         setRecipeName(custom.name)
         loadCustomSections(custom.sections, sectionMeta)
@@ -89,9 +84,9 @@ export function useRecipeManagement(
     const wireSections: SectionConfigWire[] = sections.map(s => ({
       name: s.name,
       enabled: s.enabled,
-      instructionOverride: s.instructionOverride
+      instructionOverride: s.instructionOverride ?? undefined
     }))
-    saveMutation.mutate({ recipe: { name, baseRecipe, sections: wireSections } })
+    saveMutation.mutate({ recipe: { name, baseRecipe: baseRecipe ?? undefined, sections: wireSections } })
   }
 
   const handleDelete = () => {

@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { useCommentMutations } from '@/hooks/useCommentMutations'
 import { formatDate } from '@/lib/formatDate'
-import type { Task } from '@/types/prd'
+import type { Task } from '@/types/generated'
 import { CommentEditor } from './CommentEditor'
 
 export function CommentsSection({ task }: { task: Task }) {

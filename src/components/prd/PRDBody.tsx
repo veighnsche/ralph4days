@@ -1,7 +1,7 @@
 import { Brain, FileX, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
-import type { Task } from '@/types/prd'
+import type { Task } from '@/types/generated'
 import { PlaylistView } from './PlaylistView'
 
 interface PRDBodyProps {

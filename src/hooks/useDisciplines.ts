@@ -1,14 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import { resolveIcon } from '@/lib/iconRegistry'
+import type { DisciplineConfig as DisciplineConfigWire } from '@/types/generated'
 import { useInvoke } from './useInvoke'
-
-interface DisciplineConfigRaw {
-  name: string
-  displayName: string
-  icon: string
-  color: string
-  acronym: string
-}
 
 export interface DisciplineConfig {
   name: string
@@ -19,7 +12,7 @@ export interface DisciplineConfig {
   bgColor: string
 }
 
-function resolveDisciplines(raw: DisciplineConfigRaw[]): DisciplineConfig[] {
+function resolveDisciplines(raw: DisciplineConfigWire[]): DisciplineConfig[] {
   return raw.map(d => ({
     name: d.name,
     displayName: d.displayName,
@@ -31,7 +24,7 @@ function resolveDisciplines(raw: DisciplineConfigRaw[]): DisciplineConfig[] {
 }
 
 export function useDisciplines() {
-  const { data, error } = useInvoke<DisciplineConfigRaw[], DisciplineConfig[]>('get_disciplines_config', undefined, {
+  const { data, error } = useInvoke<DisciplineConfigWire[], DisciplineConfig[]>('get_disciplines_config', undefined, {
     staleTime: 5 * 60 * 1000,
     select: resolveDisciplines
   })

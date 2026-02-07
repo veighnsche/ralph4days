@@ -9,11 +9,7 @@ import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { useInvoke } from '@/hooks/useInvoke'
-
-interface RalphProject {
-  name: string
-  path: string
-}
+import type { RalphProject } from '@/types/generated'
 
 interface ProjectSelectorProps {
   onProjectSelected: (path: string) => void

@@ -3,7 +3,7 @@ import { Fragment, useState } from 'react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { ItemGroup, ItemSeparator } from '@/components/ui/item'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import type { Task } from '@/types/prd'
+import type { Task } from '@/types/generated'
 import { PlaylistItem } from './PlaylistItem'
 
 interface PlaylistViewProps {

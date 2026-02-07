@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import type { Task } from '@/types/prd'
+import type { Task } from '@/types/generated'
 import { TaskIdDisplay } from './TaskIdDisplay'
 
 const meta = {
@@ -53,6 +53,12 @@ const createTask = (id: number, feature: string, discipline: string): Task => {
     title: 'Example task',
     status: 'pending',
     inferredStatus: 'ready',
+    tags: [],
+    dependsOn: [],
+    acceptanceCriteria: [],
+    contextFiles: [],
+    outputArtifacts: [],
+    comments: [],
     featureDisplayName: featureDisplayName(feature),
     featureAcronym: featureAcronym(feature),
     disciplineDisplayName: disc.displayName,

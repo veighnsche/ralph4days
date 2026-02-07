@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { resolveIcon } from '@/lib/iconRegistry'
-import type { Task } from '@/types/prd'
+import type { Task } from '@/types/generated'
 
 interface TaskIdDisplayProps {
   task: Task

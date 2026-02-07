@@ -1,8 +1,9 @@
+use ralph_macros::ipc_type;
 use ralph_rag::FeatureLearning;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// Task status enum (stored in DB as snake_case text)
+#[ipc_type]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum TaskStatus {
@@ -36,7 +37,7 @@ impl TaskStatus {
     }
 }
 
-/// Inferred task status (computed from TaskStatus + dependency graph)
+#[ipc_type]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum InferredTaskStatus {
@@ -48,7 +49,7 @@ pub enum InferredTaskStatus {
     Skipped,
 }
 
-/// Task priority enum
+#[ipc_type]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum Priority {
@@ -79,7 +80,7 @@ impl Priority {
     }
 }
 
-/// Task provenance — who created this task
+#[ipc_type]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum TaskProvenance {
@@ -107,7 +108,7 @@ impl TaskProvenance {
     }
 }
 
-/// Comment author — who wrote a task comment
+#[ipc_type]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum CommentAuthor {
@@ -132,7 +133,7 @@ impl CommentAuthor {
     }
 }
 
-/// A structured comment on a task (now with stable ID from DB)
+#[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TaskComment {
     pub id: u32,
@@ -144,7 +145,7 @@ pub struct TaskComment {
     pub created: Option<String>,
 }
 
-/// MCP server configuration for discipline-specific tooling
+#[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct McpServerConfig {
     pub name: String,
@@ -155,8 +156,7 @@ pub struct McpServerConfig {
     pub env: HashMap<String, String>,
 }
 
-/// Task record with pre-joined feature/discipline display data.
-/// Uses camelCase for JSON serialization (frontend-ready).
+#[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Task {
@@ -196,7 +196,6 @@ pub struct Task {
     pub provenance: Option<TaskProvenance>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub comments: Vec<TaskComment>,
-    // Pre-joined display fields
     pub feature_display_name: String,
     pub feature_acronym: String,
     pub discipline_display_name: String,
@@ -205,7 +204,7 @@ pub struct Task {
     pub discipline_color: String,
 }
 
-/// Stats for a group of tasks (feature or discipline)
+#[ipc_type]
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GroupStats {
@@ -219,7 +218,7 @@ pub struct GroupStats {
     pub skipped: u32,
 }
 
-/// Overall project progress
+#[ipc_type]
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectProgress {
@@ -228,7 +227,6 @@ pub struct ProjectProgress {
     pub progress_percent: u32,
 }
 
-/// Feature definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Feature {
     pub name: String,
@@ -253,7 +251,7 @@ pub struct Feature {
     pub dependencies: Vec<String>,
 }
 
-/// Input for creating or updating a feature (excludes learnings — those are append-only).
+/// Learnings excluded — append-only via dedicated API.
 #[derive(Default)]
 pub struct FeatureInput {
     pub name: String,
@@ -267,7 +265,6 @@ pub struct FeatureInput {
     pub dependencies: Vec<String>,
 }
 
-/// Discipline definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Discipline {
     pub name: String,
@@ -286,7 +283,6 @@ pub struct Discipline {
     pub mcp_servers: Vec<McpServerConfig>,
 }
 
-/// Project metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProjectMetadata {
     pub title: String,
@@ -296,7 +292,6 @@ pub struct ProjectMetadata {
     pub created: Option<String>,
 }
 
-/// Input for creating a new task (before ID assignment)
 #[derive(Default)]
 pub struct TaskInput {
     pub feature: String,

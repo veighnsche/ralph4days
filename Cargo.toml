@@ -5,6 +5,7 @@ members = [
     "crates/ralph-rag",
     "crates/sqlite-db",
     "crates/prompt-builder",
+    "crates/ralph-macros",
 ]
 
 [workspace.package]
@@ -58,3 +59,5 @@ serde_json = "1"
 chrono = "0.4"
 thiserror = "2"
 tokio = { version = "1", features = ["full"] }
+ts-rs = { version = "12", features = ["serde-compat"] }
+ralph-macros = { path = "crates/ralph-macros" }

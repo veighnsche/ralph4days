@@ -1,5 +1,16 @@
 import { useState } from 'react'
-import type { PriorityFilter, StatusFilter, Task } from '@/types/prd'
+import type { Task } from '@/types/generated'
+
+export type StatusFilter =
+  | 'all'
+  | 'pending'
+  | 'in_progress'
+  | 'blocked'
+  | 'done'
+  | 'skipped'
+  | 'ready'
+  | 'waiting_on_deps'
+export type PriorityFilter = 'all' | 'low' | 'medium' | 'high' | 'critical'
 
 export interface FilterState {
   searchQuery: string

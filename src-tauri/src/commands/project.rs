@@ -1,4 +1,5 @@
 use super::state::{AppState, ToStringErr};
+use ralph_macros::ipc_type;
 use sqlite_db::SqliteDb;
 use std::path::PathBuf;
 use tauri::State;
@@ -26,12 +27,14 @@ const EXCLUDED_DIRS: &[&str] = &[
     "Applications",
 ];
 
+#[ipc_type]
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct RalphProject {
     pub name: String,
     pub path: String,
 }
 
+#[ipc_type]
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectInfo {

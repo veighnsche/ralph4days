@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import type { ProjectInfo } from '@/types/prd'
+import type { ProjectInfo } from '@/types/generated'
 import { PRDHeader } from './PRDHeader'
 
 const meta = {

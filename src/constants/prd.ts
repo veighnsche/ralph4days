@@ -1,5 +1,5 @@
 import { AlertCircle, Ban, CheckCircle2, Circle, Clock, type LucideIcon, Play, Slash } from 'lucide-react'
-import type { InferredTaskStatus, Task } from '@/types/prd'
+import type { InferredTaskStatus, Task } from '@/types/generated'
 
 export const STATUS_CONFIG = {
   pending: {

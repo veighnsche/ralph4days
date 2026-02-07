@@ -1,6 +1,8 @@
 use super::state::{get_locked_project_path, parse_prompt_type, AppState};
+use ralph_macros::ipc_type;
 use tauri::State;
 
+#[ipc_type]
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PromptPreviewSection {
@@ -8,6 +10,7 @@ pub struct PromptPreviewSection {
     pub content: String,
 }
 
+#[ipc_type]
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PromptPreview {
@@ -107,6 +110,7 @@ pub fn reset_prompt_instructions(
     }
 }
 
+#[ipc_type]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SectionConfig {
@@ -115,6 +119,7 @@ pub struct SectionConfig {
     pub instruction_override: Option<String>,
 }
 
+#[ipc_type]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CustomRecipe {
