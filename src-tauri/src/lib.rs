@@ -11,12 +11,14 @@ use tauri_plugin_cli::CliExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // WORKAROUND: WebKitGTK + NVIDIA + Wayland is broken
-    // See: https://github.com/tauri-apps/tauri/issues/10702
-    // Trade-off: Prevents crash but may cause higher CPU usage
+    // WORKAROUND: WebKitGTK + NVIDIA + Wayland crash prevention
+    // See: https://github.com/tauri-apps/tauri/issues/9394
+    // __NV_DISABLE_EXPLICIT_SYNC=1 targets the specific NVIDIA sync issue
+    // without disabling GPU acceleration entirely (unlike WEBKIT_DISABLE_DMABUF_RENDERER=1
+    // which forces software rendering and causes massive input lag).
     #[cfg(target_os = "linux")]
     {
-        std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+        std::env::set_var("__NV_DISABLE_EXPLICIT_SYNC", "1");
     }
 
     tauri::Builder::default()

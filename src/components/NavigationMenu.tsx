@@ -20,7 +20,7 @@ interface NavigationMenuProps {
 }
 
 export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProps) {
-  const { openTab } = useWorkspaceStore();
+  const openTab = useWorkspaceStore((s) => s.openTab);
 
   const handleCreateTask = () => {
     openTab({

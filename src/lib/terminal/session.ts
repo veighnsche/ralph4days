@@ -38,11 +38,13 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
 
   // Listen for PTY output
   useEffect(() => {
-    const unlisten = listen<{ session_id: string; data: number[] }>("ralph://pty_output", (event) => {
+    const unlisten = listen<{ session_id: string; data: string }>("ralph://pty_output", (event) => {
       if (event.payload.session_id !== config.sessionId) return;
       sessionStartedRef.current = true;
 
-      const bytes = new Uint8Array(event.payload.data);
+      const binary = atob(event.payload.data);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
       if (isReadyRef.current) {
         handlersRef.current.onOutput?.(bytes);
       } else {

@@ -67,7 +67,7 @@ ONE project per session, chosen at startup. CLI mode (`ralph --project /path`) v
 
 ## Tech Stack
 
-**Frontend:** React 19, TypeScript, Vite, Tailwind v4, Zustand, Lucide Icons
+**Frontend:** React 19 (with React Compiler — never use manual useMemo/useCallback/React.memo), TypeScript, Vite, Tailwind v4, Zustand, Lucide Icons
 **Backend:** Tauri 2.5, Rust, Tokio
 **Testing:** Vitest, Playwright, Gremlins.js (unit/e2e/visual/chaos)
 **Build:** bun, Cargo

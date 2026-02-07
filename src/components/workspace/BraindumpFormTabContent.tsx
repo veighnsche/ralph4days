@@ -63,7 +63,8 @@ interface BraindumpFormTabContentProps {
 
 export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
   useTabMeta(tab.id, "Braindump", Brain);
-  const { closeTab, openTab, tabs } = useWorkspaceStore();
+  const closeTab = useWorkspaceStore((s) => s.closeTab);
+  const openTab = useWorkspaceStore((s) => s.openTab);
   const [braindump, setBraindump] = useState(DEFAULT_QUESTIONS);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [promptBuilderOpen, setPromptBuilderOpen] = useState(false);
@@ -80,7 +81,7 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     if (!isMountedRef.current) return;
 
-    const terminalExists = tabs.some((t) => t.id === terminalId);
+    const terminalExists = useWorkspaceStore.getState().tabs.some((t) => t.id === terminalId);
     if (!terminalExists) throw new Error("Terminal tab was closed before sending");
 
     const bytes = Array.from(new TextEncoder().encode(`${text}\n`));

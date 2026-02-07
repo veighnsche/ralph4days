@@ -1,3 +1,4 @@
+use base64::{engine::general_purpose::STANDARD, Engine};
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use std::collections::HashMap;
 use std::io::{Read, Write};
@@ -108,7 +109,7 @@ impl PTYManager {
                             "ralph://pty_output",
                             PtyOutputEvent {
                                 session_id: sid.clone(),
-                                data: buf[..n].to_vec(),
+                                data: STANDARD.encode(&buf[..n]),
                             },
                         );
                     }

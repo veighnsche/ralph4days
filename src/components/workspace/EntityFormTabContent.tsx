@@ -29,7 +29,7 @@ export function EntityFormTabContent<T extends FieldValues>({
   const mode = tab.data?.mode ?? "create";
   const label = mode === "create" ? `Create ${entityName}` : `Edit ${entityName}`;
   useTabMeta(tab.id, label, icon);
-  const { closeTab } = useWorkspaceStore();
+  const closeTab = useWorkspaceStore((s) => s.closeTab);
 
   return (
     <Form {...form}>

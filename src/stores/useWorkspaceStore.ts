@@ -112,6 +112,11 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
 
   setTabMeta: (tabId, meta) => {
     const { tabs } = get();
+    const tab = tabs.find((t) => t.id === tabId);
+    if (!tab) return;
+    const titleSame = meta.title === undefined || meta.title === tab.title;
+    const iconSame = meta.icon === undefined || meta.icon === tab.icon;
+    if (titleSame && iconSame) return;
     set({
       tabs: tabs.map((t) =>
         t.id === tabId

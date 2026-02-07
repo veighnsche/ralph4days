@@ -14,7 +14,11 @@ import {
 import { useWorkspaceStore, type WorkspaceTab } from "@/stores/useWorkspaceStore";
 
 export function WorkspacePanel() {
-  const { tabs, activeTabId, switchTab, closeTab, openTab } = useWorkspaceStore();
+  const tabs = useWorkspaceStore((s) => s.tabs);
+  const activeTabId = useWorkspaceStore((s) => s.activeTabId);
+  const switchTab = useWorkspaceStore((s) => s.switchTab);
+  const closeTab = useWorkspaceStore((s) => s.closeTab);
+  const openTab = useWorkspaceStore((s) => s.openTab);
 
   const handleNewTab = (model: Model, thinking: boolean) => {
     openTab({
@@ -54,7 +58,7 @@ export function WorkspacePanel() {
           <EmptyWorkspace />
         ) : (
           tabs.map((tab) => (
-            <div key={tab.id} className={tab.id === activeTabId ? "absolute inset-0" : "absolute inset-0 invisible"}>
+            <div key={tab.id} className={tab.id === activeTabId ? "absolute inset-0" : "absolute inset-0 hidden"}>
               <ErrorBoundary>
                 <TabContent tab={tab} />
               </ErrorBoundary>
@@ -96,7 +100,7 @@ function PlaceholderTab({ title }: { title: string }) {
 }
 
 function EmptyWorkspace() {
-  const { openTab } = useWorkspaceStore();
+  const openTab = useWorkspaceStore((s) => s.openTab);
 
   const handleCreateTerminal = () => {
     openTab({

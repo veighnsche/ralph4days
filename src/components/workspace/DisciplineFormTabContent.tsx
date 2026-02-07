@@ -10,7 +10,7 @@ import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
 import { EntityFormTabContent } from "./EntityFormTabContent";
 
 export function DisciplineFormTabContent({ tab }: { tab: WorkspaceTab }) {
-  const { closeTab } = useWorkspaceStore();
+  const closeTab = useWorkspaceStore((s) => s.closeTab);
 
   const form = useForm<DisciplineFormData>({
     resolver: zodResolver(disciplineSchema),

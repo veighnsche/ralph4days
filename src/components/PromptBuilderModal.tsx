@@ -106,18 +106,45 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
   const [recipeName, setRecipeName] = useState<string | null>(null);
   const [sections, setSections] = useState<SectionBlock[]>([]);
   const [preview, setPreview] = useState<PromptPreview | null>(null);
-  const [userInput, setUserInput] = useState("");
   const [customRecipeNames, setCustomRecipeNames] = useState<string[]>([]);
   const [sectionMeta, setSectionMeta] = useState<SectionMeta[]>([]);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [saveNameInput, setSaveNameInput] = useState("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // User input lives in a ref — updated by DebouncedUserInput, read by preview
+  const userInputRef = useRef("");
 
   const enabledCount = sections.filter((s) => s.enabled).length;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  // Trigger a debounced preview. Called when sections change (via useEffect)
+  // or when user input changes (via DebouncedUserInput callback).
+  const schedulePreview = useCallback(
+    (currentSections: SectionBlock[]) => {
+      if (!open || currentSections.length === 0) return;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(async () => {
+        try {
+          const wireSections: SectionConfigWire[] = currentSections.map((s) => ({
+            name: s.name,
+            enabled: s.enabled,
+            instructionOverride: s.instructionOverride,
+          }));
+          const result = await invoke<PromptPreview>("preview_custom_recipe", {
+            sections: wireSections,
+            userInput: userInputRef.current || null,
+          });
+          setPreview(result);
+        } catch (err) {
+          console.error("Failed to preview:", err);
+        }
+      }, 500);
+    },
+    [open]
   );
 
   // Load section metadata once
@@ -160,32 +187,22 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
     }
   }, [open, sectionMeta, baseRecipe, loadRecipeSections]);
 
-  // Debounced preview
+  // Preview when sections change (toggle, reorder, instruction blur)
   useEffect(() => {
-    if (!open || sections.length === 0) return;
-
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const wireSections: SectionConfigWire[] = sections.map((s) => ({
-          name: s.name,
-          enabled: s.enabled,
-          instructionOverride: s.instructionOverride,
-        }));
-        const result = await invoke<PromptPreview>("preview_custom_recipe", {
-          sections: wireSections,
-          userInput: userInput || null,
-        });
-        setPreview(result);
-      } catch (err) {
-        console.error("Failed to preview:", err);
-      }
-    }, 500);
-
+    schedulePreview(sections);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [open, sections, userInput]);
+  }, [sections, schedulePreview]);
+
+  // Called by DebouncedUserInput — doesn't touch parent state, just triggers preview
+  const handleUserInputChange = useCallback(
+    (value: string) => {
+      userInputRef.current = value;
+      schedulePreview(sections);
+    },
+    [sections, schedulePreview]
+  );
 
   const handleRecipeChange = async (value: string) => {
     if (customRecipeNames.includes(value)) {
@@ -235,7 +252,7 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
     setSections((prev) => prev.map((s) => (s.name === name ? { ...s, enabled: !s.enabled } : s)));
   };
 
-  const setInstructionOverride = (name: string, text: string | null) => {
+  const commitInstructionOverride = (name: string, text: string | null) => {
     setSections((prev) => prev.map((s) => (s.name === name ? { ...s, instructionOverride: text } : s)));
   };
 
@@ -332,17 +349,7 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
           <ResizablePanel defaultSize={40} minSize={25}>
             <ScrollArea className="h-full">
               <div className="p-3 space-y-1.5">
-                <div className="space-y-1.5 mb-3">
-                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-1">
-                    User Input (preview only)
-                  </p>
-                  <Textarea
-                    value={userInput}
-                    onChange={(e) => setUserInput(e.target.value)}
-                    placeholder="Simulated user input..."
-                    className="min-h-[60px] font-mono text-xs"
-                  />
-                </div>
+                <DebouncedUserInput onDebouncedChange={handleUserInputChange} />
 
                 <Separator />
 
@@ -357,7 +364,7 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
                         key={section.name}
                         section={section}
                         onToggle={() => toggleSection(section.name)}
-                        onInstructionChange={(text) => setInstructionOverride(section.name, text)}
+                        onInstructionCommit={(text) => commitInstructionOverride(section.name, text)}
                       />
                     ))}
                   </SortableContext>
@@ -445,14 +452,51 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
   );
 }
 
+/** User input textarea with local state. Syncs to parent via debounced callback.
+ *  Typing here NEVER re-renders the parent or the DndContext tree. */
+function DebouncedUserInput({ onDebouncedChange }: { onDebouncedChange: (value: string) => void }) {
+  const [value, setValue] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newValue = e.target.value;
+    setValue(newValue);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => onDebouncedChange(newValue), 300);
+  };
+
+  return (
+    <div className="space-y-1.5 mb-3">
+      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-1">
+        User Input (preview only)
+      </p>
+      <Textarea
+        value={value}
+        onChange={handleChange}
+        placeholder="Simulated user input..."
+        className="min-h-[60px] font-mono text-xs"
+      />
+    </div>
+  );
+}
+
+/** Each block owns its instruction override text locally.
+ *  Typing in the instruction textarea ONLY re-renders this one block.
+ *  Parent (and DndContext) only re-renders on blur when the value is committed. */
 function SortableSectionBlock({
   section,
   onToggle,
-  onInstructionChange,
+  onInstructionCommit,
 }: {
   section: SectionBlock;
   onToggle: () => void;
-  onInstructionChange: (text: string | null) => void;
+  onInstructionCommit: (text: string | null) => void;
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: section.name,
@@ -464,7 +508,26 @@ function SortableSectionBlock({
   };
 
   const [instructionOpen, setInstructionOpen] = useState(!!section.instructionOverride);
+  const [localInstruction, setLocalInstruction] = useState(section.instructionOverride ?? "");
   const categoryColor = CATEGORY_COLORS[section.category] ?? "";
+
+  // Sync from parent when section data changes externally (recipe load, reset)
+  const parentValue = section.instructionOverride ?? "";
+  useEffect(() => {
+    setLocalInstruction(parentValue);
+  }, [parentValue]);
+
+  const handleBlur = () => {
+    const committed = localInstruction || null;
+    if (committed !== section.instructionOverride) {
+      onInstructionCommit(committed);
+    }
+  };
+
+  const handleReset = () => {
+    setLocalInstruction("");
+    onInstructionCommit(null);
+  };
 
   return (
     <div
@@ -503,19 +566,20 @@ function SortableSectionBlock({
               className="w-full text-left px-2.5 py-1 border-t text-[10px] text-muted-foreground hover:bg-muted/30 transition-colors flex items-center gap-1"
             >
               {instructionOpen ? <ChevronUp className="size-2.5" /> : <ChevronDown className="size-2.5" />}
-              {section.instructionOverride ? "Custom instructions" : "Edit instructions"}
+              {localInstruction ? "Custom instructions" : "Edit instructions"}
             </button>
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="px-2.5 pb-2 pt-1 border-t space-y-1">
               <Textarea
-                value={section.instructionOverride ?? ""}
-                onChange={(e) => onInstructionChange(e.target.value || null)}
+                value={localInstruction}
+                onChange={(e) => setLocalInstruction(e.target.value)}
+                onBlur={handleBlur}
                 placeholder="Leave empty to use default instructions..."
                 className="min-h-[120px] font-mono text-[11px] leading-relaxed"
               />
-              {section.instructionOverride && (
-                <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => onInstructionChange(null)}>
+              {localInstruction && (
+                <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={handleReset}>
                   Reset to default
                 </Button>
               )}

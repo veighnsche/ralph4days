@@ -63,6 +63,7 @@ impl Drop for AppState {
 
 impl AppState {
     /// Build a PromptContext from current app state. Shared by MCP config generation and prompt preview.
+    /// Reuses the already-open database connection from AppState.db.
     fn build_prompt_context(
         &self,
         project_path: &std::path::Path,
@@ -71,7 +72,11 @@ impl AppState {
     ) -> Result<PromptContext, String> {
         let ralph_dir = project_path.join(".ralph");
         let db_path = ralph_dir.join("db").join("ralph.db");
-        let db = sqlite_db::SqliteDb::open(&db_path)?;
+
+        let db_guard = self.db.lock().map_err(|e| e.to_string())?;
+        let db = db_guard
+            .as_ref()
+            .ok_or_else(|| "No project locked (database not open)".to_string())?;
 
         let snapshot = self
             .codebase_snapshot

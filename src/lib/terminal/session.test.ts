@@ -103,7 +103,7 @@ describe("useTerminalSession", () => {
       onOutput: vi.fn(),
     };
 
-    let outputCallback: ((event: { payload: { session_id: string; data: number[] } }) => void) | undefined;
+    let outputCallback: ((event: { payload: { session_id: string; data: string } }) => void) | undefined;
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
       if (eventName === "ralph://pty_output") {
@@ -116,9 +116,9 @@ describe("useTerminalSession", () => {
 
     await waitFor(() => expect(outputCallback).toBeDefined());
 
-    // Simulate output arriving before terminal is ready
+    // Simulate output arriving before terminal is ready ("Hello" as base64)
     outputCallback?.({
-      payload: { session_id: "test-session", data: [72, 101, 108, 108, 111] },
+      payload: { session_id: "test-session", data: btoa("Hello") },
     });
 
     // Should NOT call onOutput yet (buffered)
@@ -131,7 +131,7 @@ describe("useTerminalSession", () => {
       onOutput: vi.fn(),
     };
 
-    let outputCallback: ((event: { payload: { session_id: string; data: number[] } }) => void) | undefined;
+    let outputCallback: ((event: { payload: { session_id: string; data: string } }) => void) | undefined;
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
       if (eventName === "ralph://pty_output") {
@@ -144,10 +144,10 @@ describe("useTerminalSession", () => {
 
     await waitFor(() => expect(outputCallback).toBeDefined());
 
-    // Buffer output before ready
+    // Buffer output before ready ("Hello" as base64)
     const bufferedData = new Uint8Array([72, 101, 108, 108, 111]); // "Hello"
     outputCallback?.({
-      payload: { session_id: "test-session", data: Array.from(bufferedData) },
+      payload: { session_id: "test-session", data: btoa("Hello") },
     });
 
     expect(handlers.onOutput).not.toHaveBeenCalled();
@@ -197,7 +197,7 @@ describe("useTerminalSession", () => {
       onOutput: vi.fn(),
     };
 
-    let outputCallback: ((event: { payload: { session_id: string; data: number[] } }) => void) | undefined;
+    let outputCallback: ((event: { payload: { session_id: string; data: string } }) => void) | undefined;
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
       if (eventName === "ralph://pty_output") {
@@ -214,7 +214,7 @@ describe("useTerminalSession", () => {
 
     // Output from different session
     outputCallback?.({
-      payload: { session_id: "different-session", data: [72, 101] },
+      payload: { session_id: "different-session", data: btoa("He") },
     });
 
     expect(handlers.onOutput).not.toHaveBeenCalled();
@@ -227,7 +227,7 @@ describe("useTerminalSession", () => {
     };
 
     let closedCallback: ((event: { payload: { session_id: string; exit_code: number } }) => void) | undefined;
-    let outputCallback: ((event: { payload: { session_id: string; data: number[] } }) => void) | undefined;
+    let outputCallback: ((event: { payload: { session_id: string; data: string } }) => void) | undefined;
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
       if (eventName === "ralph://pty_closed") {
@@ -246,7 +246,7 @@ describe("useTerminalSession", () => {
 
     // Simulate output first to mark session as started
     outputCallback?.({
-      payload: { session_id: "test-session", data: [72, 101] },
+      payload: { session_id: "test-session", data: btoa("He") },
     });
 
     // Now simulate session close

@@ -31,6 +31,7 @@ chrono = "0.4"
 regex = "1.10"
 lazy_static = "1.4"
 portable-pty = "0.9"
+base64 = "0.22"
 
 [dev-dependencies]
 tempfile = "3"
