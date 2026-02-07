@@ -7,14 +7,10 @@ fn build(ctx: &PromptContext) -> Option<String> {
         return None;
     }
 
-    let tasks: Vec<_> = match ctx.target_task() {
-        Some(task) => ctx
-            .tasks
-            .iter()
-            .filter(|t| t.feature == task.feature)
-            .collect(),
-        None => ctx.tasks.iter().collect(),
-    };
+    let tasks: Vec<_> = ctx.target_task().map_or_else(
+        || ctx.tasks.iter().collect(),
+        |task| ctx.tasks.iter().filter(|t| t.feature == task.feature).collect(),
+    );
 
     if tasks.is_empty() {
         return None;

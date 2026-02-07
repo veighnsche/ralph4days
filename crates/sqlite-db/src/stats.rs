@@ -34,7 +34,7 @@ impl SqliteDb {
             })
         })
         .unwrap()
-        .filter_map(|r| r.ok())
+        .filter_map(std::result::Result::ok)
         .collect()
     }
 
@@ -70,7 +70,7 @@ impl SqliteDb {
             })
         })
         .unwrap()
-        .filter_map(|r| r.ok())
+        .filter_map(std::result::Result::ok)
         .collect()
     }
 

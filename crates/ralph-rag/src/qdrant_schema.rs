@@ -230,14 +230,14 @@ impl MemoryPayload {
             feature: record.feature.clone(),
             discipline: record.discipline.clone(),
             timestamp: record.timestamp.clone(),
-            outcome: record.outcome.as_str().to_string(),
+            outcome: record.outcome.as_str().to_owned(),
             summary: record.summary.clone(),
             errors_json: serde_json::to_string(&record.errors).unwrap_or_default(),
             decisions_json: serde_json::to_string(&record.decisions).unwrap_or_default(),
             files_touched_json: serde_json::to_string(&record.files_touched).unwrap_or_default(),
             tokens_used: record.tokens_used,
-            embedding_text: embedding_text.to_string(),
-            embedding_model: embedding_model.to_string(),
+            embedding_text: embedding_text.to_owned(),
+            embedding_model: embedding_model.to_owned(),
             embedding_hash,
         }
     }

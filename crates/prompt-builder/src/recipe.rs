@@ -36,7 +36,7 @@ pub fn build_sections_from_names(
         .filter_map(|name| {
             let section = crate::sections::get_section(name)?;
             (section.build)(ctx).map(|c| PromptSection {
-                name: name.to_string(),
+                name: (*name).to_owned(),
                 content: c,
             })
         })
@@ -50,7 +50,7 @@ pub fn build_sections(recipe: &Recipe, ctx: &PromptContext) -> Vec<PromptSection
         .iter()
         .filter_map(|s| {
             (s.build)(ctx).map(|c| PromptSection {
-                name: s.name.to_string(),
+                name: s.name.to_owned(),
                 content: c,
             })
         })
@@ -67,7 +67,7 @@ pub fn execute_recipe(recipe: &Recipe, ctx: &PromptContext) -> Result<PromptOutp
         }
     }
     // Trim trailing whitespace
-    let prompt = prompt.trim_end().to_string();
+    let prompt = prompt.trim_end().to_owned();
 
     let (mcp_scripts, mcp_config_json) = mcp::generate(ctx, &recipe.mcp_tools);
     Ok(PromptOutput {
@@ -82,16 +82,18 @@ mod tests {
     use super::*;
     use crate::context::test_context;
 
+    #[allow(clippy::unnecessary_wraps)]
     fn dummy_section_a(_ctx: &PromptContext) -> Option<String> {
-        Some("## Section A\nHello".to_string())
+        Some("## Section A\nHello".to_owned())
     }
 
     fn dummy_section_b(_ctx: &PromptContext) -> Option<String> {
-        None // skipped
+        None
     }
 
+    #[allow(clippy::unnecessary_wraps)]
     fn dummy_section_c(_ctx: &PromptContext) -> Option<String> {
-        Some("## Section C\nWorld".to_string())
+        Some("## Section C\nWorld".to_owned())
     }
 
     #[test]

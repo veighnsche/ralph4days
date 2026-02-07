@@ -76,7 +76,7 @@ impl AppState {
         let db_guard = self.db.lock().map_err(|e| e.to_string())?;
         let db = db_guard
             .as_ref()
-            .ok_or_else(|| "No project locked (database not open)".to_string())?;
+            .ok_or_else(|| "No project locked (database not open)".to_owned())?;
 
         let snapshot = self
             .codebase_snapshot
@@ -120,10 +120,10 @@ impl AppState {
         let override_path = project_path
             .join(".ralph")
             .join("prompts")
-            .join(format!("{}_instructions.md", mode));
+            .join(format!("{mode}_instructions.md"));
         if let Ok(text) = std::fs::read_to_string(&override_path) {
             // Determine the instruction section name for this mode
-            let section_name = format!("{}_instructions", mode);
+            let section_name = format!("{mode}_instructions");
             overrides.insert(section_name, text);
         }
 
@@ -133,23 +133,23 @@ impl AppState {
         let (scripts, config_json) = prompt_builder::mcp::generate(&ctx, &recipe.mcp_tools);
 
         std::fs::create_dir_all(&self.mcp_dir)
-            .map_err(|e| format!("Failed to create MCP dir: {}", e))?;
+            .map_err(|e| format!("Failed to create MCP dir: {e}"))?;
 
         for script in &scripts {
             let script_path = self.mcp_dir.join(&script.filename);
             std::fs::write(&script_path, &script.content)
-                .map_err(|e| format!("Failed to write MCP script: {}", e))?;
+                .map_err(|e| format!("Failed to write MCP script: {e}"))?;
             #[cfg(unix)]
             {
                 use std::os::unix::fs::PermissionsExt;
                 std::fs::set_permissions(&script_path, std::fs::Permissions::from_mode(0o755))
-                    .map_err(|e| format!("Failed to chmod MCP script: {}", e))?;
+                    .map_err(|e| format!("Failed to chmod MCP script: {e}"))?;
             }
         }
 
-        let config_path = self.mcp_dir.join(format!("mcp-{}.json", mode));
+        let config_path = self.mcp_dir.join(format!("mcp-{mode}.json"));
         std::fs::write(&config_path, &config_json)
-            .map_err(|e| format!("Failed to write MCP config: {}", e))?;
+            .map_err(|e| format!("Failed to write MCP config: {e}"))?;
 
         Ok(config_path)
     }
@@ -161,7 +161,7 @@ fn get_db<'a>(
 ) -> Result<std::sync::MutexGuard<'a, Option<SqliteDb>>, String> {
     let guard = state.db.lock().map_err(|e| e.to_string())?;
     if guard.is_none() {
-        return Err("No project locked (database not open)".to_string());
+        return Err("No project locked (database not open)".to_owned());
     }
     Ok(guard)
 }
@@ -224,12 +224,12 @@ pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(
     }
 
     std::fs::create_dir(&ralph_dir)
-        .map_err(|e| format!("Failed to create .ralph/ directory: {}", e))?;
+        .map_err(|e| format!("Failed to create .ralph/ directory: {e}"))?;
 
     // Create .ralph/db/ directory
     let db_dir = ralph_dir.join("db");
     std::fs::create_dir(&db_dir)
-        .map_err(|e| format!("Failed to create .ralph/db/ directory: {}", e))?;
+        .map_err(|e| format!("Failed to create .ralph/db/ directory: {e}"))?;
 
     // Create and initialize the SQLite database
     let db_path = db_dir.join("ralph.db");
@@ -237,13 +237,13 @@ pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(
     db.seed_defaults()?;
     db.initialize_metadata(
         project_title.clone(),
-        Some("Add project description here".to_string()),
+        Some("Add project description here".to_owned()),
     )?;
 
     // Create optional CLAUDE.RALPH.md template
     let claude_path = ralph_dir.join("CLAUDE.RALPH.md");
     let claude_template = format!(
-        r#"# {} - Ralph Context
+        "# {project_title} - Ralph Context
 
 ## Project Overview
 
@@ -264,12 +264,11 @@ Describe the architecture, tech stack, and key components.
 - Any gotchas or things to watch out for
 - Known issues or limitations
 - Dependencies or external services
-"#,
-        project_title
+"
     );
 
     std::fs::write(&claude_path, claude_template)
-        .map_err(|e| format!("Failed to create CLAUDE.RALPH.md: {}", e))?;
+        .map_err(|e| format!("Failed to create CLAUDE.RALPH.md: {e}"))?;
 
     Ok(())
 }
@@ -281,12 +280,12 @@ pub fn set_locked_project(state: State<'_, AppState>, path: String) -> Result<()
 
     // Canonicalize path (resolve symlinks)
     let canonical_path =
-        std::fs::canonicalize(&path).map_err(|e| format!("Failed to resolve path: {}", e))?;
+        std::fs::canonicalize(&path).map_err(|e| format!("Failed to resolve path: {e}"))?;
 
     // Check if already locked
     let mut locked = state.locked_project.lock().map_err(|e| e.to_string())?;
     if locked.is_some() {
-        return Err("Project already locked for this session".to_string());
+        return Err("Project already locked for this session".to_owned());
     }
 
     // Open the SQLite database
@@ -314,27 +313,27 @@ pub fn get_locked_project(state: State<'_, AppState>) -> Result<Option<String>, 
 
 #[tauri::command]
 pub fn start_loop() -> Result<(), String> {
-    Err("Not implemented".to_string())
+    Err("Not implemented".to_owned())
 }
 
 #[tauri::command]
 pub fn pause_loop() -> Result<(), String> {
-    Err("Not implemented".to_string())
+    Err("Not implemented".to_owned())
 }
 
 #[tauri::command]
 pub fn resume_loop() -> Result<(), String> {
-    Err("Not implemented".to_string())
+    Err("Not implemented".to_owned())
 }
 
 #[tauri::command]
 pub fn stop_loop() -> Result<(), String> {
-    Err("Not implemented".to_string())
+    Err("Not implemented".to_owned())
 }
 
 #[tauri::command]
 pub fn get_loop_state() -> Result<(), String> {
-    Err("Not implemented".to_string())
+    Err("Not implemented".to_owned())
 }
 
 #[tauri::command]
@@ -354,14 +353,14 @@ pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProj
         depth: usize,
         max_depth: usize,
         max_projects: usize,
-    ) -> std::io::Result<()> {
+    ) {
         // Early return if limits hit
         if depth > max_depth || projects.len() >= max_projects {
-            return Ok(());
+            return;
         }
 
         if !path.is_dir() {
-            return Ok(());
+            return;
         }
 
         // Check if this directory has a .ralph folder
@@ -370,8 +369,7 @@ pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProj
             let name = path
                 .file_name()
                 .and_then(|n| n.to_str())
-                .unwrap_or("Unknown")
-                .to_string();
+                .unwrap_or("Unknown").to_owned();
 
             projects.push(RalphProject {
                 name,
@@ -380,7 +378,7 @@ pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProj
 
             // Early return if we hit max projects
             if projects.len() >= max_projects {
-                return Ok(());
+                return;
             }
         }
 
@@ -398,7 +396,7 @@ pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProj
                             }
                         }
 
-                        let _ = scan_recursive(
+                        scan_recursive(
                             &entry_path,
                             projects,
                             depth + 1,
@@ -408,18 +406,15 @@ pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProj
 
                         // Early return if we hit max projects
                         if projects.len() >= max_projects {
-                            return Ok(());
+                            return;
                         }
                     }
                 }
             }
         }
-
-        Ok(())
     }
 
-    scan_recursive(&scan_path, &mut projects, 0, MAX_SCAN_DEPTH, MAX_PROJECTS)
-        .map_err(|e| e.to_string())?;
+    scan_recursive(&scan_path, &mut projects, 0, MAX_SCAN_DEPTH, MAX_PROJECTS);
 
     Ok(projects)
 }
@@ -476,7 +471,7 @@ pub fn create_task(
 fn normalize_feature_name(name: &str) -> Result<String, String> {
     // Reject slashes, colons, and other special chars
     if name.contains('/') || name.contains(':') || name.contains('\\') {
-        return Err("Feature name cannot contain /, :, or \\".to_string());
+        return Err("Feature name cannot contain /, :, or \\".to_owned());
     }
 
     // Normalize: lowercase, replace whitespace with hyphens
@@ -771,7 +766,7 @@ pub fn append_feature_learning(
         Some("auto") | None => {
             sqlite_db::FeatureLearning::auto_extracted(text, iteration.unwrap_or(0), task_id)
         }
-        Some(other) => return Err(format!("Invalid learning source: {}", other)),
+        Some(other) => return Err(format!("Invalid learning source: {other}")),
     };
 
     db.append_feature_learning(&feature_name, learning, 50)
@@ -845,7 +840,7 @@ pub fn set_task_status(state: State<'_, AppState>, id: u32, status: String) -> R
     let guard = get_db(&state)?;
     let db = guard.as_ref().unwrap();
     let status = sqlite_db::TaskStatus::parse(&status)
-        .ok_or_else(|| format!("Invalid status: {}", status))?;
+        .ok_or_else(|| format!("Invalid status: {status}"))?;
     db.set_task_status(id, status)
 }
 
@@ -883,7 +878,7 @@ pub fn add_task_comment(
     let comment_author = match author.as_str() {
         "human" => sqlite_db::CommentAuthor::Human,
         "agent" => sqlite_db::CommentAuthor::Agent,
-        _ => return Err(format!("Invalid author: {}", author)),
+        _ => return Err(format!("Invalid author: {author}")),
     };
     db.add_comment(task_id, comment_author, agent_task_id, body)
 }
@@ -968,7 +963,7 @@ pub fn get_project_info(state: State<'_, AppState>) -> Result<ProjectInfo, Strin
     Ok(ProjectInfo {
         title: info.title.clone(),
         description: info.description.clone(),
-        created: info.created.clone(),
+        created: info.created,
     })
 }
 
@@ -979,11 +974,11 @@ fn get_locked_project_path(state: &State<'_, AppState>) -> Result<PathBuf, Strin
     locked
         .as_ref()
         .cloned()
-        .ok_or_else(|| "No project locked".to_string())
+        .ok_or_else(|| "No project locked".to_owned())
 }
 
 fn parse_prompt_type(s: &str) -> Result<prompt_builder::PromptType, String> {
-    prompt_builder::PromptType::parse(s).ok_or_else(|| format!("Unknown prompt type: {}", s))
+    prompt_builder::PromptType::parse(s).ok_or_else(|| format!("Unknown prompt type: {s}"))
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -1010,14 +1005,12 @@ pub fn preview_prompt(
     let project_path = get_locked_project_path(&state)?;
     let pt = parse_prompt_type(&prompt_type)?;
     // Convert single override to per-section HashMap
-    let overrides = if let Some(text) = instruction_override {
-        let section_name = format!("{}_instructions", prompt_type);
+    let overrides = instruction_override.map_or_else(std::collections::HashMap::new, |text| {
+        let section_name = format!("{prompt_type}_instructions");
         let mut map = std::collections::HashMap::new();
         map.insert(section_name, text);
         map
-    } else {
-        std::collections::HashMap::new()
-    };
+    });
     let ctx = state.build_prompt_context(&project_path, user_input, overrides)?;
 
     let sections: Vec<PromptPreviewSection> = prompt_builder::build_sections(pt, &ctx)
@@ -1055,9 +1048,9 @@ pub fn save_prompt_instructions(
     let project_path = get_locked_project_path(&state)?;
     let prompts_dir = project_path.join(".ralph").join("prompts");
     std::fs::create_dir_all(&prompts_dir)
-        .map_err(|e| format!("Failed to create prompts dir: {}", e))?;
-    let file_path = prompts_dir.join(format!("{}_instructions.md", prompt_type));
-    std::fs::write(&file_path, &text).map_err(|e| format!("Failed to save instructions: {}", e))?;
+        .map_err(|e| format!("Failed to create prompts dir: {e}"))?;
+    let file_path = prompts_dir.join(format!("{prompt_type}_instructions.md"));
+    std::fs::write(&file_path, &text).map_err(|e| format!("Failed to save instructions: {e}"))?;
     Ok(())
 }
 
@@ -1070,11 +1063,11 @@ pub fn load_prompt_instructions(
     let file_path = project_path
         .join(".ralph")
         .join("prompts")
-        .join(format!("{}_instructions.md", prompt_type));
+        .join(format!("{prompt_type}_instructions.md"));
     match std::fs::read_to_string(&file_path) {
         Ok(text) => Ok(Some(text)),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
-        Err(e) => Err(format!("Failed to read instructions: {}", e)),
+        Err(e) => Err(format!("Failed to read instructions: {e}")),
     }
 }
 
@@ -1087,11 +1080,11 @@ pub fn reset_prompt_instructions(
     let file_path = project_path
         .join(".ralph")
         .join("prompts")
-        .join(format!("{}_instructions.md", prompt_type));
+        .join(format!("{prompt_type}_instructions.md"));
     match std::fs::remove_file(&file_path) {
         Ok(()) => Ok(()),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        Err(e) => Err(format!("Failed to delete instructions: {}", e)),
+        Err(e) => Err(format!("Failed to delete instructions: {e}")),
     }
 }
 
@@ -1127,7 +1120,7 @@ pub fn get_recipe_sections(prompt_type: String) -> Result<Vec<SectionConfig>, St
     Ok(names
         .iter()
         .map(|name| SectionConfig {
-            name: name.to_string(),
+            name: (*name).to_owned(),
             enabled: true,
             instruction_override: None,
         })
@@ -1137,7 +1130,7 @@ pub fn get_recipe_sections(prompt_type: String) -> Result<Vec<SectionConfig>, St
                 .iter()
                 .filter(|info| !names.contains(&info.name))
                 .map(|info| SectionConfig {
-                    name: info.name.to_string(),
+                    name: info.name.to_owned(),
                     enabled: false,
                     instruction_override: None,
                 }),
@@ -1207,7 +1200,7 @@ pub fn list_saved_recipes(state: State<'_, AppState>) -> Result<Vec<String>, Str
         let path = entry.path();
         if path.extension().and_then(|e| e.to_str()) == Some("json") {
             if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
-                names.push(stem.to_string());
+                names.push(stem.to_owned());
             }
         }
     }

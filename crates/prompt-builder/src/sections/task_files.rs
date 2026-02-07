@@ -22,7 +22,7 @@ fn build(ctx: &PromptContext) -> Option<String> {
         return None;
     }
 
-    Some(out.trim_end().to_string())
+    Some(out.trim_end().to_owned())
 }
 
 pub fn task_files() -> Section {

@@ -5,6 +5,9 @@ authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 
+[lints]
+workspace = true
+
 [dependencies]
 rusqlite = { version = "0.31", features = ["bundled"] }
 rusqlite_migration = "1"

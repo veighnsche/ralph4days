@@ -12,13 +12,13 @@ impl SqliteDb {
         body: String,
     ) -> Result<(), String> {
         if body.trim().is_empty() {
-            return Err("Comment body cannot be empty".to_string());
+            return Err("Comment body cannot be empty".to_owned());
         }
         if author == CommentAuthor::Agent && agent_task_id.is_none() {
-            return Err("agent_task_id is required for agent comments".to_string());
+            return Err("agent_task_id is required for agent comments".to_owned());
         }
         if author == CommentAuthor::Human && agent_task_id.is_some() {
-            return Err("agent_task_id must not be set for human comments".to_string());
+            return Err("agent_task_id must not be set for human comments".to_owned());
         }
 
         // Verify task exists
@@ -29,9 +29,9 @@ impl SqliteDb {
                 [task_id],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check task: {}", e))?;
+            .map_err(|e| format!("Failed to check task: {e}"))?;
         if !exists {
-            return Err(format!("Task {} does not exist", task_id));
+            return Err(format!("Task {task_id} does not exist"));
         }
 
         let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
@@ -42,7 +42,7 @@ impl SqliteDb {
                  VALUES (?1, ?2, ?3, ?4, ?5)",
                 rusqlite::params![task_id, author.as_str(), agent_task_id, body, now],
             )
-            .map_err(|e| format!("Failed to insert comment: {}", e))?;
+            .map_err(|e| format!("Failed to insert comment: {e}"))?;
 
         Ok(())
     }
@@ -55,7 +55,7 @@ impl SqliteDb {
         body: String,
     ) -> Result<(), String> {
         if body.trim().is_empty() {
-            return Err("Comment body cannot be empty".to_string());
+            return Err("Comment body cannot be empty".to_owned());
         }
 
         // Verify task exists
@@ -66,9 +66,9 @@ impl SqliteDb {
                 [task_id],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check task: {}", e))?;
+            .map_err(|e| format!("Failed to check task: {e}"))?;
         if !task_exists {
-            return Err(format!("Task {} does not exist", task_id));
+            return Err(format!("Task {task_id} does not exist"));
         }
 
         let affected = self
@@ -77,12 +77,11 @@ impl SqliteDb {
                 "UPDATE task_comments SET body = ?1 WHERE id = ?2 AND task_id = ?3",
                 rusqlite::params![body, comment_id, task_id],
             )
-            .map_err(|e| format!("Failed to update comment: {}", e))?;
+            .map_err(|e| format!("Failed to update comment: {e}"))?;
 
         if affected == 0 {
             return Err(format!(
-                "Comment {} does not exist on task {}",
-                comment_id, task_id
+                "Comment {comment_id} does not exist on task {task_id}"
             ));
         }
 
@@ -99,9 +98,9 @@ impl SqliteDb {
                 [task_id],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check task: {}", e))?;
+            .map_err(|e| format!("Failed to check task: {e}"))?;
         if !task_exists {
-            return Err(format!("Task {} does not exist", task_id));
+            return Err(format!("Task {task_id} does not exist"));
         }
 
         let affected = self
@@ -110,12 +109,11 @@ impl SqliteDb {
                 "DELETE FROM task_comments WHERE id = ?1 AND task_id = ?2",
                 rusqlite::params![comment_id, task_id],
             )
-            .map_err(|e| format!("Failed to delete comment: {}", e))?;
+            .map_err(|e| format!("Failed to delete comment: {e}"))?;
 
         if affected == 0 {
             return Err(format!(
-                "Comment {} does not exist on task {}",
-                comment_id, task_id
+                "Comment {comment_id} does not exist on task {task_id}"
             ));
         }
 
@@ -143,7 +141,7 @@ impl SqliteDb {
             })
         })
         .unwrap()
-        .filter_map(|r| r.ok())
+        .filter_map(std::result::Result::ok)
         .collect()
     }
 

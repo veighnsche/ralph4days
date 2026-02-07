@@ -38,7 +38,7 @@ impl PTYManager {
         {
             let sessions = self.sessions.lock().map_err(|e| e.to_string())?;
             if sessions.contains_key(&session_id) {
-                return Err(format!("PTY session already exists: {}", session_id));
+                return Err(format!("PTY session already exists: {session_id}"));
             }
         }
 
@@ -52,7 +52,7 @@ impl PTYManager {
                 pixel_width: 0,
                 pixel_height: 0,
             })
-            .map_err(|e| format!("Failed to open PTY: {}", e))?;
+            .map_err(|e| format!("Failed to open PTY: {e}"))?;
 
         let mut cmd = CommandBuilder::new("claude");
         cmd.cwd(working_dir);
@@ -79,31 +79,31 @@ impl PTYManager {
         let child = pair
             .slave
             .spawn_command(cmd)
-            .map_err(|e| format!("Failed to spawn claude: {}", e))?;
+            .map_err(|e| format!("Failed to spawn claude: {e}"))?;
 
         let child = Arc::new(Mutex::new(child));
 
         let writer: Box<dyn Write + Send> = pair
             .master
             .take_writer()
-            .map_err(|e| format!("Failed to take PTY writer: {}", e))?;
+            .map_err(|e| format!("Failed to take PTY writer: {e}"))?;
         let writer = Arc::new(Mutex::new(writer));
 
         let mut reader = pair
             .master
             .try_clone_reader()
-            .map_err(|e| format!("Failed to clone PTY reader: {}", e))?;
+            .map_err(|e| format!("Failed to clone PTY reader: {e}"))?;
 
         // Spawn reader thread to forward PTY output to frontend
         let sid = session_id.clone();
-        let app_clone = app.clone();
+        let app_clone = app;
         let child_clone = Arc::clone(&child);
         let sessions_ref = Arc::clone(&self.sessions);
         let reader_handle = std::thread::spawn(move || {
             let mut buf = [0u8; 4096];
             loop {
                 match reader.read(&mut buf) {
-                    Ok(0) => break, // EOF
+                    Ok(0) | Err(_) => break, // EOF or error
                     Ok(n) => {
                         let _ = app_clone.emit(
                             "ralph://pty_output",
@@ -113,7 +113,6 @@ impl PTYManager {
                             },
                         );
                     }
-                    Err(_) => break,
                 }
             }
 
@@ -122,8 +121,7 @@ impl PTYManager {
                 .lock()
                 .ok()
                 .and_then(|mut c| c.wait().ok())
-                .map(|s| s.exit_code())
-                .unwrap_or(1);
+                .map_or(1, |s| s.exit_code());
 
             let _ = app_clone.emit(
                 "ralph://pty_closed",
@@ -159,20 +157,20 @@ impl PTYManager {
             let sessions = self.sessions.lock().map_err(|e| e.to_string())?;
             let session = sessions
                 .get(session_id)
-                .ok_or_else(|| format!("No PTY session: {}", session_id))?;
+                .ok_or_else(|| format!("No PTY session: {session_id}"))?;
             Arc::clone(&session.writer)
         };
         let mut guard = writer.lock().map_err(|e| e.to_string())?;
         guard
             .write_all(data)
-            .map_err(|e| format!("Failed to write to PTY: {}", e))
+            .map_err(|e| format!("Failed to write to PTY: {e}"))
     }
 
     pub fn resize(&self, session_id: &str, cols: u16, rows: u16) -> Result<(), String> {
         let sessions = self.sessions.lock().map_err(|e| e.to_string())?;
         let session = sessions
             .get(session_id)
-            .ok_or_else(|| format!("No PTY session: {}", session_id))?;
+            .ok_or_else(|| format!("No PTY session: {session_id}"))?;
         session
             .master
             .resize(PtySize {
@@ -181,7 +179,7 @@ impl PTYManager {
                 pixel_width: 0,
                 pixel_height: 0,
             })
-            .map_err(|e| format!("Failed to resize PTY: {}", e))
+            .map_err(|e| format!("Failed to resize PTY: {e}"))
     }
 
     pub fn terminate(&self, session_id: &str) -> Result<(), String> {

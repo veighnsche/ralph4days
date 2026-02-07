@@ -42,11 +42,10 @@ fn initialize_project_for_fixture(
         ));
     }
 
-    fs::create_dir(&ralph_dir).map_err(|e| format!("Failed to create ralph directory: {}", e))?;
+    fs::create_dir(&ralph_dir).map_err(|e| format!("Failed to create ralph directory: {e}"))?;
 
-    // Create db/ directory
     let db_dir = ralph_dir.join("db");
-    fs::create_dir(&db_dir).map_err(|e| format!("Failed to create db/ directory: {}", e))?;
+    fs::create_dir(&db_dir).map_err(|e| format!("Failed to create db/ directory: {e}"))?;
 
     // Create and initialize the SQLite database
     let db_path = db_dir.join("ralph.db");
@@ -54,13 +53,11 @@ fn initialize_project_for_fixture(
     db.seed_defaults()?;
     db.initialize_metadata(
         project_title.clone(),
-        Some("Add project description here".to_string()),
+        Some("Add project description here".to_owned()),
     )?;
 
-    // Create CLAUDE.RALPH.md template
     let claude_path = ralph_dir.join("CLAUDE.RALPH.md");
-    let claude_template = format!(
-        r#"# {} - Ralph Context
+    let claude_template = format!("# {project_title} - Ralph Context
 
 ## Project Overview
 
@@ -81,12 +78,10 @@ Describe the architecture, tech stack, and key components.
 - Any gotchas or things to watch out for
 - Known issues or limitations
 - Dependencies or external services
-"#,
-        project_title
-    );
+");
 
     fs::write(&claude_path, claude_template)
-        .map_err(|e| format!("Failed to create CLAUDE.RALPH.md: {}", e))?;
+        .map_err(|e| format!("Failed to create CLAUDE.RALPH.md: {e}"))?;
 
     Ok(())
 }
@@ -118,8 +113,7 @@ fn generate_fixture_00_empty_project() {
     }
     fs::create_dir_all(&fixture_path).unwrap();
 
-    // Just a README - no .undetect-ralph/
-    let readme = r#"# Empty Project
+    let readme = "# Empty Project
 
 **Purpose**: Test project initialization from scratch
 
@@ -143,7 +137,7 @@ When `initialize_ralph_project` is called on this directory:
 - `.undetect-ralph/CLAUDE.RALPH.md` (template)
 
 See `initialized-project` fixture for the AFTER state.
-"#;
+";
 
     fs::write(fixture_path.join("README.md"), readme).unwrap();
 
@@ -174,8 +168,7 @@ fn generate_fixture_01_initialized_project() {
     }
     fs::create_dir_all(&fixture_path).unwrap();
 
-    // Add README
-    let readme = r#"# Initialized Project
+    let readme = "# Initialized Project
 
 **Purpose**: Freshly initialized Ralph project (empty, ready for AI agents)
 
@@ -208,14 +201,14 @@ ralph --project mock/initialized-project
 - AI agents will create tasks and features as needed
 - Disciplines provide defaults for common categories
 - Ready for AI-driven development workflow
-"#;
+";
 
     fs::write(fixture_path.join("README.md"), readme).unwrap();
 
     // Initialize with .undetect-ralph/
     initialize_project_for_fixture(
         fixture_path.clone(),
-        "Initialized Project".to_string(),
+        "Initialized Project".to_owned(),
         true, // use .undetect-ralph
     )
     .unwrap();
@@ -244,13 +237,12 @@ fn generate_fixture_02_with_feature() {
     }
     fs::create_dir_all(&fixture_path).unwrap();
 
-    // Add README
-    let readme = r#"# With Feature Project
+    let readme = "# With Feature Project
 
 **Purpose**: Project with a feature defined, but no tasks yet
 
 This fixture shows a project that has been initialized and has a feature
-defined (e.g., "authentication"), but no tasks have been created yet.
+defined (e.g., \"authentication\"), but no tasks have been created yet.
 
 ## Usage
 
@@ -272,20 +264,20 @@ just dev-mock 02-with-feature-project
 
 Shows state after AI agent has created a feature but before any tasks.
 Next stage: 03-with-tasks-project
-"#;
+";
 
     fs::write(fixture_path.join("README.md"), readme).unwrap();
 
     // Initialize
-    initialize_project_for_fixture(fixture_path.clone(), "Feature Project".to_string(), true)
+    initialize_project_for_fixture(fixture_path.clone(), "Feature Project".to_owned(), true)
         .unwrap();
 
     // Add a feature
     let db = open_fixture_db(&fixture_path);
     db.create_feature(FeatureInput {
-        name: "authentication".to_string(),
-        display_name: "Authentication".to_string(),
-        acronym: "AUTH".to_string(),
+        name: "authentication".to_owned(),
+        display_name: "Authentication".to_owned(),
+        acronym: "AUTH".to_owned(),
         ..Default::default()
     })
     .unwrap();
@@ -316,8 +308,7 @@ fn generate_fixture_03_with_tasks() {
     }
     fs::create_dir_all(&fixture_path).unwrap();
 
-    // Add README
-    let readme = r#"# With Tasks Project
+    let readme = "# With Tasks Project
 
 **Purpose**: Project with features and tasks (ready for loop)
 
@@ -351,51 +342,51 @@ just dev-mock 03-with-tasks-project
 - Monkey testing with real task data
 - Verify task dependency handling
 - Test multi-feature projects
-"#;
+";
 
     fs::write(fixture_path.join("README.md"), readme).unwrap();
 
     // Initialize
-    initialize_project_for_fixture(fixture_path.clone(), "Tasks Project".to_string(), true)
+    initialize_project_for_fixture(fixture_path.clone(), "Tasks Project".to_owned(), true)
         .unwrap();
 
     let db = open_fixture_db(&fixture_path);
 
     // Add features
     db.create_feature(FeatureInput {
-        name: "authentication".to_string(),
-        display_name: "Authentication".to_string(),
-        acronym: "AUTH".to_string(),
+        name: "authentication".to_owned(),
+        display_name: "Authentication".to_owned(),
+        acronym: "AUTH".to_owned(),
         ..Default::default()
     })
     .unwrap();
     db.create_feature(FeatureInput {
-        name: "user-profile".to_string(),
-        display_name: "User Profile".to_string(),
-        acronym: "USPR".to_string(),
+        name: "user-profile".to_owned(),
+        display_name: "User Profile".to_owned(),
+        acronym: "USPR".to_owned(),
         ..Default::default()
     })
     .unwrap();
 
     // Add tasks
     db.create_task(TaskInput {
-        feature: "authentication".to_string(),
-        discipline: "backend".to_string(),
-        title: "Implement login API".to_string(),
-        description: Some("Create REST API endpoints for user authentication".to_string()),
+        feature: "authentication".to_owned(),
+        discipline: "backend".to_owned(),
+        title: "Implement login API".to_owned(),
+        description: Some("Create REST API endpoints for user authentication".to_owned()),
         priority: Some(sqlite_db::Priority::High),
-        tags: vec!["api".to_string(), "security".to_string()],
+        tags: vec!["api".to_owned(), "security".to_owned()],
         depends_on: vec![],
         acceptance_criteria: Some(vec![
-            "POST /login endpoint works".to_string(),
-            "Returns JWT token".to_string(),
+            "POST /login endpoint works".to_owned(),
+            "Returns JWT token".to_owned(),
         ]),
-        context_files: vec!["src/auth/mod.rs".to_string(), "src/routes/auth.rs".to_string()],
+        context_files: vec!["src/auth/mod.rs".to_owned(), "src/routes/auth.rs".to_owned()],
         output_artifacts: vec![
-            "src/routes/auth.rs".to_string(),
-            "tests/auth_test.rs".to_string(),
+            "src/routes/auth.rs".to_owned(),
+            "tests/auth_test.rs".to_owned(),
         ],
-        hints: Some("Use bcrypt for password hashing, not SHA256. Check existing middleware pattern in src/middleware/".to_string()),
+        hints: Some("Use bcrypt for password hashing, not SHA256. Check existing middleware pattern in src/middleware/".to_owned()),
         estimated_turns: Some(3),
         provenance: Some(sqlite_db::TaskProvenance::Agent),
     })
@@ -406,20 +397,20 @@ just dev-mock 03-with-tasks-project
         1,
         sqlite_db::CommentAuthor::Agent,
         Some(1),
-        "First attempt failed: forgot to add JWT_SECRET to .env".to_string(),
+        "First attempt failed: forgot to add JWT_SECRET to .env".to_owned(),
     )
     .unwrap();
 
     db.create_task(TaskInput {
-        feature: "authentication".to_string(),
-        discipline: "frontend".to_string(),
-        title: "Build login form".to_string(),
-        description: Some("Create UI for user login".to_string()),
+        feature: "authentication".to_owned(),
+        discipline: "frontend".to_owned(),
+        title: "Build login form".to_owned(),
+        description: Some("Create UI for user login".to_owned()),
         priority: Some(sqlite_db::Priority::Medium),
-        tags: vec!["ui".to_string()],
+        tags: vec!["ui".to_owned()],
         depends_on: vec![1],
-        acceptance_criteria: Some(vec!["Form validates input".to_string()]),
-        context_files: vec!["src/components/LoginForm.tsx".to_string()],
+        acceptance_criteria: Some(vec!["Form validates input".to_owned()]),
+        context_files: vec!["src/components/LoginForm.tsx".to_owned()],
         output_artifacts: vec![],
         hints: None,
         estimated_turns: Some(2),
@@ -428,14 +419,14 @@ just dev-mock 03-with-tasks-project
     .unwrap();
 
     db.create_task(TaskInput {
-        feature: "user-profile".to_string(),
-        discipline: "frontend".to_string(),
-        title: "Create profile page".to_string(),
-        description: Some("User profile display and editing".to_string()),
+        feature: "user-profile".to_owned(),
+        discipline: "frontend".to_owned(),
+        title: "Create profile page".to_owned(),
+        description: Some("User profile display and editing".to_owned()),
         priority: Some(sqlite_db::Priority::Low),
-        tags: vec!["ui".to_string()],
+        tags: vec!["ui".to_owned()],
         depends_on: vec![],
-        acceptance_criteria: Some(vec!["Shows user info".to_string()]),
+        acceptance_criteria: Some(vec!["Shows user info".to_owned()]),
         context_files: vec![],
         output_artifacts: vec![],
         hints: None,
@@ -470,7 +461,7 @@ fn generate_fixture_04_dev_project() {
     }
     fs::create_dir_all(&fixture_path).unwrap();
 
-    let readme = r#"# Dev Project — Bookmarks Manager
+    let readme = "# Dev Project — Bookmarks Manager
 
 **Purpose**: Comprehensive mid-progress fixture exercising every frontend rendering path.
 
@@ -490,59 +481,59 @@ just dev-mock 04-dev-project
 
 - **TaskDetailSidebar**: all 5 status badges, all 4 priority badges, blocked_by alert,
   depends_on badges, acceptance criteria list, tags, created/updated/completed timestamps
-- **PlaylistView**: blocked+skipped in "Issues", done section, in_progress NOW PLAYING, pending
+- **PlaylistView**: blocked+skipped in \"Issues\", done section, in_progress NOW PLAYING, pending
 - **FeaturesPage**: 5 features with varied completion %
 - **DisciplinesPage**: 7 disciplines with tasks, 3 with 0 tasks
 - **Filters**: 14 distinct tags, every status/priority combo, text search on titles+descriptions
 - **TaskIdDisplay**: multiple feature+discipline acronym combos
-"#;
+";
 
     fs::write(fixture_path.join("README.md"), readme).unwrap();
 
     // Initialize project structure + default disciplines
-    initialize_project_for_fixture(fixture_path.clone(), "Bookmarks Manager".to_string(), true)
+    initialize_project_for_fixture(fixture_path.clone(), "Bookmarks Manager".to_owned(), true)
         .unwrap();
 
     let db = open_fixture_db(&fixture_path);
 
     // --- Features ---
     db.create_feature(FeatureInput {
-        name: "bookmark-crud".to_string(),
-        display_name: "Bookmark CRUD".to_string(),
-        acronym: "BKMK".to_string(),
-        description: Some("Core bookmark create, read, update, delete operations".to_string()),
+        name: "bookmark-crud".to_owned(),
+        display_name: "Bookmark CRUD".to_owned(),
+        acronym: "BKMK".to_owned(),
+        description: Some("Core bookmark create, read, update, delete operations".to_owned()),
         ..Default::default()
     })
     .unwrap();
     db.create_feature(FeatureInput {
-        name: "collections".to_string(),
-        display_name: "Collections".to_string(),
-        acronym: "COLL".to_string(),
-        description: Some("Organize bookmarks into named collections".to_string()),
+        name: "collections".to_owned(),
+        display_name: "Collections".to_owned(),
+        acronym: "COLL".to_owned(),
+        description: Some("Organize bookmarks into named collections".to_owned()),
         ..Default::default()
     })
     .unwrap();
     db.create_feature(FeatureInput {
-        name: "search".to_string(),
-        display_name: "Search".to_string(),
-        acronym: "SRCH".to_string(),
-        description: Some("Full-text search and filtering across bookmarks".to_string()),
+        name: "search".to_owned(),
+        display_name: "Search".to_owned(),
+        acronym: "SRCH".to_owned(),
+        description: Some("Full-text search and filtering across bookmarks".to_owned()),
         ..Default::default()
     })
     .unwrap();
     db.create_feature(FeatureInput {
-        name: "import-export".to_string(),
-        display_name: "Import Export".to_string(),
-        acronym: "IMEX".to_string(),
-        description: Some("Import from HTML, export to JSON".to_string()),
+        name: "import-export".to_owned(),
+        display_name: "Import Export".to_owned(),
+        acronym: "IMEX".to_owned(),
+        description: Some("Import from HTML, export to JSON".to_owned()),
         ..Default::default()
     })
     .unwrap();
     db.create_feature(FeatureInput {
-        name: "settings".to_string(),
-        display_name: "Settings".to_string(),
-        acronym: "STNG".to_string(),
-        description: Some("User preferences and theme configuration".to_string()),
+        name: "settings".to_owned(),
+        display_name: "Settings".to_owned(),
+        acronym: "STNG".to_owned(),
+        description: Some("User preferences and theme configuration".to_owned()),
         ..Default::default()
     })
     .unwrap();
@@ -553,19 +544,19 @@ just dev-mock 04-dev-project
     // Task 1: bookmark-crud / design / done / low
     let _id1 = db
         .create_task(TaskInput {
-            feature: "bookmark-crud".to_string(),
-            discipline: "design".to_string(),
-            title: "Bookmark card layout".to_string(),
+            feature: "bookmark-crud".to_owned(),
+            discipline: "design".to_owned(),
+            title: "Bookmark card layout".to_owned(),
             description: Some(
                 "Design the bookmark card component with favicon, title, URL, and action buttons"
-                    .to_string(),
+                    .to_owned(),
             ),
             priority: Some(sqlite_db::Priority::Low),
-            tags: vec!["ui".to_string(), "design".to_string()],
+            tags: vec!["ui".to_owned(), "design".to_owned()],
             depends_on: vec![],
             acceptance_criteria: Some(vec![
-                "Card displays favicon, title, and truncated URL".to_string(),
-                "Action buttons visible on hover".to_string(),
+                "Card displays favicon, title, and truncated URL".to_owned(),
+                "Action buttons visible on hover".to_owned(),
             ]),
             context_files: vec![],
             output_artifacts: vec![],
@@ -578,20 +569,20 @@ just dev-mock 04-dev-project
     // Task 2: bookmark-crud / frontend / done / high
     let _id2 = db
         .create_task(TaskInput {
-            feature: "bookmark-crud".to_string(),
-            discipline: "frontend".to_string(),
-            title: "Create bookmark form".to_string(),
+            feature: "bookmark-crud".to_owned(),
+            discipline: "frontend".to_owned(),
+            title: "Create bookmark form".to_owned(),
             description: Some(
                 "Implement the form to add new bookmarks with URL validation and auto-title fetch"
-                    .to_string(),
+                    .to_owned(),
             ),
             priority: Some(sqlite_db::Priority::High),
-            tags: vec!["ui".to_string(), "forms".to_string()],
+            tags: vec!["ui".to_owned(), "forms".to_owned()],
             depends_on: vec![],
             acceptance_criteria: Some(vec![
-                "Form accepts URL input with validation".to_string(),
-                "Auto-fetches page title from URL".to_string(),
-                "Shows loading state during fetch".to_string(),
+                "Form accepts URL input with validation".to_owned(),
+                "Auto-fetches page title from URL".to_owned(),
+                "Shows loading state during fetch".to_owned(),
             ]),
             context_files: vec![],
             output_artifacts: vec![],
@@ -604,20 +595,20 @@ just dev-mock 04-dev-project
     // Task 3: bookmark-crud / backend / done / high (depends on 2)
     let _id3 = db
         .create_task(TaskInput {
-            feature: "bookmark-crud".to_string(),
-            discipline: "backend".to_string(),
-            title: "Bookmark localStorage storage".to_string(),
+            feature: "bookmark-crud".to_owned(),
+            discipline: "backend".to_owned(),
+            title: "Bookmark localStorage storage".to_owned(),
             description: Some(
                 "Implement localStorage-based persistence layer for bookmarks with CRUD operations"
-                    .to_string(),
+                    .to_owned(),
             ),
             priority: Some(sqlite_db::Priority::High),
-            tags: vec!["storage".to_string()],
+            tags: vec!["storage".to_owned()],
             depends_on: vec![2],
             acceptance_criteria: Some(vec![
-                "Bookmarks persist across page reloads".to_string(),
-                "CRUD operations update localStorage atomically".to_string(),
-                "Handles storage quota errors gracefully".to_string(),
+                "Bookmarks persist across page reloads".to_owned(),
+                "CRUD operations update localStorage atomically".to_owned(),
+                "Handles storage quota errors gracefully".to_owned(),
             ]),
             context_files: vec![],
             output_artifacts: vec![],
@@ -630,19 +621,19 @@ just dev-mock 04-dev-project
     // Task 4: bookmark-crud / testing / in_progress / medium (depends on 3)
     let _id4 = db
         .create_task(TaskInput {
-            feature: "bookmark-crud".to_string(),
-            discipline: "testing".to_string(),
-            title: "Unit tests for bookmark CRUD".to_string(),
+            feature: "bookmark-crud".to_owned(),
+            discipline: "testing".to_owned(),
+            title: "Unit tests for bookmark CRUD".to_owned(),
             description: Some(
                 "Write comprehensive unit tests for create, read, update, and delete operations"
-                    .to_string(),
+                    .to_owned(),
             ),
             priority: Some(sqlite_db::Priority::Medium),
-            tags: vec!["testing".to_string()],
+            tags: vec!["testing".to_owned()],
             depends_on: vec![3],
             acceptance_criteria: Some(vec![
-                "Tests cover all CRUD operations".to_string(),
-                "Edge cases for empty and malformed URLs tested".to_string(),
+                "Tests cover all CRUD operations".to_owned(),
+                "Edge cases for empty and malformed URLs tested".to_owned(),
             ]),
             context_files: vec![],
             output_artifacts: vec![],
@@ -655,18 +646,18 @@ just dev-mock 04-dev-project
     // Tasks 5-20: remaining tasks (all pending by default)
     let _id5 = db
         .create_task(TaskInput {
-            feature: "bookmark-crud".to_string(),
-            discipline: "frontend".to_string(),
-            title: "Edit bookmark modal".to_string(),
+            feature: "bookmark-crud".to_owned(),
+            discipline: "frontend".to_owned(),
+            title: "Edit bookmark modal".to_owned(),
             description: Some(
-                "Modal dialog for editing existing bookmark title, URL, and notes".to_string(),
+                "Modal dialog for editing existing bookmark title, URL, and notes".to_owned(),
             ),
             priority: Some(sqlite_db::Priority::Medium),
-            tags: vec!["ui".to_string(), "forms".to_string()],
+            tags: vec!["ui".to_owned(), "forms".to_owned()],
             depends_on: vec![2],
             acceptance_criteria: Some(vec![
-                "Modal pre-fills current bookmark data".to_string(),
-                "Validates URL format on save".to_string(),
+                "Modal pre-fills current bookmark data".to_owned(),
+                "Validates URL format on save".to_owned(),
             ]),
             context_files: vec![],
             output_artifacts: vec![],
@@ -678,19 +669,19 @@ just dev-mock 04-dev-project
 
     let _id6 = db
         .create_task(TaskInput {
-            feature: "bookmark-crud".to_string(),
-            discipline: "frontend".to_string(),
-            title: "Bulk delete bookmarks".to_string(),
+            feature: "bookmark-crud".to_owned(),
+            discipline: "frontend".to_owned(),
+            title: "Bulk delete bookmarks".to_owned(),
             description: Some(
                 "Multi-select bookmarks and delete them in batch with confirmation dialog"
-                    .to_string(),
+                    .to_owned(),
             ),
             priority: Some(sqlite_db::Priority::Medium),
-            tags: vec!["ui".to_string()],
+            tags: vec!["ui".to_owned()],
             depends_on: vec![3],
             acceptance_criteria: Some(vec![
-                "Checkbox selection for multiple bookmarks".to_string(),
-                "Confirmation dialog before bulk delete".to_string(),
+                "Checkbox selection for multiple bookmarks".to_owned(),
+                "Confirmation dialog before bulk delete".to_owned(),
             ]),
             context_files: vec![],
             output_artifacts: vec![],
@@ -702,20 +693,20 @@ just dev-mock 04-dev-project
 
     let _id7 = db
         .create_task(TaskInput {
-            feature: "bookmark-crud".to_string(),
-            discipline: "security".to_string(),
-            title: "URL input sanitization".to_string(),
+            feature: "bookmark-crud".to_owned(),
+            discipline: "security".to_owned(),
+            title: "URL input sanitization".to_owned(),
             description: Some(
                 "Sanitize and validate all URL inputs to prevent XSS and injection attacks"
-                    .to_string(),
+                    .to_owned(),
             ),
             priority: Some(sqlite_db::Priority::High),
-            tags: vec!["security".to_string(), "validation".to_string()],
+            tags: vec!["security".to_owned(), "validation".to_owned()],
             depends_on: vec![],
             acceptance_criteria: Some(vec![
-                "Rejects javascript: and data: URLs".to_string(),
-                "Escapes HTML entities in bookmark titles".to_string(),
-                "Validates URL format before storage".to_string(),
+                "Rejects javascript: and data: URLs".to_owned(),
+                "Escapes HTML entities in bookmark titles".to_owned(),
+                "Validates URL format before storage".to_owned(),
             ]),
             context_files: vec![],
             output_artifacts: vec![],
@@ -728,19 +719,19 @@ just dev-mock 04-dev-project
     // Task 8: collections / backend / done / high
     let _id8 = db
         .create_task(TaskInput {
-            feature: "collections".to_string(),
-            discipline: "backend".to_string(),
-            title: "Collection data model".to_string(),
+            feature: "collections".to_owned(),
+            discipline: "backend".to_owned(),
+            title: "Collection data model".to_owned(),
             description: Some(
                 "Define collection schema with name, color, icon, and bookmark references"
-                    .to_string(),
+                    .to_owned(),
             ),
             priority: Some(sqlite_db::Priority::High),
-            tags: vec!["storage".to_string(), "data-model".to_string()],
+            tags: vec!["storage".to_owned(), "data-model".to_owned()],
             depends_on: vec![],
             acceptance_criteria: Some(vec![
-                "Collection stores name, color, icon, and ordered bookmark IDs".to_string(),
-                "Supports many-to-many relationship with bookmarks".to_string(),
+                "Collection stores name, color, icon, and ordered bookmark IDs".to_owned(),
+                "Supports many-to-many relationship with bookmarks".to_owned(),
             ]),
             context_files: vec![],
             output_artifacts: vec![],
@@ -752,32 +743,32 @@ just dev-mock 04-dev-project
 
     // Task 9: collections / frontend / in_progress / high (depends on 8)
     let _id9 = db.create_task(TaskInput {
-        feature: "collections".to_string(),
-        discipline: "frontend".to_string(),
-        title: "Collection sidebar".to_string(),
-        description: Some("Sidebar component showing all collections with bookmark counts and quick navigation".to_string()),
+        feature: "collections".to_owned(),
+        discipline: "frontend".to_owned(),
+        title: "Collection sidebar".to_owned(),
+        description: Some("Sidebar component showing all collections with bookmark counts and quick navigation".to_owned()),
         priority: Some(sqlite_db::Priority::High),
-        tags: vec!["ui".to_string(), "navigation".to_string()],
+        tags: vec!["ui".to_owned(), "navigation".to_owned()],
         depends_on: vec![8],
-        acceptance_criteria: Some(vec!["Sidebar lists all collections with bookmark counts".to_string(), "Click collection filters bookmark list".to_string(), "Collapse/expand sidebar on mobile".to_string()]),
+        acceptance_criteria: Some(vec!["Sidebar lists all collections with bookmark counts".to_owned(), "Click collection filters bookmark list".to_owned(), "Collapse/expand sidebar on mobile".to_owned()]),
         context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
     }).unwrap();
 
     // Task 10: collections / frontend / pending / medium (depends on 9)
     let _id10 = db
         .create_task(TaskInput {
-            feature: "collections".to_string(),
-            discipline: "frontend".to_string(),
-            title: "Drag-and-drop sorting".to_string(),
+            feature: "collections".to_owned(),
+            discipline: "frontend".to_owned(),
+            title: "Drag-and-drop sorting".to_owned(),
             description: Some(
-                "Allow reordering bookmarks within a collection via drag-and-drop".to_string(),
+                "Allow reordering bookmarks within a collection via drag-and-drop".to_owned(),
             ),
             priority: Some(sqlite_db::Priority::Medium),
-            tags: vec!["ui".to_string(), "interaction".to_string()],
+            tags: vec!["ui".to_owned(), "interaction".to_owned()],
             depends_on: vec![9],
             acceptance_criteria: Some(vec![
-                "Drag handle on each bookmark card".to_string(),
-                "Visual feedback during drag operation".to_string(),
+                "Drag handle on each bookmark card".to_owned(),
+                "Visual feedback during drag operation".to_owned(),
             ]),
             context_files: vec![],
             output_artifacts: vec![],
@@ -790,14 +781,14 @@ just dev-mock 04-dev-project
     // Task 11: collections / design / pending / none
     let _id11 = db
         .create_task(TaskInput {
-            feature: "collections".to_string(),
-            discipline: "design".to_string(),
-            title: "Collection icons and colors".to_string(),
+            feature: "collections".to_owned(),
+            discipline: "design".to_owned(),
+            title: "Collection icons and colors".to_owned(),
             description: Some(
-                "Design the icon picker and color palette for collection customization".to_string(),
+                "Design the icon picker and color palette for collection customization".to_owned(),
             ),
             priority: None,
-            tags: vec!["design".to_string()],
+            tags: vec!["design".to_owned()],
             depends_on: vec![],
             acceptance_criteria: Some(vec![]),
             context_files: vec![],
@@ -811,18 +802,18 @@ just dev-mock 04-dev-project
     // Task 12: collections / frontend / pending / low (depends on 9, 8)
     let _id12 = db
         .create_task(TaskInput {
-            feature: "collections".to_string(),
-            discipline: "frontend".to_string(),
-            title: "Nested collections".to_string(),
+            feature: "collections".to_owned(),
+            discipline: "frontend".to_owned(),
+            title: "Nested collections".to_owned(),
             description: Some(
-                "Support hierarchical collection nesting with tree view navigation".to_string(),
+                "Support hierarchical collection nesting with tree view navigation".to_owned(),
             ),
             priority: Some(sqlite_db::Priority::Low),
-            tags: vec!["ui".to_string(), "navigation".to_string()],
+            tags: vec!["ui".to_owned(), "navigation".to_owned()],
             depends_on: vec![9, 8],
             acceptance_criteria: Some(vec![
-                "Collections can contain sub-collections".to_string(),
-                "Tree view shows hierarchy with expand/collapse".to_string(),
+                "Collections can contain sub-collections".to_owned(),
+                "Tree view shows hierarchy with expand/collapse".to_owned(),
             ]),
             context_files: vec![],
             output_artifacts: vec![],
@@ -834,34 +825,34 @@ just dev-mock 04-dev-project
 
     // Task 13: search / backend / pending / critical (depends on 3)
     let _id13 = db.create_task(TaskInput {
-        feature: "search".to_string(),
-        discipline: "backend".to_string(),
-        title: "Full-text search index".to_string(),
-        description: Some("Build an inverted index for full-text search across bookmark titles, URLs, and notes".to_string()),
+        feature: "search".to_owned(),
+        discipline: "backend".to_owned(),
+        title: "Full-text search index".to_owned(),
+        description: Some("Build an inverted index for full-text search across bookmark titles, URLs, and notes".to_owned()),
         priority: Some(sqlite_db::Priority::Critical),
-        tags: vec!["search".to_string(), "performance".to_string()],
+        tags: vec!["search".to_owned(), "performance".to_owned()],
         depends_on: vec![3],
-        acceptance_criteria: Some(vec!["Index updates on bookmark create/update/delete".to_string(), "Search returns results in under 50ms for 10k bookmarks".to_string(), "Supports partial word matching".to_string(), "Ranks results by relevance".to_string()]),
+        acceptance_criteria: Some(vec!["Index updates on bookmark create/update/delete".to_owned(), "Search returns results in under 50ms for 10k bookmarks".to_owned(), "Supports partial word matching".to_owned(), "Ranks results by relevance".to_owned()]),
         context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
     }).unwrap();
 
     // Task 14: search / frontend / blocked / high (depends on 13)
     let _id14 = db
         .create_task(TaskInput {
-            feature: "search".to_string(),
-            discipline: "frontend".to_string(),
-            title: "Search bar with autocomplete".to_string(),
+            feature: "search".to_owned(),
+            discipline: "frontend".to_owned(),
+            title: "Search bar with autocomplete".to_owned(),
             description: Some(
                 "Search input with debounced autocomplete dropdown showing matching bookmarks"
-                    .to_string(),
+                    .to_owned(),
             ),
             priority: Some(sqlite_db::Priority::High),
-            tags: vec!["ui".to_string(), "search".to_string()],
+            tags: vec!["ui".to_owned(), "search".to_owned()],
             depends_on: vec![13],
             acceptance_criteria: Some(vec![
-                "Debounced input with 300ms delay".to_string(),
-                "Dropdown shows top 5 matching bookmarks".to_string(),
-                "Keyboard navigation through results".to_string(),
+                "Debounced input with 300ms delay".to_owned(),
+                "Dropdown shows top 5 matching bookmarks".to_owned(),
+                "Keyboard navigation through results".to_owned(),
             ]),
             context_files: vec![],
             output_artifacts: vec![],
@@ -874,19 +865,19 @@ just dev-mock 04-dev-project
     // Task 15: search / testing / pending / none (depends on 13)
     let _id15 = db
         .create_task(TaskInput {
-            feature: "search".to_string(),
-            discipline: "testing".to_string(),
-            title: "Search ranking tests".to_string(),
+            feature: "search".to_owned(),
+            discipline: "testing".to_owned(),
+            title: "Search ranking tests".to_owned(),
             description: Some(
                 "Test search result ranking and relevance scoring with various query patterns"
-                    .to_string(),
+                    .to_owned(),
             ),
             priority: None,
-            tags: vec!["testing".to_string(), "search".to_string()],
+            tags: vec!["testing".to_owned(), "search".to_owned()],
             depends_on: vec![13],
             acceptance_criteria: Some(vec![
-                "Exact title matches rank highest".to_string(),
-                "Partial matches rank by relevance score".to_string(),
+                "Exact title matches rank highest".to_owned(),
+                "Partial matches rank by relevance score".to_owned(),
             ]),
             context_files: vec![],
             output_artifacts: vec![],
@@ -899,20 +890,20 @@ just dev-mock 04-dev-project
     // Task 16: import-export / backend / pending / high
     let _id16 = db
         .create_task(TaskInput {
-            feature: "import-export".to_string(),
-            discipline: "backend".to_string(),
-            title: "HTML bookmark parser".to_string(),
+            feature: "import-export".to_owned(),
+            discipline: "backend".to_owned(),
+            title: "HTML bookmark parser".to_owned(),
             description: Some(
                 "Parse Netscape bookmark HTML format exported by Chrome, Firefox, and Safari"
-                    .to_string(),
+                    .to_owned(),
             ),
             priority: Some(sqlite_db::Priority::High),
-            tags: vec!["parser".to_string(), "import".to_string()],
+            tags: vec!["parser".to_owned(), "import".to_owned()],
             depends_on: vec![],
             acceptance_criteria: Some(vec![
-                "Parses Chrome bookmark export format".to_string(),
-                "Parses Firefox bookmark export format".to_string(),
-                "Preserves folder structure as collections".to_string(),
+                "Parses Chrome bookmark export format".to_owned(),
+                "Parses Firefox bookmark export format".to_owned(),
+                "Preserves folder structure as collections".to_owned(),
             ]),
             context_files: vec![],
             output_artifacts: vec![],
@@ -925,19 +916,19 @@ just dev-mock 04-dev-project
     // Task 17: import-export / frontend / blocked / medium (depends on 16)
     let _id17 = db
         .create_task(TaskInput {
-            feature: "import-export".to_string(),
-            discipline: "frontend".to_string(),
-            title: "Import bookmarks UI".to_string(),
+            feature: "import-export".to_owned(),
+            discipline: "frontend".to_owned(),
+            title: "Import bookmarks UI".to_owned(),
             description: Some(
                 "File upload dialog for importing bookmarks with preview and conflict resolution"
-                    .to_string(),
+                    .to_owned(),
             ),
             priority: Some(sqlite_db::Priority::Medium),
-            tags: vec!["ui".to_string(), "import".to_string()],
+            tags: vec!["ui".to_owned(), "import".to_owned()],
             depends_on: vec![16],
             acceptance_criteria: Some(vec![
-                "File picker accepts .html files".to_string(),
-                "Preview shows bookmarks to import before confirming".to_string(),
+                "File picker accepts .html files".to_owned(),
+                "Preview shows bookmarks to import before confirming".to_owned(),
             ]),
             context_files: vec![],
             output_artifacts: vec![],
@@ -950,18 +941,18 @@ just dev-mock 04-dev-project
     // Task 18: import-export / frontend / pending / low (depends on 3)
     let _id18 = db
         .create_task(TaskInput {
-            feature: "import-export".to_string(),
-            discipline: "frontend".to_string(),
-            title: "Export to JSON".to_string(),
+            feature: "import-export".to_owned(),
+            discipline: "frontend".to_owned(),
+            title: "Export to JSON".to_owned(),
             description: Some(
-                "Export all bookmarks and collections to a JSON file for backup".to_string(),
+                "Export all bookmarks and collections to a JSON file for backup".to_owned(),
             ),
             priority: Some(sqlite_db::Priority::Low),
-            tags: vec!["export".to_string()],
+            tags: vec!["export".to_owned()],
             depends_on: vec![3],
             acceptance_criteria: Some(vec![
-                "Exports all bookmarks with metadata".to_string(),
-                "Includes collection membership info".to_string(),
+                "Exports all bookmarks with metadata".to_owned(),
+                "Includes collection membership info".to_owned(),
             ]),
             context_files: vec![],
             output_artifacts: vec![],
@@ -974,14 +965,14 @@ just dev-mock 04-dev-project
     // Task 19: settings / docs / skipped / low
     let _id19 = db
         .create_task(TaskInput {
-            feature: "settings".to_string(),
-            discipline: "docs".to_string(),
-            title: "Write settings documentation".to_string(),
+            feature: "settings".to_owned(),
+            discipline: "docs".to_owned(),
+            title: "Write settings documentation".to_owned(),
             description: Some(
-                "Document all available settings and their default values".to_string(),
+                "Document all available settings and their default values".to_owned(),
             ),
             priority: Some(sqlite_db::Priority::Low),
-            tags: vec!["docs".to_string()],
+            tags: vec!["docs".to_owned()],
             depends_on: vec![],
             acceptance_criteria: Some(vec![]),
             context_files: vec![],
@@ -995,17 +986,17 @@ just dev-mock 04-dev-project
     // Task 20: settings / database / pending / none
     let _id20 = db
         .create_task(TaskInput {
-            feature: "settings".to_string(),
-            discipline: "database".to_string(),
-            title: "Theme preference storage".to_string(),
+            feature: "settings".to_owned(),
+            discipline: "database".to_owned(),
+            title: "Theme preference storage".to_owned(),
             description: Some(
-                "Store user theme preference (light/dark/system) in local database".to_string(),
+                "Store user theme preference (light/dark/system) in local database".to_owned(),
             ),
             priority: None,
-            tags: vec!["storage".to_string()],
+            tags: vec!["storage".to_owned()],
             depends_on: vec![],
             acceptance_criteria: Some(
-                vec!["Persists theme preference across sessions".to_string()],
+                vec!["Persists theme preference across sessions".to_owned()],
             ),
             context_files: vec![],
             output_artifacts: vec![],
@@ -1049,7 +1040,7 @@ just dev-mock 04-dev-project
 /// Ignored by default to avoid race conditions with individual fixture tests.
 /// Run explicitly with: cargo test --test generate_fixtures generate_all_fixtures -- --ignored --nocapture
 #[test]
-#[ignore]
+#[ignore = "Calls test functions directly, run with --test-threads=1 to avoid conflicts"]
 fn generate_all_fixtures() {
     println!("\n========================================");
     println!("GENERATING ALL FIXTURES");

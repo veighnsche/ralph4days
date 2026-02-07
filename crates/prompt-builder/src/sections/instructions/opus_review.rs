@@ -26,10 +26,10 @@ You are reviewing recent work for quality. Focus on correctness, code quality, a
 - Be specific in learnings -- "the X pattern causes Y problem, use Z instead" is useful; "be careful with X" is not.
 - If you find systemic issues (e.g., a pattern repeated across many files), note it in learnings and fix the instances you find.
 - Do not re-do completed work that is correct. Focus on finding and fixing actual problems.
-- Commit fixes with clear messages explaining what was wrong and how it was fixed."#
-        .to_string()
+- Commit fixes with clear messages explaining what was wrong and how it was fixed."#.to_owned()
 }
 
+#[allow(clippy::unnecessary_wraps)]
 fn build(ctx: &PromptContext) -> Option<String> {
     if let Some(text) = ctx.instruction_overrides.get("opus_review_instructions") {
         return Some(text.clone());

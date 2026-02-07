@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    ralph4days_lib::run()
+    ralph4days_lib::run();
 }

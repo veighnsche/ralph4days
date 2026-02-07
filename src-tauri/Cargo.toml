@@ -33,6 +33,9 @@ lazy_static = "1.4"
 portable-pty = "0.9"
 base64 = "0.22"
 
+[lints]
+workspace = true
+
 [dev-dependencies]
 tempfile = "3"
 

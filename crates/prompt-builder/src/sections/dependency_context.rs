@@ -24,7 +24,7 @@ fn build(ctx: &PromptContext) -> Option<String> {
     for dep in &completed_deps {
         let desc = dep.description.as_deref().unwrap_or("No description");
         // Truncate description to first sentence or 120 chars for a summary
-        let summary = desc.split_once('.').map(|(first, _)| first).unwrap_or(desc);
+        let summary = desc.split_once('.').map_or(desc, |(first, _)| first);
         let summary = if summary.len() > 120 {
             &summary[..120]
         } else {
@@ -33,7 +33,7 @@ fn build(ctx: &PromptContext) -> Option<String> {
         out.push_str(&format!("- **{}** (#{}): {summary}\n", dep.title, dep.id));
     }
 
-    Some(out.trim_end().to_string())
+    Some(out.trim_end().to_owned())
 }
 
 pub fn dependency_context() -> Section {

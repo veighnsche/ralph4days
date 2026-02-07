@@ -25,10 +25,10 @@ You are receiving input from the user about disciplines. Review the existing dis
 - System prompts should be detailed enough to guide a Claude agent effectively
 - Skills should be specific and actionable, not vague
 - Conventions should be concrete rules, not aspirational statements
-- Keep discipline scope focused -- one discipline should not cover everything"#
-        .to_string()
+- Keep discipline scope focused -- one discipline should not cover everything"#.to_owned()
 }
 
+#[allow(clippy::unnecessary_wraps)]
 fn build(ctx: &PromptContext) -> Option<String> {
     if let Some(text) = ctx.instruction_overrides.get("discuss_instructions") {
         return Some(text.clone());

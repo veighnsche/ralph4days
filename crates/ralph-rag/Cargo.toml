@@ -11,6 +11,9 @@ repository = "https://github.com/ralph4days/ralph4days"
 keywords = ["rag", "agent-memory", "feature-scoped", "jsonl", "qdrant"]
 categories = ["data-structures", "database"]
 
+[lints]
+workspace = true
+
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true

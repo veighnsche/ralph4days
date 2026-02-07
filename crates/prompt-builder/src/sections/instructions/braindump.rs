@@ -2,7 +2,7 @@ use crate::context::PromptContext;
 use crate::recipe::Section;
 
 pub fn default_text() -> String {
-    r#"## Instructions
+    "## Instructions
 
 You are receiving a raw braindump from the user. Your job is to analyze it and create structured project data.
 
@@ -27,10 +27,10 @@ You are receiving a raw braindump from the user. Your job is to analyze it and c
 - Set `estimated_turns` to help with scheduling
 - Use `context_files` to point tasks at the relevant source files
 - Use `hints` to give the executing agent useful tips
-- Create dependencies between tasks when one must complete before another can start"#
-        .to_string()
+- Create dependencies between tasks when one must complete before another can start".to_owned()
 }
 
+#[allow(clippy::unnecessary_wraps)]
 fn build(ctx: &PromptContext) -> Option<String> {
     if let Some(text) = ctx.instruction_overrides.get("braindump_instructions") {
         return Some(text.clone());

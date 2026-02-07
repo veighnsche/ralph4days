@@ -23,7 +23,7 @@ export function shouldShowInferredStatus(actualStatus: TaskStatus, inferredStatu
 export function getInferredStatusExplanation(
   actualStatus: TaskStatus,
   inferredStatus: InferredTaskStatus,
-  dependsOnCount: number = 0
+  dependsOnCount = 0
 ): string {
   if (actualStatus === 'pending') {
     if (inferredStatus === 'ready') {

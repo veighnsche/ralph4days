@@ -94,10 +94,8 @@ mod tests {
 
     #[test]
     fn test_build_settings_json_with_model() {
-        // Model is not used in settings JSON (passed as CLI flag instead)
-        // But verify config structure accepts it
         let config = SessionConfig {
-            model: Some("claude-opus-4".to_string()),
+            model: Some("claude-opus-4".to_owned()),
             thinking: Some(true),
         };
 
@@ -112,7 +110,7 @@ mod tests {
     #[test]
     fn test_build_settings_json_output_is_valid_json() {
         let config = SessionConfig {
-            model: Some("haiku".to_string()),
+            model: Some("haiku".to_owned()),
             thinking: Some(true),
         };
 

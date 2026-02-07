@@ -16,21 +16,21 @@ pub enum TaskStatus {
 impl TaskStatus {
     pub fn as_str(&self) -> &'static str {
         match self {
-            TaskStatus::Pending => "pending",
-            TaskStatus::InProgress => "in_progress",
-            TaskStatus::Done => "done",
-            TaskStatus::Blocked => "blocked",
-            TaskStatus::Skipped => "skipped",
+            Self::Pending => "pending",
+            Self::InProgress => "in_progress",
+            Self::Done => "done",
+            Self::Blocked => "blocked",
+            Self::Skipped => "skipped",
         }
     }
 
     pub fn parse(s: &str) -> Option<Self> {
         match s {
-            "pending" => Some(TaskStatus::Pending),
-            "in_progress" => Some(TaskStatus::InProgress),
-            "done" => Some(TaskStatus::Done),
-            "blocked" => Some(TaskStatus::Blocked),
-            "skipped" => Some(TaskStatus::Skipped),
+            "pending" => Some(Self::Pending),
+            "in_progress" => Some(Self::InProgress),
+            "done" => Some(Self::Done),
+            "blocked" => Some(Self::Blocked),
+            "skipped" => Some(Self::Skipped),
             _ => None,
         }
     }
@@ -61,19 +61,19 @@ pub enum Priority {
 impl Priority {
     pub fn as_str(&self) -> &'static str {
         match self {
-            Priority::Low => "low",
-            Priority::Medium => "medium",
-            Priority::High => "high",
-            Priority::Critical => "critical",
+            Self::Low => "low",
+            Self::Medium => "medium",
+            Self::High => "high",
+            Self::Critical => "critical",
         }
     }
 
     pub fn parse(s: &str) -> Option<Self> {
         match s {
-            "low" => Some(Priority::Low),
-            "medium" => Some(Priority::Medium),
-            "high" => Some(Priority::High),
-            "critical" => Some(Priority::Critical),
+            "low" => Some(Self::Low),
+            "medium" => Some(Self::Medium),
+            "high" => Some(Self::High),
+            "critical" => Some(Self::Critical),
             _ => None,
         }
     }
@@ -91,17 +91,17 @@ pub enum TaskProvenance {
 impl TaskProvenance {
     pub fn as_str(&self) -> &'static str {
         match self {
-            TaskProvenance::Agent => "agent",
-            TaskProvenance::Human => "human",
-            TaskProvenance::System => "system",
+            Self::Agent => "agent",
+            Self::Human => "human",
+            Self::System => "system",
         }
     }
 
     pub fn parse(s: &str) -> Option<Self> {
         match s {
-            "agent" => Some(TaskProvenance::Agent),
-            "human" => Some(TaskProvenance::Human),
-            "system" => Some(TaskProvenance::System),
+            "agent" => Some(Self::Agent),
+            "human" => Some(Self::Human),
+            "system" => Some(Self::System),
             _ => None,
         }
     }
@@ -118,15 +118,15 @@ pub enum CommentAuthor {
 impl CommentAuthor {
     pub fn as_str(&self) -> &'static str {
         match self {
-            CommentAuthor::Human => "human",
-            CommentAuthor::Agent => "agent",
+            Self::Human => "human",
+            Self::Agent => "agent",
         }
     }
 
     pub fn parse(s: &str) -> Option<Self> {
         match s {
-            "human" => Some(CommentAuthor::Human),
-            "agent" => Some(CommentAuthor::Agent),
+            "human" => Some(Self::Human),
+            "agent" => Some(Self::Agent),
             _ => None,
         }
     }

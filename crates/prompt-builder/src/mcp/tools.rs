@@ -79,11 +79,7 @@ impl McpTool {
                 r#"{"type":"object","properties":{"id":{"type":"number","description":"Task ID"},"status":{"type":"string","enum":["pending","in_progress","done","blocked","skipped"],"description":"New task status"}},"required":["id","status"]}"#
             }
 
-            Self::ListFeatures => r#"{"type":"object","properties":{}}"#,
-
-            Self::ListDisciplines => r#"{"type":"object","properties":{}}"#,
-
-            Self::ListTasks => r#"{"type":"object","properties":{}}"#,
+            Self::ListFeatures | Self::ListDisciplines | Self::ListTasks => r#"{"type":"object","properties":{}}"#,
 
             Self::UpdateFeature => {
                 r#"{"type":"object","properties":{"name":{"type":"string","description":"Feature name to update"},"display_name":{"type":"string","description":"New display name"},"description":{"type":"string","description":"New description"}},"required":["name"]}"#

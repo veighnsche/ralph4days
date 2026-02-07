@@ -34,7 +34,7 @@ fn build(ctx: &PromptContext) -> Option<String> {
         out.push_str(&source_sections);
     }
 
-    Some(out.trim_end().to_string())
+    Some(out.trim_end().to_owned())
 }
 
 pub fn feature_files() -> Section {

@@ -72,7 +72,7 @@ impl ToolUseEvent {
         self.input
             .get("file_path")
             .and_then(|v| v.as_str())
-            .map(|s| s.to_string())
+            .map(std::borrow::ToOwned::to_owned)
     }
 
     /// Classify this tool use as a file action.

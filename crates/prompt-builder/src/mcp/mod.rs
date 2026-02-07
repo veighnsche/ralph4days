@@ -12,11 +12,11 @@ use tools::McpTool;
 /// empty JSON object.
 pub fn generate(ctx: &PromptContext, tools: &[McpTool]) -> (Vec<McpScript>, String) {
     if tools.is_empty() {
-        return (vec![], "{}".to_string());
+        return (vec![], "{}".to_owned());
     }
 
     let script_content = generate_script(ctx, tools);
-    let filename = "ralph-mcp.sh".to_string();
+    let filename = "ralph-mcp.sh".to_owned();
     let scripts = vec![McpScript {
         filename: filename.clone(),
         content: script_content,
@@ -186,8 +186,7 @@ fn generate_config(ctx: &PromptContext, filename: &str) -> String {
             let args_str = args.join(",");
 
             let mut server = format!(
-                "\"{}\":{{\"command\":\"{}\",\"args\":[{}]",
-                name, command, args_str
+                "\"{name}\":{{\"command\":\"{command}\",\"args\":[{args_str}]"
             );
 
             if !mcp.env.is_empty() {
@@ -269,9 +268,9 @@ mod tests {
         ctx.target_task_id = Some(1);
         ctx.tasks = vec![sqlite_db::Task {
             id: 1,
-            feature: "auth".to_string(),
-            discipline: "frontend".to_string(),
-            title: "Build login".to_string(),
+            feature: "auth".to_owned(),
+            discipline: "frontend".to_owned(),
+            title: "Build login".to_owned(),
             description: None,
             status: sqlite_db::TaskStatus::Pending,
             inferred_status: sqlite_db::InferredTaskStatus::Ready,
@@ -289,28 +288,28 @@ mod tests {
             estimated_turns: None,
             provenance: None,
             comments: vec![],
-            feature_display_name: "Auth".to_string(),
-            feature_acronym: "AU".to_string(),
-            discipline_display_name: "Frontend".to_string(),
-            discipline_acronym: "FE".to_string(),
-            discipline_icon: "code".to_string(),
-            discipline_color: "blue".to_string(),
+            feature_display_name: "Auth".to_owned(),
+            feature_acronym: "AU".to_owned(),
+            discipline_display_name: "Frontend".to_owned(),
+            discipline_acronym: "FE".to_owned(),
+            discipline_icon: "code".to_owned(),
+            discipline_color: "blue".to_owned(),
         }];
         let mut env = HashMap::new();
-        env.insert("NODE_ENV".to_string(), "development".to_string());
+        env.insert("NODE_ENV".to_owned(), "development".to_owned());
         ctx.disciplines = vec![Discipline {
-            name: "frontend".to_string(),
-            display_name: "Frontend".to_string(),
-            icon: "code".to_string(),
-            color: "blue".to_string(),
-            acronym: "FE".to_string(),
+            name: "frontend".to_owned(),
+            display_name: "Frontend".to_owned(),
+            icon: "code".to_owned(),
+            color: "blue".to_owned(),
+            acronym: "FE".to_owned(),
             system_prompt: None,
             skills: vec![],
             conventions: None,
             mcp_servers: vec![McpServerConfig {
-                name: "browser-tools".to_string(),
-                command: "npx".to_string(),
-                args: vec!["@anthropic/browser-tools".to_string()],
+                name: "browser-tools".to_owned(),
+                command: "npx".to_owned(),
+                args: vec!["@anthropic/browser-tools".to_owned()],
                 env,
             }],
         }];

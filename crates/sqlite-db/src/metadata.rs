@@ -17,7 +17,7 @@ impl SqliteDb {
                 },
             )
             .unwrap_or_else(|_| ProjectMetadata {
-                title: "Untitled Project".to_string(),
+                title: "Untitled Project".to_owned(),
                 description: None,
                 created: None,
             })
@@ -37,7 +37,7 @@ impl SqliteDb {
                  VALUES (1, ?1, ?2, ?3)",
                 rusqlite::params![title, description, now],
             )
-            .map_err(|e| format!("Failed to initialize metadata: {}", e))?;
+            .map_err(|e| format!("Failed to initialize metadata: {e}"))?;
 
         Ok(())
     }

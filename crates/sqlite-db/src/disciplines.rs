@@ -12,10 +12,10 @@ impl SqliteDb {
         color: String,
     ) -> Result<(), String> {
         if name.trim().is_empty() {
-            return Err("Discipline name cannot be empty".to_string());
+            return Err("Discipline name cannot be empty".to_owned());
         }
         if display_name.trim().is_empty() {
-            return Err("Discipline display name cannot be empty".to_string());
+            return Err("Discipline display name cannot be empty".to_owned());
         }
 
         crate::acronym::validate_acronym_format(&acronym)?;
@@ -28,9 +28,9 @@ impl SqliteDb {
                 [&name],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check discipline: {}", e))?;
+            .map_err(|e| format!("Failed to check discipline: {e}"))?;
         if exists {
-            return Err(format!("Discipline '{}' already exists", name));
+            return Err(format!("Discipline '{name}' already exists"));
         }
 
         // Check acronym uniqueness
@@ -41,11 +41,10 @@ impl SqliteDb {
                 [&acronym],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check acronym: {}", e))?;
+            .map_err(|e| format!("Failed to check acronym: {e}"))?;
         if acronym_exists {
             return Err(format!(
-                "Acronym '{}' is already used by another discipline",
-                acronym
+                "Acronym '{acronym}' is already used by another discipline"
             ));
         }
 
@@ -55,7 +54,7 @@ impl SqliteDb {
                  VALUES (?1, ?2, ?3, ?4, ?5)",
                 rusqlite::params![name, display_name, acronym, icon, color],
             )
-            .map_err(|e| format!("Failed to insert discipline: {}", e))?;
+            .map_err(|e| format!("Failed to insert discipline: {e}"))?;
 
         Ok(())
     }
@@ -70,7 +69,7 @@ impl SqliteDb {
         color: String,
     ) -> Result<(), String> {
         if display_name.trim().is_empty() {
-            return Err("Discipline display name cannot be empty".to_string());
+            return Err("Discipline display name cannot be empty".to_owned());
         }
 
         crate::acronym::validate_acronym_format(&acronym)?;
@@ -83,9 +82,9 @@ impl SqliteDb {
                 [&name],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check discipline: {}", e))?;
+            .map_err(|e| format!("Failed to check discipline: {e}"))?;
         if !exists {
-            return Err(format!("Discipline '{}' does not exist", name));
+            return Err(format!("Discipline '{name}' does not exist"));
         }
 
         // Check acronym uniqueness (exclude self)
@@ -96,11 +95,10 @@ impl SqliteDb {
                 rusqlite::params![acronym, name],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check acronym: {}", e))?;
+            .map_err(|e| format!("Failed to check acronym: {e}"))?;
         if acronym_conflict {
             return Err(format!(
-                "Acronym '{}' is already used by another discipline",
-                acronym
+                "Acronym '{acronym}' is already used by another discipline"
             ));
         }
 
@@ -110,7 +108,7 @@ impl SqliteDb {
                 "UPDATE disciplines SET display_name = ?1, acronym = ?2, icon = ?3, color = ?4 WHERE name = ?5",
                 rusqlite::params![display_name, acronym, icon, color, name],
             )
-            .map_err(|e| format!("Failed to update discipline: {}", e))?;
+            .map_err(|e| format!("Failed to update discipline: {e}"))?;
 
         Ok(())
     }
@@ -121,28 +119,27 @@ impl SqliteDb {
         let mut stmt = self
             .conn
             .prepare("SELECT id, title FROM tasks WHERE discipline = ?1")
-            .map_err(|e| format!("Failed to prepare query: {}", e))?;
+            .map_err(|e| format!("Failed to prepare query: {e}"))?;
 
         let tasks: Vec<(u32, String)> = stmt
             .query_map([&name], |row| Ok((row.get(0)?, row.get(1)?)))
-            .map_err(|e| format!("Failed to query tasks: {}", e))?
-            .filter_map(|r| r.ok())
+            .map_err(|e| format!("Failed to query tasks: {e}"))?
+            .filter_map(std::result::Result::ok)
             .collect();
 
         if let Some((task_id, task_title)) = tasks.first() {
             return Err(format!(
-                "Cannot delete discipline '{}': task {} ('{}') belongs to it",
-                name, task_id, task_title
+                "Cannot delete discipline '{name}': task {task_id} ('{task_title}') belongs to it"
             ));
         }
 
         let affected = self
             .conn
             .execute("DELETE FROM disciplines WHERE name = ?1", [&name])
-            .map_err(|e| format!("Failed to delete discipline: {}", e))?;
+            .map_err(|e| format!("Failed to delete discipline: {e}"))?;
 
         if affected == 0 {
-            return Err(format!("Discipline '{}' does not exist", name));
+            return Err(format!("Discipline '{name}' does not exist"));
         }
 
         Ok(())
@@ -175,7 +172,7 @@ impl SqliteDb {
             })
         })
         .unwrap()
-        .filter_map(|r| r.ok())
+        .filter_map(std::result::Result::ok)
         .collect()
     }
 
@@ -203,7 +200,7 @@ impl SqliteDb {
                     [name],
                     |row| row.get(0),
                 )
-                .map_err(|e| format!("Failed to check discipline: {}", e))?;
+                .map_err(|e| format!("Failed to check discipline: {e}"))?;
 
             if !exists {
                 self.conn
@@ -212,7 +209,7 @@ impl SqliteDb {
                          VALUES (?1, ?2, ?3, ?4, ?5)",
                         rusqlite::params![name, display_name, acronym, icon, color],
                     )
-                    .map_err(|e| format!("Failed to seed discipline '{}': {}", name, e))?;
+                    .map_err(|e| format!("Failed to seed discipline '{name}': {e}"))?;
             }
         }
 

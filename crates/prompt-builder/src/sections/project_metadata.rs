@@ -1,6 +1,7 @@
 use crate::context::PromptContext;
 use crate::recipe::Section;
 
+#[allow(clippy::unnecessary_wraps)]
 fn build(ctx: &PromptContext) -> Option<String> {
     let title = &ctx.metadata.title;
     let desc = ctx

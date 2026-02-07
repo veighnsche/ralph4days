@@ -6,10 +6,10 @@ impl SqliteDb {
     /// Create a new feature.
     pub fn create_feature(&self, input: FeatureInput) -> Result<(), String> {
         if input.name.trim().is_empty() {
-            return Err("Feature name cannot be empty".to_string());
+            return Err("Feature name cannot be empty".to_owned());
         }
         if input.display_name.trim().is_empty() {
-            return Err("Feature display name cannot be empty".to_string());
+            return Err("Feature display name cannot be empty".to_owned());
         }
 
         crate::acronym::validate_acronym_format(&input.acronym)?;
@@ -22,7 +22,7 @@ impl SqliteDb {
                 [&input.name],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check feature: {}", e))?;
+            .map_err(|e| format!("Failed to check feature: {e}"))?;
         if exists {
             return Err(format!("Feature '{}' already exists", input.name));
         }
@@ -35,7 +35,7 @@ impl SqliteDb {
                 [&input.acronym],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check acronym: {}", e))?;
+            .map_err(|e| format!("Failed to check acronym: {e}"))?;
         if acronym_exists {
             return Err(format!(
                 "Acronym '{}' is already used by another feature",
@@ -66,7 +66,7 @@ impl SqliteDb {
                     deps_json,
                 ],
             )
-            .map_err(|e| format!("Failed to insert feature: {}", e))?;
+            .map_err(|e| format!("Failed to insert feature: {e}"))?;
 
         Ok(())
     }
@@ -74,7 +74,7 @@ impl SqliteDb {
     /// Update an existing feature. Preserves: created, learnings.
     pub fn update_feature(&self, input: FeatureInput) -> Result<(), String> {
         if input.display_name.trim().is_empty() {
-            return Err("Feature display name cannot be empty".to_string());
+            return Err("Feature display name cannot be empty".to_owned());
         }
 
         crate::acronym::validate_acronym_format(&input.acronym)?;
@@ -87,7 +87,7 @@ impl SqliteDb {
                 [&input.name],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check feature: {}", e))?;
+            .map_err(|e| format!("Failed to check feature: {e}"))?;
         if !exists {
             return Err(format!("Feature '{}' does not exist", input.name));
         }
@@ -100,7 +100,7 @@ impl SqliteDb {
                 rusqlite::params![input.acronym, input.name],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check acronym: {}", e))?;
+            .map_err(|e| format!("Failed to check acronym: {e}"))?;
         if acronym_conflict {
             return Err(format!(
                 "Acronym '{}' is already used by another feature",
@@ -130,7 +130,7 @@ impl SqliteDb {
                     input.name,
                 ],
             )
-            .map_err(|e| format!("Failed to update feature: {}", e))?;
+            .map_err(|e| format!("Failed to update feature: {e}"))?;
 
         Ok(())
     }
@@ -141,28 +141,27 @@ impl SqliteDb {
         let mut stmt = self
             .conn
             .prepare("SELECT id, title FROM tasks WHERE feature = ?1")
-            .map_err(|e| format!("Failed to prepare query: {}", e))?;
+            .map_err(|e| format!("Failed to prepare query: {e}"))?;
 
         let tasks: Vec<(u32, String)> = stmt
             .query_map([&name], |row| Ok((row.get(0)?, row.get(1)?)))
-            .map_err(|e| format!("Failed to query tasks: {}", e))?
-            .filter_map(|r| r.ok())
+            .map_err(|e| format!("Failed to query tasks: {e}"))?
+            .filter_map(std::result::Result::ok)
             .collect();
 
         if let Some((task_id, task_title)) = tasks.first() {
             return Err(format!(
-                "Cannot delete feature '{}': task {} ('{}') belongs to it",
-                name, task_id, task_title
+                "Cannot delete feature '{name}': task {task_id} ('{task_title}') belongs to it"
             ));
         }
 
         let affected = self
             .conn
             .execute("DELETE FROM features WHERE name = ?1", [&name])
-            .map_err(|e| format!("Failed to delete feature: {}", e))?;
+            .map_err(|e| format!("Failed to delete feature: {e}"))?;
 
         if affected == 0 {
-            return Err(format!("Feature '{}' does not exist", name));
+            return Err(format!("Feature '{name}' does not exist"));
         }
 
         Ok(())
@@ -201,7 +200,7 @@ impl SqliteDb {
             })
         })
         .unwrap()
-        .filter_map(|r| r.ok())
+        .filter_map(std::result::Result::ok)
         .collect()
     }
 
@@ -221,7 +220,7 @@ impl SqliteDb {
                 [feature_name],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Feature '{}' not found: {}", feature_name, e))?;
+            .map_err(|e| format!("Feature '{feature_name}' not found: {e}"))?;
 
         let mut learnings: Vec<FeatureLearning> =
             serde_json::from_str(&learnings_json).unwrap_or_default();
@@ -232,13 +231,13 @@ impl SqliteDb {
                 // Increment hit_count on existing
                 learnings[existing_index].record_re_observation();
                 let updated =
-                    serde_json::to_string(&learnings).map_err(|e| format!("JSON error: {}", e))?;
+                    serde_json::to_string(&learnings).map_err(|e| format!("JSON error: {e}"))?;
                 self.conn
                     .execute(
                         "UPDATE features SET learnings = ?1 WHERE name = ?2",
                         rusqlite::params![updated, feature_name],
                     )
-                    .map_err(|e| format!("Failed to update learnings: {}", e))?;
+                    .map_err(|e| format!("Failed to update learnings: {e}"))?;
                 Ok(false)
             }
             DeduplicationResult::Conflict {
@@ -249,15 +248,15 @@ impl SqliteDb {
                 learnings[existing_index] = learning;
                 // Update reason to note the conflict
                 learnings[existing_index].reason =
-                    Some(format!("Replaced conflicting learning: {}", new_text));
+                    Some(format!("Replaced conflicting learning: {new_text}"));
                 let updated =
-                    serde_json::to_string(&learnings).map_err(|e| format!("JSON error: {}", e))?;
+                    serde_json::to_string(&learnings).map_err(|e| format!("JSON error: {e}"))?;
                 self.conn
                     .execute(
                         "UPDATE features SET learnings = ?1 WHERE name = ?2",
                         rusqlite::params![updated, feature_name],
                     )
-                    .map_err(|e| format!("Failed to update learnings: {}", e))?;
+                    .map_err(|e| format!("Failed to update learnings: {e}"))?;
                 Ok(true)
             }
             DeduplicationResult::Unique => {
@@ -267,7 +266,7 @@ impl SqliteDb {
                 let to_prune = select_for_pruning(&learnings, max_learnings);
                 if !to_prune.is_empty() {
                     // Remove in reverse order to preserve indices
-                    let mut sorted_prune = to_prune.clone();
+                    let mut sorted_prune = to_prune;
                     sorted_prune.sort_unstable_by(|a, b| b.cmp(a));
                     for idx in sorted_prune {
                         learnings.remove(idx);
@@ -277,19 +276,18 @@ impl SqliteDb {
                 // If still over cap (all protected), reject
                 if learnings.len() > max_learnings {
                     return Err(
-                        "Learnings full — all are protected. Review and remove some manually."
-                            .to_string(),
+                        "Learnings full — all are protected. Review and remove some manually.".to_owned(),
                     );
                 }
 
                 let updated =
-                    serde_json::to_string(&learnings).map_err(|e| format!("JSON error: {}", e))?;
+                    serde_json::to_string(&learnings).map_err(|e| format!("JSON error: {e}"))?;
                 self.conn
                     .execute(
                         "UPDATE features SET learnings = ?1 WHERE name = ?2",
                         rusqlite::params![updated, feature_name],
                     )
-                    .map_err(|e| format!("Failed to update learnings: {}", e))?;
+                    .map_err(|e| format!("Failed to update learnings: {e}"))?;
                 Ok(true)
             }
         }
@@ -304,7 +302,7 @@ impl SqliteDb {
                 [feature_name],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Feature '{}' not found: {}", feature_name, e))?;
+            .map_err(|e| format!("Feature '{feature_name}' not found: {e}"))?;
 
         let mut learnings: Vec<FeatureLearning> =
             serde_json::from_str(&learnings_json).unwrap_or_default();
@@ -320,13 +318,13 @@ impl SqliteDb {
         learnings.remove(index);
 
         let updated =
-            serde_json::to_string(&learnings).map_err(|e| format!("JSON error: {}", e))?;
+            serde_json::to_string(&learnings).map_err(|e| format!("JSON error: {e}"))?;
         self.conn
             .execute(
                 "UPDATE features SET learnings = ?1 WHERE name = ?2",
                 rusqlite::params![updated, feature_name],
             )
-            .map_err(|e| format!("Failed to update learnings: {}", e))?;
+            .map_err(|e| format!("Failed to update learnings: {e}"))?;
 
         Ok(())
     }
@@ -341,10 +339,10 @@ impl SqliteDb {
     ) -> Result<bool, String> {
         // Validate path: reject absolute paths and ".."
         if file_path.starts_with('/') || file_path.starts_with('\\') {
-            return Err("Context file path must be relative".to_string());
+            return Err("Context file path must be relative".to_owned());
         }
         if file_path.contains("..") {
-            return Err("Context file path cannot contain '..'".to_string());
+            return Err("Context file path cannot contain '..'".to_owned());
         }
 
         let cf_json: String = self
@@ -354,7 +352,7 @@ impl SqliteDb {
                 [feature_name],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Feature '{}' not found: {}", feature_name, e))?;
+            .map_err(|e| format!("Feature '{feature_name}' not found: {e}"))?;
 
         let mut files: Vec<String> = serde_json::from_str(&cf_json).unwrap_or_default();
 
@@ -366,20 +364,19 @@ impl SqliteDb {
         // Cap enforcement
         if files.len() >= max_files {
             return Err(format!(
-                "Context files limit ({}) reached for feature '{}'",
-                max_files, feature_name
+                "Context files limit ({max_files}) reached for feature '{feature_name}'"
             ));
         }
 
-        files.push(file_path.to_string());
+        files.push(file_path.to_owned());
 
-        let updated = serde_json::to_string(&files).map_err(|e| format!("JSON error: {}", e))?;
+        let updated = serde_json::to_string(&files).map_err(|e| format!("JSON error: {e}"))?;
         self.conn
             .execute(
                 "UPDATE features SET context_files = ?1 WHERE name = ?2",
                 rusqlite::params![updated, feature_name],
             )
-            .map_err(|e| format!("Failed to update context_files: {}", e))?;
+            .map_err(|e| format!("Failed to update context_files: {e}"))?;
 
         Ok(true)
     }

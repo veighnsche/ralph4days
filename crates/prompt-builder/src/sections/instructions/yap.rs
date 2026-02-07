@@ -2,7 +2,7 @@ use crate::context::PromptContext;
 use crate::recipe::Section;
 
 pub fn default_text() -> String {
-    r#"## Instructions
+    "## Instructions
 
 You are receiving additional input from the user about tasks. Review the existing tasks and the user's input, then create new tasks or update existing ones.
 
@@ -21,10 +21,10 @@ You are receiving additional input from the user about tasks. Review the existin
 - Use `context_files` to point tasks at relevant source files
 - If the user's input conflicts with existing tasks, ask for clarification
 - Preserve existing task data when updating -- only change what the user explicitly requests
-- Use `hints` to pass along any useful implementation tips from the user"#
-        .to_string()
+- Use `hints` to pass along any useful implementation tips from the user".to_owned()
 }
 
+#[allow(clippy::unnecessary_wraps)]
 fn build(ctx: &PromptContext) -> Option<String> {
     if let Some(text) = ctx.instruction_overrides.get("yap_instructions") {
         return Some(text.clone());

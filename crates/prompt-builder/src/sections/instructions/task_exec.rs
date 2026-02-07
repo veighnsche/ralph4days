@@ -22,10 +22,10 @@ You are executing a specific task. Complete it thoroughly, following the discipl
 - If you encounter a blocker, update the task status to `blocked` with a `blocked_by` explanation and stop.
 - If ALL tasks in the project are now complete, output `<promise>COMPLETE</promise>` at the end of your response.
 - Do not modify files outside the scope of your assigned task unless absolutely necessary.
-- If a dependency task is not yet complete, do not proceed -- mark yourself as blocked."#
-        .to_string()
+- If a dependency task is not yet complete, do not proceed -- mark yourself as blocked."#.to_owned()
 }
 
+#[allow(clippy::unnecessary_wraps)]
 fn build(ctx: &PromptContext) -> Option<String> {
     if let Some(text) = ctx.instruction_overrides.get("task_exec_instructions") {
         return Some(text.clone());

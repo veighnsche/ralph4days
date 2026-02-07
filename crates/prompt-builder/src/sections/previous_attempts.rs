@@ -17,7 +17,7 @@ fn build(ctx: &PromptContext) -> Option<String> {
         ));
     }
 
-    Some(out.trim_end().to_string())
+    Some(out.trim_end().to_owned())
 }
 
 pub fn previous_attempts() -> Section {

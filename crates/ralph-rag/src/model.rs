@@ -151,7 +151,7 @@ impl IterationRecord {
             for err in &self.errors {
                 text.push_str(&format!("\n- {}", err.message));
                 if let Some(path) = &err.file_path {
-                    text.push_str(&format!(" (in {})", path));
+                    text.push_str(&format!(" (in {path})"));
                 }
             }
         }
@@ -365,7 +365,7 @@ mod tests {
             }],
             files_touched: vec![],
             tokens_used: Some(45000),
-            duration_ms: Some(120000),
+            duration_ms: Some(120_000),
             model_tier: ModelTier::Haiku,
         };
 

@@ -19,7 +19,7 @@ pub fn run() {
     #[cfg(target_os = "linux")]
     {
         std::env::set_var("__NV_DISABLE_EXPLICIT_SYNC", "1");
-    }
+    };
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -32,15 +32,15 @@ pub fn run() {
                 if let Some(project_path) = matches.args.get("project") {
                     if let serde_json::Value::String(path_str) = &project_path.value {
                         // Validate and lock project from CLI arg
-                        if let Err(e) = commands::validate_project_path(path_str.to_string()) {
-                            eprintln!("Failed to lock project: {}", e);
+                        if let Err(e) = commands::validate_project_path(path_str.clone()) {
+                            eprintln!("Failed to lock project: {e}");
                             std::process::exit(1);
                         }
 
                         // Lock the project
                         let state: tauri::State<AppState> = app.state();
-                        if let Err(e) = commands::set_locked_project(state, path_str.to_string()) {
-                            eprintln!("Error: {}", e);
+                        if let Err(e) = commands::set_locked_project(state, path_str.clone()) {
+                            eprintln!("Error: {e}");
                             std::process::exit(1);
                         }
                     }

@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 /// Dirs to skip when walking the project tree.
@@ -85,7 +85,7 @@ fn analyze_inner(project_path: &Path) -> Option<CodebaseSnapshot> {
     let mut languages: BTreeMap<String, usize> = BTreeMap::new();
     let mut total_files: usize = 0;
     let mut top_dirs: Vec<String> = Vec::new();
-    let mut dir_tree_set: BTreeMap<String, ()> = BTreeMap::new();
+    let mut dir_tree_set: BTreeSet<String> = BTreeSet::new();
 
     // Collect top-level dirs
     let entries = std::fs::read_dir(project_path).ok()?;
@@ -94,7 +94,7 @@ fn analyze_inner(project_path: &Path) -> Option<CodebaseSnapshot> {
         if ft.is_dir() {
             if let Some(name) = entry.file_name().to_str() {
                 if !name.starts_with('.') && !EXCLUDED_DIRS.contains(&name) {
-                    top_dirs.push(name.to_string());
+                    top_dirs.push(name.to_owned());
                 }
             }
         }
@@ -104,14 +104,13 @@ fn analyze_inner(project_path: &Path) -> Option<CodebaseSnapshot> {
     // Walk the tree
     let mut stack: Vec<(std::path::PathBuf, usize)> = vec![(project_path.to_path_buf(), 0)];
     while let Some((dir, depth)) = stack.pop() {
-        let entries = match std::fs::read_dir(&dir) {
-            Ok(e) => e,
-            Err(_) => continue,
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            continue;
         };
         for entry in entries.flatten() {
             let path = entry.path();
             let name = match entry.file_name().to_str() {
-                Some(n) => n.to_string(),
+                Some(n) => n.to_owned(),
                 None => continue,
             };
 
@@ -122,20 +121,20 @@ fn analyze_inner(project_path: &Path) -> Option<CodebaseSnapshot> {
                 // Record depth-2 dir tree entries (top/sub)
                 if depth == 0 && dir_tree_set.len() < 30 {
                     // This is a top-level dir; its children will be depth=1
-                    dir_tree_set.insert(name.clone(), ());
+                    dir_tree_set.insert(name.clone());
                 } else if depth == 1 && dir_tree_set.len() < 30 {
                     // depth=1 child: record as "parent/child"
                     let parent = dir
                         .strip_prefix(project_path)
                         .unwrap_or(dir.as_path())
                         .to_string_lossy();
-                    dir_tree_set.insert(format!("{parent}/{name}"), ());
+                    dir_tree_set.insert(format!("{parent}/{name}"));
                 }
                 stack.push((path, depth + 1));
             } else if path.is_file() {
                 if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
                     if let Some(lang) = ext_to_language(ext) {
-                        *languages.entry(lang.to_string()).or_insert(0) += 1;
+                        *languages.entry(lang.to_owned()).or_insert(0) += 1;
                         total_files += 1;
                     }
                 }
@@ -144,7 +143,7 @@ fn analyze_inner(project_path: &Path) -> Option<CodebaseSnapshot> {
     }
 
     let is_empty_project = total_files == 0;
-    let dir_tree: Vec<String> = dir_tree_set.into_keys().collect();
+    let dir_tree: Vec<String> = dir_tree_set.into_iter().collect();
 
     Some(CodebaseSnapshot {
         total_files,

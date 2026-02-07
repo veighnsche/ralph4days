@@ -296,9 +296,9 @@ impl FeatureLearning {
 
         // Add provenance context
         let mut meta = Vec::new();
-        meta.push(self.source_label().to_string());
+        meta.push(self.source_label().to_owned());
         if let Some(iter) = self.iteration {
-            meta.push(format!("iteration {}", iter));
+            meta.push(format!("iteration {iter}"));
         }
         if !self.reviewed {
             meta.push("unreviewed".into());
@@ -310,7 +310,7 @@ impl FeatureLearning {
         parts.push(format!("[{}]", meta.join(", ")));
 
         if let Some(reason) = &self.reason {
-            parts.push(format!("({})", reason));
+            parts.push(format!("({reason})"));
         }
 
         parts.join(" ")
@@ -388,7 +388,7 @@ pub fn check_deduplication(new_text: &str, existing: &[FeatureLearning]) -> Dedu
                 // One negates the other — this is a CONFLICT, not a duplicate
                 return DeduplicationResult::Conflict {
                     existing_index: i,
-                    new_text: new_text.to_string(),
+                    new_text: new_text.to_owned(),
                 };
             }
 
@@ -436,7 +436,7 @@ fn has_negation(text: &str) -> bool {
 /// assert!(!injected.contains("IGNORE ALL"));
 /// ```
 pub fn sanitize_learning_text(text: &str) -> String {
-    let mut sanitized = text.to_string();
+    let mut sanitized = text.to_owned();
 
     // Strip known injection patterns (case-insensitive)
     let lower = sanitized.to_lowercase();
@@ -463,7 +463,7 @@ pub fn sanitize_learning_text(text: &str) -> String {
         sanitized.truncate(500);
     }
 
-    sanitized.trim().to_string()
+    sanitized.trim().to_owned()
 }
 
 /// Select which learnings to prune when over the cap (max 50).
@@ -518,7 +518,7 @@ impl<'de> Deserialize<'de> for FeatureLearning {
         let value = serde_json::Value::deserialize(deserializer)?;
 
         match value {
-            serde_json::Value::String(s) => Ok(FeatureLearning {
+            serde_json::Value::String(s) => Ok(Self {
                 text: s,
                 reason: None,
                 source: LearningSource::Auto,
@@ -537,50 +537,46 @@ impl<'de> Deserialize<'de> for FeatureLearning {
                         serde::de::Error::custom(
                             "FeatureLearning map must have a 'text' field (string)",
                         )
-                    })?
-                    .to_string();
+                    })?.to_owned();
 
                 let reason = map
                     .get("reason")
                     .and_then(|v| v.as_str())
-                    .map(|s| s.to_string());
+                    .map(std::borrow::ToOwned::to_owned);
 
                 let source = map
                     .get("source")
                     .and_then(|v| v.as_str())
-                    .map(|s| match s {
-                        "auto" => LearningSource::Auto,
+                    .map_or(LearningSource::Auto, |s| match s {
                         "agent" => LearningSource::Agent,
                         "human" => LearningSource::Human,
                         "opus_reviewed" => LearningSource::OpusReviewed,
                         _ => LearningSource::Auto,
-                    })
-                    .unwrap_or(LearningSource::Auto);
+                    });
 
                 let task_id = map
                     .get("task_id")
-                    .and_then(|v| v.as_u64())
+                    .and_then(serde_json::Value::as_u64)
                     .map(|n| n as u32);
                 let iteration = map
                     .get("iteration")
-                    .and_then(|v| v.as_u64())
+                    .and_then(serde_json::Value::as_u64)
                     .map(|n| n as u32);
                 let created = map
                     .get("created")
                     .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .to_string();
-                let hit_count = map.get("hit_count").and_then(|v| v.as_u64()).unwrap_or(1) as u32;
+                    .unwrap_or("").to_owned();
+                let hit_count = map.get("hit_count").and_then(serde_json::Value::as_u64).unwrap_or(1) as u32;
                 let reviewed = map
                     .get("reviewed")
-                    .and_then(|v| v.as_bool())
+                    .and_then(serde_json::Value::as_bool)
                     .unwrap_or(false);
                 let review_count = map
                     .get("review_count")
-                    .and_then(|v| v.as_u64())
+                    .and_then(serde_json::Value::as_u64)
                     .unwrap_or(0) as u32;
 
-                Ok(FeatureLearning {
+                Ok(Self {
                     text,
                     reason,
                     source,

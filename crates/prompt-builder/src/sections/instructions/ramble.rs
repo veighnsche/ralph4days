@@ -2,7 +2,7 @@ use crate::context::PromptContext;
 use crate::recipe::Section;
 
 pub fn default_text() -> String {
-    r#"## Instructions
+    "## Instructions
 
 You are receiving input from the user about features. Review the existing features and the user's input, then create or update features as needed.
 
@@ -21,10 +21,10 @@ You are receiving input from the user about features. Review the existing featur
 - Set `knowledge_paths` to point at reference documents (specs, designs, docs)
 - Set `context_files` to point at the key source files for the feature
 - If a feature is being split or merged, update associated tasks accordingly
-- Keep feature descriptions concise but informative"#
-        .to_string()
+- Keep feature descriptions concise but informative".to_owned()
 }
 
+#[allow(clippy::unnecessary_wraps)]
 fn build(ctx: &PromptContext) -> Option<String> {
     if let Some(text) = ctx.instruction_overrides.get("ramble_instructions") {
         return Some(text.clone());

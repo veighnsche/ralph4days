@@ -12,6 +12,45 @@ authors = ["vince"]
 edition = "2021"
 rust-version = "1.75"
 
+[workspace.lints.clippy]
+# Enable pedantic group (aggressive shorthand/conciseness enforcement)
+pedantic = { level = "warn", priority = -1 }
+
+# --- Disable noisy pedantic lints that don't save tokens ---
+cast_possible_truncation = "allow"   # i64 → i32 casts are intentional
+cast_precision_loss = "allow"        # f64 precision is fine for our use
+cast_sign_loss = "allow"             # Unsigned casts are intentional
+case_sensitive_file_extension_comparisons = "allow"  # Path API is more verbose
+doc_markdown = "allow"               # Don't enforce backticks in doc comments
+format_push_string = "allow"         # write!() is more verbose than push_str(format!())
+items_after_statements = "allow"     # Doesn't save tokens, just reorders
+missing_errors_doc = "allow"         # Don't require error docs on every Result fn
+missing_panics_doc = "allow"         # Don't require panic docs
+module_name_repetitions = "allow"    # Allow FooError in foo module
+must_use_candidate = "allow"         # Too noisy for app code
+return_self_not_must_use = "allow"   # Builder pattern doesn't need #[must_use]
+needless_pass_by_value = "allow"     # Tauri commands require owned types
+struct_excessive_bools = "allow"     # Config structs legitimately use bools
+too_many_lines = "allow"             # Function length is handled elsewhere
+wildcard_imports = "allow"           # We use prelude-style imports
+
+# --- Cherry-pick from restriction (extra token savings) ---
+redundant_type_annotations = "warn"  # Remove `let x: Foo = Foo::new()`
+needless_raw_strings = "warn"        # r"no escapes" → "no escapes"
+needless_raw_string_hashes = "warn"  # r##"foo"## → r"foo"
+rest_pat_in_fully_bound_structs = "warn"  # Remove useless `..` in struct patterns
+str_to_string = "warn"               # "s".to_string() → "s".to_owned() (clearer intent)
+semicolon_outside_block = "warn"     # Consistent semicolon placement
+try_err = "warn"                     # Err(e)? → return Err(e)
+
+# --- Cherry-pick from nursery (extra token savings) ---
+redundant_clone = "warn"             # Remove unnecessary .clone()
+use_self = "warn"                    # MyType → Self in impl blocks
+option_if_let_else = "warn"          # if let Some → map_or / map_or_else
+
+[workspace.lints.rust]
+unsafe_code = "deny"
+
 [workspace.dependencies]
 # Shared dependencies
 serde = { version = "1", features = ["derive"] }

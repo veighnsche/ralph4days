@@ -35,7 +35,7 @@ impl SqliteDb {
     /// Sets PRAGMAs, runs migrations, and returns a ready-to-use database.
     pub fn open(path: &Path) -> Result<Self, String> {
         let mut conn =
-            Connection::open(path).map_err(|e| format!("Failed to open database: {}", e))?;
+            Connection::open(path).map_err(|e| format!("Failed to open database: {e}"))?;
 
         // Set PRAGMAs for performance and correctness
         conn.execute_batch(
@@ -43,7 +43,7 @@ impl SqliteDb {
              PRAGMA synchronous = NORMAL;
              PRAGMA foreign_keys = ON;",
         )
-        .map_err(|e| format!("Failed to set PRAGMAs: {}", e))?;
+        .map_err(|e| format!("Failed to set PRAGMAs: {e}"))?;
 
         // Run migrations
         let migrations = Migrations::new(vec![
@@ -53,7 +53,7 @@ impl SqliteDb {
 
         migrations
             .to_latest(&mut conn)
-            .map_err(|e| format!("Failed to run migrations: {}", e))?;
+            .map_err(|e| format!("Failed to run migrations: {e}"))?;
 
         Ok(Self { conn })
     }
@@ -62,16 +62,16 @@ impl SqliteDb {
     pub fn execute_raw(&self, sql: &str) -> Result<(), String> {
         self.conn
             .execute_batch(sql)
-            .map_err(|e| format!("Raw SQL failed: {}", e))
+            .map_err(|e| format!("Raw SQL failed: {e}"))
     }
 
     /// Open an in-memory database (for testing).
     pub fn open_in_memory() -> Result<Self, String> {
         let mut conn = Connection::open_in_memory()
-            .map_err(|e| format!("Failed to open in-memory database: {}", e))?;
+            .map_err(|e| format!("Failed to open in-memory database: {e}"))?;
 
         conn.execute_batch("PRAGMA foreign_keys = ON;")
-            .map_err(|e| format!("Failed to set PRAGMAs: {}", e))?;
+            .map_err(|e| format!("Failed to set PRAGMAs: {e}"))?;
 
         let migrations = Migrations::new(vec![
             M::up(include_str!("migrations/001_initial.sql")),
@@ -80,7 +80,7 @@ impl SqliteDb {
 
         migrations
             .to_latest(&mut conn)
-            .map_err(|e| format!("Failed to run migrations: {}", e))?;
+            .map_err(|e| format!("Failed to run migrations: {e}"))?;
 
         Ok(Self { conn })
     }

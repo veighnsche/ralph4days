@@ -138,7 +138,7 @@ pub fn journal_path(project_path: &Path, feature_name: &str) -> PathBuf {
         .join(".ralph")
         .join("db")
         .join("memory")
-        .join(format!("{}.jsonl", feature_name))
+        .join(format!("{feature_name}.jsonl"))
 }
 
 /// Path to the memory directory.
@@ -153,9 +153,8 @@ pub fn memory_dir(project_path: &Path) -> PathBuf {
 pub fn read_journal(project_path: &Path, feature_name: &str) -> Vec<JournalEntry> {
     let path = journal_path(project_path, feature_name);
 
-    let content = match std::fs::read_to_string(&path) {
-        Ok(c) => c,
-        Err(_) => return vec![], // File doesn't exist yet — empty history
+    let Ok(content) = std::fs::read_to_string(&path) else {
+        return vec![]; // File doesn't exist yet — empty history
     };
 
     content
@@ -186,29 +185,26 @@ pub fn read_journal(project_path: &Path, feature_name: &str) -> Vec<JournalEntry
 /// Count journal entries for a feature without loading them all.
 pub fn count_entries(project_path: &Path, feature_name: &str) -> usize {
     let path = journal_path(project_path, feature_name);
-    match std::fs::read_to_string(&path) {
-        Ok(content) => content.lines().filter(|l| !l.trim().is_empty()).count(),
-        Err(_) => 0,
-    }
+    std::fs::read_to_string(&path)
+        .map_or(0, |content| content.lines().filter(|l| !l.trim().is_empty()).count())
 }
 
 /// List all features that have journal files.
 pub fn list_features_with_history(project_path: &Path) -> Vec<String> {
     let dir = memory_dir(project_path);
-    match std::fs::read_dir(&dir) {
-        Ok(entries) => entries
-            .filter_map(|e| e.ok())
-            .filter_map(|e| {
-                let name = e.file_name().to_string_lossy().to_string();
-                if name.ends_with(".jsonl") {
-                    Some(name.trim_end_matches(".jsonl").to_string())
-                } else {
-                    None
-                }
-            })
-            .collect(),
-        Err(_) => vec![],
-    }
+    std::fs::read_dir(&dir).map_or_else(
+        |_| vec![],
+        |entries| {
+            entries
+                .filter_map(std::result::Result::ok)
+                .filter_map(|e| {
+                    let name = e.file_name().to_string_lossy().to_string();
+                    name.ends_with(".jsonl")
+                        .then(|| name.trim_end_matches(".jsonl").to_owned())
+                })
+                .collect()
+        },
+    )
 }
 
 #[cfg(test)]

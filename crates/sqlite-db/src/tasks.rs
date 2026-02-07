@@ -6,13 +6,13 @@ impl SqliteDb {
     /// Create a new task with automatic ID assignment.
     pub fn create_task(&self, input: TaskInput) -> Result<u32, String> {
         if input.feature.trim().is_empty() {
-            return Err("Feature name cannot be empty".to_string());
+            return Err("Feature name cannot be empty".to_owned());
         }
         if input.discipline.trim().is_empty() {
-            return Err("Discipline name cannot be empty".to_string());
+            return Err("Discipline name cannot be empty".to_owned());
         }
         if input.title.trim().is_empty() {
-            return Err("Task title cannot be empty".to_string());
+            return Err("Task title cannot be empty".to_owned());
         }
 
         // Validate feature exists
@@ -23,7 +23,7 @@ impl SqliteDb {
                 [&input.feature],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check feature: {}", e))?;
+            .map_err(|e| format!("Failed to check feature: {e}"))?;
         if !feature_exists {
             return Err(format!(
                 "Feature '{}' does not exist. Create it first.",
@@ -39,7 +39,7 @@ impl SqliteDb {
                 [&input.discipline],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check discipline: {}", e))?;
+            .map_err(|e| format!("Failed to check discipline: {e}"))?;
         if !discipline_exists {
             return Err(format!(
                 "Discipline '{}' does not exist. Create it first.",
@@ -56,9 +56,9 @@ impl SqliteDb {
                     [dep_id],
                     |row| row.get(0),
                 )
-                .map_err(|e| format!("Failed to check dependency: {}", e))?;
+                .map_err(|e| format!("Failed to check dependency: {e}"))?;
             if !dep_exists {
-                return Err(format!("Dependency task {} does not exist", dep_id));
+                return Err(format!("Dependency task {dep_id} does not exist"));
             }
         }
 
@@ -68,7 +68,7 @@ impl SqliteDb {
             .query_row("SELECT COALESCE(MAX(id), 0) + 1 FROM tasks", [], |row| {
                 row.get(0)
             })
-            .map_err(|e| format!("Failed to get next task ID: {}", e))?;
+            .map_err(|e| format!("Failed to get next task ID: {e}"))?;
 
         let now = chrono::Utc::now().format("%Y-%m-%d").to_string();
         let tags_json = serde_json::to_string(&input.tags).unwrap();
@@ -91,7 +91,7 @@ impl SqliteDb {
                     input.title,
                     input.description,
                     "pending",
-                    input.priority.map(|p| p.as_str().to_string()),
+                    input.priority.map(|p| p.as_str().to_owned()),
                     tags_json,
                     depends_on_json,
                     now,
@@ -100,10 +100,10 @@ impl SqliteDb {
                     oa_json,
                     input.hints,
                     input.estimated_turns,
-                    input.provenance.map(|p| p.as_str().to_string()),
+                    input.provenance.map(|p| p.as_str().to_owned()),
                 ],
             )
-            .map_err(|e| format!("Failed to insert task: {}", e))?;
+            .map_err(|e| format!("Failed to insert task: {e}"))?;
 
         Ok(next_id)
     }
@@ -111,13 +111,13 @@ impl SqliteDb {
     /// Update an existing task. Preserves: status, blocked_by, created, completed, provenance, comments.
     pub fn update_task(&self, id: u32, update: TaskInput) -> Result<(), String> {
         if update.feature.trim().is_empty() {
-            return Err("Feature name cannot be empty".to_string());
+            return Err("Feature name cannot be empty".to_owned());
         }
         if update.discipline.trim().is_empty() {
-            return Err("Discipline name cannot be empty".to_string());
+            return Err("Discipline name cannot be empty".to_owned());
         }
         if update.title.trim().is_empty() {
-            return Err("Task title cannot be empty".to_string());
+            return Err("Task title cannot be empty".to_owned());
         }
 
         // Verify task exists
@@ -128,9 +128,9 @@ impl SqliteDb {
                 [id],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check task: {}", e))?;
+            .map_err(|e| format!("Failed to check task: {e}"))?;
         if !exists {
-            return Err(format!("Task {} does not exist", id));
+            return Err(format!("Task {id} does not exist"));
         }
 
         // Validate feature exists
@@ -141,7 +141,7 @@ impl SqliteDb {
                 [&update.feature],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check feature: {}", e))?;
+            .map_err(|e| format!("Failed to check feature: {e}"))?;
         if !feature_exists {
             return Err(format!(
                 "Feature '{}' does not exist. Create it first.",
@@ -157,7 +157,7 @@ impl SqliteDb {
                 [&update.discipline],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check discipline: {}", e))?;
+            .map_err(|e| format!("Failed to check discipline: {e}"))?;
         if !discipline_exists {
             return Err(format!(
                 "Discipline '{}' does not exist. Create it first.",
@@ -174,23 +174,22 @@ impl SqliteDb {
                     [dep_id],
                     |row| row.get(0),
                 )
-                .map_err(|e| format!("Failed to check dependency: {}", e))?;
+                .map_err(|e| format!("Failed to check dependency: {e}"))?;
             if !dep_exists {
-                return Err(format!("Dependency task {} does not exist", dep_id));
+                return Err(format!("Dependency task {dep_id} does not exist"));
             }
         }
 
         // Check self-dependency
         if update.depends_on.contains(&id) {
-            return Err(format!("Task {} cannot depend on itself", id));
+            return Err(format!("Task {id} cannot depend on itself"));
         }
 
         // Check circular dependencies
         for dep_id in &update.depends_on {
             if self.has_circular_dependency(id, *dep_id)? {
                 return Err(format!(
-                    "Circular dependency detected: task {} would create a cycle with task {}",
-                    id, dep_id
+                    "Circular dependency detected: task {id} would create a cycle with task {dep_id}"
                 ));
             }
         }
@@ -216,7 +215,7 @@ impl SqliteDb {
                     update.discipline,
                     update.title,
                     update.description,
-                    update.priority.map(|p| p.as_str().to_string()),
+                    update.priority.map(|p| p.as_str().to_owned()),
                     tags_json,
                     depends_on_json,
                     now,
@@ -228,7 +227,7 @@ impl SqliteDb {
                     id,
                 ],
             )
-            .map_err(|e| format!("Failed to update task: {}", e))?;
+            .map_err(|e| format!("Failed to update task: {e}"))?;
 
         Ok(())
     }
@@ -243,9 +242,9 @@ impl SqliteDb {
                 [id],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check task: {}", e))?;
+            .map_err(|e| format!("Failed to check task: {e}"))?;
         if !exists {
-            return Err(format!("Task {} does not exist", id));
+            return Err(format!("Task {id} does not exist"));
         }
 
         let now = chrono::Utc::now().format("%Y-%m-%d").to_string();
@@ -256,14 +255,14 @@ impl SqliteDb {
                     "UPDATE tasks SET status = ?1, completed = ?2, updated = ?3 WHERE id = ?4",
                     rusqlite::params![status.as_str(), now, now, id],
                 )
-                .map_err(|e| format!("Failed to update task status: {}", e))?;
+                .map_err(|e| format!("Failed to update task status: {e}"))?;
         } else {
             self.conn
                 .execute(
                     "UPDATE tasks SET status = ?1, updated = ?2 WHERE id = ?3",
                     rusqlite::params![status.as_str(), now, id],
                 )
-                .map_err(|e| format!("Failed to update task status: {}", e))?;
+                .map_err(|e| format!("Failed to update task status: {e}"))?;
         }
 
         Ok(())
@@ -275,7 +274,7 @@ impl SqliteDb {
         let mut stmt = self
             .conn
             .prepare("SELECT id, depends_on FROM tasks")
-            .map_err(|e| format!("Failed to prepare query: {}", e))?;
+            .map_err(|e| format!("Failed to prepare query: {e}"))?;
 
         let rows = stmt
             .query_map([], |row| {
@@ -283,15 +282,14 @@ impl SqliteDb {
                 let deps_json: String = row.get(1)?;
                 Ok((task_id, deps_json))
             })
-            .map_err(|e| format!("Failed to query tasks: {}", e))?;
+            .map_err(|e| format!("Failed to query tasks: {e}"))?;
 
         for row in rows {
-            let (task_id, deps_json) = row.map_err(|e| format!("Failed to read row: {}", e))?;
+            let (task_id, deps_json) = row.map_err(|e| format!("Failed to read row: {e}"))?;
             let deps: Vec<u32> = serde_json::from_str(&deps_json).unwrap_or_default();
             if deps.contains(&id) {
                 return Err(format!(
-                    "Cannot delete task {}: task {} depends on it",
-                    id, task_id
+                    "Cannot delete task {id}: task {task_id} depends on it"
                 ));
             }
         }
@@ -300,10 +298,10 @@ impl SqliteDb {
         let affected = self
             .conn
             .execute("DELETE FROM tasks WHERE id = ?1", [id])
-            .map_err(|e| format!("Failed to delete task: {}", e))?;
+            .map_err(|e| format!("Failed to delete task: {e}"))?;
 
         if affected == 0 {
-            return Err(format!("Task {} does not exist", id));
+            return Err(format!("Task {id} does not exist"));
         }
 
         Ok(())
@@ -368,7 +366,7 @@ impl SqliteDb {
         let tasks: Vec<Task> = stmt
             .query_map([], |row| Ok(self.row_to_task(row)))
             .unwrap()
-            .filter_map(|r| r.ok())
+            .filter_map(std::result::Result::ok)
             .collect();
 
         // Build status map for inferred status computation
@@ -391,6 +389,7 @@ impl SqliteDb {
 
     /// Convert a rusqlite Row to a Task (25 columns: 19 task + 6 joined display).
     /// inferred_status defaults to Ready; caller computes the real value.
+    #[allow(clippy::unused_self)]
     fn row_to_task(&self, row: &rusqlite::Row) -> Task {
         let status_str: String = row.get(5).unwrap();
         let priority_str: Option<String> = row.get(6).unwrap();
@@ -445,7 +444,7 @@ impl SqliteDb {
             ))
         })
         .unwrap()
-        .filter_map(|r| r.ok())
+        .filter_map(std::result::Result::ok)
         .collect()
     }
 
@@ -464,8 +463,7 @@ impl SqliteDb {
                 let all_deps_met = depends_on.iter().all(|dep_id| {
                     status_map
                         .get(dep_id)
-                        .map(|s| *s == TaskStatus::Done)
-                        .unwrap_or(false)
+                        .is_some_and(|s| *s == TaskStatus::Done)
                 });
 
                 if all_deps_met {
@@ -483,7 +481,7 @@ impl SqliteDb {
         let mut stmt = self
             .conn
             .prepare("SELECT id, depends_on FROM tasks")
-            .map_err(|e| format!("Failed to prepare query: {}", e))?;
+            .map_err(|e| format!("Failed to prepare query: {e}"))?;
 
         let deps_map: std::collections::HashMap<u32, Vec<u32>> = stmt
             .query_map([], |row| {
@@ -492,8 +490,8 @@ impl SqliteDb {
                 let deps: Vec<u32> = serde_json::from_str(&deps_json).unwrap_or_default();
                 Ok((id, deps))
             })
-            .map_err(|e| format!("Failed to query: {}", e))?
-            .filter_map(|r| r.ok())
+            .map_err(|e| format!("Failed to query: {e}"))?
+            .filter_map(std::result::Result::ok)
             .collect();
 
         let mut visited = HashSet::new();

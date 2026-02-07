@@ -88,6 +88,6 @@ impl Serialize for RalphError {
 
 impl From<std::io::Error> for RalphError {
     fn from(e: std::io::Error) -> Self {
-        RalphError::IoError(e.to_string())
+        Self::IoError(e.to_string())
     }
 }
