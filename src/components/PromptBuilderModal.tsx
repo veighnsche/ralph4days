@@ -29,7 +29,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { usePromptPreview } from '@/hooks/usePromptPreview'
 import { useRecipeManagement } from '@/hooks/useRecipeManagement'
 import { type SectionBlock, useSectionConfiguration } from '@/hooks/useSectionConfiguration'
-import { BUILT_IN_RECIPES, CATEGORY_COLORS } from '@/lib/recipe-registry'
+import { BUILT_IN_RECIPES, CATEGORY_COLORS, CATEGORY_GRADIENT_COLORS } from '@/lib/recipe-registry'
 
 interface PromptBuilderModalProps {
   open: boolean
@@ -276,21 +276,29 @@ function SortableSectionBlock({
   }
 
   const categoryColor = CATEGORY_COLORS[section.category] ?? ''
+  const gradientColor = CATEGORY_GRADIENT_COLORS[section.category] ?? 'rgba(100, 116, 139, 0.12)'
 
   return (
     <button
       ref={setNodeRef}
       style={style}
       type="button"
-      className={`w-full rounded-md border transition-all duration-100 cursor-pointer ${section.enabled ? 'opacity-100' : 'opacity-50'} ${isDragging ? 'z-50 shadow-md bg-background' : ''} ${selected ? 'ring-2 ring-ring' : 'hover:bg-muted/30'}`}
+      className={`w-full rounded-md border transition-all duration-100 cursor-pointer relative overflow-hidden ${section.enabled ? 'opacity-100' : 'opacity-50'} ${isDragging ? 'z-50 shadow-md bg-background' : ''} ${selected ? 'ring-2 ring-ring' : 'hover:bg-muted/30'}`}
       onClick={onSelect}>
-      <div className="flex items-center gap-2 px-2.5 py-1.5">
+      <div
+        className="absolute top-0 right-0 w-32 h-32 pointer-events-none"
+        style={{
+          background: `radial-gradient(circle at top right, ${gradientColor} 0%, transparent 70%)`
+        }}
+      />
+
+      <div className="flex items-center gap-2 px-2.5 py-1.5 relative">
         <button
           type="button"
           ref={setActivatorNodeRef}
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground transition-colors"
+          className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
           onClick={e => e.stopPropagation()}>
           <GripVertical className="size-3.5" />
         </button>
@@ -300,18 +308,19 @@ function SortableSectionBlock({
           onClick={e => e.stopPropagation()}
           onKeyDown={e => {
             if (e.key === 'Enter' || e.key === ' ') e.stopPropagation()
-          }}>
+          }}
+          className="flex-shrink-0">
           <Switch checked={section.enabled} onCheckedChange={onToggle} className="scale-75" />
         </button>
 
-        <Badge variant="secondary" className={`text-[9px] px-1.5 py-0 font-normal ${categoryColor}`}>
-          {section.category}
-        </Badge>
-
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 text-left">
           <p className="text-xs font-medium truncate">{section.displayName}</p>
           <p className="text-[10px] text-muted-foreground truncate">{section.description}</p>
         </div>
+
+        <Badge variant="secondary" className={`text-[9px] px-1.5 py-0.5 font-normal flex-shrink-0 ${categoryColor}`}>
+          {section.category}
+        </Badge>
       </div>
     </button>
   )

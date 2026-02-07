@@ -412,6 +412,16 @@ export const CATEGORY_COLORS: Record<string, string> = {
   instructions: 'bg-orange-500/15 text-orange-700 dark:text-orange-400'
 }
 
+export const CATEGORY_GRADIENT_COLORS: Record<string, string> = {
+  project: 'rgba(59, 130, 246, 0.12)',
+  feature: 'rgba(139, 92, 246, 0.12)',
+  task: 'rgba(245, 158, 11, 0.12)',
+  discipline: 'rgba(16, 185, 129, 0.12)',
+  state: 'rgba(100, 116, 139, 0.12)',
+  user: 'rgba(244, 63, 94, 0.12)',
+  instructions: 'rgba(249, 115, 22, 0.12)'
+}
+
 export const BUILT_IN_RECIPES = [
   { value: 'braindump', label: 'Braindump' },
   { value: 'yap', label: 'Yap' },
