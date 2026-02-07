@@ -25,7 +25,6 @@ export function FeaturesPage() {
   const loading = featuresLoading || statsLoading
   const error = featuresError ? String(featuresError) : null
 
-  // Build lookup map from stats array
   const statsMap = new Map<string, GroupStats>()
   for (const stat of featureStats) {
     statsMap.set(stat.name, stat)

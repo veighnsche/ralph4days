@@ -43,20 +43,16 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
       }}>
       <ScrollArea className="h-full">
         <div className="py-3 space-y-3">
-          {/* Task Card */}
           <Card className="shadow-sm flex flex-row gap-0 py-0">
-            {/* Main Content */}
             <div className="flex-1 min-w-0 py-4">
               <TaskCardContent task={task} />
             </div>
 
-            {/* Properties Sidebar */}
             <div className="w-56 flex-shrink-0 border-l">
               <TaskSidebar task={task} />
             </div>
           </Card>
 
-          {/* Comments Section */}
           <CommentsSection task={task} />
         </div>
       </ScrollArea>

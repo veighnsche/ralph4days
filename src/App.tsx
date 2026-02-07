@@ -20,7 +20,7 @@ function App() {
 
   const { data: lockedProject, isLoading: isLoadingProject } = useInvoke<string | null>('get_locked_project')
 
-  // Set window title when project changes
+  // WHY: Tauri window title must be set via API, not document.title
   useEffect(() => {
     if (lockedProject && typeof window !== 'undefined' && '__TAURI__' in window) {
       const projectName = lockedProject.split('/').pop() || 'Unknown'
@@ -45,7 +45,6 @@ function App() {
     [queryClient]
   )
 
-  // Show loading or project picker
   if (isLoadingProject) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -61,11 +60,9 @@ function App() {
   return (
     <ErrorBoundary>
       <ResizablePanelGroup orientation="horizontal" className="h-screen">
-        {/* Left: Pages */}
         <ResizablePanel defaultSize={50} minSize={40}>
           <div className="h-full flex flex-col overflow-hidden">
             <div className="flex-1 min-h-0 overflow-hidden relative">
-              {/* Preload all pages, show/hide with CSS */}
               <div className={currentPage === 'tasks' ? 'h-full' : 'hidden'}>
                 <TasksPage />
               </div>
@@ -76,14 +73,12 @@ function App() {
                 <DisciplinesPage />
               </div>
             </div>
-            {/* Bottom Bar */}
             <BottomBar lockedProject={lockedProject} currentPage={currentPage} onPageChange={setCurrentPage} />
           </div>
         </ResizablePanel>
 
         <ResizableHandle withHandle />
 
-        {/* Right: Output (always visible) */}
         <ResizablePanel defaultSize={50} minSize={20}>
           <div className="h-full">
             <WorkspacePanel />

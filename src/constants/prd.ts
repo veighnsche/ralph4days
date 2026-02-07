@@ -38,42 +38,42 @@ export const INFERRED_STATUS_CONFIG = {
   ready: {
     label: 'Ready',
     icon: CheckCircle2,
-    color: 'var(--status-done)', // Green
+    color: 'var(--status-done)',
     bgColor: 'color-mix(in oklch, var(--status-done) 15%, transparent)',
     description: 'All dependencies met - can be claimed'
   },
   waiting_on_deps: {
     label: 'Waiting on Deps',
     icon: Clock,
-    color: 'var(--priority-medium)', // Yellow/Orange
+    color: 'var(--priority-medium)',
     bgColor: 'color-mix(in oklch, var(--priority-medium) 15%, transparent)',
     description: 'Waiting for dependencies to complete'
   },
   externally_blocked: {
     label: 'Blocked',
     icon: AlertCircle,
-    color: 'var(--status-blocked)', // Red
+    color: 'var(--status-blocked)',
     bgColor: 'color-mix(in oklch, var(--status-blocked) 15%, transparent)',
     description: 'Externally blocked'
   },
   in_progress: {
     label: 'In Progress',
     icon: Play,
-    color: 'var(--status-in-progress)', // Blue
+    color: 'var(--status-in-progress)',
     bgColor: 'color-mix(in oklch, var(--status-in-progress) 15%, transparent)',
     description: 'Currently being worked on'
   },
   done: {
     label: 'Done',
     icon: CheckCircle2,
-    color: 'var(--status-done)', // Green
+    color: 'var(--status-done)',
     bgColor: 'color-mix(in oklch, var(--status-done) 15%, transparent)',
     description: 'Completed'
   },
   skipped: {
     label: 'Skipped',
     icon: Slash,
-    color: 'var(--status-skipped)', // Gray
+    color: 'var(--status-skipped)',
     bgColor: 'color-mix(in oklch, var(--status-skipped) 15%, transparent)',
     description: 'Intentionally skipped'
   }

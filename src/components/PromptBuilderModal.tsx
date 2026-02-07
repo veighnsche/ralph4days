@@ -111,7 +111,6 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [saveNameInput, setSaveNameInput] = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // User input lives in a ref — updated by DebouncedUserInput, read by preview
   const userInputRef = useRef('')
 
   const enabledCount = sections.filter(s => s.enabled).length
@@ -121,8 +120,6 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
-  // Trigger a debounced preview. Called when sections change (via useEffect)
-  // or when user input changes (via DebouncedUserInput callback).
   const schedulePreview = useCallback(
     (currentSections: SectionBlock[]) => {
       if (!open || currentSections.length === 0) return
@@ -147,14 +144,12 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
     [open]
   )
 
-  // Load section metadata once
   useEffect(() => {
     if (!open) return
     invoke<SectionMeta[]>('get_section_metadata').then(setSectionMeta).catch(console.error)
     invoke<string[]>('list_saved_recipes').then(setCustomRecipeNames).catch(console.error)
   }, [open])
 
-  // Load recipe sections when base recipe changes
   const loadRecipeSections = useCallback(
     async (promptType: string) => {
       try {
@@ -180,14 +175,12 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
     [sectionMeta]
   )
 
-  // Load on open and when metadata loads
   useEffect(() => {
     if (open && sectionMeta.length > 0) {
       loadRecipeSections(baseRecipe)
     }
   }, [open, sectionMeta, baseRecipe, loadRecipeSections])
 
-  // Preview when sections change (toggle, reorder, instruction blur)
   useEffect(() => {
     schedulePreview(sections)
     return () => {
@@ -195,7 +188,6 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
     }
   }, [sections, schedulePreview])
 
-  // Called by DebouncedUserInput — doesn't touch parent state, just triggers preview
   const handleUserInputChange = useCallback(
     (value: string) => {
       userInputRef.current = value
@@ -452,8 +444,6 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
   )
 }
 
-/** User input textarea with local state. Syncs to parent via debounced callback.
- *  Typing here NEVER re-renders the parent or the DndContext tree. */
 function DebouncedUserInput({ onDebouncedChange }: { onDebouncedChange: (value: string) => void }) {
   const [value, setValue] = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -486,9 +476,6 @@ function DebouncedUserInput({ onDebouncedChange }: { onDebouncedChange: (value: 
   )
 }
 
-/** Each block owns its instruction override text locally.
- *  Typing in the instruction textarea ONLY re-renders this one block.
- *  Parent (and DndContext) only re-renders on blur when the value is committed. */
 function SortableSectionBlock({
   section,
   onToggle,

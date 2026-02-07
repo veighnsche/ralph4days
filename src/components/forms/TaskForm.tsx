@@ -52,7 +52,6 @@ export function TaskFormFields({ disabled }: { disabled?: boolean }) {
 
   return (
     <div className="space-y-3">
-      {/* Feature */}
       <FormField
         control={control}
         name="feature"
@@ -80,7 +79,6 @@ export function TaskFormFields({ disabled }: { disabled?: boolean }) {
         )}
       />
 
-      {/* Discipline */}
       <FormField
         control={control}
         name="discipline"
@@ -104,7 +102,6 @@ export function TaskFormFields({ disabled }: { disabled?: boolean }) {
         )}
       />
 
-      {/* Title */}
       <FormField
         control={control}
         name="title"
@@ -121,7 +118,6 @@ export function TaskFormFields({ disabled }: { disabled?: boolean }) {
         )}
       />
 
-      {/* Description */}
       <FormField
         control={control}
         name="description"
@@ -136,7 +132,6 @@ export function TaskFormFields({ disabled }: { disabled?: boolean }) {
         )}
       />
 
-      {/* Priority */}
       <FormField
         control={control}
         name="priority"
@@ -156,7 +151,6 @@ export function TaskFormFields({ disabled }: { disabled?: boolean }) {
         )}
       />
 
-      {/* Tags */}
       <FormField
         control={control}
         name="tags"
@@ -201,7 +195,6 @@ export function TaskFormFields({ disabled }: { disabled?: boolean }) {
         )}
       />
 
-      {/* Acceptance Criteria */}
       <FormField
         control={control}
         name="acceptanceCriteria"

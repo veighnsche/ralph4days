@@ -1,31 +1,8 @@
-/**
- * BraindumpFormTabContent - Form for braindumping project ideas to Claude
- *
- * TODO LIST:
- * 1. Wire up MCP server generation (mcp_generator.rs)
- *    - Generate bash MCP server that exposes .ralph/db/ as tools
- *    - Pass mcp_config to create_pty_session instead of hardcoded "interactive"
- *    - Claude needs create_task, create_feature, create_discipline commands
- *
- * 2. Add context prompt wrapper
- *    - Prepend system prompt: "You are helping structure a project. Use the tools..."
- *    - Include instructions to create features/disciplines/tasks from braindump
- *    - Tell Claude to ask clarifying questions if needed
- *
- * 3. Listen for database changes
- *    - After Claude creates tasks, invalidate React Query cache
- *    - Auto-refresh tasks/features pages to show new items
- *    - Show toast notification when items are created
- *
- * 4. Handle terminal close gracefully
- *    - If user closes terminal before Claude finishes, show warning
- *    - Option to continue in background or cancel operation
- *
- * 5. Show progress indicator
- *    - Parse Claude's stream output to show "Creating tasks..." status
- *    - Count how many tasks/features were created
- *    - Show summary when complete
- */
+// TODO: Wire up MCP server generation & database sync
+// TODO: Add context prompt wrapper with tool instructions
+// TODO: Listen for database changes & invalidate cache
+// TODO: Handle terminal close gracefully with background option
+// TODO: Show progress indicator & creation summary
 
 import { invoke } from '@tauri-apps/api/core'
 import { Brain, Wrench } from 'lucide-react'
@@ -70,7 +47,6 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
   const [promptBuilderOpen, setPromptBuilderOpen] = useState(false)
   const isMountedRef = useRef(true)
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       isMountedRef.current = false

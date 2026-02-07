@@ -22,7 +22,6 @@ export function TaskSidebar({ task }: { task: Task }) {
 
   return (
     <div className="px-4 py-4 space-y-0.5 overflow-y-auto h-full">
-      {/* Status */}
       <PropertyRow label="Status">
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-1.5">
@@ -81,7 +80,6 @@ export function TaskSidebar({ task }: { task: Task }) {
         </div>
       </PropertyRow>
 
-      {/* Priority */}
       <PropertyRow label="Priority">
         {priorityConfig ? (
           <span className="text-sm" style={{ color: priorityConfig.color }}>
@@ -94,12 +92,10 @@ export function TaskSidebar({ task }: { task: Task }) {
 
       <Separator bleed="md" className="my-2" />
 
-      {/* Feature */}
       <PropertyRow label="Feature">
         <span className="text-sm">{task.featureDisplayName}</span>
       </PropertyRow>
 
-      {/* Discipline */}
       <PropertyRow label="Discipline">
         <div className="flex items-center gap-1.5">
           <DisciplineIcon className="h-3.5 w-3.5" style={{ color: task.disciplineColor }} />
@@ -109,7 +105,6 @@ export function TaskSidebar({ task }: { task: Task }) {
         </div>
       </PropertyRow>
 
-      {/* Tags */}
       {task.tags && task.tags.length > 0 && (
         <>
           <Separator bleed="md" className="my-2" />
@@ -125,7 +120,6 @@ export function TaskSidebar({ task }: { task: Task }) {
         </>
       )}
 
-      {/* Timeline */}
       <Separator bleed="md" className="my-2" />
       {task.created && (
         <PropertyRow label="Created">

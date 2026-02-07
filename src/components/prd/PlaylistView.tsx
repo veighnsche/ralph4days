@@ -42,7 +42,6 @@ export const PlaylistView = memo(function PlaylistView({ tasks, onTaskClick }: P
   return (
     <TooltipProvider>
       <div className="flex flex-col gap-3 pb-4">
-        {/* Blocked/Skipped Section */}
         {hasBlockedOrSkipped && (
           <Collapsible open={issuesOpen} onOpenChange={setIssuesOpen}>
             <CollapsibleTrigger className="w-full group">
@@ -71,9 +70,7 @@ export const PlaylistView = memo(function PlaylistView({ tasks, onTaskClick }: P
           </Collapsible>
         )}
 
-        {/* Main Playlist */}
         <ItemGroup className="rounded-md">
-          {/* Completed Tasks */}
           {done.map(task => (
             <Fragment key={task.id}>
               <PlaylistItem task={task} onClick={() => onTaskClick(task)} />
@@ -81,7 +78,6 @@ export const PlaylistView = memo(function PlaylistView({ tasks, onTaskClick }: P
             </Fragment>
           ))}
 
-          {/* Now Playing */}
           {inProgress.map(task => (
             <Fragment key={task.id}>
               <PlaylistItem task={task} isNowPlaying onClick={() => onTaskClick(task)} />
@@ -89,7 +85,6 @@ export const PlaylistView = memo(function PlaylistView({ tasks, onTaskClick }: P
             </Fragment>
           ))}
 
-          {/* Pending Tasks */}
           {pending.map((task, index) => (
             <Fragment key={task.id}>
               <PlaylistItem task={task} onClick={() => onTaskClick(task)} />
@@ -97,7 +92,6 @@ export const PlaylistView = memo(function PlaylistView({ tasks, onTaskClick }: P
             </Fragment>
           ))}
 
-          {/* Empty State */}
           {tasks.length === 0 && (
             <div className="flex items-center justify-center h-32">
               <p className="text-sm text-muted-foreground">No tasks in playlist</p>

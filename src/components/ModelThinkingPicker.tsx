@@ -1,13 +1,3 @@
-/**
- * ModelThinkingPicker - Reusable component for selecting Claude model and thinking mode
- *
- * Provides a split button with dropdown menu to select:
- * - Model: haiku, sonnet, opus
- * - Extended thinking: on/off
- *
- * Persists preferences to localStorage using shared keys across the app.
- */
-
 import { ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -27,19 +17,12 @@ import { cn } from '@/lib/utils'
 export type { Model } from '@/hooks/useModelThinkingPreferences'
 
 interface ModelThinkingPickerProps {
-  /** Called when user clicks the primary action button */
   onAction: (model: Model, thinking: boolean) => void
-  /** Text for the primary action button */
   actionLabel: string
-  /** Optional icon element for the primary action button */
   actionIcon?: React.ReactNode
-  /** Whether the action button is disabled */
   disabled?: boolean
-  /** Button variant - defaults to "default" */
   variant?: 'default' | 'outline' | 'ghost'
-  /** Button size - defaults to "lg" */
   size?: 'sm' | 'default' | 'lg'
-  /** Additional className for the button container */
   className?: string
 }
 

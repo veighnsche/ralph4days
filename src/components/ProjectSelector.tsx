@@ -20,11 +20,9 @@ interface ProjectSelectorProps {
 }
 
 export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
-  // Left side - Initialize
   const [initPath, setInitPath] = useState('')
   const [initializing, setInitializing] = useState(false)
 
-  // Right side - Open existing
   const { data: projects = [], isLoading: scanning } = useInvoke<RalphProject[]>('scan_for_ralph_projects')
   const [selectedProject, setSelectedProject] = useState('')
 
@@ -74,7 +72,6 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
     <Dialog open={true}>
       <DialogContent className="max-w-[700px]" showCloseButton={false}>
         <div className="grid grid-cols-[1fr_auto_1fr] gap-4">
-          {/* Left Half - Initialize */}
           <div className="flex flex-col">
             <DialogTitle>Initialize Existing Project</DialogTitle>
             <FieldGroup className="flex-1">
@@ -105,7 +102,6 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
 
           <Separator orientation="vertical" />
 
-          {/* Right Half - Open Existing */}
           <div className="flex flex-col">
             <DialogTitle>Open Existing Project</DialogTitle>
             <FieldGroup className="flex-1">

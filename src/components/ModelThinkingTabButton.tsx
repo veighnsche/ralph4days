@@ -1,10 +1,3 @@
-/**
- * ModelThinkingTabButton - Tab bar variant of model/thinking picker
- *
- * Styled to match browser tab bar aesthetics.
- * Used in WorkspacePanel for the "new tab" plus button.
- */
-
 import { ChevronDown, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -24,7 +17,6 @@ import { cn } from '@/lib/utils'
 export type { Model } from '@/hooks/useModelThinkingPreferences'
 
 interface ModelThinkingTabButtonProps {
-  /** Called when user clicks the plus button to create new tab */
   onNewTab: (model: Model, thinking: boolean) => void
 }
 

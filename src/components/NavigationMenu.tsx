@@ -76,7 +76,6 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
         <DropdownMenuLabel>Navigate to</DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        {/* Tasks submenu */}
         <DropdownMenuSub>
           <DropdownMenuSubTrigger onClick={() => onPageChange('tasks')}>
             <ListTodo className="mr-2 h-4 w-4" />
@@ -95,7 +94,6 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
-        {/* Features submenu */}
         <DropdownMenuSub>
           <DropdownMenuSubTrigger onClick={() => onPageChange('features')}>
             <Target className="mr-2 h-4 w-4" />
@@ -114,7 +112,6 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
-        {/* Disciplines submenu */}
         <DropdownMenuSub>
           <DropdownMenuSubTrigger onClick={() => onPageChange('disciplines')}>
             <Layers className="mr-2 h-4 w-4" />

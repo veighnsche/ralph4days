@@ -36,7 +36,7 @@ interface WorkspaceStore {
   closeTab: (tabId: string) => void
   switchTab: (tabId: string) => void
   closeAllExcept: (tabId: string) => void
-  /** Browser pattern: tab content pushes its own title/icon up to the tab bar */
+  // WHY: Tab content updates title/icon via this method (browser pattern, not parent-driven)
   setTabMeta: (tabId: string, meta: { title?: string; icon?: LucideIcon }) => void
 }
 
@@ -59,7 +59,6 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
     const id = generateTabId(tabInput)
     const { tabs } = get()
 
-    // Duplicate check — focus existing
     const existing = tabs.find(t => t.id === id)
     if (existing) {
       set({ activeTabId: id })
@@ -68,7 +67,6 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
 
     const tab: WorkspaceTab = { ...tabInput, id }
 
-    // Enforce max tabs — close oldest closeable
     let nextTabs = [...tabs, tab]
     while (nextTabs.length > MAX_TABS) {
       const oldest = nextTabs.find(t => t.closeable)
@@ -89,7 +87,6 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
     let nextActive = activeTabId
 
     if (activeTabId === tabId) {
-      // Switch to the tab before the closed one, or first available
       const closedIndex = tabs.findIndex(t => t.id === tabId)
       const prev = tabs[closedIndex - 1] || tabs[closedIndex + 1]
       nextActive = prev?.id ?? ''

@@ -2,7 +2,6 @@ import type { LucideIcon } from 'lucide-react'
 import { resolveIcon } from '@/lib/iconRegistry'
 import { useInvoke } from './useInvoke'
 
-/** Discipline config as returned by the backend (now camelCase) */
 interface DisciplineConfigRaw {
   name: string
   displayName: string
@@ -11,7 +10,6 @@ interface DisciplineConfigRaw {
   acronym: string
 }
 
-/** Resolved discipline config with Lucide icon component */
 export interface DisciplineConfig {
   name: string
   displayName: string
@@ -32,7 +30,6 @@ function resolveDisciplines(raw: DisciplineConfigRaw[]): DisciplineConfig[] {
   }))
 }
 
-/** Fetch discipline configs from the backend, resolve icons, and provide a lookup map */
 export function useDisciplines() {
   const { data, error } = useInvoke<DisciplineConfigRaw[], DisciplineConfig[]>('get_disciplines_config', undefined, {
     staleTime: 5 * 60 * 1000,

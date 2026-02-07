@@ -15,7 +15,6 @@ interface PRDBodyProps {
 
 export function PRDBody({ filteredTasks, totalTasks, onTaskClick, onClearFilters, onBraindump, onYap }: PRDBodyProps) {
   if (filteredTasks.length === 0) {
-    // No tasks at all - show braindump CTA
     if (totalTasks === 0) {
       return (
         <Empty>
@@ -44,7 +43,6 @@ export function PRDBody({ filteredTasks, totalTasks, onTaskClick, onClearFilters
       )
     }
 
-    // Tasks exist but filtered out
     return (
       <Empty>
         <EmptyHeader>

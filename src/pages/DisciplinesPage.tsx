@@ -19,7 +19,6 @@ export function DisciplinesPage() {
   const doneTasks = progress?.doneTasks ?? 0
   const progressPercent = progress?.progressPercent ?? 0
 
-  // Build lookup map from stats array
   const statsMap = new Map<string, GroupStats>()
   for (const stat of disciplineStats) {
     statsMap.set(stat.name, stat)

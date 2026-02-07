@@ -6,7 +6,6 @@ export function useTauriEvent<T>(eventName: string, handler: (payload: T) => voi
   handlerRef.current = handler
 
   useEffect(() => {
-    // Skip if not in Tauri context
     if (typeof window === 'undefined' || !('__TAURI__' in window)) {
       return
     }

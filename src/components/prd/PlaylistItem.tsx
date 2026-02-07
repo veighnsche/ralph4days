@@ -35,7 +35,6 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
       className="cursor-pointer transition-all duration-200 hover:opacity-80 border-l-4 relative overflow-hidden"
       style={getItemStyle(task.status, statusConfig)}
       onClick={onClick}>
-      {/* Priority Color Gradient (upper right corner) */}
       {priorityConfig && (
         <div
           className="absolute top-0 right-0 w-32 h-32 pointer-events-none"
@@ -46,12 +45,10 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
         />
       )}
 
-      {/* Task ID with Icon */}
       <div className="flex-shrink-0 self-start">
         <TaskIdDisplay task={task} />
       </div>
 
-      {/* Main Content: Title + Description */}
       <ItemContent className="gap-0">
         <ItemTitle
           className={isNowPlaying ? 'text-base' : 'text-sm'}
@@ -62,7 +59,6 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
 
         {task.description && <ItemDescription className="truncate">{task.description}</ItemDescription>}
 
-        {/* Blocked By Alert */}
         {task.blockedBy && (
           <Alert variant="destructive" className="mt-1 py-1.5 px-2">
             <AlertDescription className="text-xs flex items-center gap-1.5">{task.blockedBy}</AlertDescription>
@@ -70,11 +66,8 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
         )}
       </ItemContent>
 
-      {/* Right Side: Priority + Metadata */}
       <ItemActions className="flex-col items-end gap-2">
-        {/* Top Row: Counts + Priority */}
         <div className="flex items-center gap-2">
-          {/* Provenance Icon */}
           {task.provenance &&
             (() => {
               const Icon = task.provenance === 'agent' ? Bot : task.provenance === 'human' ? User : Cog
@@ -90,7 +83,6 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
               )
             })()}
 
-          {/* Metadata Badges */}
           {task.acceptanceCriteria && task.acceptanceCriteria.length > 0 && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -102,7 +94,6 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
             </Tooltip>
           )}
 
-          {/* Dependencies Badge - enhanced with inferred status color */}
           {task.dependsOn &&
             task.dependsOn.length > 0 &&
             (() => {
@@ -136,7 +127,6 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
               )
             })()}
 
-          {/* Priority Badge */}
           {priorityConfig && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -156,7 +146,6 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
           )}
         </div>
 
-        {/* Bottom Row: Individual Tags */}
         {task.tags && task.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 justify-end">
             {task.tags.map(tag => (

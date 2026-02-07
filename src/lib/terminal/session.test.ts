@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TerminalSessionConfig, TerminalSessionHandlers } from './session'
 import { useTerminalSession } from './session'
 
-// Mock Tauri API
 const mockInvoke = vi.fn()
 const mockListen = vi.fn()
 const mockUnlisten = vi.fn()
@@ -116,12 +115,10 @@ describe('useTerminalSession', () => {
 
     await waitFor(() => expect(outputCallback).toBeDefined())
 
-    // Simulate output arriving before terminal is ready ("Hello" as base64)
     outputCallback?.({
       payload: { session_id: 'test-session', data: btoa('Hello') }
     })
 
-    // Should NOT call onOutput yet (buffered)
     expect(handlers.onOutput).not.toHaveBeenCalled()
   })
 
@@ -144,7 +141,6 @@ describe('useTerminalSession', () => {
 
     await waitFor(() => expect(outputCallback).toBeDefined())
 
-    // Buffer output before ready ("Hello" as base64)
     const bufferedData = new Uint8Array([72, 101, 108, 108, 111]) // "Hello"
     outputCallback?.({
       payload: { session_id: 'test-session', data: btoa('Hello') }
@@ -152,12 +148,9 @@ describe('useTerminalSession', () => {
 
     expect(handlers.onOutput).not.toHaveBeenCalled()
 
-    // Mark ready - should flush buffer
     result.current.markReady()
 
-    await waitFor(() => {
-      expect(handlers.onOutput).toHaveBeenCalledWith(bufferedData)
-    })
+    await waitFor(() => expect(handlers.onOutput).toHaveBeenCalledWith(bufferedData))
   })
 
   it('sends input to PTY via IPC', async () => {
@@ -212,7 +205,6 @@ describe('useTerminalSession', () => {
 
     result.current.markReady()
 
-    // Output from different session
     outputCallback?.({
       payload: { session_id: 'different-session', data: btoa('He') }
     })
@@ -244,12 +236,10 @@ describe('useTerminalSession', () => {
     await waitFor(() => expect(closedCallback).toBeDefined())
     await waitFor(() => expect(outputCallback).toBeDefined())
 
-    // Simulate output first to mark session as started
     outputCallback?.({
       payload: { session_id: 'test-session', data: btoa('He') }
     })
 
-    // Now simulate session close
     closedCallback?.({
       payload: { session_id: 'test-session', exit_code: 0 }
     })

@@ -38,7 +38,6 @@ export function TaskIdDisplay({ task, variant = 'default', className = '' }: Tas
   if (variant === 'badge') {
     return (
       <div className={`flex items-center gap-2 ${className}`}>
-        {/* Simple icon box */}
         <div
           className="w-12 h-12 flex items-center justify-center rounded border"
           style={{
@@ -48,7 +47,6 @@ export function TaskIdDisplay({ task, variant = 'default', className = '' }: Tas
           <DisciplineIcon className="w-6 h-6" style={{ color: task.disciplineColor }} />
         </div>
 
-        {/* Badge variant */}
         <div className="flex flex-col items-start leading-tight">
           <Badge variant="outline" className="font-mono text-xs mb-0.5">
             {task.featureAcronym}
@@ -71,10 +69,8 @@ export function TaskIdDisplay({ task, variant = 'default', className = '' }: Tas
     )
   }
 
-  // Default variant - SUPER SIMPLE
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      {/* Simple icon box */}
       <div
         className="w-12 h-12 flex items-center justify-center rounded border"
         style={{
@@ -84,7 +80,6 @@ export function TaskIdDisplay({ task, variant = 'default', className = '' }: Tas
         <DisciplineIcon className="w-6 h-6" style={{ color: task.disciplineColor }} />
       </div>
 
-      {/* Simple text */}
       <div className="flex flex-col items-start leading-tight font-mono">
         <span className="text-xs text-muted-foreground">{task.featureAcronym}</span>
         <span className="text-xs font-medium" style={{ color: task.disciplineColor }}>

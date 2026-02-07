@@ -43,7 +43,6 @@ export function WorkspacePanel() {
 
   return (
     <div className="flex h-full flex-col">
-      {/* BrowserTabs ALWAYS rendered at root - never bound to tab content */}
       <BrowserTabs
         tabs={browserTabs}
         activeTabId={activeTabId}
@@ -52,7 +51,6 @@ export function WorkspacePanel() {
         newTabButton={newTabButton}
       />
 
-      {/* Tab content area - shows empty state if no tabs */}
       <div className="flex-1 min-h-0 relative">
         {tabs.length === 0 ? (
           <EmptyWorkspace />

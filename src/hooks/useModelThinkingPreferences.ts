@@ -1,10 +1,3 @@
-/**
- * useModelThinkingPreferences - Hook to manage Claude model and thinking mode preferences
- *
- * Provides shared state management and localStorage persistence for model/thinking preferences.
- * Used across multiple components (braindump form, workspace panel, etc.)
- */
-
 import { useCallback, useState } from 'react'
 
 const STORAGE_KEY_MODEL = 'ralph.preferences.model'

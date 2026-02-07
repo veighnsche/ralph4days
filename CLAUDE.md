@@ -65,6 +65,24 @@ ONE project per session, chosen at startup. CLI mode (`ralph --project /path`) v
 - **Prompts**: Inline file contents (no @file syntax): aggregates 4 YAML files into PRD section
 - **Stagnation**: SHA256 hash of 6 files (tasks.yaml, features.yaml, disciplines.yaml, metadata.yaml, progress.txt, learnings.txt) before/after iteration; abort after 3 unchanged iterations
 
+## Code Comments Policy
+
+Comments explain **WHY**, never WHAT or HOW. The code itself is the source of truth for behavior.
+
+**Allowed:**
+- `TODO/FIXME/HACK` comments with actionable context (e.g., "TODO: Wire up MCP server generation — blocked by #47")
+- **WHY comments** only: non-obvious design decisions, workarounds for external bugs, unsafe patterns that need justification, counter-intuitive ordering constraints
+- SPDX/license headers where legally required
+
+**Forbidden:**
+- Restating code behavior ("// fetch the user", "// loop through items", "// Cleanup on unmount")
+- Parameter/return docs that just mirror the type signature
+- Section banners or end-of-block markers ("// Header", "// Main content", "// End of loop")
+- Commented-out code (use git history instead)
+- Doc comments that add nothing beyond the function name ("// Initializes the sidebar" for a function named `initSidebar()`)
+
+**Rule of thumb:** Before writing a comment, ask: "Would a competent developer misunderstand this code without it?" If no, don't write it.
+
 ## Tech Stack
 
 **Frontend:** React 19 (with React Compiler — never use manual useMemo/useCallback/React.memo), TypeScript, Vite, Tailwind v4, Zustand, Lucide Icons

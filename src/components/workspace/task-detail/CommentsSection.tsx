@@ -65,7 +65,6 @@ export function CommentsSection({ task }: { task: Task }) {
 
   return (
     <div className="px-3 pb-1">
-      {/* Header */}
       <div className="flex items-center gap-1.5 mb-3">
         <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
         <span className="text-sm font-medium text-muted-foreground">
@@ -73,7 +72,6 @@ export function CommentsSection({ task }: { task: Task }) {
         </span>
       </div>
 
-      {/* Comment list */}
       {comments.length > 0 && (
         <div className="space-y-3 mb-4">
           {comments.map(comment => (
@@ -130,7 +128,6 @@ export function CommentsSection({ task }: { task: Task }) {
         </div>
       )}
 
-      {/* Input */}
       <div className="flex gap-2.5 items-start">
         <Avatar size="sm" className="mt-1.5 flex-shrink-0">
           <AvatarFallback className="text-muted-foreground">

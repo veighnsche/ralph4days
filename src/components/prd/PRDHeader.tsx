@@ -41,7 +41,6 @@ export function PRDHeader({
   return (
     <Card className="py-3">
       <CardContent className="space-y-3">
-        {/* Title Row */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex-1 min-w-0">
             <CardTitle className="text-base">{project.title}</CardTitle>
@@ -52,14 +51,11 @@ export function PRDHeader({
           <TaskStatsBar totalTasks={totalTasks} doneTasks={doneTasks} progressPercent={progressPercent} />
         </div>
 
-        {/* Progress Bar */}
         <Progress value={progressPercent} className="h-1.5" />
 
         <Separator bleed="md" />
 
-        {/* Filters Row */}
         <div className="flex items-center gap-2">
-          {/* Search */}
           <div className="flex-1 max-w-xs">
             <div className="relative">
               <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
@@ -72,7 +68,6 @@ export function PRDHeader({
             </div>
           </div>
 
-          {/* Filters Modal */}
           <FiltersModal filters={filters} setters={setters} allTags={allTags} onClearFilters={onClearFilters} />
 
           <div className="text-[10px] text-muted-foreground ml-auto whitespace-nowrap">

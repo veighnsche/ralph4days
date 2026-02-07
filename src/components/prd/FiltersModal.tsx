@@ -55,7 +55,6 @@ export function FiltersModal({ filters, setters, allTags, onClearFilters }: Filt
           <DialogDescription>Set filters to narrow down your task list</DialogDescription>
         </DialogHeader>
         <div className="grid gap-3 py-3">
-          {/* Search */}
           <div className="grid gap-2">
             <Label htmlFor="search">Search</Label>
             <Input
@@ -66,7 +65,6 @@ export function FiltersModal({ filters, setters, allTags, onClearFilters }: Filt
             />
           </div>
 
-          {/* Status */}
           <div className="grid gap-2">
             <Label htmlFor="status">Status</Label>
             <Select value={filters.statusFilter} onValueChange={setters.setStatusFilter}>
@@ -84,7 +82,6 @@ export function FiltersModal({ filters, setters, allTags, onClearFilters }: Filt
             </Select>
           </div>
 
-          {/* Priority */}
           <div className="grid gap-2">
             <Label htmlFor="priority">Priority</Label>
             <Select value={filters.priorityFilter} onValueChange={setters.setPriorityFilter}>
@@ -101,7 +98,6 @@ export function FiltersModal({ filters, setters, allTags, onClearFilters }: Filt
             </Select>
           </div>
 
-          {/* Tags */}
           {allTags.length > 0 && (
             <div className="grid gap-2">
               <Label htmlFor="tag">Tag</Label>

@@ -17,12 +17,10 @@ export function BottomBar({ lockedProject: _lockedProject, currentPage, onPageCh
   return (
     <div className="border-t bg-[hsl(var(--background))] px-3 py-1.5">
       <div className="flex items-center justify-between gap-2">
-        {/* Left: Navigation Menu */}
         <div className="flex-1">
           <NavigationMenu currentPage={currentPage} onPageChange={onPageChange} />
         </div>
 
-        {/* Center: Transport Controls (disabled stubs) */}
         <ButtonGroup>
           <LoopToggle />
 
@@ -35,7 +33,6 @@ export function BottomBar({ lockedProject: _lockedProject, currentPage, onPageCh
           </Button>
         </ButtonGroup>
 
-        {/* Right: Settings */}
         <div className="flex-1 flex justify-end">
           <Settings />
         </div>

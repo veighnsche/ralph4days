@@ -26,7 +26,6 @@ export function usePRDFilters(tasks: Task[] | null, allTags: string[]) {
 
     let filtered = [...tasks]
 
-    // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(
@@ -40,17 +39,14 @@ export function usePRDFilters(tasks: Task[] | null, allTags: string[]) {
       )
     }
 
-    // Status filter
     if (statusFilter !== 'all') {
       filtered = filtered.filter(task => task.status === statusFilter)
     }
 
-    // Priority filter
     if (priorityFilter !== 'all') {
       filtered = filtered.filter(task => task.priority === priorityFilter)
     }
 
-    // Tag filter
     if (tagFilter !== 'all') {
       filtered = filtered.filter(task => task.tags?.includes(tagFilter))
     }

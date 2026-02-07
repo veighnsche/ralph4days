@@ -3,10 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import { TerminalTabContent } from './TerminalTabContent'
 
-// Mock dependencies
 vi.mock('@/lib/terminal', () => ({
   Terminal: ({ onReady }: { onReady?: (terminal: unknown) => void }) => {
-    // Simulate terminal ready
     if (onReady) {
       setTimeout(() => {
         onReady({
@@ -80,7 +78,6 @@ describe('TerminalTabContent', () => {
 
   it('renders Terminal directly without wrapper', () => {
     const { container } = render(<TerminalTabContent tab={mockTab} />)
-    // Terminal mock renders a div with data-testid="terminal" — should be the root element
     expect(container.firstElementChild?.getAttribute('data-testid')).toBe('terminal')
   })
 })

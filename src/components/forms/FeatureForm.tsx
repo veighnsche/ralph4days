@@ -9,7 +9,6 @@ export function FeatureFormFields({ disabled, isEditing }: { disabled?: boolean;
 
   return (
     <div className="space-y-3">
-      {/* Display Name */}
       <FormField
         control={control}
         name="displayName"
@@ -27,7 +26,6 @@ export function FeatureFormFields({ disabled, isEditing }: { disabled?: boolean;
         )}
       />
 
-      {/* Acronym */}
       <FormField
         control={control}
         name="acronym"
@@ -53,7 +51,6 @@ export function FeatureFormFields({ disabled, isEditing }: { disabled?: boolean;
         )}
       />
 
-      {/* Name (Internal ID) */}
       <FormField
         control={control}
         name="name"
@@ -71,7 +68,6 @@ export function FeatureFormFields({ disabled, isEditing }: { disabled?: boolean;
         )}
       />
 
-      {/* Description */}
       <FormField
         control={control}
         name="description"

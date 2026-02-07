@@ -19,13 +19,7 @@ interface BrowserTabsProps {
   className?: string
 }
 
-/**
- * Accessible tab bar using WAI-ARIA Tabs pattern.
- *
- * Keyboard: Arrow keys navigate tabs, Home/End jump to first/last,
- * Enter/Space activate, Delete closes. Tab key exits the tablist.
- * Close buttons are mouse-only (tabIndex -1) per desktop convention.
- */
+// WHY: Close buttons are mouse-only (tabIndex -1); Delete key for keyboard users (desktop convention)
 export function BrowserTabs({ tabs, activeTabId, onTabChange, onTabClose, newTabButton, className }: BrowserTabsProps) {
   const tabRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
 
@@ -84,7 +78,6 @@ export function BrowserTabs({ tabs, activeTabId, onTabChange, onTabClose, newTab
 
   return (
     <div className={cn('flex items-end bg-muted/50 border-b border-border', className)}>
-      {/* Tab list — scrolls horizontally when overflowing */}
       <div
         role="tablist"
         aria-label="Workspace tabs"
@@ -113,13 +106,9 @@ export function BrowserTabs({ tabs, activeTabId, onTabChange, onTabClose, newTab
                 'rounded-t-md',
                 'outline-none transition-colors duration-100',
                 'select-none cursor-default',
-                // Focus ring
                 'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
-                // Right padding: tighter when close button present
                 onTabClose && tab.closeable !== false ? 'pr-1' : 'pr-3',
-                // Active tab connects to content — overlaps the bottom border
                 isActive && ['-mb-px bg-background text-foreground', 'border border-border border-b-background'],
-                // Inactive state
                 !isActive && [
                   'text-muted-foreground',
                   'border border-transparent',
@@ -129,7 +118,6 @@ export function BrowserTabs({ tabs, activeTabId, onTabChange, onTabClose, newTab
               {TabIcon && <TabIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
               <span className="truncate">{tab.title}</span>
 
-              {/* Close button — mouse-only, keyboard users press Delete */}
               {onTabClose && tab.closeable !== false && (
                 <button
                   type="button"
@@ -148,7 +136,6 @@ export function BrowserTabs({ tabs, activeTabId, onTabChange, onTabClose, newTab
         })}
       </div>
 
-      {/* New tab area — outside the tablist, always accessible */}
       {newTabButton && <div className="flex items-center shrink-0 px-1 pb-px">{newTabButton}</div>}
     </div>
   )

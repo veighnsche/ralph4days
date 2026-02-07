@@ -46,7 +46,6 @@ export function DisciplineFormFields({ disabled, isEditing }: { disabled?: boole
 
   return (
     <div className="space-y-3">
-      {/* Display Name */}
       <FormField
         control={control}
         name="displayName"
@@ -64,7 +63,6 @@ export function DisciplineFormFields({ disabled, isEditing }: { disabled?: boole
         )}
       />
 
-      {/* Acronym */}
       <FormField
         control={control}
         name="acronym"
@@ -90,7 +88,6 @@ export function DisciplineFormFields({ disabled, isEditing }: { disabled?: boole
         )}
       />
 
-      {/* Name (Internal ID) */}
       <FormField
         control={control}
         name="name"
@@ -110,7 +107,6 @@ export function DisciplineFormFields({ disabled, isEditing }: { disabled?: boole
         )}
       />
 
-      {/* Icon */}
       <FormField
         control={control}
         name="icon"
@@ -145,7 +141,6 @@ export function DisciplineFormFields({ disabled, isEditing }: { disabled?: boole
         )}
       />
 
-      {/* Color */}
       <FormField
         control={control}
         name="color"

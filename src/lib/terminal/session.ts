@@ -22,7 +22,6 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
   const handlersRef = useRef(handlers)
   handlersRef.current = handlers
 
-  // Create PTY session on mount, terminate on unmount
   useEffect(() => {
     invoke('create_pty_session', {
       sessionId: config.sessionId,
@@ -36,7 +35,6 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     }
   }, [config.sessionId, config.mcpMode, config.model, config.thinking])
 
-  // Listen for PTY output
   useEffect(() => {
     const unlisten = listen<{ session_id: string; data: string }>('ralph://pty_output', event => {
       if (event.payload.session_id !== config.sessionId) return
@@ -57,7 +55,6 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     }
   }, [config.sessionId])
 
-  // Listen for PTY close
   useEffect(() => {
     const unlisten = listen<{ session_id: string; exit_code: number }>('ralph://pty_closed', event => {
       if (event.payload.session_id === config.sessionId && sessionStartedRef.current) {

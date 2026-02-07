@@ -1,10 +1,7 @@
 import { type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/react-query'
 import { invoke } from '@tauri-apps/api/core'
 
-/**
- * Thin wrapper around TanStack Query useMutation + Tauri invoke.
- * Mirrors useInvoke for reads — this handles writes with automatic cache invalidation.
- */
+// WHY: Mirror of useInvoke for writes; auto-invalidates cache after mutations
 export function useInvokeMutation<TArgs = void, TResult = void>(
   command: string,
   options?: {

@@ -5,12 +5,8 @@ import { useTabMeta } from '@/hooks/useTabMeta'
 import { Terminal, useTerminalSession } from '@/lib/terminal'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 
-// NOTE TO FUTURE DEVELOPERS (and Vince):
-// Claude Code's welcome screen renders LEFT-ALIGNED in PTY environments. This is NOT a Ralph bug.
-// Claude Code uses React + Ink (Yoga layout) which defensively falls back to left-alignment when
-// terminal width detection is uncertain — standard behavior in embedded PTY terminals.
+// WHY: Claude Code welcome screen is left-aligned in PTY (upstream issue #5430)
 // See: https://github.com/anthropics/claude-code/issues/5430
-// DO NOT waste time trying to "fix" centering. It's upstream. Move on to features that matter.
 
 export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
   useTabMeta(tab.id, tab.title, TerminalSquare)
@@ -32,17 +28,14 @@ export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
     }
   )
 
-  // Terminal uses refs for these callbacks (called once at mount, never re-evaluated),
-  // so memoization is unnecessary.
+  // WHY: Callbacks use refs (invoked once at mount), so memoization unnecessary
   const handleReady = (terminal: XTerm) => {
     terminalRef.current = terminal
     requestAnimationFrame(() => session.resize(terminal.cols, terminal.rows))
     session.markReady()
     terminal.onData(data => session.sendInput(data))
 
-    // xterm.js doesn't implement the kitty keyboard protocol, so Shift+Enter
-    // sends \r (same as Enter). Real terminals (Ghostty, Kitty, Konsole) send
-    // the CSI u sequence \x1b[13;2u which Claude Code needs for multi-line input.
+    // WHY: xterm.js doesn't implement kitty protocol for Shift+Enter; need CSI u seq \x1b[13;2u
     terminal.attachCustomKeyEventHandler(event => {
       if (
         event.type === 'keydown' &&
