@@ -2,6 +2,7 @@ import { CheckCircle2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { STATUS_CONFIG } from "@/constants/prd";
+import { usePRDData } from "@/hooks/usePRDData";
 import { useTabMeta } from "@/hooks/useTabMeta";
 import type { WorkspaceTab } from "@/stores/useWorkspaceStore";
 import type { EnrichedTask } from "@/types/prd";
@@ -10,7 +11,12 @@ import { TaskCardContent } from "./task-detail/TaskCardContent";
 import { TaskSidebar } from "./task-detail/TaskSidebar";
 
 export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
-  const task = tab.data?.entity as EnrichedTask | undefined;
+  const entityId = tab.data?.entityId as number | undefined;
+  const snapshotTask = tab.data?.entity as EnrichedTask | undefined;
+
+  const { tasks } = usePRDData();
+  const task = (entityId != null ? tasks?.find((t) => t.id === entityId) : undefined) ?? snapshotTask;
+
   useTabMeta(tab.id, task?.title ?? "Task Detail", CheckCircle2);
 
   if (!task) {
