@@ -1,8 +1,6 @@
 mod claude_client;
 mod commands;
 mod loop_engine;
-mod mcp_generator;
-mod prompt_builder;
 mod terminal;
 mod types;
 

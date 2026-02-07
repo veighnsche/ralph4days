@@ -1,0 +1,16 @@
+[package]
+name = "prompt-builder"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+sqlite-db = { path = "../sqlite-db" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = "0.10"
+hex = "0.4"
+thiserror = { workspace = true }
+
+[dev-dependencies]

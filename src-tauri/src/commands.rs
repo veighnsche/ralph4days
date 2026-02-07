@@ -1,7 +1,7 @@
 use crate::loop_engine::LoopEngine;
-use crate::mcp_generator::MCPGenerator;
 use crate::terminal::{PTYManager, SessionConfig};
 use crate::types::LoopStatus;
+use prompt_builder::PromptContext;
 use sqlite_db::{Priority, SqliteDb, TaskInput};
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -42,7 +42,7 @@ pub struct AppState {
     pub locked_project: Mutex<Option<PathBuf>>,
     pub db: Mutex<Option<SqliteDb>>,
     pub pty_manager: PTYManager,
-    pub mcp_generator: MCPGenerator,
+    mcp_dir: PathBuf,
 }
 
 impl Default for AppState {
@@ -52,8 +52,77 @@ impl Default for AppState {
             locked_project: Mutex::new(None),
             db: Mutex::new(None),
             pty_manager: PTYManager::new(),
-            mcp_generator: MCPGenerator::new(),
+            mcp_dir: std::env::temp_dir().join(format!("ralph-mcp-{}", std::process::id())),
         }
+    }
+}
+
+impl Drop for AppState {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.mcp_dir);
+    }
+}
+
+impl AppState {
+    /// Generate MCP config for a terminal session by writing scripts to disk.
+    fn generate_mcp_config(
+        &self,
+        mode: &str,
+        project_path: &std::path::Path,
+    ) -> Result<PathBuf, String> {
+        let ralph_dir = project_path.join(".ralph");
+        let db_path = ralph_dir.join("db").join("ralph.db");
+        let db = SqliteDb::open(&db_path)?;
+
+        let prompt_type = match mode {
+            "task_creation" => prompt_builder::PromptType::Braindump,
+            _ => prompt_builder::PromptType::Discuss,
+        };
+
+        let recipe = prompt_builder::recipes::get(prompt_type);
+        let ctx = PromptContext {
+            features: db.get_features(),
+            tasks: db.get_tasks(),
+            disciplines: db.get_disciplines(),
+            metadata: db.get_project_info(),
+            file_contents: std::collections::HashMap::new(),
+            progress_txt: None,
+            learnings_txt: None,
+            claude_ralph_md: None,
+            project_path: project_path.to_string_lossy().to_string(),
+            db_path: db_path.to_string_lossy().to_string(),
+            script_dir: self.mcp_dir.to_string_lossy().to_string(),
+            user_input: None,
+            target_task_id: None,
+            target_feature: None,
+        };
+
+        let (scripts, config_json) =
+            prompt_builder::mcp::generate(&ctx, &recipe.mcp_tools);
+
+        std::fs::create_dir_all(&self.mcp_dir)
+            .map_err(|e| format!("Failed to create MCP dir: {}", e))?;
+
+        for script in &scripts {
+            let script_path = self.mcp_dir.join(&script.filename);
+            std::fs::write(&script_path, &script.content)
+                .map_err(|e| format!("Failed to write MCP script: {}", e))?;
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                std::fs::set_permissions(
+                    &script_path,
+                    std::fs::Permissions::from_mode(0o755),
+                )
+                .map_err(|e| format!("Failed to chmod MCP script: {}", e))?;
+            }
+        }
+
+        let config_path = self.mcp_dir.join(format!("mcp-{}.json", mode));
+        std::fs::write(&config_path, &config_json)
+            .map_err(|e| format!("Failed to write MCP config: {}", e))?;
+
+        Ok(config_path)
     }
 }
 
@@ -782,8 +851,7 @@ pub fn create_pty_session(
     drop(locked);
 
     let mcp_config = if let Some(mode) = mcp_mode {
-        let ralph_db = project_path.join(".ralph").join("db");
-        Some(state.mcp_generator.generate(&mode, &ralph_db)?)
+        Some(state.generate_mcp_config(&mode, &project_path)?)
     } else {
         None
     };

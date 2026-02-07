@@ -1,6 +1,6 @@
 use crate::claude_client::{ClaudeClient, ClaudeOutput};
-use crate::prompt_builder::{hash_content, PromptBuilder};
 use crate::types::{LoopConfig, LoopState, LoopStatus, RalphError, RalphEvent};
+use prompt_builder::{check_completion, hash_content, PromptContext, PromptType};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -253,11 +253,12 @@ impl LoopEngine {
             let model = if is_opus_review { "opus" } else { "haiku" };
 
             // Build prompt
-            let prompt_result = if is_opus_review {
-                PromptBuilder::build_opus_review_prompt(&config.project_path)
+            let prompt_type = if is_opus_review {
+                PromptType::OpusReview
             } else {
-                PromptBuilder::build_haiku_prompt(&config.project_path)
+                PromptType::TaskExecution
             };
+            let prompt_result = Self::build_prompt(&config.project_path, prompt_type);
 
             let prompt = match prompt_result {
                 Ok(p) => p,
@@ -380,7 +381,7 @@ impl LoopEngine {
                     }
 
                     // Check for completion marker
-                    if PromptBuilder::check_completion(&output) {
+                    if check_completion(&output) {
                         let mut s = status.lock().unwrap();
                         s.state = LoopState::Complete;
                         Self::emit_event(
@@ -453,6 +454,41 @@ impl LoopEngine {
                 }
             }
         }
+    }
+
+    /// Build a prompt by reading project state and calling the pure prompt builder.
+    fn build_prompt(project_path: &Path, prompt_type: PromptType) -> Result<String, RalphError> {
+        let ralph_dir = project_path.join(".ralph");
+        let db_path = ralph_dir.join("db").join("ralph.db");
+
+        let db = sqlite_db::SqliteDb::open(&db_path)
+            .map_err(|e| RalphError::MissingFile(format!("db/ralph.db: {}", e)))?;
+
+        let script_dir = std::env::temp_dir()
+            .join(format!("ralph-mcp-{}", std::process::id()))
+            .to_string_lossy()
+            .to_string();
+
+        let ctx = PromptContext {
+            features: db.get_features(),
+            tasks: db.get_tasks(),
+            disciplines: db.get_disciplines(),
+            metadata: db.get_project_info(),
+            file_contents: std::collections::HashMap::new(),
+            progress_txt: std::fs::read_to_string(ralph_dir.join("progress.txt")).ok(),
+            learnings_txt: std::fs::read_to_string(ralph_dir.join("learnings.txt")).ok(),
+            claude_ralph_md: std::fs::read_to_string(ralph_dir.join("CLAUDE.RALPH.md")).ok(),
+            project_path: project_path.to_string_lossy().to_string(),
+            db_path: db_path.to_string_lossy().to_string(),
+            script_dir,
+            user_input: None,
+            target_task_id: None,
+            target_feature: None,
+        };
+
+        prompt_builder::build(prompt_type, &ctx)
+            .map(|output| output.prompt)
+            .map_err(|e| RalphError::ClaudeProcessError(format!("Prompt build failed: {}", e)))
     }
 
     fn get_progress_hash(project_path: &Path) -> String {

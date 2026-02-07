@@ -4,6 +4,7 @@ members = [
     "src-tauri",
     "crates/ralph-rag",
     "crates/sqlite-db",
+    "crates/prompt-builder",
 ]
 
 [workspace.package]
