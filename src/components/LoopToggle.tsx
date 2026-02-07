@@ -1,6 +1,6 @@
-import { RotateCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { RotateCw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 // TODO: Wire up to new terminal-based loop system
 export function LoopToggle() {
@@ -18,5 +18,5 @@ export function LoopToggle() {
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
-  );
+  )
 }

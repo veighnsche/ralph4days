@@ -1,36 +1,36 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Layers } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { DisciplineFormFields } from "@/components/forms/DisciplineForm";
-import { useInvokeMutation } from "@/hooks/useInvokeMutation";
-import { type DisciplineFormData, disciplineSchema } from "@/lib/schemas";
-import type { WorkspaceTab } from "@/stores/useWorkspaceStore";
-import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
-import { EntityFormTabContent } from "./EntityFormTabContent";
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Layers } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import { DisciplineFormFields } from '@/components/forms/DisciplineForm'
+import { useInvokeMutation } from '@/hooks/useInvokeMutation'
+import { type DisciplineFormData, disciplineSchema } from '@/lib/schemas'
+import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
+import { EntityFormTabContent } from './EntityFormTabContent'
 
 export function DisciplineFormTabContent({ tab }: { tab: WorkspaceTab }) {
-  const closeTab = useWorkspaceStore((s) => s.closeTab);
+  const closeTab = useWorkspaceStore(s => s.closeTab)
 
   const form = useForm<DisciplineFormData>({
     resolver: zodResolver(disciplineSchema),
     defaultValues: {
-      name: "",
-      displayName: "",
-      acronym: "",
-      icon: "Code",
-      color: "#3b82f6",
-    },
-  });
+      name: '',
+      displayName: '',
+      acronym: '',
+      icon: 'Code',
+      color: '#3b82f6'
+    }
+  })
 
-  const createDiscipline = useInvokeMutation<Record<string, unknown>>("create_discipline", {
-    invalidateKeys: [["get_disciplines_config"], ["get_tasks"], ["get_discipline_stats"]],
+  const createDiscipline = useInvokeMutation<Record<string, unknown>>('create_discipline', {
+    invalidateKeys: [['get_disciplines_config'], ['get_tasks'], ['get_discipline_stats']],
     onSuccess: () => {
-      toast.success("Discipline created");
-      closeTab(tab.id);
+      toast.success('Discipline created')
+      closeTab(tab.id)
     },
-    onError: (err) => toast.error(err.message),
-  });
+    onError: err => toast.error(err.message)
+  })
 
   const handleSubmit = (data: DisciplineFormData) => {
     createDiscipline.mutate({
@@ -38,9 +38,9 @@ export function DisciplineFormTabContent({ tab }: { tab: WorkspaceTab }) {
       displayName: data.displayName,
       acronym: data.acronym,
       icon: data.icon,
-      color: data.color,
-    });
-  };
+      color: data.color
+    })
+  }
 
   return (
     <EntityFormTabContent
@@ -49,9 +49,8 @@ export function DisciplineFormTabContent({ tab }: { tab: WorkspaceTab }) {
       entityName="Discipline"
       form={form}
       onSubmit={handleSubmit}
-      isPending={createDiscipline.isPending}
-    >
+      isPending={createDiscipline.isPending}>
       <DisciplineFormFields disabled={createDiscipline.isPending} />
     </EntityFormTabContent>
-  );
+  )
 }

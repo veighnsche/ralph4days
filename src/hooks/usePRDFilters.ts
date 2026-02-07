@@ -1,89 +1,89 @@
-import { useCallback, useMemo, useState } from "react";
-import type { PriorityFilter, StatusFilter, Task } from "@/types/prd";
+import { useCallback, useMemo, useState } from 'react'
+import type { PriorityFilter, StatusFilter, Task } from '@/types/prd'
 
 export interface FilterState {
-  searchQuery: string;
-  statusFilter: StatusFilter;
-  priorityFilter: PriorityFilter;
-  tagFilter: string;
+  searchQuery: string
+  statusFilter: StatusFilter
+  priorityFilter: PriorityFilter
+  tagFilter: string
 }
 
 export interface FilterSetters {
-  setSearchQuery: (query: string) => void;
-  setStatusFilter: (filter: StatusFilter) => void;
-  setPriorityFilter: (filter: PriorityFilter) => void;
-  setTagFilter: (tag: string) => void;
+  setSearchQuery: (query: string) => void
+  setStatusFilter: (filter: StatusFilter) => void
+  setPriorityFilter: (filter: PriorityFilter) => void
+  setTagFilter: (tag: string) => void
 }
 
 export function usePRDFilters(tasks: Task[] | null, allTags: string[]) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all");
-  const [tagFilter, setTagFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all')
+  const [tagFilter, setTagFilter] = useState<string>('all')
 
   const filteredTasks = useMemo(() => {
-    if (!tasks) return [];
+    if (!tasks) return []
 
-    let filtered = [...tasks];
+    let filtered = [...tasks]
 
     // Search filter
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+      const query = searchQuery.toLowerCase()
       filtered = filtered.filter(
-        (task) =>
+        task =>
           task.title.toLowerCase().includes(query) ||
           task.description?.toLowerCase().includes(query) ||
           task.id.toString().includes(query) ||
           task.feature.toLowerCase().includes(query) ||
           task.discipline.toLowerCase().includes(query) ||
-          task.tags?.some((tag) => tag.toLowerCase().includes(query))
-      );
+          task.tags?.some(tag => tag.toLowerCase().includes(query))
+      )
     }
 
     // Status filter
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((task) => task.status === statusFilter);
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(task => task.status === statusFilter)
     }
 
     // Priority filter
-    if (priorityFilter !== "all") {
-      filtered = filtered.filter((task) => task.priority === priorityFilter);
+    if (priorityFilter !== 'all') {
+      filtered = filtered.filter(task => task.priority === priorityFilter)
     }
 
     // Tag filter
-    if (tagFilter !== "all") {
-      filtered = filtered.filter((task) => task.tags?.includes(tagFilter));
+    if (tagFilter !== 'all') {
+      filtered = filtered.filter(task => task.tags?.includes(tagFilter))
     }
 
-    return filtered;
-  }, [tasks, searchQuery, statusFilter, priorityFilter, tagFilter]);
+    return filtered
+  }, [tasks, searchQuery, statusFilter, priorityFilter, tagFilter])
 
   const clearFilters = useCallback(() => {
-    setSearchQuery("");
-    setStatusFilter("all");
-    setPriorityFilter("all");
-    setTagFilter("all");
-  }, []);
+    setSearchQuery('')
+    setStatusFilter('all')
+    setPriorityFilter('all')
+    setTagFilter('all')
+  }, [])
 
   const filters: FilterState = {
     searchQuery,
     statusFilter,
     priorityFilter,
-    tagFilter,
-  };
+    tagFilter
+  }
 
   const setters: FilterSetters = {
     setSearchQuery,
     setStatusFilter,
     setPriorityFilter,
-    setTagFilter,
-  };
+    setTagFilter
+  }
 
   return {
     filters,
     setters,
     filteredTasks,
     allTags,
-    clearFilters,
-  };
+    clearFilters
+  }
 }

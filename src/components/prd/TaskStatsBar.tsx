@@ -1,13 +1,13 @@
-import { Badge } from "@/components/ui/badge";
+import { Badge } from '@/components/ui/badge'
 
 interface TaskStatsBarProps {
-  totalTasks: number;
-  doneTasks: number;
-  progressPercent: number;
+  totalTasks: number
+  doneTasks: number
+  progressPercent: number
 }
 
 export function TaskStatsBar({ totalTasks, doneTasks, progressPercent }: TaskStatsBarProps) {
-  const remainingTasks = totalTasks - doneTasks;
+  const remainingTasks = totalTasks - doneTasks
 
   return (
     <div className="flex items-center gap-3 text-xs">
@@ -34,5 +34,5 @@ export function TaskStatsBar({ totalTasks, doneTasks, progressPercent }: TaskSta
         <div className="text-[10px] text-muted-foreground mt-0.5">Complete</div>
       </div>
     </div>
-  );
+  )
 }

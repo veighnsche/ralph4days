@@ -1,32 +1,32 @@
-import { Bot, Cog, User } from "lucide-react";
-import { memo } from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { INFERRED_STATUS_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from "@/constants/prd";
-import { getInferredStatusExplanation } from "@/lib/taskStatus";
-import type { Task } from "@/types/prd";
-import { TaskIdDisplay } from "./TaskIdDisplay";
+import { Bot, Cog, User } from 'lucide-react'
+import { memo } from 'react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from '@/components/ui/item'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { INFERRED_STATUS_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from '@/constants/prd'
+import { getInferredStatusExplanation } from '@/lib/taskStatus'
+import type { Task } from '@/types/prd'
+import { TaskIdDisplay } from './TaskIdDisplay'
 
 interface PlaylistItemProps {
-  task: Task;
-  isNowPlaying?: boolean;
-  isIssue?: boolean;
-  onClick: () => void;
+  task: Task
+  isNowPlaying?: boolean
+  isIssue?: boolean
+  onClick: () => void
 }
 
-function getItemStyle(status: Task["status"], statusConfig: (typeof STATUS_CONFIG)[keyof typeof STATUS_CONFIG]) {
+function getItemStyle(status: Task['status'], statusConfig: (typeof STATUS_CONFIG)[keyof typeof STATUS_CONFIG]) {
   return {
     borderLeftColor: statusConfig.color,
     backgroundColor: statusConfig.bgColor,
-    opacity: status === "done" || status === "skipped" ? 0.5 : 1,
-  };
+    opacity: status === 'done' || status === 'skipped' ? 0.5 : 1
+  }
 }
 
 export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = false, onClick }: PlaylistItemProps) {
-  const statusConfig = STATUS_CONFIG[task.status];
-  const priorityConfig = task.priority ? PRIORITY_CONFIG[task.priority] : null;
+  const statusConfig = STATUS_CONFIG[task.status]
+  const priorityConfig = task.priority ? PRIORITY_CONFIG[task.priority] : null
 
   return (
     <Item
@@ -34,15 +34,14 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
       variant="default"
       className="cursor-pointer transition-all duration-200 hover:opacity-80 border-l-4 relative overflow-hidden"
       style={getItemStyle(task.status, statusConfig)}
-      onClick={onClick}
-    >
+      onClick={onClick}>
       {/* Priority Color Gradient (upper right corner) */}
       {priorityConfig && (
         <div
           className="absolute top-0 right-0 w-32 h-32 pointer-events-none"
           style={{
             background: `radial-gradient(circle at top right, ${priorityConfig.bgColor} 0%, transparent 70%)`,
-            opacity: 1.0,
+            opacity: 1.0
           }}
         />
       )}
@@ -55,9 +54,8 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
       {/* Main Content: Title + Description */}
       <ItemContent className="gap-0">
         <ItemTitle
-          className={isNowPlaying ? "text-base" : "text-sm"}
-          style={isNowPlaying ? { color: statusConfig.color } : undefined}
-        >
+          className={isNowPlaying ? 'text-base' : 'text-sm'}
+          style={isNowPlaying ? { color: statusConfig.color } : undefined}>
           {task.title}
           {isNowPlaying && <span className="ml-2 text-xs opacity-70">[NOW PLAYING]</span>}
         </ItemTitle>
@@ -79,7 +77,7 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
           {/* Provenance Icon */}
           {task.provenance &&
             (() => {
-              const Icon = task.provenance === "agent" ? Bot : task.provenance === "human" ? User : Cog;
+              const Icon = task.provenance === 'agent' ? Bot : task.provenance === 'human' ? User : Cog
               return (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -89,7 +87,7 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
                   </TooltipTrigger>
                   <TooltipContent>Created by {task.provenance}</TooltipContent>
                 </Tooltip>
-              );
+              )
             })()}
 
           {/* Metadata Badges */}
@@ -108,8 +106,8 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
           {task.dependsOn &&
             task.dependsOn.length > 0 &&
             (() => {
-              const isWaiting = task.inferredStatus === "waiting_on_deps";
-              const inferredConfig = isWaiting ? INFERRED_STATUS_CONFIG.waiting_on_deps : null;
+              const isWaiting = task.inferredStatus === 'waiting_on_deps'
+              const inferredConfig = isWaiting ? INFERRED_STATUS_CONFIG.waiting_on_deps : null
 
               return (
                 <Tooltip>
@@ -122,21 +120,20 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
                           ? {
                               borderColor: inferredConfig.color,
                               color: inferredConfig.color,
-                              backgroundColor: inferredConfig.bgColor,
+                              backgroundColor: inferredConfig.bgColor
                             }
                           : undefined
-                      }
-                    >
-                      {task.dependsOn.length} dep{task.dependsOn.length !== 1 ? "s" : ""}
+                      }>
+                      {task.dependsOn.length} dep{task.dependsOn.length !== 1 ? 's' : ''}
                     </Badge>
                   </TooltipTrigger>
                   <TooltipContent>
                     {isWaiting
                       ? getInferredStatusExplanation(task.status, task.inferredStatus, task.dependsOn.length)
-                      : `${task.dependsOn.length} ${task.dependsOn.length === 1 ? "Dependency" : "Dependencies"}`}
+                      : `${task.dependsOn.length} ${task.dependsOn.length === 1 ? 'Dependency' : 'Dependencies'}`}
                   </TooltipContent>
                 </Tooltip>
-              );
+              )
             })()}
 
           {/* Priority Badge */}
@@ -149,9 +146,8 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
                   style={{
                     backgroundColor: priorityConfig.bgColor,
                     color: priorityConfig.color,
-                    borderColor: priorityConfig.color,
-                  }}
-                >
+                    borderColor: priorityConfig.color
+                  }}>
                   {priorityConfig.label}
                 </Badge>
               </TooltipTrigger>
@@ -163,7 +159,7 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
         {/* Bottom Row: Individual Tags */}
         {task.tags && task.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 justify-end">
-            {task.tags.map((tag) => (
+            {task.tags.map(tag => (
               <Badge key={tag} variant="outline" className="text-xs px-2.5 py-0.5 h-5 min-w-[3rem]">
                 {tag}
               </Badge>
@@ -172,5 +168,5 @@ export const PlaylistItem = memo(function PlaylistItem({ task, isNowPlaying = fa
         )}
       </ItemActions>
     </Item>
-  );
-});
+  )
+})

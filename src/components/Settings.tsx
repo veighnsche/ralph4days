@@ -1,20 +1,20 @@
-import { Settings as SettingsIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Settings as SettingsIcon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
-import { Switch } from "@/components/ui/switch";
-import { useTheme } from "@/lib/theme-provider";
+  DialogTrigger
+} from '@/components/ui/dialog'
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
+import { Switch } from '@/components/ui/switch'
+import { useTheme } from '@/lib/theme-provider'
 
 export function Settings() {
-  const { theme, setTheme } = useTheme();
-  const isDark = theme === "dark";
+  const { theme, setTheme } = useTheme()
+  const isDark = theme === 'dark'
 
   return (
     <Dialog>
@@ -36,10 +36,10 @@ export function Settings() {
               <FieldLabel>Dark Mode</FieldLabel>
               <FieldDescription>Use dark theme for the interface</FieldDescription>
             </div>
-            <Switch checked={isDark} onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")} />
+            <Switch checked={isDark} onCheckedChange={checked => setTheme(checked ? 'dark' : 'light')} />
           </Field>
         </div>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

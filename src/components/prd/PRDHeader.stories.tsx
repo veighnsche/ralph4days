@@ -1,38 +1,38 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import type { ProjectInfo } from "@/types/prd";
-import { PRDHeader } from "./PRDHeader";
+import type { Meta, StoryObj } from '@storybook/react'
+import type { ProjectInfo } from '@/types/prd'
+import { PRDHeader } from './PRDHeader'
 
 const meta = {
-  title: "PRD/PRDHeader",
+  title: 'PRD/PRDHeader',
   component: PRDHeader,
   parameters: {
-    layout: "padded",
+    layout: 'padded'
   },
-  tags: ["autodocs"],
-} satisfies Meta<typeof PRDHeader>;
+  tags: ['autodocs']
+} satisfies Meta<typeof PRDHeader>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
+export default meta
+type Story = StoryObj<typeof meta>
 
 const mockProject: ProjectInfo = {
-  title: "Ralph4days Development",
-  description: "Autonomous multi-agent build loops with Claude",
-  created: "2026-02-01",
-};
+  title: 'Ralph4days Development',
+  description: 'Autonomous multi-agent build loops with Claude',
+  created: '2026-02-01'
+}
 
 const mockFilters = {
-  searchQuery: "",
-  statusFilter: "all" as const,
-  priorityFilter: "all" as const,
-  tagFilter: "all" as const,
-};
+  searchQuery: '',
+  statusFilter: 'all' as const,
+  priorityFilter: 'all' as const,
+  tagFilter: 'all' as const
+}
 
 const mockSetters = {
   setSearchQuery: () => {},
   setStatusFilter: () => {},
   setPriorityFilter: () => {},
-  setTagFilter: () => {},
-};
+  setTagFilter: () => {}
+}
 
 export const NewProject: Story = {
   args: {
@@ -44,9 +44,9 @@ export const NewProject: Story = {
     filters: mockFilters,
     setters: mockSetters,
     allTags: [],
-    onClearFilters: () => console.log("Clear filters"),
-  },
-};
+    onClearFilters: () => console.log('Clear filters')
+  }
+}
 
 export const JustStarted: Story = {
   args: {
@@ -57,10 +57,10 @@ export const JustStarted: Story = {
     filteredCount: 25,
     filters: mockFilters,
     setters: mockSetters,
-    allTags: ["frontend", "backend", "design"],
-    onClearFilters: () => console.log("Clear filters"),
-  },
-};
+    allTags: ['frontend', 'backend', 'design'],
+    onClearFilters: () => console.log('Clear filters')
+  }
+}
 
 export const HalfwayComplete: Story = {
   args: {
@@ -71,10 +71,10 @@ export const HalfwayComplete: Story = {
     filteredCount: 50,
     filters: mockFilters,
     setters: mockSetters,
-    allTags: ["frontend", "backend", "database", "testing", "design"],
-    onClearFilters: () => console.log("Clear filters"),
-  },
-};
+    allTags: ['frontend', 'backend', 'database', 'testing', 'design'],
+    onClearFilters: () => console.log('Clear filters')
+  }
+}
 
 export const NearlyComplete: Story = {
   args: {
@@ -85,10 +85,10 @@ export const NearlyComplete: Story = {
     filteredCount: 30,
     filters: mockFilters,
     setters: mockSetters,
-    allTags: ["frontend", "backend", "polish"],
-    onClearFilters: () => console.log("Clear filters"),
-  },
-};
+    allTags: ['frontend', 'backend', 'polish'],
+    onClearFilters: () => console.log('Clear filters')
+  }
+}
 
 export const Complete: Story = {
   args: {
@@ -99,10 +99,10 @@ export const Complete: Story = {
     filteredCount: 42,
     filters: mockFilters,
     setters: mockSetters,
-    allTags: ["frontend", "backend", "database", "testing", "design", "docs"],
-    onClearFilters: () => console.log("Clear filters"),
-  },
-};
+    allTags: ['frontend', 'backend', 'database', 'testing', 'design', 'docs'],
+    onClearFilters: () => console.log('Clear filters')
+  }
+}
 
 export const WithFiltersActive: Story = {
   args: {
@@ -112,24 +112,24 @@ export const WithFiltersActive: Story = {
     progressPercent: 40,
     filteredCount: 8,
     filters: {
-      searchQuery: "api",
-      statusFilter: "in_progress" as const,
-      priorityFilter: "high" as const,
-      tagFilter: "backend",
+      searchQuery: 'api',
+      statusFilter: 'in_progress' as const,
+      priorityFilter: 'high' as const,
+      tagFilter: 'backend'
     },
     setters: mockSetters,
-    allTags: ["frontend", "backend", "database", "testing", "api"],
-    onClearFilters: () => console.log("Clear filters"),
-  },
-};
+    allTags: ['frontend', 'backend', 'database', 'testing', 'api'],
+    onClearFilters: () => console.log('Clear filters')
+  }
+}
 
 export const LongProjectName: Story = {
   args: {
     project: {
-      title: "Enterprise Customer Relationship Management System with Advanced Analytics",
+      title: 'Enterprise Customer Relationship Management System with Advanced Analytics',
       description:
-        "A comprehensive CRM solution featuring real-time analytics, multi-tenant architecture, and AI-powered insights",
-      created: "2026-01-15",
+        'A comprehensive CRM solution featuring real-time analytics, multi-tenant architecture, and AI-powered insights',
+      created: '2026-01-15'
     },
     totalTasks: 247,
     doneTasks: 189,
@@ -137,7 +137,7 @@ export const LongProjectName: Story = {
     filteredCount: 247,
     filters: mockFilters,
     setters: mockSetters,
-    allTags: ["frontend", "backend", "database", "api", "analytics", "ai", "security"],
-    onClearFilters: () => console.log("Clear filters"),
-  },
-};
+    allTags: ['frontend', 'backend', 'database', 'api', 'analytics', 'ai', 'security'],
+    onClearFilters: () => console.log('Clear filters')
+  }
+}

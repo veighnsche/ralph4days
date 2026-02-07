@@ -4,5 +4,5 @@ export function PropertyRow({ label, children }: { label: string; children: Reac
       <span className="text-xs font-medium text-muted-foreground">{label}</span>
       {children}
     </div>
-  );
+  )
 }

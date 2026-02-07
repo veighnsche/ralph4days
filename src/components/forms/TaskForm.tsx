@@ -1,54 +1,54 @@
-import { X } from "lucide-react";
-import { useState } from "react";
-import { useFormContext } from "react-hook-form";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
-import { Textarea } from "@/components/ui/textarea";
-import { useDisciplines } from "@/hooks/useDisciplines";
-import { useInvoke } from "@/hooks/useInvoke";
-import type { TaskFormData } from "@/lib/schemas";
-import type { Feature } from "@/types/prd";
+import { X } from 'lucide-react'
+import { useState } from 'react'
+import { useFormContext } from 'react-hook-form'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { NativeSelect } from '@/components/ui/native-select'
+import { Textarea } from '@/components/ui/textarea'
+import { useDisciplines } from '@/hooks/useDisciplines'
+import { useInvoke } from '@/hooks/useInvoke'
+import type { TaskFormData } from '@/lib/schemas'
+import type { Feature } from '@/types/prd'
 
 export function TaskFormFields({ disabled }: { disabled?: boolean }) {
-  const { control, getValues, setValue } = useFormContext<TaskFormData>();
-  const { disciplines } = useDisciplines();
-  const { data: features = [] } = useInvoke<Feature[]>("get_features");
+  const { control, getValues, setValue } = useFormContext<TaskFormData>()
+  const { disciplines } = useDisciplines()
+  const { data: features = [] } = useInvoke<Feature[]>('get_features')
 
-  const [newTag, setNewTag] = useState("");
-  const [newCriterion, setNewCriterion] = useState("");
+  const [newTag, setNewTag] = useState('')
+  const [newCriterion, setNewCriterion] = useState('')
 
   const addTag = () => {
-    const tag = newTag.trim();
-    if (tag && !getValues("tags").includes(tag)) {
-      setValue("tags", [...getValues("tags"), tag]);
-      setNewTag("");
+    const tag = newTag.trim()
+    if (tag && !getValues('tags').includes(tag)) {
+      setValue('tags', [...getValues('tags'), tag])
+      setNewTag('')
     }
-  };
+  }
 
   const removeTag = (tag: string) => {
     setValue(
-      "tags",
-      getValues("tags").filter((t) => t !== tag)
-    );
-  };
+      'tags',
+      getValues('tags').filter(t => t !== tag)
+    )
+  }
 
   const addCriterion = () => {
-    const criterion = newCriterion.trim();
+    const criterion = newCriterion.trim()
     if (criterion) {
-      setValue("acceptanceCriteria", [...getValues("acceptanceCriteria"), criterion]);
-      setNewCriterion("");
+      setValue('acceptanceCriteria', [...getValues('acceptanceCriteria'), criterion])
+      setNewCriterion('')
     }
-  };
+  }
 
   const removeCriterion = (index: number) => {
     setValue(
-      "acceptanceCriteria",
-      getValues("acceptanceCriteria").filter((_, i) => i !== index)
-    );
-  };
+      'acceptanceCriteria',
+      getValues('acceptanceCriteria').filter((_, i) => i !== index)
+    )
+  }
 
   return (
     <div className="space-y-3">
@@ -65,7 +65,7 @@ export function TaskFormFields({ disabled }: { disabled?: boolean }) {
               {features.length > 0 ? (
                 <NativeSelect {...field} required disabled={disabled}>
                   <option value="">Select a feature...</option>
-                  {features.map((feature) => (
+                  {features.map(feature => (
                     <option key={feature.name} value={feature.name}>
                       {feature.displayName}
                     </option>
@@ -92,7 +92,7 @@ export function TaskFormFields({ disabled }: { disabled?: boolean }) {
             <FormControl>
               <NativeSelect {...field} required disabled={disabled}>
                 <option value="">Select a discipline...</option>
-                {disciplines.map((discipline) => (
+                {disciplines.map(discipline => (
                   <option key={discipline.name} value={discipline.name}>
                     {discipline.displayName}
                   </option>
@@ -166,13 +166,13 @@ export function TaskFormFields({ disabled }: { disabled?: boolean }) {
             <div className="flex gap-2">
               <Input
                 value={newTag}
-                onChange={(e) => setNewTag(e.target.value)}
+                onChange={e => setNewTag(e.target.value)}
                 placeholder="Add a tag"
                 disabled={disabled}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addTag();
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    addTag()
                   }
                 }}
               />
@@ -182,15 +182,14 @@ export function TaskFormFields({ disabled }: { disabled?: boolean }) {
             </div>
             {field.value.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
-                {field.value.map((tag) => (
+                {field.value.map(tag => (
                   <Badge key={tag} variant="secondary" className="gap-1">
                     {tag}
                     <button
                       type="button"
                       onClick={() => removeTag(tag)}
                       className="hover:text-destructive"
-                      disabled={disabled}
-                    >
+                      disabled={disabled}>
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
@@ -212,13 +211,13 @@ export function TaskFormFields({ disabled }: { disabled?: boolean }) {
             <div className="flex gap-2">
               <Input
                 value={newCriterion}
-                onChange={(e) => setNewCriterion(e.target.value)}
+                onChange={e => setNewCriterion(e.target.value)}
                 placeholder="Add acceptance criterion"
                 disabled={disabled}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addCriterion();
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    addCriterion()
                   }
                 }}
               />
@@ -235,8 +234,7 @@ export function TaskFormFields({ disabled }: { disabled?: boolean }) {
                       type="button"
                       onClick={() => removeCriterion(index)}
                       className="text-muted-foreground hover:text-destructive"
-                      disabled={disabled}
-                    >
+                      disabled={disabled}>
                       <X className="h-4 w-4" />
                     </button>
                   </li>
@@ -248,5 +246,5 @@ export function TaskFormFields({ disabled }: { disabled?: boolean }) {
         )}
       />
     </div>
-  );
+  )
 }

@@ -1,10 +1,10 @@
-import { render, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { WorkspaceTab } from "@/stores/useWorkspaceStore";
-import { TerminalTabContent } from "./TerminalTabContent";
+import { render, waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
+import { TerminalTabContent } from './TerminalTabContent'
 
 // Mock dependencies
-vi.mock("@/lib/terminal", () => ({
+vi.mock('@/lib/terminal', () => ({
   Terminal: ({ onReady }: { onReady?: (terminal: unknown) => void }) => {
     // Simulate terminal ready
     if (onReady) {
@@ -15,72 +15,72 @@ vi.mock("@/lib/terminal", () => ({
           write: vi.fn(),
           writeln: vi.fn(),
           onData: vi.fn(),
-          attachCustomKeyEventHandler: vi.fn(),
-        });
-      }, 0);
+          attachCustomKeyEventHandler: vi.fn()
+        })
+      }, 0)
     }
-    return <div data-testid="terminal">Terminal</div>;
+    return <div data-testid="terminal">Terminal</div>
   },
   useTerminalSession: () => ({
     markReady: vi.fn(),
     sendInput: vi.fn(),
-    resize: vi.fn(),
-  }),
-}));
+    resize: vi.fn()
+  })
+}))
 
-vi.mock("@/hooks/useTabMeta", () => ({
-  useTabMeta: vi.fn(),
-}));
+vi.mock('@/hooks/useTabMeta', () => ({
+  useTabMeta: vi.fn()
+}))
 
-vi.mock("lucide-react", () => ({
-  TerminalSquare: () => <svg data-testid="terminal-icon" />,
-}));
+vi.mock('lucide-react', () => ({
+  TerminalSquare: () => <svg data-testid="terminal-icon" />
+}))
 
-describe("TerminalTabContent", () => {
+describe('TerminalTabContent', () => {
   const mockTab: WorkspaceTab = {
-    id: "test-terminal-1",
-    type: "terminal",
-    title: "Terminal 1",
+    id: 'test-terminal-1',
+    type: 'terminal',
+    title: 'Terminal 1',
     closeable: true,
     data: {
-      model: "haiku",
-      thinking: true,
-    },
-  };
+      model: 'haiku',
+      thinking: true
+    }
+  }
 
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
-  it("renders Terminal component", () => {
-    const { getByTestId } = render(<TerminalTabContent tab={mockTab} />);
-    expect(getByTestId("terminal")).toBeTruthy();
-  });
+  it('renders Terminal component', () => {
+    const { getByTestId } = render(<TerminalTabContent tab={mockTab} />)
+    expect(getByTestId('terminal')).toBeTruthy()
+  })
 
-  it("sets tab metadata", async () => {
-    const { useTabMeta } = await import("@/hooks/useTabMeta");
-    render(<TerminalTabContent tab={mockTab} />);
+  it('sets tab metadata', async () => {
+    const { useTabMeta } = await import('@/hooks/useTabMeta')
+    render(<TerminalTabContent tab={mockTab} />)
 
     await waitFor(() => {
-      expect(useTabMeta).toHaveBeenCalledWith("test-terminal-1", "Terminal 1", expect.any(Function));
-    });
-  });
+      expect(useTabMeta).toHaveBeenCalledWith('test-terminal-1', 'Terminal 1', expect.any(Function))
+    })
+  })
 
-  it("handles tab with minimal config", () => {
+  it('handles tab with minimal config', () => {
     const minimalTab: WorkspaceTab = {
-      id: "test-terminal-2",
-      type: "terminal",
-      title: "Terminal 2",
-      closeable: true,
-    };
+      id: 'test-terminal-2',
+      type: 'terminal',
+      title: 'Terminal 2',
+      closeable: true
+    }
 
-    const { getByTestId } = render(<TerminalTabContent tab={minimalTab} />);
-    expect(getByTestId("terminal")).toBeTruthy();
-  });
+    const { getByTestId } = render(<TerminalTabContent tab={minimalTab} />)
+    expect(getByTestId('terminal')).toBeTruthy()
+  })
 
-  it("renders Terminal directly without wrapper", () => {
-    const { container } = render(<TerminalTabContent tab={mockTab} />);
+  it('renders Terminal directly without wrapper', () => {
+    const { container } = render(<TerminalTabContent tab={mockTab} />)
     // Terminal mock renders a div with data-testid="terminal" — should be the root element
-    expect(container.firstElementChild?.getAttribute("data-testid")).toBe("terminal");
-  });
-});
+    expect(container.firstElementChild?.getAttribute('data-testid')).toBe('terminal')
+  })
+})

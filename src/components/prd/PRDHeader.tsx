@@ -1,24 +1,24 @@
-import { Search } from "lucide-react";
-import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
-import type { FilterSetters, FilterState } from "@/hooks/usePRDFilters";
-import type { ProjectInfo } from "@/types/prd";
-import { ActiveFilters } from "./ActiveFilters";
-import { FiltersModal } from "./FiltersModal";
-import { TaskStatsBar } from "./TaskStatsBar";
+import { Search } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Progress } from '@/components/ui/progress'
+import { Separator } from '@/components/ui/separator'
+import type { FilterSetters, FilterState } from '@/hooks/usePRDFilters'
+import type { ProjectInfo } from '@/types/prd'
+import { ActiveFilters } from './ActiveFilters'
+import { FiltersModal } from './FiltersModal'
+import { TaskStatsBar } from './TaskStatsBar'
 
 interface PRDHeaderProps {
-  project: ProjectInfo;
-  totalTasks: number;
-  doneTasks: number;
-  progressPercent: number;
-  filteredCount: number;
-  filters: FilterState;
-  setters: FilterSetters;
-  allTags: string[];
-  onClearFilters: () => void;
+  project: ProjectInfo
+  totalTasks: number
+  doneTasks: number
+  progressPercent: number
+  filteredCount: number
+  filters: FilterState
+  setters: FilterSetters
+  allTags: string[]
+  onClearFilters: () => void
 }
 
 export function PRDHeader({
@@ -30,13 +30,13 @@ export function PRDHeader({
   filters,
   setters,
   allTags,
-  onClearFilters,
+  onClearFilters
 }: PRDHeaderProps) {
   const hasActiveFilters =
     filters.searchQuery ||
-    filters.statusFilter !== "all" ||
-    filters.priorityFilter !== "all" ||
-    filters.tagFilter !== "all";
+    filters.statusFilter !== 'all' ||
+    filters.priorityFilter !== 'all' ||
+    filters.tagFilter !== 'all'
 
   return (
     <Card className="py-3">
@@ -66,7 +66,7 @@ export function PRDHeader({
               <Input
                 placeholder="Search tasks..."
                 value={filters.searchQuery}
-                onChange={(e) => setters.setSearchQuery(e.target.value)}
+                onChange={e => setters.setSearchQuery(e.target.value)}
                 className="pl-8 h-8 text-xs"
               />
             </div>
@@ -88,5 +88,5 @@ export function PRDHeader({
         )}
       </CardContent>
     </Card>
-  );
+  )
 }

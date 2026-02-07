@@ -1,24 +1,24 @@
-import { Bot, Cog, User } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { INFERRED_STATUS_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from "@/constants/prd";
-import { formatDate } from "@/lib/formatDate";
-import { resolveIcon } from "@/lib/iconRegistry";
-import { shouldShowInferredStatus } from "@/lib/taskStatus";
-import type { Task } from "@/types/prd";
-import { PropertyRow } from "./PropertyRow";
+import { Bot, Cog, User } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { INFERRED_STATUS_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from '@/constants/prd'
+import { formatDate } from '@/lib/formatDate'
+import { resolveIcon } from '@/lib/iconRegistry'
+import { shouldShowInferredStatus } from '@/lib/taskStatus'
+import type { Task } from '@/types/prd'
+import { PropertyRow } from './PropertyRow'
 
 const PROVENANCE_CONFIG = {
-  agent: { label: "Agent", icon: Bot },
-  human: { label: "Human", icon: User },
-  system: { label: "System", icon: Cog },
-} as const;
+  agent: { label: 'Agent', icon: Bot },
+  human: { label: 'Human', icon: User },
+  system: { label: 'System', icon: Cog }
+} as const
 
 export function TaskSidebar({ task }: { task: Task }) {
-  const statusConfig = STATUS_CONFIG[task.status];
-  const StatusIcon = statusConfig.icon;
-  const priorityConfig = task.priority ? PRIORITY_CONFIG[task.priority] : null;
-  const DisciplineIcon = resolveIcon(task.disciplineIcon);
+  const statusConfig = STATUS_CONFIG[task.status]
+  const StatusIcon = statusConfig.icon
+  const priorityConfig = task.priority ? PRIORITY_CONFIG[task.priority] : null
+  const DisciplineIcon = resolveIcon(task.disciplineIcon)
 
   return (
     <div className="px-4 py-4 space-y-0.5 overflow-y-auto h-full">
@@ -37,9 +37,9 @@ export function TaskSidebar({ task }: { task: Task }) {
 
           {shouldShowInferredStatus(task.status, task.inferredStatus) &&
             (() => {
-              const inferredConfig = INFERRED_STATUS_CONFIG[task.inferredStatus];
-              const InferredIcon = inferredConfig.icon;
-              const hasDeps = task.dependsOn && task.dependsOn.length > 0;
+              const inferredConfig = INFERRED_STATUS_CONFIG[task.inferredStatus]
+              const InferredIcon = inferredConfig.icon
+              const hasDeps = task.dependsOn && task.dependsOn.length > 0
 
               return (
                 <div className="flex items-start gap-1.5 pl-5">
@@ -54,16 +54,16 @@ export function TaskSidebar({ task }: { task: Task }) {
                     {hasDeps && (
                       <div className="flex flex-wrap gap-1 items-center">
                         <span className="text-xs text-muted-foreground">Depends on:</span>
-                        {task.dependsOn?.map((depId) => (
+                        {task.dependsOn?.map(depId => (
                           <Badge key={depId} variant="outline" className="text-xs font-mono px-1.5 py-0 h-4">
-                            #{depId.toString().padStart(3, "0")}
+                            #{depId.toString().padStart(3, '0')}
                           </Badge>
                         ))}
                       </div>
                     )}
                   </div>
                 </div>
-              );
+              )
             })()}
 
           {!shouldShowInferredStatus(task.status, task.inferredStatus) &&
@@ -71,9 +71,9 @@ export function TaskSidebar({ task }: { task: Task }) {
             task.dependsOn.length > 0 && (
               <div className="flex flex-wrap gap-1 items-center pl-5">
                 <span className="text-xs text-muted-foreground">Depends on:</span>
-                {task.dependsOn.map((depId) => (
+                {task.dependsOn.map(depId => (
                   <Badge key={depId} variant="outline" className="text-xs font-mono px-1.5 py-0 h-4">
-                    #{depId.toString().padStart(3, "0")}
+                    #{depId.toString().padStart(3, '0')}
                   </Badge>
                 ))}
               </div>
@@ -115,7 +115,7 @@ export function TaskSidebar({ task }: { task: Task }) {
           <Separator bleed="md" className="my-2" />
           <PropertyRow label="Tags">
             <div className="flex flex-wrap gap-1">
-              {task.tags.map((tag) => (
+              {task.tags.map(tag => (
                 <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0 h-5">
                   {tag}
                 </Badge>
@@ -133,15 +133,15 @@ export function TaskSidebar({ task }: { task: Task }) {
             <span className="text-xs text-muted-foreground">{formatDate(task.created)}</span>
             {task.provenance &&
               (() => {
-                const prov = PROVENANCE_CONFIG[task.provenance];
-                const ProvIcon = prov.icon;
+                const prov = PROVENANCE_CONFIG[task.provenance]
+                const ProvIcon = prov.icon
                 return (
                   <>
                     <span className="text-xs text-muted-foreground">·</span>
                     <ProvIcon className="h-3 w-3 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">{prov.label}</span>
                   </>
-                );
+                )
               })()}
           </div>
         </PropertyRow>
@@ -149,14 +149,14 @@ export function TaskSidebar({ task }: { task: Task }) {
       {!task.created && task.provenance && (
         <PropertyRow label="Created by">
           {(() => {
-            const prov = PROVENANCE_CONFIG[task.provenance];
-            const ProvIcon = prov.icon;
+            const prov = PROVENANCE_CONFIG[task.provenance]
+            const ProvIcon = prov.icon
             return (
               <div className="flex items-center gap-1.5">
                 <ProvIcon className="h-3 w-3 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">{prov.label}</span>
               </div>
-            );
+            )
           })()}
         </PropertyRow>
       )}
@@ -173,5 +173,5 @@ export function TaskSidebar({ task }: { task: Task }) {
         </PropertyRow>
       )}
     </div>
-  );
+  )
 }

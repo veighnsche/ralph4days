@@ -1,25 +1,25 @@
-import { AlertCircle } from "lucide-react";
-import { Component, type ErrorInfo, type ReactNode } from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { AlertCircle } from 'lucide-react'
+import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
 
 interface Props {
-  children: ReactNode;
+  children: ReactNode
 }
 
 interface State {
-  error: Error | null;
+  error: Error | null
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  state: State = { error: null };
+  state: State = { error: null }
 
   static getDerivedStateFromError(error: Error): State {
-    return { error };
+    return { error }
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("ErrorBoundary caught:", error, info.componentStack);
+    console.error('ErrorBoundary caught:', error, info.componentStack)
   }
 
   render() {
@@ -37,8 +37,8 @@ export class ErrorBoundary extends Component<Props, State> {
             </AlertDescription>
           </Alert>
         </div>
-      );
+      )
     }
-    return this.props.children;
+    return this.props.children
   }
 }

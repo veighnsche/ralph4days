@@ -1,26 +1,26 @@
-import { Badge } from "@/components/ui/badge";
-import { resolveIcon } from "@/lib/iconRegistry";
-import type { Task } from "@/types/prd";
+import { Badge } from '@/components/ui/badge'
+import { resolveIcon } from '@/lib/iconRegistry'
+import type { Task } from '@/types/prd'
 
 interface TaskIdDisplayProps {
-  task: Task;
-  variant?: "default" | "badge" | "full";
-  className?: string;
+  task: Task
+  variant?: 'default' | 'badge' | 'full'
+  className?: string
 }
 
 function formatTaskId(id: number): string {
   if (id > 999) {
-    return id.toString();
+    return id.toString()
   }
-  return `#${id.toString().padStart(3, "0")}`;
+  return `#${id.toString().padStart(3, '0')}`
 }
 
-export function TaskIdDisplay({ task, variant = "default", className = "" }: TaskIdDisplayProps) {
-  const DisciplineIcon = resolveIcon(task.disciplineIcon);
-  const bgColor = `color-mix(in oklch, ${task.disciplineColor} 15%, transparent)`;
-  const formattedId = formatTaskId(task.id);
+export function TaskIdDisplay({ task, variant = 'default', className = '' }: TaskIdDisplayProps) {
+  const DisciplineIcon = resolveIcon(task.disciplineIcon)
+  const bgColor = `color-mix(in oklch, ${task.disciplineColor} 15%, transparent)`
+  const formattedId = formatTaskId(task.id)
 
-  if (variant === "full") {
+  if (variant === 'full') {
     return (
       <div className={`flex items-center gap-1.5 text-sm text-muted-foreground ${className}`}>
         <span>{task.featureDisplayName}</span>
@@ -32,10 +32,10 @@ export function TaskIdDisplay({ task, variant = "default", className = "" }: Tas
         <span className="opacity-40">/</span>
         <span className="font-mono">{formattedId}</span>
       </div>
-    );
+    )
   }
 
-  if (variant === "badge") {
+  if (variant === 'badge') {
     return (
       <div className={`flex items-center gap-2 ${className}`}>
         {/* Simple icon box */}
@@ -43,9 +43,8 @@ export function TaskIdDisplay({ task, variant = "default", className = "" }: Tas
           className="w-12 h-12 flex items-center justify-center rounded border"
           style={{
             backgroundColor: bgColor,
-            borderColor: task.disciplineColor,
-          }}
-        >
+            borderColor: task.disciplineColor
+          }}>
           <DisciplineIcon className="w-6 h-6" style={{ color: task.disciplineColor }} />
         </div>
 
@@ -60,9 +59,8 @@ export function TaskIdDisplay({ task, variant = "default", className = "" }: Tas
             style={{
               borderColor: task.disciplineColor,
               backgroundColor: bgColor,
-              color: task.disciplineColor,
-            }}
-          >
+              color: task.disciplineColor
+            }}>
             {task.disciplineAcronym}
           </Badge>
           <Badge variant="outline" className="font-mono text-xs mb-0.5">
@@ -70,7 +68,7 @@ export function TaskIdDisplay({ task, variant = "default", className = "" }: Tas
           </Badge>
         </div>
       </div>
-    );
+    )
   }
 
   // Default variant - SUPER SIMPLE
@@ -81,9 +79,8 @@ export function TaskIdDisplay({ task, variant = "default", className = "" }: Tas
         className="w-12 h-12 flex items-center justify-center rounded border"
         style={{
           backgroundColor: bgColor,
-          borderColor: task.disciplineColor,
-        }}
-      >
+          borderColor: task.disciplineColor
+        }}>
         <DisciplineIcon className="w-6 h-6" style={{ color: task.disciplineColor }} />
       </div>
 
@@ -96,5 +93,5 @@ export function TaskIdDisplay({ task, variant = "default", className = "" }: Tas
         <span className="text-xs text-muted-foreground">{formattedId}</span>
       </div>
     </div>
-  );
+  )
 }

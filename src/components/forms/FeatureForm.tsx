@@ -1,11 +1,11 @@
-import { useFormContext } from "react-hook-form";
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import type { FeatureFormData } from "@/lib/schemas";
+import { useFormContext } from 'react-hook-form'
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import type { FeatureFormData } from '@/lib/schemas'
 
 export function FeatureFormFields({ disabled, isEditing }: { disabled?: boolean; isEditing?: boolean }) {
-  const { control } = useFormContext<FeatureFormData>();
+  const { control } = useFormContext<FeatureFormData>()
 
   return (
     <div className="space-y-3">
@@ -39,7 +39,7 @@ export function FeatureFormFields({ disabled, isEditing }: { disabled?: boolean;
             <FormControl>
               <Input
                 {...field}
-                onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                onChange={e => field.onChange(e.target.value.toUpperCase())}
                 placeholder="FTR (3-4 uppercase letters)"
                 maxLength={4}
                 required
@@ -64,7 +64,7 @@ export function FeatureFormFields({ disabled, isEditing }: { disabled?: boolean;
               <Input {...field} placeholder="auto-generated-from-display-name" disabled={disabled || isEditing} />
             </FormControl>
             <p className="text-xs text-muted-foreground">
-              {isEditing ? "Internal name cannot be changed after creation" : "Auto-generated (lowercase with hyphens)"}
+              {isEditing ? 'Internal name cannot be changed after creation' : 'Auto-generated (lowercase with hyphens)'}
             </p>
             <FormMessage />
           </FormItem>
@@ -86,5 +86,5 @@ export function FeatureFormFields({ disabled, isEditing }: { disabled?: boolean;
         )}
       />
     </div>
-  );
+  )
 }

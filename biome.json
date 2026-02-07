@@ -28,13 +28,13 @@
   "javascript": {
     "formatter": {
       "enabled": true,
-      "quoteStyle": "double",
+      "quoteStyle": "single",
       "jsxQuoteStyle": "double",
-      "trailingCommas": "es5",
-      "semicolons": "always",
-      "arrowParentheses": "always",
+      "trailingCommas": "none",
+      "semicolons": "asNeeded",
+      "arrowParentheses": "asNeeded",
       "bracketSpacing": true,
-      "bracketSameLine": false
+      "bracketSameLine": true
     }
   },
   "linter": {
@@ -47,7 +47,9 @@
       "complexity": {
         "noExcessiveCognitiveComplexity": "warn",
         "noForEach": "off",
-        "noUselessFragments": "error"
+        "noUselessFragments": "error",
+        "useSimplifiedLogicExpression": "warn",
+        "noUselessUndefinedInitialization": "error"
       },
       "correctness": {
         "noUnusedVariables": "error",
@@ -61,11 +63,15 @@
       },
       "style": {
         "noImplicitBoolean": "off",
-        "noNegationElse": "off",
+        "noNegationElse": "warn",
         "noParameterAssign": "off",
+        "noUselessElse": "error",
         "useBlockStatements": "off",
+        "useCollapsedElseIf": "error",
+        "useCollapsedIf": "warn",
         "useConsistentArrayType": "error",
         "useForOf": "warn",
+        "useShorthandAssign": "error",
         "useShorthandFunctionType": "error"
       },
       "suspicious": {

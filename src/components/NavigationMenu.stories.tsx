@@ -1,32 +1,32 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { NavigationMenu } from "./NavigationMenu";
+import type { Meta, StoryObj } from '@storybook/react'
+import { NavigationMenu } from './NavigationMenu'
 
 const meta = {
-  title: "Components/NavigationMenu",
+  title: 'Components/NavigationMenu',
   component: NavigationMenu,
-  tags: ["autodocs"],
+  tags: ['autodocs'],
   args: {
-    onPageChange: () => {},
-  },
-} satisfies Meta<typeof NavigationMenu>;
+    onPageChange: () => {}
+  }
+} satisfies Meta<typeof NavigationMenu>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
+export default meta
+type Story = StoryObj<typeof meta>
 
 export const TasksPage: Story = {
   args: {
-    currentPage: "tasks",
-  },
-};
+    currentPage: 'tasks'
+  }
+}
 
 export const FeaturesPage: Story = {
   args: {
-    currentPage: "features",
-  },
-};
+    currentPage: 'features'
+  }
+}
 
 export const DisciplinesPage: Story = {
   args: {
-    currentPage: "disciplines",
-  },
-};
+    currentPage: 'disciplines'
+  }
+}

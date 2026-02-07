@@ -1,31 +1,31 @@
-import { Layers } from "lucide-react";
-import { PageContent, PageHeader, PageLayout } from "@/components/layout/PageLayout";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import { ItemGroup, ItemSeparator } from "@/components/ui/item";
-import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useDisciplines } from "@/hooks/useDisciplines";
-import { useInvoke } from "@/hooks/useInvoke";
-import type { GroupStats, ProjectProgress } from "@/types/prd";
+import { Layers } from 'lucide-react'
+import { PageContent, PageHeader, PageLayout } from '@/components/layout/PageLayout'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card'
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
+import { ItemGroup, ItemSeparator } from '@/components/ui/item'
+import { Progress } from '@/components/ui/progress'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useDisciplines } from '@/hooks/useDisciplines'
+import { useInvoke } from '@/hooks/useInvoke'
+import type { GroupStats, ProjectProgress } from '@/types/prd'
 
 export function DisciplinesPage() {
-  const { disciplines } = useDisciplines();
-  const { data: disciplineStats = [], isLoading: statsLoading } = useInvoke<GroupStats[]>("get_discipline_stats");
-  const { data: progress } = useInvoke<ProjectProgress>("get_project_progress");
+  const { disciplines } = useDisciplines()
+  const { data: disciplineStats = [], isLoading: statsLoading } = useInvoke<GroupStats[]>('get_discipline_stats')
+  const { data: progress } = useInvoke<ProjectProgress>('get_project_progress')
 
-  const totalTasks = progress?.totalTasks ?? 0;
-  const doneTasks = progress?.doneTasks ?? 0;
-  const progressPercent = progress?.progressPercent ?? 0;
+  const totalTasks = progress?.totalTasks ?? 0
+  const doneTasks = progress?.doneTasks ?? 0
+  const progressPercent = progress?.progressPercent ?? 0
 
   // Build lookup map from stats array
-  const statsMap = new Map<string, GroupStats>();
+  const statsMap = new Map<string, GroupStats>()
   for (const stat of disciplineStats) {
-    statsMap.set(stat.name, stat);
+    statsMap.set(stat.name, stat)
   }
 
-  const loading = statsLoading || disciplines.length === 0;
+  const loading = statsLoading || disciplines.length === 0
 
   if (loading) {
     return (
@@ -41,7 +41,7 @@ export function DisciplinesPage() {
           </div>
         </PageContent>
       </PageLayout>
-    );
+    )
   }
 
   return (
@@ -62,7 +62,7 @@ export function DisciplinesPage() {
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-medium">
-                    Done: <span style={{ color: "var(--status-done)" }}>{doneTasks}</span>
+                    Done: <span style={{ color: 'var(--status-done)' }}>{doneTasks}</span>
                   </div>
                 </div>
                 <div className="text-right">
@@ -97,16 +97,16 @@ export function DisciplinesPage() {
         ) : (
           <ItemGroup className="rounded-md border">
             {disciplines.map((discipline, index) => {
-              const Icon = discipline.icon;
+              const Icon = discipline.icon
               const stats = statsMap.get(discipline.name) || {
                 total: 0,
                 done: 0,
                 pending: 0,
                 inProgress: 0,
                 blocked: 0,
-                skipped: 0,
-              };
-              const discProgress = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+                skipped: 0
+              }
+              const discProgress = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0
 
               return (
                 <div key={discipline.name}>
@@ -117,9 +117,8 @@ export function DisciplinesPage() {
                           className="p-2 rounded-md shrink-0"
                           style={{
                             backgroundColor: discipline.bgColor,
-                            color: discipline.color,
-                          }}
-                        >
+                            color: discipline.color
+                          }}>
                           <Icon className="h-4 w-4" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -144,11 +143,11 @@ export function DisciplinesPage() {
                   </div>
                   {index < disciplines.length - 1 && <ItemSeparator />}
                 </div>
-              );
+              )
             })}
           </ItemGroup>
         )}
       </PageContent>
     </PageLayout>
-  );
+  )
 }

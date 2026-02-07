@@ -1,13 +1,13 @@
-import type { LucideIcon } from "lucide-react";
-import type { FieldValues, UseFormReturn } from "react-hook-form";
-import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
-import { FormDescription, FormHeader, FormTitle } from "@/components/ui/form-header";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { useTabMeta } from "@/hooks/useTabMeta";
-import type { WorkspaceTab } from "@/stores/useWorkspaceStore";
-import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
+import type { LucideIcon } from 'lucide-react'
+import type { FieldValues, UseFormReturn } from 'react-hook-form'
+import { Button } from '@/components/ui/button'
+import { Form } from '@/components/ui/form'
+import { FormDescription, FormHeader, FormTitle } from '@/components/ui/form-header'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/components/ui/separator'
+import { useTabMeta } from '@/hooks/useTabMeta'
+import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
 export function EntityFormTabContent<T extends FieldValues>({
   tab,
@@ -16,20 +16,20 @@ export function EntityFormTabContent<T extends FieldValues>({
   form,
   onSubmit,
   isPending,
-  children,
+  children
 }: {
-  tab: WorkspaceTab;
-  icon: LucideIcon;
-  entityName: string;
-  form: UseFormReturn<T>;
-  onSubmit: (data: T) => void;
-  isPending: boolean;
-  children: React.ReactNode;
+  tab: WorkspaceTab
+  icon: LucideIcon
+  entityName: string
+  form: UseFormReturn<T>
+  onSubmit: (data: T) => void
+  isPending: boolean
+  children: React.ReactNode
 }) {
-  const mode = tab.data?.mode ?? "create";
-  const label = mode === "create" ? `Create ${entityName}` : `Edit ${entityName}`;
-  useTabMeta(tab.id, label, icon);
-  const closeTab = useWorkspaceStore((s) => s.closeTab);
+  const mode = tab.data?.mode ?? 'create'
+  const label = mode === 'create' ? `Create ${entityName}` : `Edit ${entityName}`
+  useTabMeta(tab.id, label, icon)
+  const closeTab = useWorkspaceStore(s => s.closeTab)
 
   return (
     <Form {...form}>
@@ -38,7 +38,7 @@ export function EntityFormTabContent<T extends FieldValues>({
           <FormHeader>
             <FormTitle>{label}</FormTitle>
             <FormDescription>
-              {mode === "create"
+              {mode === 'create'
                 ? `Add a new ${entityName.toLowerCase()} to your project`
                 : `Update ${entityName.toLowerCase()} details`}
             </FormDescription>
@@ -54,10 +54,10 @@ export function EntityFormTabContent<T extends FieldValues>({
             Cancel
           </Button>
           <Button type="submit" size="default" disabled={isPending}>
-            {isPending ? "Saving..." : mode === "create" ? "Create" : "Update"}
+            {isPending ? 'Saving...' : mode === 'create' ? 'Create' : 'Update'}
           </Button>
         </div>
       </form>
     </Form>
-  );
+  )
 }

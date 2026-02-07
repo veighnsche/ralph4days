@@ -5,311 +5,311 @@ import {
   KeyboardSensor,
   PointerSensor,
   useSensor,
-  useSensors,
-} from "@dnd-kit/core";
+  useSensors
+} from '@dnd-kit/core'
 import {
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { invoke } from "@tauri-apps/api/core";
-import { ChevronDown, ChevronUp, ClipboardCopy, GripVertical, Save, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { invoke } from '@tauri-apps/api/core'
+import { ChevronDown, ChevronUp, ClipboardCopy, GripVertical, Save, Trash2 } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
+  DialogTitle
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
 
 const BUILT_IN_RECIPES = [
-  { value: "braindump", label: "Braindump" },
-  { value: "yap", label: "Yap" },
-  { value: "ramble", label: "Ramble" },
-  { value: "discuss", label: "Discuss" },
-  { value: "task_execution", label: "Task Execution" },
-  { value: "opus_review", label: "Opus Review" },
-] as const;
+  { value: 'braindump', label: 'Braindump' },
+  { value: 'yap', label: 'Yap' },
+  { value: 'ramble', label: 'Ramble' },
+  { value: 'discuss', label: 'Discuss' },
+  { value: 'task_execution', label: 'Task Execution' },
+  { value: 'opus_review', label: 'Opus Review' }
+] as const
 
 const CATEGORY_COLORS: Record<string, string> = {
-  project: "bg-blue-500/15 text-blue-700 dark:text-blue-400",
-  feature: "bg-violet-500/15 text-violet-700 dark:text-violet-400",
-  task: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
-  discipline: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
-  state: "bg-slate-500/15 text-slate-700 dark:text-slate-400",
-  user: "bg-rose-500/15 text-rose-700 dark:text-rose-400",
-  instructions: "bg-orange-500/15 text-orange-700 dark:text-orange-400",
-};
+  project: 'bg-blue-500/15 text-blue-700 dark:text-blue-400',
+  feature: 'bg-violet-500/15 text-violet-700 dark:text-violet-400',
+  task: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
+  discipline: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
+  state: 'bg-slate-500/15 text-slate-700 dark:text-slate-400',
+  user: 'bg-rose-500/15 text-rose-700 dark:text-rose-400',
+  instructions: 'bg-orange-500/15 text-orange-700 dark:text-orange-400'
+}
 
 interface SectionMeta {
-  name: string;
-  display_name: string;
-  description: string;
-  category: string;
-  is_instruction: boolean;
+  name: string
+  display_name: string
+  description: string
+  category: string
+  is_instruction: boolean
 }
 
 interface SectionBlock {
-  name: string;
-  displayName: string;
-  description: string;
-  category: string;
-  isInstruction: boolean;
-  enabled: boolean;
-  instructionOverride: string | null;
+  name: string
+  displayName: string
+  description: string
+  category: string
+  isInstruction: boolean
+  enabled: boolean
+  instructionOverride: string | null
 }
 
 interface PromptPreviewSection {
-  name: string;
-  content: string;
+  name: string
+  content: string
 }
 
 interface PromptPreview {
-  sections: PromptPreviewSection[];
-  fullPrompt: string;
+  sections: PromptPreviewSection[]
+  fullPrompt: string
 }
 
 interface SectionConfigWire {
-  name: string;
-  enabled: boolean;
-  instructionOverride: string | null;
+  name: string
+  enabled: boolean
+  instructionOverride: string | null
 }
 
 interface CustomRecipeWire {
-  name: string;
-  baseRecipe: string | null;
-  sections: SectionConfigWire[];
+  name: string
+  baseRecipe: string | null
+  sections: SectionConfigWire[]
 }
 
 interface PromptBuilderModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
 export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalProps) {
-  const [baseRecipe, setBaseRecipe] = useState("braindump");
-  const [recipeName, setRecipeName] = useState<string | null>(null);
-  const [sections, setSections] = useState<SectionBlock[]>([]);
-  const [preview, setPreview] = useState<PromptPreview | null>(null);
-  const [customRecipeNames, setCustomRecipeNames] = useState<string[]>([]);
-  const [sectionMeta, setSectionMeta] = useState<SectionMeta[]>([]);
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-  const [saveNameInput, setSaveNameInput] = useState("");
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [baseRecipe, setBaseRecipe] = useState('braindump')
+  const [recipeName, setRecipeName] = useState<string | null>(null)
+  const [sections, setSections] = useState<SectionBlock[]>([])
+  const [preview, setPreview] = useState<PromptPreview | null>(null)
+  const [customRecipeNames, setCustomRecipeNames] = useState<string[]>([])
+  const [sectionMeta, setSectionMeta] = useState<SectionMeta[]>([])
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false)
+  const [saveNameInput, setSaveNameInput] = useState('')
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // User input lives in a ref — updated by DebouncedUserInput, read by preview
-  const userInputRef = useRef("");
+  const userInputRef = useRef('')
 
-  const enabledCount = sections.filter((s) => s.enabled).length;
+  const enabledCount = sections.filter(s => s.enabled).length
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
+  )
 
   // Trigger a debounced preview. Called when sections change (via useEffect)
   // or when user input changes (via DebouncedUserInput callback).
   const schedulePreview = useCallback(
     (currentSections: SectionBlock[]) => {
-      if (!open || currentSections.length === 0) return;
-      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (!open || currentSections.length === 0) return
+      if (debounceRef.current) clearTimeout(debounceRef.current)
       debounceRef.current = setTimeout(async () => {
         try {
-          const wireSections: SectionConfigWire[] = currentSections.map((s) => ({
+          const wireSections: SectionConfigWire[] = currentSections.map(s => ({
             name: s.name,
             enabled: s.enabled,
-            instructionOverride: s.instructionOverride,
-          }));
-          const result = await invoke<PromptPreview>("preview_custom_recipe", {
+            instructionOverride: s.instructionOverride
+          }))
+          const result = await invoke<PromptPreview>('preview_custom_recipe', {
             sections: wireSections,
-            userInput: userInputRef.current || null,
-          });
-          setPreview(result);
+            userInput: userInputRef.current || null
+          })
+          setPreview(result)
         } catch (err) {
-          console.error("Failed to preview:", err);
+          console.error('Failed to preview:', err)
         }
-      }, 500);
+      }, 500)
     },
     [open]
-  );
+  )
 
   // Load section metadata once
   useEffect(() => {
-    if (!open) return;
-    invoke<SectionMeta[]>("get_section_metadata").then(setSectionMeta).catch(console.error);
-    invoke<string[]>("list_saved_recipes").then(setCustomRecipeNames).catch(console.error);
-  }, [open]);
+    if (!open) return
+    invoke<SectionMeta[]>('get_section_metadata').then(setSectionMeta).catch(console.error)
+    invoke<string[]>('list_saved_recipes').then(setCustomRecipeNames).catch(console.error)
+  }, [open])
 
   // Load recipe sections when base recipe changes
   const loadRecipeSections = useCallback(
     async (promptType: string) => {
       try {
-        const configs = await invoke<SectionConfigWire[]>("get_recipe_sections", { promptType });
-        const blocks: SectionBlock[] = configs.map((cfg) => {
-          const meta = sectionMeta.find((m) => m.name === cfg.name);
+        const configs = await invoke<SectionConfigWire[]>('get_recipe_sections', { promptType })
+        const blocks: SectionBlock[] = configs.map(cfg => {
+          const meta = sectionMeta.find(m => m.name === cfg.name)
           return {
             name: cfg.name,
             displayName: meta?.display_name ?? cfg.name,
-            description: meta?.description ?? "",
-            category: meta?.category ?? "unknown",
+            description: meta?.description ?? '',
+            category: meta?.category ?? 'unknown',
             isInstruction: meta?.is_instruction ?? false,
             enabled: cfg.enabled,
-            instructionOverride: cfg.instructionOverride,
-          };
-        });
-        setSections(blocks);
-        setRecipeName(null);
+            instructionOverride: cfg.instructionOverride
+          }
+        })
+        setSections(blocks)
+        setRecipeName(null)
       } catch (err) {
-        console.error("Failed to load recipe sections:", err);
+        console.error('Failed to load recipe sections:', err)
       }
     },
     [sectionMeta]
-  );
+  )
 
   // Load on open and when metadata loads
   useEffect(() => {
     if (open && sectionMeta.length > 0) {
-      loadRecipeSections(baseRecipe);
+      loadRecipeSections(baseRecipe)
     }
-  }, [open, sectionMeta, baseRecipe, loadRecipeSections]);
+  }, [open, sectionMeta, baseRecipe, loadRecipeSections])
 
   // Preview when sections change (toggle, reorder, instruction blur)
   useEffect(() => {
-    schedulePreview(sections);
+    schedulePreview(sections)
     return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [sections, schedulePreview]);
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [sections, schedulePreview])
 
   // Called by DebouncedUserInput — doesn't touch parent state, just triggers preview
   const handleUserInputChange = useCallback(
     (value: string) => {
-      userInputRef.current = value;
-      schedulePreview(sections);
+      userInputRef.current = value
+      schedulePreview(sections)
     },
     [sections, schedulePreview]
-  );
+  )
 
   const handleRecipeChange = async (value: string) => {
     if (customRecipeNames.includes(value)) {
       try {
-        const custom = await invoke<CustomRecipeWire>("load_saved_recipe", { name: value });
-        setBaseRecipe(custom.baseRecipe ?? "braindump");
-        setRecipeName(custom.name);
-        const blocks: SectionBlock[] = custom.sections.map((cfg) => {
-          const meta = sectionMeta.find((m) => m.name === cfg.name);
+        const custom = await invoke<CustomRecipeWire>('load_saved_recipe', { name: value })
+        setBaseRecipe(custom.baseRecipe ?? 'braindump')
+        setRecipeName(custom.name)
+        const blocks: SectionBlock[] = custom.sections.map(cfg => {
+          const meta = sectionMeta.find(m => m.name === cfg.name)
           return {
             name: cfg.name,
             displayName: meta?.display_name ?? cfg.name,
-            description: meta?.description ?? "",
-            category: meta?.category ?? "unknown",
+            description: meta?.description ?? '',
+            category: meta?.category ?? 'unknown',
             isInstruction: meta?.is_instruction ?? false,
             enabled: cfg.enabled,
-            instructionOverride: cfg.instructionOverride,
-          };
-        });
-        setSections(blocks);
+            instructionOverride: cfg.instructionOverride
+          }
+        })
+        setSections(blocks)
       } catch (err) {
-        toast.error(`Failed to load recipe: ${err}`);
+        toast.error(`Failed to load recipe: ${err}`)
       }
     } else {
-      setBaseRecipe(value);
-      loadRecipeSections(value);
+      setBaseRecipe(value)
+      loadRecipeSections(value)
     }
-  };
+  }
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    const { active, over } = event
+    if (!over || active.id === over.id) return
 
-    setSections((prev) => {
-      const oldIndex = prev.findIndex((s) => s.name === active.id);
-      const newIndex = prev.findIndex((s) => s.name === over.id);
-      if (oldIndex === -1 || newIndex === -1) return prev;
+    setSections(prev => {
+      const oldIndex = prev.findIndex(s => s.name === active.id)
+      const newIndex = prev.findIndex(s => s.name === over.id)
+      if (oldIndex === -1 || newIndex === -1) return prev
 
-      const next = [...prev];
-      const [moved] = next.splice(oldIndex, 1);
-      next.splice(newIndex, 0, moved);
-      return next;
-    });
-  };
+      const next = [...prev]
+      const [moved] = next.splice(oldIndex, 1)
+      next.splice(newIndex, 0, moved)
+      return next
+    })
+  }
 
   const toggleSection = (name: string) => {
-    setSections((prev) => prev.map((s) => (s.name === name ? { ...s, enabled: !s.enabled } : s)));
-  };
+    setSections(prev => prev.map(s => (s.name === name ? { ...s, enabled: !s.enabled } : s)))
+  }
 
   const commitInstructionOverride = (name: string, text: string | null) => {
-    setSections((prev) => prev.map((s) => (s.name === name ? { ...s, instructionOverride: text } : s)));
-  };
+    setSections(prev => prev.map(s => (s.name === name ? { ...s, instructionOverride: text } : s)))
+  }
 
   const handleSave = async () => {
     if (!recipeName) {
-      setSaveDialogOpen(true);
-      return;
+      setSaveDialogOpen(true)
+      return
     }
-    await doSave(recipeName);
-  };
+    await doSave(recipeName)
+  }
 
   const doSave = async (name: string) => {
     try {
-      const wireSections: SectionConfigWire[] = sections.map((s) => ({
+      const wireSections: SectionConfigWire[] = sections.map(s => ({
         name: s.name,
         enabled: s.enabled,
-        instructionOverride: s.instructionOverride,
-      }));
-      await invoke("save_recipe", {
+        instructionOverride: s.instructionOverride
+      }))
+      await invoke('save_recipe', {
         recipe: {
           name,
           baseRecipe: baseRecipe,
-          sections: wireSections,
-        },
-      });
-      setRecipeName(name);
-      setSaveDialogOpen(false);
-      const names = await invoke<string[]>("list_saved_recipes");
-      setCustomRecipeNames(names);
-      toast.success(`Recipe "${name}" saved`);
+          sections: wireSections
+        }
+      })
+      setRecipeName(name)
+      setSaveDialogOpen(false)
+      const names = await invoke<string[]>('list_saved_recipes')
+      setCustomRecipeNames(names)
+      toast.success(`Recipe "${name}" saved`)
     } catch (err) {
-      toast.error(`Failed to save: ${err}`);
+      toast.error(`Failed to save: ${err}`)
     }
-  };
+  }
 
   const handleDelete = async () => {
-    if (!recipeName) return;
+    if (!recipeName) return
     try {
-      await invoke("delete_recipe", { name: recipeName });
-      const names = await invoke<string[]>("list_saved_recipes");
-      setCustomRecipeNames(names);
-      toast.success(`Recipe "${recipeName}" deleted`);
-      setRecipeName(null);
-      loadRecipeSections(baseRecipe);
+      await invoke('delete_recipe', { name: recipeName })
+      const names = await invoke<string[]>('list_saved_recipes')
+      setCustomRecipeNames(names)
+      toast.success(`Recipe "${recipeName}" deleted`)
+      setRecipeName(null)
+      loadRecipeSections(baseRecipe)
     } catch (err) {
-      toast.error(`Failed to delete: ${err}`);
+      toast.error(`Failed to delete: ${err}`)
     }
-  };
+  }
 
   const handleCopy = () => {
     if (preview?.fullPrompt) {
-      navigator.clipboard.writeText(preview.fullPrompt);
-      toast.success("Copied to clipboard");
+      navigator.clipboard.writeText(preview.fullPrompt)
+      toast.success('Copied to clipboard')
     }
-  };
+  }
 
-  const currentPickerValue = recipeName ?? baseRecipe;
+  const currentPickerValue = recipeName ?? baseRecipe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -327,13 +327,13 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {BUILT_IN_RECIPES.map((r) => (
+                {BUILT_IN_RECIPES.map(r => (
                   <SelectItem key={r.value} value={r.value}>
                     {r.label}
                   </SelectItem>
                 ))}
                 {customRecipeNames.length > 0 && <Separator className="my-1" />}
-                {customRecipeNames.map((name) => (
+                {customRecipeNames.map(name => (
                   <SelectItem key={`custom-${name}`} value={name}>
                     {name}
                   </SelectItem>
@@ -358,13 +358,13 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
                 </p>
 
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                  <SortableContext items={sections.map((s) => s.name)} strategy={verticalListSortingStrategy}>
-                    {sections.map((section) => (
+                  <SortableContext items={sections.map(s => s.name)} strategy={verticalListSortingStrategy}>
+                    {sections.map(section => (
                       <SortableSectionBlock
                         key={section.name}
                         section={section}
                         onToggle={() => toggleSection(section.name)}
-                        onInstructionCommit={(text) => commitInstructionOverride(section.name, text)}
+                        onInstructionCommit={text => commitInstructionOverride(section.name, text)}
                       />
                     ))}
                   </SortableContext>
@@ -378,7 +378,7 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
           <ResizablePanel defaultSize={60} minSize={35}>
             <ScrollArea className="h-full">
               <div className="p-3 space-y-2">
-                {preview?.sections.map((section) => (
+                {preview?.sections.map(section => (
                   <div key={section.name} className="rounded-md border">
                     <div className="bg-muted/50 px-3 py-1 border-b">
                       <span className="text-[11px] font-medium text-muted-foreground">{section.name}</span>
@@ -415,7 +415,7 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
 
           <Button size="default" onClick={handleSave}>
             <Save className="size-3.5" />
-            {recipeName ? "Save" : "Save As..."}
+            {recipeName ? 'Save' : 'Save As...'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -429,12 +429,12 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
           </DialogHeader>
           <Input
             value={saveNameInput}
-            onChange={(e) => setSaveNameInput(e.target.value)}
+            onChange={e => setSaveNameInput(e.target.value)}
             placeholder="my-custom-recipe"
             className="h-8"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && saveNameInput.trim()) {
-                doSave(saveNameInput.trim());
+            onKeyDown={e => {
+              if (e.key === 'Enter' && saveNameInput.trim()) {
+                doSave(saveNameInput.trim())
               }
             }}
           />
@@ -449,27 +449,27 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
         </DialogContent>
       </Dialog>
     </Dialog>
-  );
+  )
 }
 
 /** User input textarea with local state. Syncs to parent via debounced callback.
  *  Typing here NEVER re-renders the parent or the DndContext tree. */
 function DebouncedUserInput({ onDebouncedChange }: { onDebouncedChange: (value: string) => void }) {
-  const [value, setValue] = useState("");
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [value, setValue] = useState('')
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value;
-    setValue(newValue);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => onDebouncedChange(newValue), 300);
-  };
+    const newValue = e.target.value
+    setValue(newValue)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => onDebouncedChange(newValue), 300)
+  }
 
   return (
     <div className="space-y-1.5 mb-3">
@@ -483,7 +483,7 @@ function DebouncedUserInput({ onDebouncedChange }: { onDebouncedChange: (value: 
         className="min-h-[60px] font-mono text-xs"
       />
     </div>
-  );
+  )
 }
 
 /** Each block owns its instruction override text locally.
@@ -492,57 +492,55 @@ function DebouncedUserInput({ onDebouncedChange }: { onDebouncedChange: (value: 
 function SortableSectionBlock({
   section,
   onToggle,
-  onInstructionCommit,
+  onInstructionCommit
 }: {
-  section: SectionBlock;
-  onToggle: () => void;
-  onInstructionCommit: (text: string | null) => void;
+  section: SectionBlock
+  onToggle: () => void
+  onInstructionCommit: (text: string | null) => void
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
-    id: section.name,
-  });
+    id: section.name
+  })
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
-  };
+    transition
+  }
 
-  const [instructionOpen, setInstructionOpen] = useState(!!section.instructionOverride);
-  const [localInstruction, setLocalInstruction] = useState(section.instructionOverride ?? "");
-  const categoryColor = CATEGORY_COLORS[section.category] ?? "";
+  const [instructionOpen, setInstructionOpen] = useState(!!section.instructionOverride)
+  const [localInstruction, setLocalInstruction] = useState(section.instructionOverride ?? '')
+  const categoryColor = CATEGORY_COLORS[section.category] ?? ''
 
   // Sync from parent when section data changes externally (recipe load, reset)
-  const parentValue = section.instructionOverride ?? "";
+  const parentValue = section.instructionOverride ?? ''
   useEffect(() => {
-    setLocalInstruction(parentValue);
-  }, [parentValue]);
+    setLocalInstruction(parentValue)
+  }, [parentValue])
 
   const handleBlur = () => {
-    const committed = localInstruction || null;
+    const committed = localInstruction || null
     if (committed !== section.instructionOverride) {
-      onInstructionCommit(committed);
+      onInstructionCommit(committed)
     }
-  };
+  }
 
   const handleReset = () => {
-    setLocalInstruction("");
-    onInstructionCommit(null);
-  };
+    setLocalInstruction('')
+    onInstructionCommit(null)
+  }
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`rounded-md border transition-opacity duration-100 ${section.enabled ? "opacity-100" : "opacity-50"} ${isDragging ? "z-50 shadow-md bg-background" : ""}`}
-    >
+      className={`rounded-md border transition-opacity duration-100 ${section.enabled ? 'opacity-100' : 'opacity-50'} ${isDragging ? 'z-50 shadow-md bg-background' : ''}`}>
       <div className="flex items-center gap-2 px-2.5 py-1.5">
         <button
           type="button"
           ref={setActivatorNodeRef}
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground transition-colors"
-        >
+          className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground transition-colors">
           <GripVertical className="size-3.5" />
         </button>
 
@@ -563,17 +561,16 @@ function SortableSectionBlock({
           <CollapsibleTrigger asChild>
             <button
               type="button"
-              className="w-full text-left px-2.5 py-1 border-t text-[10px] text-muted-foreground hover:bg-muted/30 transition-colors flex items-center gap-1"
-            >
+              className="w-full text-left px-2.5 py-1 border-t text-[10px] text-muted-foreground hover:bg-muted/30 transition-colors flex items-center gap-1">
               {instructionOpen ? <ChevronUp className="size-2.5" /> : <ChevronDown className="size-2.5" />}
-              {localInstruction ? "Custom instructions" : "Edit instructions"}
+              {localInstruction ? 'Custom instructions' : 'Edit instructions'}
             </button>
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="px-2.5 pb-2 pt-1 border-t space-y-1">
               <Textarea
                 value={localInstruction}
-                onChange={(e) => setLocalInstruction(e.target.value)}
+                onChange={e => setLocalInstruction(e.target.value)}
                 onBlur={handleBlur}
                 placeholder="Leave empty to use default instructions..."
                 className="min-h-[120px] font-mono text-[11px] leading-relaxed"
@@ -588,5 +585,5 @@ function SortableSectionBlock({
         </Collapsible>
       )}
     </div>
-  );
+  )
 }

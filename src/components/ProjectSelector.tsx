@@ -1,74 +1,74 @@
-import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
-import { FolderOpen } from "lucide-react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { useInvoke } from "@/hooks/useInvoke";
+import { invoke } from '@tauri-apps/api/core'
+import { open } from '@tauri-apps/plugin-dialog'
+import { FolderOpen } from 'lucide-react'
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
+import { useInvoke } from '@/hooks/useInvoke'
 
 interface RalphProject {
-  name: string;
-  path: string;
+  name: string
+  path: string
 }
 
 interface ProjectSelectorProps {
-  onProjectSelected: (path: string) => void;
+  onProjectSelected: (path: string) => void
 }
 
 export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
   // Left side - Initialize
-  const [initPath, setInitPath] = useState("");
-  const [initializing, setInitializing] = useState(false);
+  const [initPath, setInitPath] = useState('')
+  const [initializing, setInitializing] = useState(false)
 
   // Right side - Open existing
-  const { data: projects = [], isLoading: scanning } = useInvoke<RalphProject[]>("scan_for_ralph_projects");
-  const [selectedProject, setSelectedProject] = useState("");
+  const { data: projects = [], isLoading: scanning } = useInvoke<RalphProject[]>('scan_for_ralph_projects')
+  const [selectedProject, setSelectedProject] = useState('')
 
   const handleBrowseInit = async () => {
     try {
       const selected = await open({
         directory: true,
         multiple: false,
-        title: "Select Directory to Initialize",
-      });
-      if (selected && typeof selected === "string") {
-        setInitPath(selected);
+        title: 'Select Directory to Initialize'
+      })
+      if (selected && typeof selected === 'string') {
+        setInitPath(selected)
       }
     } catch (e) {
-      console.error("Failed to open folder dialog:", e);
+      console.error('Failed to open folder dialog:', e)
     }
-  };
+  }
 
   const handleInitialize = async () => {
-    if (!initPath) return;
+    if (!initPath) return
 
-    setInitializing(true);
+    setInitializing(true)
     try {
-      const title = initPath.split("/").pop() || "Project";
-      await invoke("initialize_ralph_project", { path: initPath, projectTitle: title });
-      await invoke("set_locked_project", { path: initPath });
-      onProjectSelected(initPath);
+      const title = initPath.split('/').pop() || 'Project'
+      await invoke('initialize_ralph_project', { path: initPath, projectTitle: title })
+      await invoke('set_locked_project', { path: initPath })
+      onProjectSelected(initPath)
     } catch (err) {
-      alert(`Failed to initialize: ${err}`);
+      alert(`Failed to initialize: ${err}`)
     } finally {
-      setInitializing(false);
+      setInitializing(false)
     }
-  };
+  }
 
   const handleOpenProject = async () => {
-    if (!selectedProject) return;
+    if (!selectedProject) return
 
     try {
-      await invoke("set_locked_project", { path: selectedProject });
-      onProjectSelected(selectedProject);
+      await invoke('set_locked_project', { path: selectedProject })
+      onProjectSelected(selectedProject)
     } catch (err) {
-      alert(`Failed to open: ${err}`);
+      alert(`Failed to open: ${err}`)
     }
-  };
+  }
 
   return (
     <Dialog open={true}>
@@ -84,7 +84,7 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
                   <InputGroup>
                     <InputGroupInput
                       value={initPath}
-                      onChange={(e) => setInitPath(e.target.value)}
+                      onChange={e => setInitPath(e.target.value)}
                       placeholder="/path/to/your-project"
                     />
                     <InputGroupAddon align="inline-end">
@@ -98,7 +98,7 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
               </div>
 
               <Button onClick={handleInitialize} disabled={!initPath || initializing} className="w-full">
-                {initializing ? "Initializing..." : "Initialize Ralph"}
+                {initializing ? 'Initializing...' : 'Initialize Ralph'}
               </Button>
             </FieldGroup>
           </div>
@@ -121,7 +121,7 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
                           <SelectValue placeholder="-- Select a project --" />
                         </SelectTrigger>
                         <SelectContent>
-                          {projects.map((project) => (
+                          {projects.map(project => (
                             <SelectItem key={project.path} value={project.path}>
                               {project.name}
                             </SelectItem>
@@ -141,5 +141,5 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
         </div>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

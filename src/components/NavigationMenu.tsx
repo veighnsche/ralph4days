@@ -1,5 +1,5 @@
-import { Layers, ListTodo, Menu, MessageCircle, MessageSquare, Plus, Target } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Layers, ListTodo, Menu, MessageCircle, MessageSquare, Plus, Target } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,61 +9,61 @@ import {
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import type { Page } from "@/hooks/useNavigation";
-import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
+import type { Page } from '@/hooks/useNavigation'
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
 interface NavigationMenuProps {
-  currentPage: Page;
-  onPageChange: (page: Page) => void;
+  currentPage: Page
+  onPageChange: (page: Page) => void
 }
 
 export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProps) {
-  const openTab = useWorkspaceStore((s) => s.openTab);
+  const openTab = useWorkspaceStore(s => s.openTab)
 
   const handleCreateTask = () => {
     openTab({
-      type: "task-form",
-      title: "Create Task",
+      type: 'task-form',
+      title: 'Create Task',
       closeable: true,
-      data: { mode: "create" },
-    });
-  };
+      data: { mode: 'create' }
+    })
+  }
 
   const handleCreateFeature = () => {
     openTab({
-      type: "feature-form",
-      title: "Create Feature",
+      type: 'feature-form',
+      title: 'Create Feature',
       closeable: true,
-      data: { mode: "create" },
-    });
-  };
+      data: { mode: 'create' }
+    })
+  }
 
   const handleCreateDiscipline = () => {
     openTab({
-      type: "discipline-form",
-      title: "Create Discipline",
+      type: 'discipline-form',
+      title: 'Create Discipline',
       closeable: true,
-      data: { mode: "create" },
-    });
-  };
+      data: { mode: 'create' }
+    })
+  }
 
   const handleYapAboutTasks = () => {
     openTab({
-      type: "braindump-form",
-      title: "Yap about Tasks",
-      closeable: true,
-    });
-  };
+      type: 'braindump-form',
+      title: 'Yap about Tasks',
+      closeable: true
+    })
+  }
 
   const handleRambleAboutFeatures = () => {
     openTab({
-      type: "braindump-form",
-      title: "Ramble about Features",
-      closeable: true,
-    });
-  };
+      type: 'braindump-form',
+      title: 'Ramble about Features',
+      closeable: true
+    })
+  }
 
   return (
     <DropdownMenu>
@@ -78,10 +78,10 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
 
         {/* Tasks submenu */}
         <DropdownMenuSub>
-          <DropdownMenuSubTrigger onClick={() => onPageChange("tasks")}>
+          <DropdownMenuSubTrigger onClick={() => onPageChange('tasks')}>
             <ListTodo className="mr-2 h-4 w-4" />
             Tasks
-            {currentPage === "tasks" && <span className="ml-2 text-xs text-muted-foreground">•</span>}
+            {currentPage === 'tasks' && <span className="ml-2 text-xs text-muted-foreground">•</span>}
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-48">
             <DropdownMenuItem onClick={handleCreateTask}>
@@ -97,10 +97,10 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
 
         {/* Features submenu */}
         <DropdownMenuSub>
-          <DropdownMenuSubTrigger onClick={() => onPageChange("features")}>
+          <DropdownMenuSubTrigger onClick={() => onPageChange('features')}>
             <Target className="mr-2 h-4 w-4" />
             Features
-            {currentPage === "features" && <span className="ml-2 text-xs text-muted-foreground">•</span>}
+            {currentPage === 'features' && <span className="ml-2 text-xs text-muted-foreground">•</span>}
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-48">
             <DropdownMenuItem onClick={handleCreateFeature}>
@@ -116,10 +116,10 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
 
         {/* Disciplines submenu */}
         <DropdownMenuSub>
-          <DropdownMenuSubTrigger onClick={() => onPageChange("disciplines")}>
+          <DropdownMenuSubTrigger onClick={() => onPageChange('disciplines')}>
             <Layers className="mr-2 h-4 w-4" />
             Disciplines
-            {currentPage === "disciplines" && <span className="ml-2 text-xs text-muted-foreground">•</span>}
+            {currentPage === 'disciplines' && <span className="ml-2 text-xs text-muted-foreground">•</span>}
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-48">
             <DropdownMenuItem onClick={handleCreateDiscipline}>
@@ -130,5 +130,5 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
         </DropdownMenuSub>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  )
 }

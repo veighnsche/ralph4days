@@ -1,16 +1,16 @@
-import { Brain, FileX, MessageSquare } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import type { Task } from "@/types/prd";
-import { PlaylistView } from "./PlaylistView";
+import { Brain, FileX, MessageSquare } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
+import type { Task } from '@/types/prd'
+import { PlaylistView } from './PlaylistView'
 
 interface PRDBodyProps {
-  filteredTasks: Task[];
-  totalTasks: number;
-  onTaskClick: (task: Task) => void;
-  onClearFilters: () => void;
-  onBraindump: () => void;
-  onYap: () => void;
+  filteredTasks: Task[]
+  totalTasks: number
+  onTaskClick: (task: Task) => void
+  onClearFilters: () => void
+  onBraindump: () => void
+  onYap: () => void
 }
 
 export function PRDBody({ filteredTasks, totalTasks, onTaskClick, onClearFilters, onBraindump, onYap }: PRDBodyProps) {
@@ -41,7 +41,7 @@ export function PRDBody({ filteredTasks, totalTasks, onTaskClick, onClearFilters
             </div>
           </EmptyContent>
         </Empty>
-      );
+      )
     }
 
     // Tasks exist but filtered out
@@ -62,8 +62,8 @@ export function PRDBody({ filteredTasks, totalTasks, onTaskClick, onClearFilters
           </Button>
         </EmptyContent>
       </Empty>
-    );
+    )
   }
 
-  return <PlaylistView tasks={filteredTasks} onTaskClick={onTaskClick} />;
+  return <PlaylistView tasks={filteredTasks} onTaskClick={onTaskClick} />
 }

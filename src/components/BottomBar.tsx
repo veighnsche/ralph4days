@@ -1,15 +1,15 @@
-import { Play, Square } from "lucide-react";
-import { LoopToggle } from "@/components/LoopToggle";
-import { NavigationMenu } from "@/components/NavigationMenu";
-import { Settings } from "@/components/Settings";
-import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
-import type { Page } from "@/hooks/useNavigation";
+import { Play, Square } from 'lucide-react'
+import { LoopToggle } from '@/components/LoopToggle'
+import { NavigationMenu } from '@/components/NavigationMenu'
+import { Settings } from '@/components/Settings'
+import { Button } from '@/components/ui/button'
+import { ButtonGroup } from '@/components/ui/button-group'
+import type { Page } from '@/hooks/useNavigation'
 
 interface BottomBarProps {
-  lockedProject: string;
-  currentPage: Page;
-  onPageChange: (page: Page) => void;
+  lockedProject: string
+  currentPage: Page
+  onPageChange: (page: Page) => void
 }
 
 // TODO: Wire up to new terminal-based loop system
@@ -41,5 +41,5 @@ export function BottomBar({ lockedProject: _lockedProject, currentPage, onPageCh
         </div>
       </div>
     </div>
-  );
+  )
 }

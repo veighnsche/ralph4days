@@ -1,55 +1,51 @@
-import { Brain, MessageCircle, Target } from "lucide-react";
-import { PageContent, PageHeader, PageLayout } from "@/components/layout/PageLayout";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import { ItemGroup, ItemSeparator } from "@/components/ui/item";
-import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useInvoke } from "@/hooks/useInvoke";
-import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
-import type { Feature, GroupStats, ProjectProgress } from "@/types/prd";
+import { Brain, MessageCircle, Target } from 'lucide-react'
+import { PageContent, PageHeader, PageLayout } from '@/components/layout/PageLayout'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card'
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
+import { ItemGroup, ItemSeparator } from '@/components/ui/item'
+import { Progress } from '@/components/ui/progress'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useInvoke } from '@/hooks/useInvoke'
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
+import type { Feature, GroupStats, ProjectProgress } from '@/types/prd'
 
 export function FeaturesPage() {
-  const {
-    data: features = [],
-    isLoading: featuresLoading,
-    error: featuresError,
-  } = useInvoke<Feature[]>("get_features");
-  const { data: featureStats = [], isLoading: statsLoading } = useInvoke<GroupStats[]>("get_feature_stats");
-  const { data: progress } = useInvoke<ProjectProgress>("get_project_progress");
-  const openTab = useWorkspaceStore((s) => s.openTab);
+  const { data: features = [], isLoading: featuresLoading, error: featuresError } = useInvoke<Feature[]>('get_features')
+  const { data: featureStats = [], isLoading: statsLoading } = useInvoke<GroupStats[]>('get_feature_stats')
+  const { data: progress } = useInvoke<ProjectProgress>('get_project_progress')
+  const openTab = useWorkspaceStore(s => s.openTab)
 
-  const totalTasks = progress?.totalTasks ?? 0;
-  const doneTasks = progress?.doneTasks ?? 0;
-  const progressPercent = progress?.progressPercent ?? 0;
+  const totalTasks = progress?.totalTasks ?? 0
+  const doneTasks = progress?.doneTasks ?? 0
+  const progressPercent = progress?.progressPercent ?? 0
 
-  const loading = featuresLoading || statsLoading;
-  const error = featuresError ? String(featuresError) : null;
+  const loading = featuresLoading || statsLoading
+  const error = featuresError ? String(featuresError) : null
 
   // Build lookup map from stats array
-  const statsMap = new Map<string, GroupStats>();
+  const statsMap = new Map<string, GroupStats>()
   for (const stat of featureStats) {
-    statsMap.set(stat.name, stat);
+    statsMap.set(stat.name, stat)
   }
 
   const handleRambleAboutFeatures = () => {
     openTab({
-      type: "braindump-form",
-      title: "Ramble about Features",
-      closeable: true,
-    });
-  };
+      type: 'braindump-form',
+      title: 'Ramble about Features',
+      closeable: true
+    })
+  }
 
   const handleBraindumpProject = () => {
     openTab({
-      type: "braindump-form",
-      title: "Braindump Project",
-      closeable: true,
-    });
-  };
+      type: 'braindump-form',
+      title: 'Braindump Project',
+      closeable: true
+    })
+  }
 
   if (loading) {
     return (
@@ -65,7 +61,7 @@ export function FeaturesPage() {
           </div>
         </PageContent>
       </PageLayout>
-    );
+    )
   }
 
   if (error) {
@@ -77,7 +73,7 @@ export function FeaturesPage() {
           </Alert>
         </PageContent>
       </PageLayout>
-    );
+    )
   }
 
   return (
@@ -98,7 +94,7 @@ export function FeaturesPage() {
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-medium">
-                    Done: <span style={{ color: "var(--status-done)" }}>{doneTasks}</span>
+                    Done: <span style={{ color: 'var(--status-done)' }}>{doneTasks}</span>
                   </div>
                 </div>
                 <div className="text-right">
@@ -152,9 +148,9 @@ export function FeaturesPage() {
                 pending: 0,
                 inProgress: 0,
                 blocked: 0,
-                skipped: 0,
-              };
-              const featureProgress = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+                skipped: 0
+              }
+              const featureProgress = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0
 
               return (
                 <div key={feature.name}>
@@ -184,11 +180,11 @@ export function FeaturesPage() {
                   </div>
                   {index < features.length - 1 && <ItemSeparator />}
                 </div>
-              );
+              )
             })}
           </ItemGroup>
         )}
       </PageContent>
     </PageLayout>
-  );
+  )
 }

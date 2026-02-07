@@ -27,21 +27,21 @@
  *    - Show summary when complete
  */
 
-import { invoke } from "@tauri-apps/api/core";
-import { Brain, Wrench } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
-import { type Model, ModelThinkingPicker } from "@/components/ModelThinkingPicker";
-import { PromptBuilderModal } from "@/components/PromptBuilderModal";
-import { Button } from "@/components/ui/button";
-import { FormDescription, FormHeader, FormTitle } from "@/components/ui/form-header";
-import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
-import { useTabMeta } from "@/hooks/useTabMeta";
-import type { WorkspaceTab } from "@/stores/useWorkspaceStore";
-import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
+import { invoke } from '@tauri-apps/api/core'
+import { Brain, Wrench } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
+import { type Model, ModelThinkingPicker } from '@/components/ModelThinkingPicker'
+import { PromptBuilderModal } from '@/components/PromptBuilderModal'
+import { Button } from '@/components/ui/button'
+import { FormDescription, FormHeader, FormTitle } from '@/components/ui/form-header'
+import { Label } from '@/components/ui/label'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/components/ui/separator'
+import { Textarea } from '@/components/ui/textarea'
+import { useTabMeta } from '@/hooks/useTabMeta'
+import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
 const DEFAULT_QUESTIONS = `What is this project about?
 
@@ -55,72 +55,72 @@ What's the tech stack (if you know)?
 
 Any constraints or special requirements?
 
-What's your timeline or priorities?`;
+What's your timeline or priorities?`
 
 interface BraindumpFormTabContentProps {
-  tab: WorkspaceTab;
+  tab: WorkspaceTab
 }
 
 export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
-  useTabMeta(tab.id, "Braindump", Brain);
-  const closeTab = useWorkspaceStore((s) => s.closeTab);
-  const openTab = useWorkspaceStore((s) => s.openTab);
-  const [braindump, setBraindump] = useState(DEFAULT_QUESTIONS);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [promptBuilderOpen, setPromptBuilderOpen] = useState(false);
-  const isMountedRef = useRef(true);
+  useTabMeta(tab.id, 'Braindump', Brain)
+  const closeTab = useWorkspaceStore(s => s.closeTab)
+  const openTab = useWorkspaceStore(s => s.openTab)
+  const [braindump, setBraindump] = useState(DEFAULT_QUESTIONS)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [promptBuilderOpen, setPromptBuilderOpen] = useState(false)
+  const isMountedRef = useRef(true)
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
+      isMountedRef.current = false
+    }
+  }, [])
 
   const sendToTerminal = async (terminalId: string, text: string) => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    if (!isMountedRef.current) return;
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    if (!isMountedRef.current) return
 
-    const terminalExists = useWorkspaceStore.getState().tabs.some((t) => t.id === terminalId);
-    if (!terminalExists) throw new Error("Terminal tab was closed before sending");
+    const terminalExists = useWorkspaceStore.getState().tabs.some(t => t.id === terminalId)
+    if (!terminalExists) throw new Error('Terminal tab was closed before sending')
 
-    const bytes = Array.from(new TextEncoder().encode(`${text}\n`));
-    await invoke("send_terminal_input", { sessionId: terminalId, data: bytes });
+    const bytes = Array.from(new TextEncoder().encode(`${text}\n`))
+    await invoke('send_terminal_input', { sessionId: terminalId, data: bytes })
 
-    if (!isMountedRef.current) return;
-    closeTab(tab.id);
-    toast.success("Braindump sent to Claude");
-  };
+    if (!isMountedRef.current) return
+    closeTab(tab.id)
+    toast.success('Braindump sent to Claude')
+  }
 
   const handleSubmit = async (model: Model, thinking: boolean) => {
-    const trimmedBraindump = braindump.trim();
+    const trimmedBraindump = braindump.trim()
     if (!trimmedBraindump) {
-      toast.error("Please enter some text before sending");
-      return;
+      toast.error('Please enter some text before sending')
+      return
     }
-    if (isSubmitting) return;
+    if (isSubmitting) return
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
 
     try {
       const terminalId = openTab({
-        type: "terminal",
+        type: 'terminal',
         title: `Claude (${model})`,
         closeable: true,
-        data: { model, thinking },
-      });
-      await sendToTerminal(terminalId, trimmedBraindump);
+        data: { model, thinking }
+      })
+      await sendToTerminal(terminalId, trimmedBraindump)
     } catch (err) {
-      console.error("Failed to send braindump:", err);
-      const errorMessage = err instanceof Error ? err.message : "Unknown error";
-      toast.error(`Failed to send braindump: ${errorMessage}`);
-      if (isMountedRef.current) setIsSubmitting(false);
+      console.error('Failed to send braindump:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      toast.error(`Failed to send braindump: ${errorMessage}`)
+      if (isMountedRef.current) setIsSubmitting(false)
     }
-  };
+  }
 
   const handleCancel = () => {
-    closeTab(tab.id);
-  };
+    closeTab(tab.id)
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -140,7 +140,7 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
             <Textarea
               id="braindump"
               value={braindump}
-              onChange={(e) => setBraindump(e.target.value)}
+              onChange={e => setBraindump(e.target.value)}
               className="min-h-[400px] font-mono text-sm"
               placeholder="Start typing your thoughts..."
             />
@@ -160,8 +160,7 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
           size="default"
           onClick={() => setPromptBuilderOpen(true)}
           title="Prompt Builder"
-          className="mr-auto"
-        >
+          className="mr-auto">
           <Wrench className="size-3.5" />
           Prompt Builder
         </Button>
@@ -172,12 +171,12 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
 
         <ModelThinkingPicker
           onAction={handleSubmit}
-          actionLabel={isSubmitting ? "Sending..." : "Send to Claude"}
+          actionLabel={isSubmitting ? 'Sending...' : 'Send to Claude'}
           disabled={isSubmitting || !braindump.trim()}
         />
       </div>
 
       <PromptBuilderModal open={promptBuilderOpen} onOpenChange={setPromptBuilderOpen} />
     </div>
-  );
+  )
 }

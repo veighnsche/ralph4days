@@ -1,129 +1,129 @@
 /** Task status stored in YAML */
-export type TaskStatus = "pending" | "in_progress" | "done" | "blocked" | "skipped";
+export type TaskStatus = 'pending' | 'in_progress' | 'done' | 'blocked' | 'skipped'
 
 /** Inferred task status (computed from TaskStatus + dependency graph) */
 export type InferredTaskStatus =
-  | "ready" // pending + all deps met + not blocked
-  | "waiting_on_deps" // pending + some deps not done
-  | "externally_blocked" // status == blocked (manual)
-  | "in_progress" // status == in_progress
-  | "done" // status == done
-  | "skipped"; // status == skipped
+  | 'ready' // pending + all deps met + not blocked
+  | 'waiting_on_deps' // pending + some deps not done
+  | 'externally_blocked' // status == blocked (manual)
+  | 'in_progress' // status == in_progress
+  | 'done' // status == done
+  | 'skipped' // status == skipped
 
-export type TaskProvenance = "agent" | "human" | "system";
+export type TaskProvenance = 'agent' | 'human' | 'system'
 
 export interface McpServerConfig {
-  name: string;
-  command: string;
-  args?: string[];
-  env?: Record<string, string>;
+  name: string
+  command: string
+  args?: string[]
+  env?: Record<string, string>
 }
 
-export type CommentAuthor = "human" | "agent";
+export type CommentAuthor = 'human' | 'agent'
 
 export interface TaskComment {
-  id: number;
-  author: CommentAuthor;
-  agent_task_id?: number; // snake_case — matches Rust serde output (no rename_all on TaskComment)
-  body: string;
-  created?: string;
+  id: number
+  author: CommentAuthor
+  agent_task_id?: number // snake_case — matches Rust serde output (no rename_all on TaskComment)
+  body: string
+  created?: string
 }
 
 export interface Task {
-  id: number;
-  feature: string;
-  discipline: string;
-  title: string;
-  description?: string;
-  status: TaskStatus;
-  inferredStatus: InferredTaskStatus;
-  priority?: "low" | "medium" | "high" | "critical";
-  tags?: string[];
-  dependsOn?: number[];
-  blockedBy?: string;
-  created?: string;
-  updated?: string;
-  completed?: string;
-  acceptanceCriteria?: string[];
-  contextFiles?: string[];
-  outputArtifacts?: string[];
-  hints?: string;
-  estimatedTurns?: number;
-  provenance?: TaskProvenance;
-  comments?: TaskComment[];
-  featureDisplayName: string;
-  featureAcronym: string;
-  disciplineDisplayName: string;
-  disciplineAcronym: string;
-  disciplineIcon: string;
-  disciplineColor: string;
+  id: number
+  feature: string
+  discipline: string
+  title: string
+  description?: string
+  status: TaskStatus
+  inferredStatus: InferredTaskStatus
+  priority?: 'low' | 'medium' | 'high' | 'critical'
+  tags?: string[]
+  dependsOn?: number[]
+  blockedBy?: string
+  created?: string
+  updated?: string
+  completed?: string
+  acceptanceCriteria?: string[]
+  contextFiles?: string[]
+  outputArtifacts?: string[]
+  hints?: string
+  estimatedTurns?: number
+  provenance?: TaskProvenance
+  comments?: TaskComment[]
+  featureDisplayName: string
+  featureAcronym: string
+  disciplineDisplayName: string
+  disciplineAcronym: string
+  disciplineIcon: string
+  disciplineColor: string
 }
 
 /** Stats for a group of tasks (feature or discipline) */
 export interface GroupStats {
-  name: string;
-  displayName: string;
-  total: number;
-  done: number;
-  pending: number;
-  inProgress: number;
-  blocked: number;
-  skipped: number;
+  name: string
+  displayName: string
+  total: number
+  done: number
+  pending: number
+  inProgress: number
+  blocked: number
+  skipped: number
 }
 
 /** Overall project progress */
 export interface ProjectProgress {
-  totalTasks: number;
-  doneTasks: number;
-  progressPercent: number;
+  totalTasks: number
+  doneTasks: number
+  progressPercent: number
 }
 
 /** Project info from metadata */
 export interface ProjectInfo {
-  title: string;
-  description?: string;
-  created?: string;
+  title: string
+  description?: string
+  created?: string
 }
 
 export type StatusFilter =
-  | "all"
+  | 'all'
   // Actual statuses (match TaskStatus)
-  | "pending"
-  | "in_progress"
-  | "blocked"
-  | "done"
-  | "skipped"
+  | 'pending'
+  | 'in_progress'
+  | 'blocked'
+  | 'done'
+  | 'skipped'
   // Inferred statuses (additional computed states)
-  | "ready" // Inferred: pending + all deps met
-  | "waiting_on_deps"; // Inferred: pending + unmet deps
-export type PriorityFilter = "all" | "low" | "medium" | "high" | "critical";
+  | 'ready' // Inferred: pending + all deps met
+  | 'waiting_on_deps' // Inferred: pending + unmet deps
+export type PriorityFilter = 'all' | 'low' | 'medium' | 'high' | 'critical'
 
-export type LearningSource = "auto" | "agent" | "human" | "opus_reviewed";
+export type LearningSource = 'auto' | 'agent' | 'human' | 'opus_reviewed'
 
 export interface FeatureLearning {
-  text: string;
-  reason?: string;
-  source: LearningSource;
-  taskId?: number;
-  iteration?: number;
-  created: string;
-  hitCount: number;
-  reviewed: boolean;
-  reviewCount: number;
+  text: string
+  reason?: string
+  source: LearningSource
+  taskId?: number
+  iteration?: number
+  created: string
+  hitCount: number
+  reviewed: boolean
+  reviewCount: number
 }
 
 export interface Feature {
-  name: string;
-  displayName: string;
-  acronym?: string;
-  description?: string;
-  created?: string;
+  name: string
+  displayName: string
+  acronym?: string
+  description?: string
+  created?: string
   // Knowledge context
-  knowledgePaths?: string[];
-  contextFiles?: string[];
+  knowledgePaths?: string[]
+  contextFiles?: string[]
   // RAG fields
-  architecture?: string;
-  boundaries?: string;
-  learnings?: FeatureLearning[];
-  dependencies?: string[];
+  architecture?: string
+  boundaries?: string
+  learnings?: FeatureLearning[]
+  dependencies?: string[]
 }
