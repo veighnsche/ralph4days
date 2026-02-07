@@ -8,6 +8,8 @@
 
 Feature is the thinnest entity in Ralph. It has 7 fields, 2 are dead (knowledge_paths, context_files — exist but no CRUD). It's a display label, not a knowledge base.
 
+**Note:** There is no production data to migrate. All data to date is mock. Do not spend time on data migration logic.
+
 But Feature is supposed to answer **"WHAT domain am I in?"** for every Haiku iteration. It's the knowledge container that Doc 015's surgical prompt assembly reads from, and that Doc 017's RAG system embeds and searches. The Feature entity is the nucleus of the entire context system.
 
 **Right now, Feature is empty. You can't RAG over empty data. You can't build surgical prompts from a display name and a one-liner description.**
@@ -547,6 +549,12 @@ Purpose: Within-feature memory search ("what went wrong with login form?")
 | Feature updated | Re-embed feature snapshot | `feature-snapshots` collection |
 | Iteration complete | Iteration entry (summary + errors + decisions) | `feature-<hash>` collection |
 | Learning appended | Re-embed feature snapshot (learnings changed) | `feature-snapshots` collection |
+
+### Qdrant Deployment Note (Updated)
+
+Qdrant is **vendored and run as a sidecar process** (no Docker requirement).
+Ralph bundles the Qdrant server binary and starts it automatically on app startup if it is not already running.
+This keeps feature memory local and zero-setup for users.
 
 ## MCP Exposure Strategy
 

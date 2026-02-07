@@ -230,7 +230,7 @@ _counters:
 ## Key Design Decisions
 
 1. **Counter rebuilding on load** - Prevents corruption from manual edits
-2. **No migration logic** - Fresh start per user request
+2. **No migration logic** - Fresh start per user request. All data so far is mock; do not spend time on data migration.
 3. **Debounced preview** - Reduces IPC calls while typing
 4. **Dialog stays open on error** - User can fix validation issues without re-entering data
 5. **Backend validation + frontend validation** - Defense in depth

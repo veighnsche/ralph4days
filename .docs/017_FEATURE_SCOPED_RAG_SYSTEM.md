@@ -9,6 +9,8 @@
 
 Doc 015 established the "Task Model as Prompt Assembly Nexus" — tasks reference Disciplines (HOW) and Features (WHAT), and Ralph assembles surgical prompts from all three. It added `knowledge_paths` and `context_files` to the Feature schema and described three phases:
 
+**Note:** There is no production data to migrate. All data to date is mock. Do not spend time on data migration logic.
+
 - Phase 1 (Collect): Schema — **done**, fields exist but are unwired
 - Phase 2 (Assemble): Prompt builder — **not started**
 - Phase 3 (Refine): MCP resources — **not started**
@@ -46,17 +48,13 @@ Feature memory gives Haiku **cross-iteration continuity** within a feature, with
 
 ### Qdrant (Vector Database)
 
-Local Docker instance. Single command setup:
+**Vendored sidecar process (no Docker, no user setup).**
 
-```bash
-docker run -d --name qdrant -p 6333:6333 -p 6334:6334 \
-  -v ~/.ralph/qdrant_storage:/qdrant/storage \
-  qdrant/qdrant
-```
-
+- Qdrant server binary is bundled with the app package.
+- Ralph spawns Qdrant on startup if it is not already running.
 - REST API at `http://localhost:6333`
 - gRPC at `localhost:6334` (used by Rust client for performance)
-- Storage persisted to `~/.ralph/qdrant_storage` (survives container restarts)
+- Storage persisted to `~/.ralph/qdrant_storage` (survives restarts)
 - No authentication needed for local use
 
 ### Ollama (Embedding Model)
@@ -681,16 +679,11 @@ Doc 015 Phase 0a (CRUD for execution fields)
 ### Quick Start
 
 ```bash
-# 1. Start Qdrant (one-time)
-docker run -d --name qdrant -p 6333:6333 -p 6334:6334 \
-  -v ~/.ralph/qdrant_storage:/qdrant/storage \
-  qdrant/qdrant
-
-# 2. Install Ollama + embedding model (one-time)
+# 1. Install Ollama + embedding model (one-time)
 curl -fsSL https://ollama.com/install.sh | sh
 ollama pull nomic-embed-text
 
-# 3. Start Ralph — RAG auto-detected
+# 2. Start Ralph — Qdrant auto-starts as a sidecar
 ralph --project /path/to/project
 # Console: "RAG: active (Qdrant ok, Ollama nomic-embed-text 768d)"
 ```
@@ -698,7 +691,7 @@ ralph --project /path/to/project
 ### Verify
 
 ```bash
-# Check Qdrant
+# Check Qdrant (auto-started)
 curl http://localhost:6333/healthz
 # → "ok"
 
