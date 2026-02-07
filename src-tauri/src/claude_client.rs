@@ -7,6 +7,7 @@ use std::thread;
 
 pub struct ClaudeClient;
 
+#[allow(dead_code)]
 pub enum ClaudeOutput {
     Text(String),
     RateLimited,

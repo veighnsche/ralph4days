@@ -2,7 +2,6 @@ mod claude_client;
 mod commands;
 mod loop_engine;
 mod mcp_generator;
-pub mod prd;
 mod prompt_builder;
 mod terminal;
 mod types;
@@ -62,6 +61,7 @@ pub fn run() {
             commands::get_locked_project,
             commands::create_task,
             commands::update_task,
+            commands::set_task_status,
             commands::delete_task,
             commands::get_disciplines_config,
             commands::get_features,

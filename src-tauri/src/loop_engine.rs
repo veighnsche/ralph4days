@@ -1,7 +1,7 @@
 use crate::claude_client::{ClaudeClient, ClaudeOutput};
 use crate::prompt_builder::{hash_content, PromptBuilder};
 use crate::types::{LoopConfig, LoopState, LoopStatus, RalphError, RalphEvent};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
@@ -455,27 +455,24 @@ impl LoopEngine {
         }
     }
 
-    fn get_progress_hash(project_path: &PathBuf) -> String {
+    fn get_progress_hash(project_path: &Path) -> String {
         let ralph_dir = project_path.join(".ralph");
-        let db_path = ralph_dir.join("db");
 
-        // Read all database files (new format)
-        let tasks = std::fs::read_to_string(db_path.join("tasks.yaml")).unwrap_or_default();
-        let features = std::fs::read_to_string(db_path.join("features.yaml")).unwrap_or_default();
-        let disciplines =
-            std::fs::read_to_string(db_path.join("disciplines.yaml")).unwrap_or_default();
-        let metadata = std::fs::read_to_string(db_path.join("metadata.yaml")).unwrap_or_default();
+        // Read database content via SQLite export
+        let db_content = {
+            let db_path = ralph_dir.join("db").join("ralph.db");
+            sqlite_db::SqliteDb::open(&db_path)
+                .and_then(|db| db.export_prd_yaml())
+                .unwrap_or_default()
+        };
 
         // Read progress and learnings
         let progress = std::fs::read_to_string(ralph_dir.join("progress.txt")).unwrap_or_default();
         let learnings =
             std::fs::read_to_string(ralph_dir.join("learnings.txt")).unwrap_or_default();
 
-        // Combine all for hash (detects changes to ANY file)
-        let combined = format!(
-            "{}{}{}{}{}{}",
-            tasks, features, disciplines, metadata, progress, learnings
-        );
+        // Combine all for hash (detects changes to ANY source)
+        let combined = format!("{}{}{}", db_content, progress, learnings);
 
         hash_content(&combined)
     }

@@ -1,0 +1,68 @@
+-- Core tables for Ralph project database
+-- Matches yaml-db behavior exactly (see Doc 021 for reference)
+
+CREATE TABLE metadata (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  schema_version TEXT NOT NULL DEFAULT '1.0',
+  project_title TEXT NOT NULL,
+  project_description TEXT,
+  project_created TEXT
+) STRICT;
+
+CREATE TABLE features (
+  name TEXT PRIMARY KEY,
+  display_name TEXT NOT NULL,
+  acronym TEXT NOT NULL UNIQUE,
+  description TEXT,
+  created TEXT,
+  knowledge_paths TEXT DEFAULT '[]',
+  context_files TEXT DEFAULT '[]'
+) STRICT;
+
+CREATE TABLE disciplines (
+  name TEXT PRIMARY KEY,
+  display_name TEXT NOT NULL,
+  acronym TEXT NOT NULL UNIQUE,
+  icon TEXT NOT NULL,
+  color TEXT NOT NULL,
+  system_prompt TEXT,
+  skills TEXT DEFAULT '[]',
+  conventions TEXT,
+  mcp_servers TEXT DEFAULT '[]'
+) STRICT;
+
+CREATE TABLE tasks (
+  id INTEGER PRIMARY KEY,
+  feature TEXT NOT NULL REFERENCES features(name) ON DELETE RESTRICT,
+  discipline TEXT NOT NULL REFERENCES disciplines(name) ON DELETE RESTRICT,
+  title TEXT NOT NULL,
+  description TEXT,
+  status TEXT NOT NULL DEFAULT 'pending',
+  priority TEXT,
+  tags TEXT DEFAULT '[]',
+  depends_on TEXT DEFAULT '[]',
+  blocked_by TEXT,
+  created TEXT,
+  updated TEXT,
+  completed TEXT,
+  acceptance_criteria TEXT DEFAULT '[]',
+  context_files TEXT DEFAULT '[]',
+  output_artifacts TEXT DEFAULT '[]',
+  hints TEXT,
+  estimated_turns INTEGER,
+  provenance TEXT
+) STRICT;
+
+CREATE TABLE task_comments (
+  id INTEGER PRIMARY KEY,
+  task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  author TEXT NOT NULL,
+  agent_task_id INTEGER,
+  body TEXT NOT NULL,
+  created TEXT
+) STRICT;
+
+CREATE INDEX idx_tasks_feature ON tasks(feature);
+CREATE INDEX idx_tasks_discipline ON tasks(discipline);
+CREATE INDEX idx_tasks_status ON tasks(status);
+CREATE INDEX idx_comments_task ON task_comments(task_id);

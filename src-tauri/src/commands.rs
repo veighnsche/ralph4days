@@ -2,11 +2,10 @@ use crate::loop_engine::LoopEngine;
 use crate::mcp_generator::MCPGenerator;
 use crate::terminal::{PTYManager, SessionConfig};
 use crate::types::LoopStatus;
+use sqlite_db::{Priority, SqliteDb, TaskInput};
 use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::{AppHandle, State};
-use yaml_db::Priority;
-use yaml_db::{TaskInput, YamlDatabase};
 
 // Recursive scan configuration
 const MAX_SCAN_DEPTH: usize = 5; // Max 5 levels deep
@@ -41,6 +40,7 @@ pub struct RalphProject {
 pub struct AppState {
     pub engine: Mutex<LoopEngine>,
     pub locked_project: Mutex<Option<PathBuf>>,
+    pub db: Mutex<Option<SqliteDb>>,
     pub pty_manager: PTYManager,
     pub mcp_generator: MCPGenerator,
 }
@@ -50,17 +50,20 @@ impl Default for AppState {
         Self {
             engine: Mutex::new(LoopEngine::new()),
             locked_project: Mutex::new(None),
+            db: Mutex::new(None),
             pty_manager: PTYManager::new(),
             mcp_generator: MCPGenerator::new(),
         }
     }
 }
 
-/// Get the .ralph/db/ path for the locked project. Fails if no project locked.
-fn get_db_path(state: &State<'_, AppState>) -> Result<PathBuf, String> {
-    let locked = state.locked_project.lock().map_err(|e| e.to_string())?;
-    let project_path = locked.as_ref().ok_or("No project locked")?;
-    Ok(project_path.join(".ralph").join("db"))
+/// Get a reference to the opened database. Fails if no project locked.
+fn get_db<'a>(state: &'a State<'a, AppState>) -> Result<std::sync::MutexGuard<'a, Option<SqliteDb>>, String> {
+    let guard = state.db.lock().map_err(|e| e.to_string())?;
+    if guard.is_none() {
+        return Err("No project locked (database not open)".to_string());
+    }
+    Ok(guard)
 }
 
 #[tauri::command]
@@ -79,7 +82,7 @@ pub fn validate_project_path(path: String) -> Result<(), String> {
     let ralph_dir = path.join(".ralph");
     if !ralph_dir.exists() {
         return Err(format!(
-            "No .ralph/ folder. Create one:\n  mkdir -p {}/.ralph\n  # Then add prd.yaml inside",
+            "No .ralph/ folder. Initialize with:\n  ralph --init \"{}\"",
             path.display()
         ));
     }
@@ -90,11 +93,11 @@ pub fn validate_project_path(path: String) -> Result<(), String> {
         ));
     }
 
-    // Check .ralph/db/ directory exists
-    let db_path = ralph_dir.join("db");
-    if !db_path.exists() || !db_path.is_dir() {
+    // Check .ralph/db/ralph.db exists
+    let db_file = ralph_dir.join("db").join("ralph.db");
+    if !db_file.exists() {
         return Err(format!(
-            "No .ralph/db/ folder found. Initialize with:\n  ralph --init \"{}\"",
+            "No .ralph/db/ralph.db found. Initialize with:\n  ralph --init \"{}\"",
             path.display()
         ));
     }
@@ -104,8 +107,6 @@ pub fn validate_project_path(path: String) -> Result<(), String> {
 
 #[tauri::command]
 pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(), String> {
-    use yaml_db::{DisciplinesFile, FeaturesFile, MetadataFile, ProjectMetadata, TasksFile};
-
     let path = PathBuf::from(&path);
 
     // Check path exists and is directory
@@ -125,35 +126,19 @@ pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(
     std::fs::create_dir(&ralph_dir)
         .map_err(|e| format!("Failed to create .ralph/ directory: {}", e))?;
 
-    // Create .ralph/db/ directory with new format
-    let db_path = ralph_dir.join("db");
-    std::fs::create_dir(&db_path)
+    // Create .ralph/db/ directory
+    let db_dir = ralph_dir.join("db");
+    std::fs::create_dir(&db_dir)
         .map_err(|e| format!("Failed to create .ralph/db/ directory: {}", e))?;
 
-    let now = chrono::Utc::now().format("%Y-%m-%d").to_string();
-
-    // Create empty tasks.yaml (AI agents will add tasks)
-    let tasks_file = TasksFile::new(db_path.join("tasks.yaml"));
-    tasks_file.save()?;
-
-    // Create empty features.yaml (AI agents will add features)
-    let features_file = FeaturesFile::new(db_path.join("features.yaml"));
-    features_file.save()?;
-
-    // Create disciplines.yaml with defaults
-    let mut disciplines = DisciplinesFile::new(db_path.join("disciplines.yaml"));
-    disciplines.initialize_defaults();
-    disciplines.save()?;
-
-    // Create metadata.yaml (no counters - no tasks yet)
-    let mut metadata = MetadataFile::new(db_path.join("metadata.yaml"));
-    metadata.project = ProjectMetadata {
-        title: project_title.clone(),
-        description: Some("Add project description here".to_string()),
-        created: Some(now),
-    };
-    // No need to rebuild counters - empty task list
-    metadata.save()?;
+    // Create and initialize the SQLite database
+    let db_path = db_dir.join("ralph.db");
+    let db = SqliteDb::open(&db_path)?;
+    db.seed_defaults()?;
+    db.initialize_metadata(
+        project_title.clone(),
+        Some("Add project description here".to_string()),
+    )?;
 
     // Create optional CLAUDE.RALPH.md template
     let claude_path = ralph_dir.join("CLAUDE.RALPH.md");
@@ -203,6 +188,14 @@ pub fn set_locked_project(state: State<'_, AppState>, path: String) -> Result<()
     if locked.is_some() {
         return Err("Project already locked for this session".to_string());
     }
+
+    // Open the SQLite database
+    let db_path = canonical_path.join(".ralph").join("db").join("ralph.db");
+    let db = SqliteDb::open(&db_path)?;
+
+    // Store the database connection
+    let mut db_guard = state.db.lock().map_err(|e| e.to_string())?;
+    *db_guard = Some(db);
 
     *locked = Some(canonical_path);
     Ok(())
@@ -353,6 +346,7 @@ pub fn get_current_dir() -> Result<String, String> {
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn create_task(
     state: State<'_, AppState>,
     feature: String,
@@ -369,8 +363,8 @@ pub fn create_task(
     estimated_turns: Option<u32>,
     provenance: Option<String>,
 ) -> Result<String, String> {
-    let db_path = get_db_path(&state)?;
-    let mut db = YamlDatabase::from_path(db_path)?;
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
 
     let task_input = TaskInput {
         feature: normalize_feature_name(&feature)?,
@@ -415,11 +409,11 @@ fn parse_priority(priority: Option<&str>) -> Option<Priority> {
 }
 
 /// Parse provenance string to TaskProvenance enum
-fn parse_provenance(provenance: Option<&str>) -> Option<yaml_db::TaskProvenance> {
+fn parse_provenance(provenance: Option<&str>) -> Option<sqlite_db::TaskProvenance> {
     provenance.and_then(|p| match p {
-        "agent" => Some(yaml_db::TaskProvenance::Agent),
-        "human" => Some(yaml_db::TaskProvenance::Human),
-        "system" => Some(yaml_db::TaskProvenance::System),
+        "agent" => Some(sqlite_db::TaskProvenance::Agent),
+        "human" => Some(sqlite_db::TaskProvenance::Human),
+        "system" => Some(sqlite_db::TaskProvenance::System),
         _ => None,
     })
 }
@@ -449,8 +443,8 @@ pub struct DisciplineConfig {
 
 #[tauri::command]
 pub fn get_disciplines_config(state: State<'_, AppState>) -> Result<Vec<DisciplineConfig>, String> {
-    let db_path = get_db_path(&state)?;
-    let db = YamlDatabase::from_path(db_path)?;
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
     Ok(db
         .get_disciplines()
         .iter()
@@ -487,8 +481,8 @@ pub struct FeatureConfig {
 
 #[tauri::command]
 pub fn get_features_config(state: State<'_, AppState>) -> Result<Vec<FeatureConfig>, String> {
-    let db_path = get_db_path(&state)?;
-    let db = YamlDatabase::from_path(db_path)?;
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
     Ok(db
         .get_features()
         .iter()
@@ -514,8 +508,8 @@ pub struct FeatureData {
 
 #[tauri::command]
 pub fn get_features(state: State<'_, AppState>) -> Result<Vec<FeatureData>, String> {
-    let db_path = get_db_path(&state)?;
-    let db = YamlDatabase::from_path(db_path)?;
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
     Ok(db
         .get_features()
         .iter()
@@ -539,8 +533,8 @@ pub fn create_feature(
     acronym: String,
     description: Option<String>,
 ) -> Result<(), String> {
-    let db_path = get_db_path(&state)?;
-    let mut db = YamlDatabase::from_path(db_path)?;
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
 
     // Normalize name (lowercase with hyphens)
     let normalized_name = normalize_feature_name(&name)?;
@@ -556,8 +550,8 @@ pub fn update_feature(
     acronym: String,
     description: Option<String>,
 ) -> Result<(), String> {
-    let db_path = get_db_path(&state)?;
-    let mut db = YamlDatabase::from_path(db_path)?;
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
     db.update_feature(name, display_name, acronym, description)
 }
 
@@ -570,8 +564,8 @@ pub fn create_discipline(
     icon: String,
     color: String,
 ) -> Result<(), String> {
-    let db_path = get_db_path(&state)?;
-    let mut db = YamlDatabase::from_path(db_path)?;
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
 
     // Normalize name (lowercase with hyphens)
     let normalized_name = name.to_lowercase().trim().replace(char::is_whitespace, "-");
@@ -588,12 +582,13 @@ pub fn update_discipline(
     icon: String,
     color: String,
 ) -> Result<(), String> {
-    let db_path = get_db_path(&state)?;
-    let mut db = YamlDatabase::from_path(db_path)?;
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
     db.update_discipline(name, display_name, acronym, icon, color)
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn update_task(
     state: State<'_, AppState>,
     id: u32,
@@ -611,8 +606,8 @@ pub fn update_task(
     estimated_turns: Option<u32>,
     provenance: Option<String>,
 ) -> Result<(), String> {
-    let db_path = get_db_path(&state)?;
-    let mut db = YamlDatabase::from_path(db_path)?;
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
 
     let task_input = TaskInput {
         feature: normalize_feature_name(&feature)?,
@@ -634,23 +629,36 @@ pub fn update_task(
 }
 
 #[tauri::command]
+pub fn set_task_status(
+    state: State<'_, AppState>,
+    id: u32,
+    status: String,
+) -> Result<(), String> {
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
+    let status = sqlite_db::TaskStatus::parse(&status)
+        .ok_or_else(|| format!("Invalid status: {}", status))?;
+    db.set_task_status(id, status)
+}
+
+#[tauri::command]
 pub fn delete_task(state: State<'_, AppState>, id: u32) -> Result<(), String> {
-    let db_path = get_db_path(&state)?;
-    let mut db = YamlDatabase::from_path(db_path)?;
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
     db.delete_task(id)
 }
 
 #[tauri::command]
 pub fn delete_feature(state: State<'_, AppState>, name: String) -> Result<(), String> {
-    let db_path = get_db_path(&state)?;
-    let mut db = YamlDatabase::from_path(db_path)?;
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
     db.delete_feature(name)
 }
 
 #[tauri::command]
 pub fn delete_discipline(state: State<'_, AppState>, name: String) -> Result<(), String> {
-    let db_path = get_db_path(&state)?;
-    let mut db = YamlDatabase::from_path(db_path)?;
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
     db.delete_discipline(name)
 }
 
@@ -662,11 +670,11 @@ pub fn add_task_comment(
     agent_task_id: Option<u32>,
     body: String,
 ) -> Result<(), String> {
-    let db_path = get_db_path(&state)?;
-    let mut db = YamlDatabase::from_path(db_path)?;
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
     let comment_author = match author.as_str() {
-        "human" => yaml_db::CommentAuthor::Human,
-        "agent" => yaml_db::CommentAuthor::Agent,
+        "human" => sqlite_db::CommentAuthor::Human,
+        "agent" => sqlite_db::CommentAuthor::Agent,
         _ => return Err(format!("Invalid author: {}", author)),
     };
     db.add_comment(task_id, comment_author, agent_task_id, body)
@@ -676,23 +684,23 @@ pub fn add_task_comment(
 pub fn update_task_comment(
     state: State<'_, AppState>,
     task_id: u32,
-    comment_index: usize,
+    comment_id: u32,
     body: String,
 ) -> Result<(), String> {
-    let db_path = get_db_path(&state)?;
-    let mut db = YamlDatabase::from_path(db_path)?;
-    db.update_comment(task_id, comment_index, body)
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
+    db.update_comment(task_id, comment_id, body)
 }
 
 #[tauri::command]
 pub fn delete_task_comment(
     state: State<'_, AppState>,
     task_id: u32,
-    comment_index: usize,
+    comment_id: u32,
 ) -> Result<(), String> {
-    let db_path = get_db_path(&state)?;
-    let mut db = YamlDatabase::from_path(db_path)?;
-    db.delete_comment(task_id, comment_index)
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
+    db.delete_comment(task_id, comment_id)
 }
 
 // --- Enriched Query Commands ---
@@ -700,41 +708,41 @@ pub fn delete_task_comment(
 #[tauri::command]
 pub fn get_enriched_tasks(
     state: State<'_, AppState>,
-) -> Result<Vec<yaml_db::EnrichedTask>, String> {
-    let db_path = get_db_path(&state)?;
-    let db = YamlDatabase::from_path(db_path)?;
+) -> Result<Vec<sqlite_db::EnrichedTask>, String> {
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
     Ok(db.get_enriched_tasks())
 }
 
 #[tauri::command]
-pub fn get_feature_stats(state: State<'_, AppState>) -> Result<Vec<yaml_db::GroupStats>, String> {
-    let db_path = get_db_path(&state)?;
-    let db = YamlDatabase::from_path(db_path)?;
+pub fn get_feature_stats(state: State<'_, AppState>) -> Result<Vec<sqlite_db::GroupStats>, String> {
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
     Ok(db.get_feature_stats())
 }
 
 #[tauri::command]
 pub fn get_discipline_stats(
     state: State<'_, AppState>,
-) -> Result<Vec<yaml_db::GroupStats>, String> {
-    let db_path = get_db_path(&state)?;
-    let db = YamlDatabase::from_path(db_path)?;
+) -> Result<Vec<sqlite_db::GroupStats>, String> {
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
     Ok(db.get_discipline_stats())
 }
 
 #[tauri::command]
 pub fn get_project_progress(
     state: State<'_, AppState>,
-) -> Result<yaml_db::ProjectProgress, String> {
-    let db_path = get_db_path(&state)?;
-    let db = YamlDatabase::from_path(db_path)?;
+) -> Result<sqlite_db::ProjectProgress, String> {
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
     Ok(db.get_project_progress())
 }
 
 #[tauri::command]
 pub fn get_all_tags(state: State<'_, AppState>) -> Result<Vec<String>, String> {
-    let db_path = get_db_path(&state)?;
-    let db = YamlDatabase::from_path(db_path)?;
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
     Ok(db.get_all_tags())
 }
 
@@ -748,8 +756,8 @@ pub struct ProjectInfo {
 
 #[tauri::command]
 pub fn get_project_info(state: State<'_, AppState>) -> Result<ProjectInfo, String> {
-    let db_path = get_db_path(&state)?;
-    let db = YamlDatabase::from_path(db_path)?;
+    let guard = get_db(&state)?;
+    let db = guard.as_ref().unwrap();
     let info = db.get_project_info();
     Ok(ProjectInfo {
         title: info.title.clone(),

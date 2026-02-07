@@ -1,21 +1,16 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum LoopState {
+    #[default]
     Idle,
     Running,
     Paused,
     RateLimited,
     Complete,
     Aborted,
-}
-
-impl Default for LoopState {
-    fn default() -> Self {
-        Self::Idle
-    }
 }
 
 // TODO: DEPRECATED ITERATION LOGIC

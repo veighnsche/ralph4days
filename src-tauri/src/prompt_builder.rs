@@ -11,22 +11,22 @@
 //    - Request structured output (features, disciplines, tasks)
 //
 // 2. build_task_execution_prompt(task_id: &str, ralph_db: &Path) -> Result<String>
-//    - Read task from tasks.yaml
+//    - Read task from SQLite database
 //    - Include task title, description, acceptance criteria
-//    - Include feature context (read from features.yaml)
-//    - Include discipline context (read from disciplines.yaml)
+//    - Include feature context from database
+//    - Include discipline context from database
 //    - List completed dependencies
 //    - Include project files overview (ls -R or similar)
 //    - Tell Claude to use update_task_status tool when done
 //
 // 3. build_yap_prompt(user_rambling: &str, ralph_db: &Path) -> Result<String>
-//    - List existing tasks from tasks.yaml
+//    - List existing tasks from database
 //    - Include user's thoughts about what to change
 //    - Explain update_task and create_task tools
 //    - Ask Claude to clarify ambiguities
 //
 // 4. build_ramble_prompt(user_rambling: &str, ralph_db: &Path) -> Result<String>
-//    - List existing features from features.yaml
+//    - List existing features from database
 //    - Include user's thoughts about features
 //    - Explain update_feature and create_feature tools
 //
@@ -36,6 +36,7 @@
 //    - Gives Claude project-specific knowledge
 
 use crate::types::RalphError;
+use sqlite_db::SqliteDb;
 use std::path::Path;
 
 const COMPLETION_MARKER: &str = "<promise>COMPLETE</promise>";
@@ -50,7 +51,7 @@ impl PromptBuilder {
             return Err(RalphError::MissingRalphDir);
         }
 
-        // Read PRD from database
+        // Read PRD from SQLite database
         let prd = Self::read_prd_content(&ralph_dir)?;
         let progress = Self::read_file_optional(&ralph_dir.join("progress.txt"));
         let learnings = Self::read_file_optional(&ralph_dir.join("learnings.txt"));
@@ -86,7 +87,7 @@ impl PromptBuilder {
             "Pick ONE incomplete task (status: todo or in-progress) and complete it.\n\n",
         );
         prompt.push_str("After completing the task:\n");
-        prompt.push_str("1. Update its status to 'done' in .ralph/db/tasks.yaml\n");
+        prompt.push_str("1. Update its status to 'done' in the project database\n");
         prompt.push_str("2. Commit your changes with a descriptive message\n");
         prompt.push_str("3. Append a brief summary to .ralph/progress.txt\n\n");
         prompt.push_str("If ALL tasks are complete, output exactly: ");
@@ -105,7 +106,7 @@ impl PromptBuilder {
             return Err(RalphError::MissingRalphDir);
         }
 
-        // Read PRD from database
+        // Read PRD from SQLite database
         let prd = Self::read_prd_content(&ralph_dir)?;
         let progress = Self::read_file_optional(&ralph_dir.join("progress.txt"));
         let learnings = Self::read_file_optional(&ralph_dir.join("learnings.txt"));
@@ -144,25 +145,13 @@ impl PromptBuilder {
         output.contains(COMPLETION_MARKER)
     }
 
-    /// Read PRD content from .ralph/db/ files
-    /// Raw YAML is fine since Claude reads it as text context
+    /// Read PRD content from SQLite database at .ralph/db/ralph.db
     fn read_prd_content(ralph_dir: &Path) -> Result<String, RalphError> {
-        let db_path = ralph_dir.join("db");
-
-        let metadata = Self::read_file(&db_path.join("metadata.yaml"), "db/metadata.yaml")?;
-        let features = Self::read_file(&db_path.join("features.yaml"), "db/features.yaml")?;
-        let disciplines =
-            Self::read_file(&db_path.join("disciplines.yaml"), "db/disciplines.yaml")?;
-        let tasks = Self::read_file(&db_path.join("tasks.yaml"), "db/tasks.yaml")?;
-
-        Ok(format!(
-            "{}\n{}\n{}\n{}",
-            metadata, features, disciplines, tasks
-        ))
-    }
-
-    fn read_file(path: &Path, name: &str) -> Result<String, RalphError> {
-        std::fs::read_to_string(path).map_err(|_| RalphError::MissingFile(name.to_string()))
+        let db_path = ralph_dir.join("db").join("ralph.db");
+        let db = SqliteDb::open(&db_path)
+            .map_err(|e| RalphError::MissingFile(format!("db/ralph.db: {}", e)))?;
+        db.export_prd_yaml()
+            .map_err(|e| RalphError::MissingFile(format!("export failed: {}", e)))
     }
 
     fn read_file_optional(path: &Path) -> Option<String> {

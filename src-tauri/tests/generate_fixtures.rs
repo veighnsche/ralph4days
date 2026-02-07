@@ -6,8 +6,9 @@
 //! Fixtures use .undetect-ralph/ (not .ralph/) so they're not detected as Ralph projects.
 //! The mock workflow (just dev-mock) renames .undetect-ralph/ to .ralph/ when copying.
 
+use sqlite_db::SqliteDb;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Helper to initialize a project (creates .undetect-ralph/ for fixtures)
 fn initialize_project_for_fixture(
@@ -15,8 +16,6 @@ fn initialize_project_for_fixture(
     project_title: String,
     use_undetect: bool,
 ) -> Result<(), String> {
-    use yaml_db::{DisciplinesFile, FeaturesFile, MetadataFile, ProjectMetadata, TasksFile};
-
     if !path.exists() {
         return Err(format!("Directory not found: {}", path.display()));
     }
@@ -46,33 +45,17 @@ fn initialize_project_for_fixture(
     fs::create_dir(&ralph_dir).map_err(|e| format!("Failed to create ralph directory: {}", e))?;
 
     // Create db/ directory
-    let db_path = ralph_dir.join("db");
-    fs::create_dir(&db_path).map_err(|e| format!("Failed to create db/ directory: {}", e))?;
+    let db_dir = ralph_dir.join("db");
+    fs::create_dir(&db_dir).map_err(|e| format!("Failed to create db/ directory: {}", e))?;
 
-    let now = chrono::Utc::now().format("%Y-%m-%d").to_string();
-
-    // Create empty tasks.yaml (AI agents will add tasks)
-    let tasks_file = TasksFile::new(db_path.join("tasks.yaml"));
-    tasks_file.save()?;
-
-    // Create empty features.yaml (AI agents will add features)
-    let features_file = FeaturesFile::new(db_path.join("features.yaml"));
-    features_file.save()?;
-
-    // Create disciplines.yaml with defaults
-    let mut disciplines = DisciplinesFile::new(db_path.join("disciplines.yaml"));
-    disciplines.initialize_defaults();
-    disciplines.save()?;
-
-    // Create metadata.yaml (no counters - no tasks yet)
-    let mut metadata = MetadataFile::new(db_path.join("metadata.yaml"));
-    metadata.project = ProjectMetadata {
-        title: project_title.clone(),
-        description: Some("Add project description here".to_string()),
-        created: Some(now),
-    };
-    // No need to rebuild counters - empty task list
-    metadata.save()?;
+    // Create and initialize the SQLite database
+    let db_path = db_dir.join("ralph.db");
+    let db = SqliteDb::open(&db_path)?;
+    db.seed_defaults()?;
+    db.initialize_metadata(
+        project_title.clone(),
+        Some("Add project description here".to_string()),
+    )?;
 
     // Create CLAUDE.RALPH.md template
     let claude_path = ralph_dir.join("CLAUDE.RALPH.md");
@@ -106,6 +89,12 @@ Describe the architecture, tech stack, and key components.
         .map_err(|e| format!("Failed to create CLAUDE.RALPH.md: {}", e))?;
 
     Ok(())
+}
+
+/// Open the fixture database
+fn open_fixture_db(fixture_path: &Path) -> SqliteDb {
+    let db_path = fixture_path.join(".undetect-ralph/db/ralph.db");
+    SqliteDb::open(&db_path).unwrap()
 }
 
 /// Generate 00-empty-project fixture (before initialization)
@@ -150,10 +139,7 @@ cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures -- --no
 ## What Gets Created
 
 When `initialize_ralph_project` is called on this directory:
-- `.undetect-ralph/db/tasks.yaml` (empty - AI agents will add tasks)
-- `.undetect-ralph/db/features.yaml` (empty - AI agents will add features)
-- `.undetect-ralph/db/disciplines.yaml` (10 defaults for reference)
-- `.undetect-ralph/db/metadata.yaml` (project info, no counters yet)
+- `.undetect-ralph/db/ralph.db` (SQLite database with schema, defaults, metadata)
 - `.undetect-ralph/CLAUDE.RALPH.md` (template)
 
 See `initialized-project` fixture for the AFTER state.
@@ -213,10 +199,7 @@ ralph --project mock/initialized-project
 
 ## Contents
 
-- `.undetect-ralph/db/tasks.yaml` - Empty (AI agents will add tasks)
-- `.undetect-ralph/db/features.yaml` - Empty (AI agents will add features)
-- `.undetect-ralph/db/disciplines.yaml` - 10 default disciplines (reference)
-- `.undetect-ralph/db/metadata.yaml` - Project metadata (no counters yet)
+- `.undetect-ralph/db/ralph.db` - SQLite database (empty tasks/features, 10 default disciplines)
 - `.undetect-ralph/CLAUDE.RALPH.md` - Template for context
 
 ## Expected Behavior
@@ -246,8 +229,6 @@ ralph --project mock/initialized-project
 /// Generate 02-with-feature-project fixture (has feature, no tasks yet)
 #[test]
 fn generate_fixture_02_with_feature() {
-    use yaml_db::FeaturesFile;
-
     println!("\n=== Generating fixture: 02-with-feature-project ===");
 
     let fixtures_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -275,7 +256,7 @@ defined (e.g., "authentication"), but no tasks have been created yet.
 
 ```bash
 # Generate fixtures
-cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures generate_all_fixtures -- --nocapture --test-threads=1
+cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures -- --nocapture
 
 # Reset mock and use
 just reset-mock
@@ -284,10 +265,8 @@ just dev-mock 02-with-feature-project
 
 ## Contents
 
-- `.undetect-ralph/db/tasks.yaml` - Empty
-- `.undetect-ralph/db/features.yaml` - 1 feature defined
-- `.undetect-ralph/db/disciplines.yaml` - 10 defaults
-- `.undetect-ralph/db/metadata.yaml` - Project metadata
+- `.undetect-ralph/db/ralph.db` - SQLite database (1 feature, no tasks)
+- `.undetect-ralph/CLAUDE.RALPH.md` - Template
 
 ## Progression
 
@@ -302,19 +281,14 @@ Next stage: 03-with-tasks-project
         .unwrap();
 
     // Add a feature
-    let db_path = fixture_path.join(".undetect-ralph/db");
-    let mut features_file = FeaturesFile::new(db_path.join("features.yaml"));
-    features_file.load().unwrap();
-    features_file.add(yaml_db::Feature {
-        name: "authentication".to_string(),
-        display_name: "Authentication".to_string(),
-        acronym: "AUTH".to_string(),
-        description: None,
-        created: None,
-    knowledge_paths: vec![],
-    context_files: vec![],
-    });
-    features_file.save().unwrap();
+    let db = open_fixture_db(&fixture_path);
+    db.create_feature(
+        "authentication".to_string(),
+        "Authentication".to_string(),
+        "AUTH".to_string(),
+        None,
+    )
+    .unwrap();
 
     println!(
         "✓ Created 02-with-feature-project fixture at: {}",
@@ -325,7 +299,7 @@ Next stage: 03-with-tasks-project
 /// Generate 03-with-tasks-project fixture (has feature + tasks)
 #[test]
 fn generate_fixture_03_with_tasks() {
-    use yaml_db::{FeaturesFile, Priority, Task, TaskProvenance, TaskStatus, TasksFile};
+    use sqlite_db::TaskInput;
 
     println!("\n=== Generating fixture: 03-with-tasks-project ===");
 
@@ -354,7 +328,7 @@ It has features defined and tasks created.
 
 ```bash
 # Generate fixtures
-cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures generate_all_fixtures -- --nocapture --test-threads=1
+cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures -- --nocapture
 
 # Reset mock and use
 just reset-mock
@@ -363,10 +337,7 @@ just dev-mock 03-with-tasks-project
 
 ## Contents
 
-- `.undetect-ralph/db/tasks.yaml` - 3 tasks across 2 features
-- `.undetect-ralph/db/features.yaml` - 2 features
-- `.undetect-ralph/db/disciplines.yaml` - 10 defaults
-- `.undetect-ralph/db/metadata.yaml` - Project metadata + counters
+- `.undetect-ralph/db/ralph.db` - SQLite database (2 features, 3 tasks)
 
 ## Tasks
 
@@ -388,124 +359,90 @@ just dev-mock 03-with-tasks-project
     initialize_project_for_fixture(fixture_path.clone(), "Tasks Project".to_string(), true)
         .unwrap();
 
-    let db_path = fixture_path.join(".undetect-ralph/db");
+    let db = open_fixture_db(&fixture_path);
 
     // Add features
-    let mut features_file = FeaturesFile::new(db_path.join("features.yaml"));
-    features_file.load().unwrap();
-    features_file.add(yaml_db::Feature {
-        name: "authentication".to_string(),
-        display_name: "Authentication".to_string(),
-        acronym: "AUTH".to_string(),
-        description: None,
-        created: None,
-        knowledge_paths: vec!["docs/auth-architecture.md".to_string()],
-        context_files: vec!["src/auth/mod.rs".to_string(), "src/auth/jwt.rs".to_string()],
-    });
-    features_file.add(yaml_db::Feature {
-        name: "user-profile".to_string(),
-        display_name: "User Profile".to_string(),
-        acronym: "USPR".to_string(),
-        description: None,
-        created: None,
-        knowledge_paths: vec![],
-        context_files: vec!["src/profile/mod.rs".to_string()],
-    });
-    features_file.save().unwrap();
+    db.create_feature(
+        "authentication".to_string(),
+        "Authentication".to_string(),
+        "AUTH".to_string(),
+        None,
+    )
+    .unwrap();
+    db.create_feature(
+        "user-profile".to_string(),
+        "User Profile".to_string(),
+        "USPR".to_string(),
+        None,
+    )
+    .unwrap();
 
     // Add tasks
-    let mut tasks_file = TasksFile::new(db_path.join("tasks.yaml"));
-    tasks_file.load().unwrap();
-
-    let now = chrono::Utc::now().format("%Y-%m-%d").to_string();
-
-    tasks_file.add_task(Task {
-        id: 1,
+    db.create_task(TaskInput {
         feature: "authentication".to_string(),
         discipline: "backend".to_string(),
         title: "Implement login API".to_string(),
         description: Some("Create REST API endpoints for user authentication".to_string()),
-        status: TaskStatus::Pending,
-        priority: Some(Priority::High),
+        priority: Some(sqlite_db::Priority::High),
         tags: vec!["api".to_string(), "security".to_string()],
         depends_on: vec![],
-        blocked_by: None,
-        created: Some(now.clone()),
-        updated: None,
-        completed: None,
-        acceptance_criteria: vec![
+        acceptance_criteria: Some(vec![
             "POST /login endpoint works".to_string(),
             "Returns JWT token".to_string(),
-        ],
+        ]),
         context_files: vec!["src/auth/mod.rs".to_string(), "src/routes/auth.rs".to_string()],
-        output_artifacts: vec!["src/routes/auth.rs".to_string(), "tests/auth_test.rs".to_string()],
+        output_artifacts: vec![
+            "src/routes/auth.rs".to_string(),
+            "tests/auth_test.rs".to_string(),
+        ],
         hints: Some("Use bcrypt for password hashing, not SHA256. Check existing middleware pattern in src/middleware/".to_string()),
         estimated_turns: Some(3),
-        provenance: Some(TaskProvenance::Agent),
-        comments: vec![
-            yaml_db::TaskComment {
-                author: yaml_db::CommentAuthor::Agent,
-                agent_task_id: Some(1),
-                body: "First attempt failed: forgot to add JWT_SECRET to .env".to_string(),
-                created: Some("2026-02-06T14:22:00Z".to_string()),
-            },
-        ],
-    });
+        provenance: Some(sqlite_db::TaskProvenance::Agent),
+    })
+    .unwrap();
 
-    tasks_file.add_task(Task {
-        id: 2,
+    // Add a comment to task 1
+    db.add_comment(
+        1,
+        sqlite_db::CommentAuthor::Agent,
+        Some(1),
+        "First attempt failed: forgot to add JWT_SECRET to .env".to_string(),
+    )
+    .unwrap();
+
+    db.create_task(TaskInput {
         feature: "authentication".to_string(),
         discipline: "frontend".to_string(),
         title: "Build login form".to_string(),
         description: Some("Create UI for user login".to_string()),
-        status: TaskStatus::Pending,
-        priority: Some(Priority::Medium),
+        priority: Some(sqlite_db::Priority::Medium),
         tags: vec!["ui".to_string()],
         depends_on: vec![1],
-        blocked_by: None,
-        created: Some(now.clone()),
-        updated: None,
-        completed: None,
-        acceptance_criteria: vec!["Form validates input".to_string()],
+        acceptance_criteria: Some(vec!["Form validates input".to_string()]),
         context_files: vec!["src/components/LoginForm.tsx".to_string()],
         output_artifacts: vec![],
         hints: None,
         estimated_turns: Some(2),
-        provenance: Some(TaskProvenance::Human),
-        comments: vec![],
-    });
+        provenance: Some(sqlite_db::TaskProvenance::Human),
+    })
+    .unwrap();
 
-    tasks_file.add_task(Task {
-        id: 3,
+    db.create_task(TaskInput {
         feature: "user-profile".to_string(),
         discipline: "frontend".to_string(),
         title: "Create profile page".to_string(),
         description: Some("User profile display and editing".to_string()),
-        status: TaskStatus::Pending,
-        priority: Some(Priority::Low),
+        priority: Some(sqlite_db::Priority::Low),
         tags: vec!["ui".to_string()],
         depends_on: vec![],
-        blocked_by: None,
-        created: Some(now),
-        updated: None,
-        completed: None,
-        acceptance_criteria: vec!["Shows user info".to_string()],
+        acceptance_criteria: Some(vec!["Shows user info".to_string()]),
         context_files: vec![],
         output_artifacts: vec![],
         hints: None,
         estimated_turns: None,
-        provenance: Some(TaskProvenance::System),
-        comments: vec![],
-    });
-
-    tasks_file.save().unwrap();
-
-    // Update metadata with counters
-    use yaml_db::MetadataFile;
-    let mut metadata = MetadataFile::new(db_path.join("metadata.yaml"));
-    metadata.load().unwrap();
-    metadata.rebuild_counters(tasks_file.get_all());
-    metadata.save().unwrap();
+        provenance: Some(sqlite_db::TaskProvenance::System),
+    })
+    .unwrap();
 
     println!(
         "✓ Created 03-with-tasks-project fixture at: {}",
@@ -516,7 +453,7 @@ just dev-mock 03-with-tasks-project
 /// Generate 04-dev-project fixture (comprehensive mid-progress project for UI development)
 #[test]
 fn generate_fixture_04_dev_project() {
-    use yaml_db::{Feature, FeaturesFile, MetadataFile, Priority, Task, TaskStatus, TasksFile};
+    use sqlite_db::TaskInput;
 
     println!("\n=== Generating fixture: 04-dev-project ===");
 
@@ -544,7 +481,7 @@ and varied timestamps.
 ## Usage
 
 ```bash
-cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures generate_all_fixtures -- --nocapture --test-threads=1
+cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures -- --nocapture --test-threads=1
 just reset-mock
 just dev-mock 04-dev-project
 ```
@@ -566,661 +503,367 @@ just dev-mock 04-dev-project
     initialize_project_for_fixture(fixture_path.clone(), "Bookmarks Manager".to_string(), true)
         .unwrap();
 
-    let db_path = fixture_path.join(".undetect-ralph/db");
+    let db = open_fixture_db(&fixture_path);
 
     // --- Features ---
-    let mut features_file = FeaturesFile::new(db_path.join("features.yaml"));
-    features_file.load().unwrap();
-
-    features_file.add(Feature {
-        name: "bookmark-crud".to_string(),
-        display_name: "Bookmark CRUD".to_string(),
-        acronym: "BKMK".to_string(),
-        description: Some("Core bookmark create, read, update, delete operations".to_string()),
-        created: Some("2025-01-10".to_string()),
-        knowledge_paths: vec![],
-        context_files: vec![],
-    });
-    features_file.add(Feature {
-        name: "collections".to_string(),
-        display_name: "Collections".to_string(),
-        acronym: "COLL".to_string(),
-        description: Some("Organize bookmarks into named collections".to_string()),
-        created: Some("2025-01-10".to_string()),
-        knowledge_paths: vec![],
-        context_files: vec![],
-    });
-    features_file.add(Feature {
-        name: "search".to_string(),
-        display_name: "Search".to_string(),
-        acronym: "SRCH".to_string(),
-        description: Some("Full-text search and filtering across bookmarks".to_string()),
-        created: Some("2025-01-11".to_string()),
-        knowledge_paths: vec![],
-        context_files: vec![],
-    });
-    features_file.add(Feature {
-        name: "import-export".to_string(),
-        display_name: "Import Export".to_string(),
-        acronym: "IMEX".to_string(),
-        description: Some("Import from HTML, export to JSON".to_string()),
-        created: Some("2025-01-11".to_string()),
-        knowledge_paths: vec![],
-        context_files: vec![],
-    });
-    features_file.add(Feature {
-        name: "settings".to_string(),
-        display_name: "Settings".to_string(),
-        acronym: "STNG".to_string(),
-        description: Some("User preferences and theme configuration".to_string()),
-        created: Some("2025-01-12".to_string()),
-        knowledge_paths: vec![],
-        context_files: vec![],
-    });
-
-    features_file.save().unwrap();
+    db.create_feature(
+        "bookmark-crud".to_string(),
+        "Bookmark CRUD".to_string(),
+        "BKMK".to_string(),
+        Some("Core bookmark create, read, update, delete operations".to_string()),
+    )
+    .unwrap();
+    db.create_feature(
+        "collections".to_string(),
+        "Collections".to_string(),
+        "COLL".to_string(),
+        Some("Organize bookmarks into named collections".to_string()),
+    )
+    .unwrap();
+    db.create_feature(
+        "search".to_string(),
+        "Search".to_string(),
+        "SRCH".to_string(),
+        Some("Full-text search and filtering across bookmarks".to_string()),
+    )
+    .unwrap();
+    db.create_feature(
+        "import-export".to_string(),
+        "Import Export".to_string(),
+        "IMEX".to_string(),
+        Some("Import from HTML, export to JSON".to_string()),
+    )
+    .unwrap();
+    db.create_feature(
+        "settings".to_string(),
+        "Settings".to_string(),
+        "STNG".to_string(),
+        Some("User preferences and theme configuration".to_string()),
+    )
+    .unwrap();
 
     // --- Tasks ---
-    let mut tasks_file = TasksFile::new(db_path.join("tasks.yaml"));
-    tasks_file.load().unwrap();
+    // All tasks created as pending via API, then we use execute_raw() to set varied statuses.
 
     // Task 1: bookmark-crud / design / done / low
-    tasks_file.add_task(Task {
-        id: 1,
-        feature: "bookmark-crud".to_string(),
-        discipline: "design".to_string(),
-        title: "Bookmark card layout".to_string(),
-        description: Some(
-            "Design the bookmark card component with favicon, title, URL, and action buttons"
-                .to_string(),
-        ),
-        status: TaskStatus::Done,
-        priority: Some(Priority::Low),
-        tags: vec!["ui".to_string(), "design".to_string()],
-        depends_on: vec![],
-        blocked_by: None,
-        created: Some("2025-01-10".to_string()),
-        updated: None,
-        completed: Some("2025-01-14".to_string()),
-        acceptance_criteria: vec![
-            "Card displays favicon, title, and truncated URL".to_string(),
-            "Action buttons visible on hover".to_string(),
-        ],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    comments: vec![],
-    });
+    let _id1 = db
+        .create_task(TaskInput {
+            feature: "bookmark-crud".to_string(),
+            discipline: "design".to_string(),
+            title: "Bookmark card layout".to_string(),
+            description: Some(
+                "Design the bookmark card component with favicon, title, URL, and action buttons"
+                    .to_string(),
+            ),
+            priority: Some(sqlite_db::Priority::Low),
+            tags: vec!["ui".to_string(), "design".to_string()],
+            depends_on: vec![],
+            acceptance_criteria: Some(vec![
+                "Card displays favicon, title, and truncated URL".to_string(),
+                "Action buttons visible on hover".to_string(),
+            ]),
+            context_files: vec![],
+            output_artifacts: vec![],
+            hints: None,
+            estimated_turns: None,
+            provenance: None,
+        })
+        .unwrap();
 
     // Task 2: bookmark-crud / frontend / done / high
-    tasks_file.add_task(Task {
-        id: 2,
-        feature: "bookmark-crud".to_string(),
-        discipline: "frontend".to_string(),
-        title: "Create bookmark form".to_string(),
-        description: Some(
-            "Implement the form to add new bookmarks with URL validation and auto-title fetch"
-                .to_string(),
-        ),
-        status: TaskStatus::Done,
-        priority: Some(Priority::High),
-        tags: vec!["ui".to_string(), "forms".to_string()],
-        depends_on: vec![],
-        blocked_by: None,
-        created: Some("2025-01-10".to_string()),
-        updated: None,
-        completed: Some("2025-01-16".to_string()),
-        acceptance_criteria: vec![
-            "Form accepts URL input with validation".to_string(),
-            "Auto-fetches page title from URL".to_string(),
-            "Shows loading state during fetch".to_string(),
-        ],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    comments: vec![],
-    });
+    let _id2 = db
+        .create_task(TaskInput {
+            feature: "bookmark-crud".to_string(),
+            discipline: "frontend".to_string(),
+            title: "Create bookmark form".to_string(),
+            description: Some(
+                "Implement the form to add new bookmarks with URL validation and auto-title fetch"
+                    .to_string(),
+            ),
+            priority: Some(sqlite_db::Priority::High),
+            tags: vec!["ui".to_string(), "forms".to_string()],
+            depends_on: vec![],
+            acceptance_criteria: Some(vec![
+                "Form accepts URL input with validation".to_string(),
+                "Auto-fetches page title from URL".to_string(),
+                "Shows loading state during fetch".to_string(),
+            ]),
+            context_files: vec![],
+            output_artifacts: vec![],
+            hints: None,
+            estimated_turns: None,
+            provenance: None,
+        })
+        .unwrap();
 
-    // Task 3: bookmark-crud / backend / done / high
-    tasks_file.add_task(Task {
-        id: 3,
-        feature: "bookmark-crud".to_string(),
-        discipline: "backend".to_string(),
-        title: "Bookmark localStorage storage".to_string(),
-        description: Some(
-            "Implement localStorage-based persistence layer for bookmarks with CRUD operations"
-                .to_string(),
-        ),
-        status: TaskStatus::Done,
-        priority: Some(Priority::High),
-        tags: vec!["storage".to_string()],
-        depends_on: vec![2],
-        blocked_by: None,
-        created: Some("2025-01-11".to_string()),
-        updated: None,
-        completed: Some("2025-01-18".to_string()),
-        acceptance_criteria: vec![
-            "Bookmarks persist across page reloads".to_string(),
-            "CRUD operations update localStorage atomically".to_string(),
-            "Handles storage quota errors gracefully".to_string(),
-        ],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    comments: vec![],
-    });
+    // Task 3: bookmark-crud / backend / done / high (depends on 2)
+    let _id3 = db
+        .create_task(TaskInput {
+            feature: "bookmark-crud".to_string(),
+            discipline: "backend".to_string(),
+            title: "Bookmark localStorage storage".to_string(),
+            description: Some(
+                "Implement localStorage-based persistence layer for bookmarks with CRUD operations"
+                    .to_string(),
+            ),
+            priority: Some(sqlite_db::Priority::High),
+            tags: vec!["storage".to_string()],
+            depends_on: vec![2],
+            acceptance_criteria: Some(vec![
+                "Bookmarks persist across page reloads".to_string(),
+                "CRUD operations update localStorage atomically".to_string(),
+                "Handles storage quota errors gracefully".to_string(),
+            ]),
+            context_files: vec![],
+            output_artifacts: vec![],
+            hints: None,
+            estimated_turns: None,
+            provenance: None,
+        })
+        .unwrap();
 
-    // Task 4: bookmark-crud / testing / in_progress / medium
-    tasks_file.add_task(Task {
-        id: 4,
-        feature: "bookmark-crud".to_string(),
-        discipline: "testing".to_string(),
-        title: "Unit tests for bookmark CRUD".to_string(),
-        description: Some(
-            "Write comprehensive unit tests for create, read, update, and delete operations"
-                .to_string(),
-        ),
-        status: TaskStatus::InProgress,
-        priority: Some(Priority::Medium),
-        tags: vec!["testing".to_string()],
-        depends_on: vec![3],
-        blocked_by: None,
-        created: Some("2025-01-15".to_string()),
-        updated: Some("2025-01-20".to_string()),
-        completed: None,
-        acceptance_criteria: vec![
-            "Tests cover all CRUD operations".to_string(),
-            "Edge cases for empty and malformed URLs tested".to_string(),
-        ],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    comments: vec![],
-    });
+    // Task 4: bookmark-crud / testing / in_progress / medium (depends on 3)
+    let _id4 = db
+        .create_task(TaskInput {
+            feature: "bookmark-crud".to_string(),
+            discipline: "testing".to_string(),
+            title: "Unit tests for bookmark CRUD".to_string(),
+            description: Some(
+                "Write comprehensive unit tests for create, read, update, and delete operations"
+                    .to_string(),
+            ),
+            priority: Some(sqlite_db::Priority::Medium),
+            tags: vec!["testing".to_string()],
+            depends_on: vec![3],
+            acceptance_criteria: Some(vec![
+                "Tests cover all CRUD operations".to_string(),
+                "Edge cases for empty and malformed URLs tested".to_string(),
+            ]),
+            context_files: vec![],
+            output_artifacts: vec![],
+            hints: None,
+            estimated_turns: None,
+            provenance: None,
+        })
+        .unwrap();
 
-    // Task 5: bookmark-crud / frontend / pending / medium
-    tasks_file.add_task(Task {
-        id: 5,
+    // Tasks 5-20: remaining tasks (all pending by default)
+    let _id5 = db.create_task(TaskInput {
         feature: "bookmark-crud".to_string(),
         discipline: "frontend".to_string(),
         title: "Edit bookmark modal".to_string(),
-        description: Some(
-            "Modal dialog for editing existing bookmark title, URL, and notes".to_string(),
-        ),
-        status: TaskStatus::Pending,
-        priority: Some(Priority::Medium),
+        description: Some("Modal dialog for editing existing bookmark title, URL, and notes".to_string()),
+        priority: Some(sqlite_db::Priority::Medium),
         tags: vec!["ui".to_string(), "forms".to_string()],
         depends_on: vec![2],
-        blocked_by: None,
-        created: Some("2025-01-12".to_string()),
-        updated: None,
-        completed: None,
-        acceptance_criteria: vec![
-            "Modal pre-fills current bookmark data".to_string(),
-            "Validates URL format on save".to_string(),
-        ],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    comments: vec![],
-    });
+        acceptance_criteria: Some(vec!["Modal pre-fills current bookmark data".to_string(), "Validates URL format on save".to_string()]),
+        context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
+    }).unwrap();
 
-    // Task 6: bookmark-crud / frontend / pending / medium
-    tasks_file.add_task(Task {
-        id: 6,
+    let _id6 = db.create_task(TaskInput {
         feature: "bookmark-crud".to_string(),
         discipline: "frontend".to_string(),
         title: "Bulk delete bookmarks".to_string(),
-        description: Some(
-            "Multi-select bookmarks and delete them in batch with confirmation dialog".to_string(),
-        ),
-        status: TaskStatus::Pending,
-        priority: Some(Priority::Medium),
+        description: Some("Multi-select bookmarks and delete them in batch with confirmation dialog".to_string()),
+        priority: Some(sqlite_db::Priority::Medium),
         tags: vec!["ui".to_string()],
         depends_on: vec![3],
-        blocked_by: None,
-        created: Some("2025-01-12".to_string()),
-        updated: None,
-        completed: None,
-        acceptance_criteria: vec![
-            "Checkbox selection for multiple bookmarks".to_string(),
-            "Confirmation dialog before bulk delete".to_string(),
-        ],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    comments: vec![],
-    });
+        acceptance_criteria: Some(vec!["Checkbox selection for multiple bookmarks".to_string(), "Confirmation dialog before bulk delete".to_string()]),
+        context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
+    }).unwrap();
 
-    // Task 7: bookmark-crud / security / pending / high
-    tasks_file.add_task(Task {
-        id: 7,
+    let _id7 = db.create_task(TaskInput {
         feature: "bookmark-crud".to_string(),
         discipline: "security".to_string(),
         title: "URL input sanitization".to_string(),
-        description: Some(
-            "Sanitize and validate all URL inputs to prevent XSS and injection attacks".to_string(),
-        ),
-        status: TaskStatus::Pending,
-        priority: Some(Priority::High),
+        description: Some("Sanitize and validate all URL inputs to prevent XSS and injection attacks".to_string()),
+        priority: Some(sqlite_db::Priority::High),
         tags: vec!["security".to_string(), "validation".to_string()],
         depends_on: vec![],
-        blocked_by: None,
-        created: Some("2025-01-13".to_string()),
-        updated: None,
-        completed: None,
-        acceptance_criteria: vec![
-            "Rejects javascript: and data: URLs".to_string(),
-            "Escapes HTML entities in bookmark titles".to_string(),
-            "Validates URL format before storage".to_string(),
-        ],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    comments: vec![],
-    });
+        acceptance_criteria: Some(vec!["Rejects javascript: and data: URLs".to_string(), "Escapes HTML entities in bookmark titles".to_string(), "Validates URL format before storage".to_string()]),
+        context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
+    }).unwrap();
 
     // Task 8: collections / backend / done / high
-    tasks_file.add_task(Task {
-        id: 8,
+    let _id8 = db.create_task(TaskInput {
         feature: "collections".to_string(),
         discipline: "backend".to_string(),
         title: "Collection data model".to_string(),
-        description: Some(
-            "Define collection schema with name, color, icon, and bookmark references".to_string(),
-        ),
-        status: TaskStatus::Done,
-        priority: Some(Priority::High),
+        description: Some("Define collection schema with name, color, icon, and bookmark references".to_string()),
+        priority: Some(sqlite_db::Priority::High),
         tags: vec!["storage".to_string(), "data-model".to_string()],
         depends_on: vec![],
-        blocked_by: None,
-        created: Some("2025-01-10".to_string()),
-        updated: None,
-        completed: Some("2025-01-15".to_string()),
-        acceptance_criteria: vec![
-            "Collection stores name, color, icon, and ordered bookmark IDs".to_string(),
-            "Supports many-to-many relationship with bookmarks".to_string(),
-        ],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    comments: vec![],
-    });
+        acceptance_criteria: Some(vec!["Collection stores name, color, icon, and ordered bookmark IDs".to_string(), "Supports many-to-many relationship with bookmarks".to_string()]),
+        context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
+    }).unwrap();
 
-    // Task 9: collections / frontend / in_progress / high
-    tasks_file.add_task(Task {
-        id: 9,
+    // Task 9: collections / frontend / in_progress / high (depends on 8)
+    let _id9 = db.create_task(TaskInput {
         feature: "collections".to_string(),
         discipline: "frontend".to_string(),
         title: "Collection sidebar".to_string(),
-        description: Some(
-            "Sidebar component showing all collections with bookmark counts and quick navigation"
-                .to_string(),
-        ),
-        status: TaskStatus::InProgress,
-        priority: Some(Priority::High),
+        description: Some("Sidebar component showing all collections with bookmark counts and quick navigation".to_string()),
+        priority: Some(sqlite_db::Priority::High),
         tags: vec!["ui".to_string(), "navigation".to_string()],
         depends_on: vec![8],
-        blocked_by: None,
-        created: Some("2025-01-14".to_string()),
-        updated: Some("2025-01-21".to_string()),
-        completed: None,
-        acceptance_criteria: vec![
-            "Sidebar lists all collections with bookmark counts".to_string(),
-            "Click collection filters bookmark list".to_string(),
-            "Collapse/expand sidebar on mobile".to_string(),
-        ],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    comments: vec![],
-    });
+        acceptance_criteria: Some(vec!["Sidebar lists all collections with bookmark counts".to_string(), "Click collection filters bookmark list".to_string(), "Collapse/expand sidebar on mobile".to_string()]),
+        context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
+    }).unwrap();
 
-    // Task 10: collections / frontend / pending / medium
-    tasks_file.add_task(Task {
-        id: 10,
+    // Task 10: collections / frontend / pending / medium (depends on 9)
+    let _id10 = db.create_task(TaskInput {
         feature: "collections".to_string(),
         discipline: "frontend".to_string(),
         title: "Drag-and-drop sorting".to_string(),
-        description: Some(
-            "Allow reordering bookmarks within a collection via drag-and-drop".to_string(),
-        ),
-        status: TaskStatus::Pending,
-        priority: Some(Priority::Medium),
+        description: Some("Allow reordering bookmarks within a collection via drag-and-drop".to_string()),
+        priority: Some(sqlite_db::Priority::Medium),
         tags: vec!["ui".to_string(), "interaction".to_string()],
         depends_on: vec![9],
-        blocked_by: None,
-        created: Some("2025-01-14".to_string()),
-        updated: None,
-        completed: None,
-        acceptance_criteria: vec![
-            "Drag handle on each bookmark card".to_string(),
-            "Visual feedback during drag operation".to_string(),
-        ],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    comments: vec![],
-    });
+        acceptance_criteria: Some(vec!["Drag handle on each bookmark card".to_string(), "Visual feedback during drag operation".to_string()]),
+        context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
+    }).unwrap();
 
     // Task 11: collections / design / pending / none
-    tasks_file.add_task(Task {
-        id: 11,
+    let _id11 = db.create_task(TaskInput {
         feature: "collections".to_string(),
         discipline: "design".to_string(),
         title: "Collection icons and colors".to_string(),
-        description: Some(
-            "Design the icon picker and color palette for collection customization".to_string(),
-        ),
-        status: TaskStatus::Pending,
+        description: Some("Design the icon picker and color palette for collection customization".to_string()),
         priority: None,
         tags: vec!["design".to_string()],
         depends_on: vec![],
-        blocked_by: None,
-        created: Some("2025-01-15".to_string()),
-        updated: None,
-        completed: None,
-        acceptance_criteria: vec![],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    comments: vec![],
-    });
+        acceptance_criteria: Some(vec![]),
+        context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
+    }).unwrap();
 
-    // Task 12: collections / frontend / pending / low
-    tasks_file.add_task(Task {
-        id: 12,
+    // Task 12: collections / frontend / pending / low (depends on 9, 8)
+    let _id12 = db.create_task(TaskInput {
         feature: "collections".to_string(),
         discipline: "frontend".to_string(),
         title: "Nested collections".to_string(),
-        description: Some(
-            "Support hierarchical collection nesting with tree view navigation".to_string(),
-        ),
-        status: TaskStatus::Pending,
-        priority: Some(Priority::Low),
+        description: Some("Support hierarchical collection nesting with tree view navigation".to_string()),
+        priority: Some(sqlite_db::Priority::Low),
         tags: vec!["ui".to_string(), "navigation".to_string()],
         depends_on: vec![9, 8],
-        blocked_by: None,
-        created: Some("2025-01-15".to_string()),
-        updated: None,
-        completed: None,
-        acceptance_criteria: vec![
-            "Collections can contain sub-collections".to_string(),
-            "Tree view shows hierarchy with expand/collapse".to_string(),
-        ],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    comments: vec![],
-    });
+        acceptance_criteria: Some(vec!["Collections can contain sub-collections".to_string(), "Tree view shows hierarchy with expand/collapse".to_string()]),
+        context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
+    }).unwrap();
 
-    // Task 13: search / backend / pending / critical
-    tasks_file.add_task(Task {
-        id: 13,
+    // Task 13: search / backend / pending / critical (depends on 3)
+    let _id13 = db.create_task(TaskInput {
         feature: "search".to_string(),
         discipline: "backend".to_string(),
         title: "Full-text search index".to_string(),
-        description: Some(
-            "Build an inverted index for full-text search across bookmark titles, URLs, and notes"
-                .to_string(),
-        ),
-        status: TaskStatus::Pending,
-        priority: Some(Priority::Critical),
+        description: Some("Build an inverted index for full-text search across bookmark titles, URLs, and notes".to_string()),
+        priority: Some(sqlite_db::Priority::Critical),
         tags: vec!["search".to_string(), "performance".to_string()],
         depends_on: vec![3],
-        blocked_by: None,
-        created: Some("2025-01-11".to_string()),
-        updated: None,
-        completed: None,
-        acceptance_criteria: vec![
-            "Index updates on bookmark create/update/delete".to_string(),
-            "Search returns results in under 50ms for 10k bookmarks".to_string(),
-            "Supports partial word matching".to_string(),
-            "Ranks results by relevance".to_string(),
-        ],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    comments: vec![],
-    });
+        acceptance_criteria: Some(vec!["Index updates on bookmark create/update/delete".to_string(), "Search returns results in under 50ms for 10k bookmarks".to_string(), "Supports partial word matching".to_string(), "Ranks results by relevance".to_string()]),
+        context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
+    }).unwrap();
 
-    // Task 14: search / frontend / blocked / high
-    tasks_file.add_task(Task {
-        id: 14,
+    // Task 14: search / frontend / blocked / high (depends on 13)
+    let _id14 = db.create_task(TaskInput {
         feature: "search".to_string(),
         discipline: "frontend".to_string(),
         title: "Search bar with autocomplete".to_string(),
-        description: Some(
-            "Search input with debounced autocomplete dropdown showing matching bookmarks"
-                .to_string(),
-        ),
-        status: TaskStatus::Blocked,
-        priority: Some(Priority::High),
+        description: Some("Search input with debounced autocomplete dropdown showing matching bookmarks".to_string()),
+        priority: Some(sqlite_db::Priority::High),
         tags: vec!["ui".to_string(), "search".to_string()],
         depends_on: vec![13],
-        blocked_by: Some("Waiting for search index (#13)".to_string()),
-        created: Some("2025-01-12".to_string()),
-        updated: None,
-        completed: None,
-        acceptance_criteria: vec![
-            "Debounced input with 300ms delay".to_string(),
-            "Dropdown shows top 5 matching bookmarks".to_string(),
-            "Keyboard navigation through results".to_string(),
-        ],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    comments: vec![],
-    });
+        acceptance_criteria: Some(vec!["Debounced input with 300ms delay".to_string(), "Dropdown shows top 5 matching bookmarks".to_string(), "Keyboard navigation through results".to_string()]),
+        context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
+    }).unwrap();
 
-    // Task 15: search / testing / pending / none
-    tasks_file.add_task(Task {
-        id: 15,
+    // Task 15: search / testing / pending / none (depends on 13)
+    let _id15 = db.create_task(TaskInput {
         feature: "search".to_string(),
         discipline: "testing".to_string(),
         title: "Search ranking tests".to_string(),
-        description: Some(
-            "Test search result ranking and relevance scoring with various query patterns"
-                .to_string(),
-        ),
-        status: TaskStatus::Pending,
+        description: Some("Test search result ranking and relevance scoring with various query patterns".to_string()),
         priority: None,
         tags: vec!["testing".to_string(), "search".to_string()],
         depends_on: vec![13],
-        blocked_by: None,
-        created: Some("2025-01-13".to_string()),
-        updated: None,
-        completed: None,
-        acceptance_criteria: vec![
-            "Exact title matches rank highest".to_string(),
-            "Partial matches rank by relevance score".to_string(),
-        ],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    comments: vec![],
-    });
+        acceptance_criteria: Some(vec!["Exact title matches rank highest".to_string(), "Partial matches rank by relevance score".to_string()]),
+        context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
+    }).unwrap();
 
     // Task 16: import-export / backend / pending / high
-    tasks_file.add_task(Task {
-        id: 16,
+    let _id16 = db.create_task(TaskInput {
         feature: "import-export".to_string(),
         discipline: "backend".to_string(),
         title: "HTML bookmark parser".to_string(),
-        description: Some(
-            "Parse Netscape bookmark HTML format exported by Chrome, Firefox, and Safari"
-                .to_string(),
-        ),
-        status: TaskStatus::Pending,
-        priority: Some(Priority::High),
+        description: Some("Parse Netscape bookmark HTML format exported by Chrome, Firefox, and Safari".to_string()),
+        priority: Some(sqlite_db::Priority::High),
         tags: vec!["parser".to_string(), "import".to_string()],
         depends_on: vec![],
-        blocked_by: None,
-        created: Some("2025-01-12".to_string()),
-        updated: None,
-        completed: None,
-        acceptance_criteria: vec![
-            "Parses Chrome bookmark export format".to_string(),
-            "Parses Firefox bookmark export format".to_string(),
-            "Preserves folder structure as collections".to_string(),
-        ],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    comments: vec![],
-    });
+        acceptance_criteria: Some(vec!["Parses Chrome bookmark export format".to_string(), "Parses Firefox bookmark export format".to_string(), "Preserves folder structure as collections".to_string()]),
+        context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
+    }).unwrap();
 
-    // Task 17: import-export / frontend / blocked / medium
-    tasks_file.add_task(Task {
-        id: 17,
+    // Task 17: import-export / frontend / blocked / medium (depends on 16)
+    let _id17 = db.create_task(TaskInput {
         feature: "import-export".to_string(),
         discipline: "frontend".to_string(),
         title: "Import bookmarks UI".to_string(),
-        description: Some(
-            "File upload dialog for importing bookmarks with preview and conflict resolution"
-                .to_string(),
-        ),
-        status: TaskStatus::Blocked,
-        priority: Some(Priority::Medium),
+        description: Some("File upload dialog for importing bookmarks with preview and conflict resolution".to_string()),
+        priority: Some(sqlite_db::Priority::Medium),
         tags: vec!["ui".to_string(), "import".to_string()],
         depends_on: vec![16],
-        blocked_by: Some("Needs HTML parser (#16)".to_string()),
-        created: Some("2025-01-13".to_string()),
-        updated: None,
-        completed: None,
-        acceptance_criteria: vec![
-            "File picker accepts .html files".to_string(),
-            "Preview shows bookmarks to import before confirming".to_string(),
-        ],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    comments: vec![],
-    });
+        acceptance_criteria: Some(vec!["File picker accepts .html files".to_string(), "Preview shows bookmarks to import before confirming".to_string()]),
+        context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
+    }).unwrap();
 
-    // Task 18: import-export / frontend / pending / low
-    tasks_file.add_task(Task {
-        id: 18,
+    // Task 18: import-export / frontend / pending / low (depends on 3)
+    let _id18 = db.create_task(TaskInput {
         feature: "import-export".to_string(),
         discipline: "frontend".to_string(),
         title: "Export to JSON".to_string(),
-        description: Some(
-            "Export all bookmarks and collections to a JSON file for backup".to_string(),
-        ),
-        status: TaskStatus::Pending,
-        priority: Some(Priority::Low),
+        description: Some("Export all bookmarks and collections to a JSON file for backup".to_string()),
+        priority: Some(sqlite_db::Priority::Low),
         tags: vec!["export".to_string()],
         depends_on: vec![3],
-        blocked_by: None,
-        created: Some("2025-01-13".to_string()),
-        updated: None,
-        completed: None,
-        acceptance_criteria: vec![
-            "Exports all bookmarks with metadata".to_string(),
-            "Includes collection membership info".to_string(),
-        ],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    comments: vec![],
-    });
+        acceptance_criteria: Some(vec!["Exports all bookmarks with metadata".to_string(), "Includes collection membership info".to_string()]),
+        context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
+    }).unwrap();
 
     // Task 19: settings / docs / skipped / low
-    tasks_file.add_task(Task {
-        id: 19,
+    let _id19 = db.create_task(TaskInput {
         feature: "settings".to_string(),
         discipline: "docs".to_string(),
         title: "Write settings documentation".to_string(),
         description: Some("Document all available settings and their default values".to_string()),
-        status: TaskStatus::Skipped,
-        priority: Some(Priority::Low),
+        priority: Some(sqlite_db::Priority::Low),
         tags: vec!["docs".to_string()],
         depends_on: vec![],
-        blocked_by: None,
-        created: Some("2025-01-14".to_string()),
-        updated: None,
-        completed: None,
-        acceptance_criteria: vec![],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    comments: vec![],
-    });
+        acceptance_criteria: Some(vec![]),
+        context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
+    }).unwrap();
 
     // Task 20: settings / database / pending / none
-    tasks_file.add_task(Task {
-        id: 20,
+    let _id20 = db.create_task(TaskInput {
         feature: "settings".to_string(),
         discipline: "database".to_string(),
         title: "Theme preference storage".to_string(),
-        description: Some(
-            "Store user theme preference (light/dark/system) in local database".to_string(),
-        ),
-        status: TaskStatus::Pending,
+        description: Some("Store user theme preference (light/dark/system) in local database".to_string()),
         priority: None,
         tags: vec!["storage".to_string()],
         depends_on: vec![],
-        blocked_by: None,
-        created: Some("2025-01-14".to_string()),
-        updated: None,
-        completed: None,
-        acceptance_criteria: vec!["Persists theme preference across sessions".to_string()],
-    context_files: vec![],
-    output_artifacts: vec![],
-    hints: None,
-    estimated_turns: None,
-    provenance: None,
-    comments: vec![],
-    });
+        acceptance_criteria: Some(vec!["Persists theme preference across sessions".to_string()]),
+        context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
+    }).unwrap();
 
-    tasks_file.save().unwrap();
-
-    // --- Rebuild metadata counters ---
-    let mut metadata = MetadataFile::new(db_path.join("metadata.yaml"));
-    metadata.load().unwrap();
-    metadata.rebuild_counters(tasks_file.get_all());
-    metadata.save().unwrap();
-
-    // Print summary
-    print_fixture_contents(&fixture_path);
+    // Set varied statuses via raw SQL (fixture-only, not public API)
+    // Tasks 1,2,3,8 = done; Tasks 4,9 = in_progress; Tasks 14,17 = blocked; Task 19 = skipped
+    db.execute_raw("UPDATE tasks SET status = 'done', completed = '2025-01-14' WHERE id = 1").unwrap();
+    db.execute_raw("UPDATE tasks SET status = 'done', completed = '2025-01-16' WHERE id = 2").unwrap();
+    db.execute_raw("UPDATE tasks SET status = 'done', completed = '2025-01-18' WHERE id = 3").unwrap();
+    db.execute_raw("UPDATE tasks SET status = 'in_progress', updated = '2025-01-20' WHERE id = 4").unwrap();
+    db.execute_raw("UPDATE tasks SET status = 'done', completed = '2025-01-15' WHERE id = 8").unwrap();
+    db.execute_raw("UPDATE tasks SET status = 'in_progress', updated = '2025-01-21' WHERE id = 9").unwrap();
+    db.execute_raw("UPDATE tasks SET status = 'blocked', blocked_by = 'Waiting for search index (#13)' WHERE id = 14").unwrap();
+    db.execute_raw("UPDATE tasks SET status = 'blocked', blocked_by = 'Needs HTML parser (#16)' WHERE id = 17").unwrap();
+    db.execute_raw("UPDATE tasks SET status = 'skipped' WHERE id = 19").unwrap();
 
     println!(
         "\n✓ Created 04-dev-project fixture at: {}",
@@ -1229,33 +872,12 @@ just dev-mock 04-dev-project
     println!("  5 features, 20 tasks (4 done, 2 in_progress, 11 pending, 2 blocked, 1 skipped)");
 }
 
-/// Print fixture contents
-fn print_fixture_contents(fixture_path: &PathBuf) {
-    let db_path = fixture_path.join(".undetect-ralph/db");
-
-    println!("\n=== Contents ===");
-    println!("\n--- tasks.yaml ---");
-    println!(
-        "{}",
-        fs::read_to_string(db_path.join("tasks.yaml")).unwrap()
-    );
-
-    println!("\n--- features.yaml ---");
-    println!(
-        "{}",
-        fs::read_to_string(db_path.join("features.yaml")).unwrap()
-    );
-
-    println!("\n--- metadata.yaml ---");
-    println!(
-        "{}",
-        fs::read_to_string(db_path.join("metadata.yaml")).unwrap()
-    );
-}
-
 /// Generate all fixtures
 /// Note: Calls test functions directly, so run with --test-threads=1 to avoid conflicts
+/// Ignored by default to avoid race conditions with individual fixture tests.
+/// Run explicitly with: cargo test --test generate_fixtures generate_all_fixtures -- --ignored --nocapture
 #[test]
+#[ignore]
 fn generate_all_fixtures() {
     println!("\n========================================");
     println!("GENERATING ALL FIXTURES");
@@ -1275,11 +897,11 @@ fn generate_all_fixtures() {
     generate_fixture_04_dev_project();
 
     println!("\n========================================");
-    println!("✅ ALL 5 FIXTURES GENERATED");
+    println!("ALL 5 FIXTURES GENERATED");
     println!("========================================");
     println!("\nFixture progression:");
     println!("  00-empty-project         → Just README, no .undetect-ralph/");
-    println!("  01-initialized-project   → Empty tasks/features");
+    println!("  01-initialized-project   → Empty tasks/features, SQLite DB");
     println!("  02-with-feature-project  → Has 1 feature, no tasks");
     println!("  03-with-tasks-project    → Has 2 features, 3 tasks");
     println!("  04-dev-project           → 5 features, 20 tasks (comprehensive dev fixture)");
