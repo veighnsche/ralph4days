@@ -282,7 +282,7 @@ function SortableSectionBlock({
       ref={setNodeRef}
       style={style}
       type="button"
-      className={`rounded-md border transition-all duration-100 cursor-pointer ${section.enabled ? 'opacity-100' : 'opacity-50'} ${isDragging ? 'z-50 shadow-md bg-background' : ''} ${selected ? 'ring-2 ring-ring' : 'hover:bg-muted/30'}`}
+      className={`w-full rounded-md border transition-all duration-100 cursor-pointer ${section.enabled ? 'opacity-100' : 'opacity-50'} ${isDragging ? 'z-50 shadow-md bg-background' : ''} ${selected ? 'ring-2 ring-ring' : 'hover:bg-muted/30'}`}
       onClick={onSelect}>
       <div className="flex items-center gap-2 px-2.5 py-1.5">
         <button
