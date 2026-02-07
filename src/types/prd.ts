@@ -22,6 +22,7 @@ export interface McpServerConfig {
 export type CommentAuthor = "human" | "agent";
 
 export interface TaskComment {
+  id: number;
   author: CommentAuthor;
   agent_task_id?: number; // snake_case — matches Rust serde output (no rename_all on TaskComment)
   body: string;

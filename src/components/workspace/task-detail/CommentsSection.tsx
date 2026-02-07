@@ -14,7 +14,7 @@ export function CommentsSection({ task }: { task: EnrichedTask }) {
   const comments = task.comments ?? [];
 
   const [commentInput, setCommentInput] = useState("");
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [editBody, setEditBody] = useState("");
 
   const addComment = useInvokeMutation<{ taskId: number; author: string; body: string }>("add_task_comment", {
@@ -26,16 +26,16 @@ export function CommentsSection({ task }: { task: EnrichedTask }) {
     onError: (err) => toast.error(err.message),
   });
 
-  const editComment = useInvokeMutation<{ taskId: number; commentIndex: number; body: string }>("update_task_comment", {
+  const editComment = useInvokeMutation<{ taskId: number; commentId: number; body: string }>("update_task_comment", {
     invalidateKeys: INVALIDATE_KEYS,
     onSuccess: () => {
-      setEditingIndex(null);
+      setEditingId(null);
       setEditBody("");
     },
     onError: (err) => toast.error(err.message),
   });
 
-  const deleteComment = useInvokeMutation<{ taskId: number; commentIndex: number }>("delete_task_comment", {
+  const deleteComment = useInvokeMutation<{ taskId: number; commentId: number }>("delete_task_comment", {
     invalidateKeys: INVALIDATE_KEYS,
     onSuccess: () => toast.success("Comment deleted"),
     onError: (err) => toast.error(err.message),
@@ -46,19 +46,19 @@ export function CommentsSection({ task }: { task: EnrichedTask }) {
     addComment.mutate({ taskId: task.id, author: "human", body: commentInput.trim() });
   };
 
-  const startEdit = (index: number, body: string) => {
-    setEditingIndex(index);
+  const startEdit = (commentId: number, body: string) => {
+    setEditingId(commentId);
     setEditBody(body);
   };
 
   const cancelEdit = () => {
-    setEditingIndex(null);
+    setEditingId(null);
     setEditBody("");
   };
 
   const submitEdit = () => {
-    if (editingIndex === null || !editBody.trim()) return;
-    editComment.mutate({ taskId: task.id, commentIndex: editingIndex, body: editBody.trim() });
+    if (editingId === null || !editBody.trim()) return;
+    editComment.mutate({ taskId: task.id, commentId: editingId, body: editBody.trim() });
   };
 
   const isPending = addComment.isPending || editComment.isPending || deleteComment.isPending;
@@ -76,8 +76,8 @@ export function CommentsSection({ task }: { task: EnrichedTask }) {
       {/* Comment list */}
       {comments.length > 0 && (
         <div className="space-y-3 mb-4">
-          {comments.map((comment, i) => (
-            <div key={`${comment.created ?? i}`} className="group/comment flex gap-2.5">
+          {comments.map((comment) => (
+            <div key={comment.id} className="group/comment flex gap-2.5">
               <Avatar size="sm" className="mt-0.5 flex-shrink-0">
                 <AvatarFallback className="text-muted-foreground">
                   {comment.author === "agent" ? <Bot className="h-3 w-3" /> : <User className="h-3 w-3" />}
@@ -96,7 +96,7 @@ export function CommentsSection({ task }: { task: EnrichedTask }) {
                       variant="ghost"
                       size="sm"
                       className="h-5 w-5 p-0"
-                      onClick={() => startEdit(i, comment.body)}
+                      onClick={() => startEdit(comment.id, comment.body)}
                     >
                       <Pencil className="h-3 w-3 text-muted-foreground" />
                     </Button>
@@ -104,13 +104,13 @@ export function CommentsSection({ task }: { task: EnrichedTask }) {
                       variant="ghost"
                       size="sm"
                       className="h-5 w-5 p-0"
-                      onClick={() => deleteComment.mutate({ taskId: task.id, commentIndex: i })}
+                      onClick={() => deleteComment.mutate({ taskId: task.id, commentId: comment.id })}
                     >
                       <Trash2 className="h-3 w-3 text-muted-foreground" />
                     </Button>
                   </div>
                 </div>
-                {editingIndex === i ? (
+                {editingId === comment.id ? (
                   <div className="mt-1.5">
                     <CommentEditor
                       value={editBody}
