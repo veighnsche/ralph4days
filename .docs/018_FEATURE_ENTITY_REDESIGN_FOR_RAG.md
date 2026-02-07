@@ -979,7 +979,7 @@ All IPC protections (PATCH semantics, append-only learnings, validation) are byp
 1. **Post-iteration validation** (F1, F9 mitigations) — catches corruption and destructive changes
 2. **FeatureLearning dual representation** — agents writing plain strings in YAML is fine
 3. **Pre-iteration snapshot** — Ralph snapshots all YAML before each iteration. On any integrity warning: surgical restore of affected fields.
-4. **Future: read-only YAML + MCP write tools** — Eventually, agents should NOT edit features.yaml directly. Instead, Ralph provides MCP tools: `update_feature_description(text)`, `append_learning(text)`, etc. This routes all writes through IPC protections. But this requires MCP in the autonomous loop (Doc 017 Phase 2).
+4. **Future: read-only YAML + MCP write tools** — Eventually, agents should NOT edit features.yaml directly. Instead, Ralph provides MCP tools: `update_feature_description(text)`, `append_learning(text)`, etc. This routes all writes through IPC protections. But this requires MCP in the task execution (Doc 017 Phase 2).
 
 ### F16: Embedding Re-computation Cost
 
@@ -1356,6 +1356,6 @@ No silent fallback. Typos produce clear errors. Data integrity preserved.
 
 2. **Should architecture auto-update from code?** An Opus review could inspect actual imports/file structure and update architecture to match reality. Desirable but complex. Phase 3+.
 
-3. **When do we switch agents from YAML editing to MCP write tools?** Currently agents edit features.yaml directly, bypassing all protections. Moving to MCP tools requires Doc 017 Phase 2 (MCP in autonomous loop). This is the biggest risk gap in the current design.
+3. **When do we switch agents from YAML editing to MCP write tools?** Currently agents edit features.yaml directly, bypassing all protections. Moving to MCP tools requires Doc 017 Phase 2 (MCP in task execution). This is the biggest risk gap in the current design.
 
 4. **Should hit_count influence prompt ordering?** High-hit-count learnings are more likely real. Should they appear first in the prompt? Probably yes — prioritize by `(verified, hit_count)` descending.

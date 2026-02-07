@@ -14,24 +14,24 @@
 
 ## 1. Purpose
 
-This specification defines the standard structure and conventions for target projects managed by Ralph Loop. It establishes:
+This specification defines the standard structure and conventions for target projects managed by Ralph. It establishes:
 
 - Required directory structure (`.ralph/` folder contents)
 - File naming conventions to avoid conflicts
-- Context file management during loop execution
+- Context file management during task execution
 - Backup and restoration procedures
 
 ## 2. Scope
 
-This specification applies to all projects that will be managed by Ralph Loop. It does NOT apply to the Ralph application itself, but to the target projects Ralph operates on.
+This specification applies to all projects that will be managed by Ralph. It does NOT apply to the Ralph application itself, but to the target projects Ralph operates on.
 
 ## 3. Definitions
 
 | Term | Definition |
 |------|------------|
-| **Target Project** | A software project that Ralph Loop operates on (not Ralph itself) |
+| **Target Project** | A software project that Ralph operates on (not Ralph itself) |
 | **Ralph Directory** | The `.ralph/` folder within a target project containing Ralph-specific files |
-| **Context File** | A file providing context to Claude during loop execution |
+| **Context File** | A file providing context to Claude during task execution |
 | **CLAUDE.md** | The standard filename that Claude CLI reads for project context |
 | **CLAUDE.RALPH.md** | Ralph-specific context file that avoids naming conflicts |
 
@@ -84,11 +84,11 @@ Many projects (including Ralph itself) already use `CLAUDE.md` in their project 
 
 Using `CLAUDE.RALPH.md` makes the purpose explicit and avoids all conflicts.
 
-## 6. Context File Management During Loops
+## 6. Context File Management During Task Execution
 
 ### 6.1 Backup and Inject Procedure
 
-When Ralph Loop **starts**, it MUST perform the following sequence:
+When Ralph **starts task execution**, it MUST perform the following sequence:
 
 | Step | Action | Command/Logic |
 |------|--------|---------------|
@@ -103,7 +103,7 @@ When Ralph Loop **starts**, it MUST perform the following sequence:
 
 ### 6.2 Restore Procedure
 
-When Ralph Loop **completes** (success, abort, stop, or error), it MUST restore the original state:
+When Ralph task execution **completes** (success, abort, stop, or error), it MUST restore the original state:
 
 | Step | Action | Command/Logic |
 |------|--------|---------------|
@@ -119,7 +119,7 @@ When Ralph Loop **completes** (success, abort, stop, or error), it MUST restore 
 
 | Rule ID | Requirement |
 |---------|-------------|
-| ERR-01 | If backup creation fails, Ralph MUST abort before starting loop |
+| ERR-01 | If backup creation fails, Ralph MUST abort before starting task execution |
 | ERR-02 | If restore fails, Ralph MUST log error and alert user |
 | ERR-03 | Backup file MUST NOT be deleted until after successful restore |
 | ERR-04 | If Ralph crashes, backup MUST remain so user can manually restore |
@@ -193,11 +193,11 @@ Update `validate_project_path()` in `src-tauri/src/commands.rs`:
 - [x] Check `.ralph/prd.yaml` exists (already done)
 - [ ] Do NOT require `CLAUDE.RALPH.md` (optional file)
 
-### 8.2 Loop Engine Changes
+### 8.2 Task Execution Engine Changes
 
 Update `src-tauri/src/loop_engine.rs`:
 
-- [ ] Add `original_claude_md_existed: bool` field to `LoopEngine` struct
+- [ ] Add `original_claude_md_existed: bool` field to execution engine struct
 - [ ] In `start()`: Implement backup procedure (section 6.1)
 - [ ] In `stop()`, `abort()`, error handlers: Implement restore procedure (section 6.2)
 - [ ] Add logging for backup/restore operations
@@ -233,7 +233,7 @@ Update test fixtures:
 
 ### 10.1 Example: Project Without Existing CLAUDE.md
 
-**Before Ralph Start:**
+**Before Ralph Starts Task Execution:**
 ```
 my-project/
 ├── .ralph/
@@ -242,7 +242,7 @@ my-project/
 └── src/
 ```
 
-**During Ralph Loop:**
+**During Ralph Task Execution:**
 ```
 my-project/
 ├── .ralph/
@@ -273,7 +273,7 @@ my-project/
 └── src/
 ```
 
-**During Ralph Loop:**
+**During Ralph Task Execution:**
 ```
 my-project/
 ├── .ralph/
@@ -284,7 +284,7 @@ my-project/
 └── src/
 ```
 
-**After Ralph Stop:**
+**After Ralph Stops:**
 ```
 my-project/
 ├── .ralph/
@@ -306,15 +306,15 @@ my-project/
 
 ### 11.2 Integration Tests
 
-- [ ] E2E test: Ralph loop with existing `CLAUDE.md`, verify restore
-- [ ] E2E test: Ralph loop without `CLAUDE.md`, verify cleanup
+- [ ] E2E test: Ralph task execution with existing `CLAUDE.md`, verify restore
+- [ ] E2E test: Ralph task execution without `CLAUDE.md`, verify cleanup
 - [ ] E2E test: Simulated crash, verify backup remains
 
 ### 11.3 Manual Tests
 
 - [ ] Start Ralph on project with `CLAUDE.md`, verify backup created
-- [ ] Check during loop that context from `CLAUDE.RALPH.md` is active
-- [ ] Stop loop, verify original `CLAUDE.md` restored
+- [ ] Check during task execution that context from `CLAUDE.RALPH.md` is active
+- [ ] Stop execution, verify original `CLAUDE.md` restored
 - [ ] Check backup file was removed after restore
 
 ## 12. Backwards Compatibility
@@ -343,7 +343,7 @@ Implementation location: `src-tauri/src/prompt_builder.rs`
 - [ ] Update `CLAUDE.md` (Ralph's own) to document this standard
 - [ ] Update "Target Project Structure" section
 - [ ] Add migration instructions for existing users
-- [ ] Update `PROJECT_LOCK_IMPLEMENTATION.md` if it references context files
+- [ ] Update implementation docs if they reference context files
 - [ ] Update fixture README files
 
 ## 14. Traceability
@@ -364,4 +364,4 @@ None. Specification is complete and ready for implementation.
 - [SPEC-000: Specification Format](./000_SPECIFICATION_FORMAT.md)
 - [SPEC-010: Traceability Standard](./010_TRACEABILITY.md)
 - [SPEC-060: Testing Standards](./060_TESTING_STANDARDS.md)
-- Ralph Loop CLAUDE.md (project instructions)
+- Ralph's CLAUDE.md (project instructions)

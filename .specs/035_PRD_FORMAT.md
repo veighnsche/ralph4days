@@ -592,7 +592,7 @@ tasks:
 - [ ] Unit test: Detect circular dependencies
 - [ ] Unit test: `is_complete()` logic
 - [ ] Unit test: Task status updates
-- [ ] E2E test: Ralph loop with `prd.yaml`
+- [ ] E2E test: Ralph task execution with `prd.yaml`
 - [ ] E2E test: Validation rejects `prd.md` (deprecated)
 
 ## 13. Backwards Compatibility

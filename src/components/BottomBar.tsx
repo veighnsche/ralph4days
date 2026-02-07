@@ -1,7 +1,6 @@
 import { Play, Square } from 'lucide-react'
 import { LoopToggle } from '@/components/LoopToggle'
 import { NavigationMenu } from '@/components/NavigationMenu'
-import { Settings } from '@/components/Settings'
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
 import type { Page } from '@/pages/pageRegistry'
@@ -12,7 +11,7 @@ interface BottomBarProps {
   onPageChange: (page: Page) => void
 }
 
-// TODO: Wire up to new terminal-based loop system
+// TODO: Wire up to new terminal-based task execution system
 export function BottomBar({ lockedProject: _lockedProject, currentPage, onPageChange }: BottomBarProps) {
   return (
     <div className="border-t bg-[hsl(var(--background))] px-3 py-1.5">
@@ -33,9 +32,7 @@ export function BottomBar({ lockedProject: _lockedProject, currentPage, onPageCh
           </Button>
         </ButtonGroup>
 
-        <div className="flex-1 flex justify-end">
-          <Settings />
-        </div>
+        <div className="flex-1" />
       </div>
     </div>
   )

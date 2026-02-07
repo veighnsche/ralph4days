@@ -346,7 +346,7 @@ Collection: feature-<hash>
 
 ### Startup Health Check
 
-On Ralph startup (or when loop starts), check both services:
+On Ralph startup (or when task execution starts), check both services:
 
 ```rust
 pub struct RagStatus {
@@ -549,7 +549,7 @@ Before feature memory can work, the Doc 015 "Assemble" phase must be done. This 
 - Implements tools: `search_feature_memory`, `get_recent_iterations`, `get_feature_files`, `get_failed_attempts`
 - Reuses `MemoryStore` from Phase 1 for actual Qdrant/Ollama calls
 
-2b. **Integrate MCP into autonomous loop**
+2b. **Integrate MCP into task execution**
 - `claude_client.rs` adds `--mcp-config` to CLI invocation (currently missing)
 - Config includes: ralph-db MCP + feature-memory MCP sidecar + discipline MCP servers
 - Loop engine passes MCP config path to claude client
@@ -668,7 +668,7 @@ Doc 015 Phase 0a (CRUD for execution fields)
     │                 │                 │
     │                 │                 └──→ Phase 3 (auto-enrichment)
     │                 │
-    │                 └──→ Phase 2 partial (MCP in autonomous loop — needed regardless)
+    │                 └──→ Phase 2 partial (MCP in task execution — needed regardless)
     │
     └──→ Phase 4 (frontend — independent, can happen anytime)
 ```

@@ -1,27 +1,29 @@
-# Task Entity Model for Concurrent Ralph Loops
+# Task Entity Model for Sequential and Concurrent Task Execution
 
 **Created:** 2026-02-06
 **Status:** Design Analysis
 
-## What Are Ralph Loops?
+## Ralph Task Execution Model
 
-Ralph loops are an **iterative autonomous agent execution pattern** where:
+Ralph implements a **sequential task execution pattern** where:
 
-- Each iteration is a **fresh Claude instance** with clean context
+- Each session is a **fresh Claude instance** with clean context
 - Progress persists in **files** (git history, progress.txt, tasks.yaml), NOT in LLM context
-- Each iteration picks the **highest priority task** where status != done
-- Simple, deterministic iteration beats sophisticated complexity
+- Each session picks the **highest priority ready task** (where status != done and all dependencies are met)
+- Simple, deterministic sequencing beats sophisticated complexity
+- Can optionally run multiple Claude instances in parallel (concurrent execution mode)
 - Named after Ralph Wiggum from The Simpsons ("I'm in danger" meme)
 
 ### Key Insight
 
 > **Naive persistence beats sophisticated complexity.**
 > Memory lives in files, not context windows.
+> By default Ralph plays tasks sequentially. Concurrency is optional.
 
 ## User Requirements
 
-1. **Traditional ralph loops** - single Claude instance iteratively working through tasks
-2. **Concurrent ralph runs** - multiple Claude instances working on different tasks in parallel
+1. **Sequential task execution (default)** - single Claude instance executing tasks one at a time
+2. **Concurrent task execution (optional)** - multiple Claude instances working on different tasks in parallel
 3. **Dependency graph tracking** - know which tasks can run because all dependencies are met
 
 ## Current Task Model Analysis
@@ -516,12 +518,12 @@ Legend:
 └─────────────────────────────────────────┘
 ```
 
-## Ralph Loop Integration
+## Ralph Task Execution Integration
 
-### Single Loop (Traditional)
+### Sequential Execution (Default)
 
 ```rust
-// Ralph loop: iterative execution
+// Ralph sequential: one task at a time
 loop {
     let ready_tasks = db.get_ready_tasks();
 
@@ -539,7 +541,7 @@ loop {
     // Generate prompt for Claude
     let prompt = generate_task_prompt(task);
 
-    // Launch Claude CLI
+    // Launch Claude CLI (one session per task)
     let result = run_claude_cli(&prompt)?;
 
     // Mark complete
@@ -549,10 +551,11 @@ loop {
 }
 ```
 
-### Concurrent Loops
+### Concurrent Execution (Optional)
 
 ```rust
-// Ralph concurrent: spawn multiple Claude instances
+// Ralph concurrent (optional): spawn multiple Claude instances
+// Each instance executes tasks independently with file locking for thread safety
 let num_workers = 3;
 let (tx, rx) = mpsc::channel();
 
@@ -570,11 +573,11 @@ for worker_id in 0..num_workers {
                 break; // No work left
             }
 
-            // Try to claim first ready task
+            // Try to claim first ready task (file lock ensures only one wins)
             let task = ready_tasks[0];
             match db.claim_task(task.id) {
                 Ok(_) => {
-                    // Successfully claimed, do work
+                    // Successfully claimed, do work in this Claude session
                     let prompt = generate_task_prompt(task);
                     run_claude_cli(&prompt)?;
                     db.complete_task(task.id)?;
@@ -652,9 +655,10 @@ With 3+ concurrent Claude instances:
 
 ### Key Insight
 
-> **Ralph loops are about file-based state persistence.**
+> **Ralph task execution is about file-based state persistence.**
 > The task model already supports this perfectly via `depends_on` + `status`.
-> We just need query/coordination methods for concurrent execution.
+> Sequential execution is the default. Concurrent execution is optional.
+> We just need query/coordination methods for both modes.
 
 ## References
 

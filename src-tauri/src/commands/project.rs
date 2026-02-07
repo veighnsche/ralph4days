@@ -198,6 +198,9 @@ pub fn get_loop_state() -> Result<(), String> {
     Err("Not implemented".to_owned())
 }
 
+// TODO: Rename these commands to reflect sequential task execution rather than "loop"
+// Commands: start_execution, pause_execution, resume_execution, stop_execution, get_execution_state
+
 #[tauri::command]
 pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProject>, String> {
     let scan_path = if let Some(dir) = root_dir {

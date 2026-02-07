@@ -1,20 +1,20 @@
 # Ralph4days
 
-**Autonomous multi-agent build orchestrator for Claude Code.** A Tauri 2.5 desktop application that runs Claude Haiku in a loop to complete project tasks defined in a structured YAML database, with periodic Opus reviews for quality assurance.
+**Autonomous multi-agent task orchestrator for Claude Code.** A Tauri 2.5 desktop application that plays tasks sequentially from a YAML database using Claude Haiku, with periodic Opus reviews for quality assurance.
 
 ## Overview
 
 Ralph4days is a desktop application that orchestrates Claude Code instances to autonomously complete software development tasks. It acts as a thin wrapper around the Claude CLI -- launching instances, generating context-rich prompts, monitoring output, and detecting stagnation or completion.
 
-The core loop is simple: Ralph picks an incomplete task from the project's YAML database, assembles a prompt with full project context, runs Claude Haiku to execute the task, and checks for progress. Every few Haiku iterations, an Opus review cycle inspects recent work for bugs, code quality issues, and architectural problems. The loop continues until all tasks are complete, stagnation is detected, or the user intervenes.
+The core execution is simple: Ralph picks the next pending task from the project's YAML database, assembles a prompt with full project context, runs Claude Haiku to execute the task, and checks for progress. Every few Haiku sessions, an Opus review cycle inspects recent work for bugs, code quality issues, and architectural problems. Execution continues until all tasks are complete, stagnation is detected, or the user intervenes. A loop emerges naturally if tasks create more tasks.
 
 Ralph is deliberately not AI. It implements only deterministic, coded behavior: project structure enforcement, prompt generation from YAML data, subprocess lifecycle management, and state persistence. All intelligence comes from the Claude instances it orchestrates.
 
 ## Features
 
-- **Autonomous build loop** -- Start, pause, resume, and stop an iterative build loop that picks and completes tasks one at a time
+- **Task execution** -- Start, pause, resume, and stop task execution that picks and completes tasks sequentially
 - **Haiku + Opus review cycle** -- Claude Haiku executes tasks for speed; periodic Opus reviews catch bugs and quality issues before they compound
-- **Stagnation detection** -- SHA256 hashing of six project files across iterations detects when the loop stops making progress, auto-aborting after three unchanged iterations
+- **Stagnation detection** -- SHA256 hashing of six project files across sessions detects when execution stops making progress, auto-aborting after three unchanged sessions
 - **Rate limit handling** -- Parses Claude's JSON stream for `overloaded_error` and `rate_limit_error` events, backs off for five minutes, and retries automatically
 - **Multi-file YAML database** -- Thread-safe, file-locked YAML storage in `.ralph/db/` with atomic writes (temp file + rename pattern) and circular dependency detection
 - **Project locking** -- One project per session, chosen at startup via interactive picker or CLI flag, preventing cross-project confusion
@@ -52,7 +52,7 @@ Claude Code (--output-format stream-json, --max-turns 50)
 
 The frontend renders a split-panel layout: task/feature/discipline pages on the left, workspace tabs (terminals, forms, detail views) on the right. All state flows through Tauri IPC commands; the frontend never touches the filesystem directly.
 
-The backend manages the build loop on a dedicated thread, streaming output events (`ralph://state_changed`, `ralph://output_chunk`, `ralph://iteration_complete`, `ralph://rate_limited`, `ralph://error`) to the frontend via Tauri's event system.
+The backend manages task execution on a dedicated thread, streaming output events (`ralph://state_changed`, `ralph://output_chunk`, `ralph://task_complete`, `ralph://rate_limited`, `ralph://error`) to the frontend via Tauri's event system.
 
 ## Prerequisites
 

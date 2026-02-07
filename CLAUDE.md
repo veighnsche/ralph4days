@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-**Ralph4days** — Tauri 2.5 desktop app for autonomous multi-agent build loops. Runs Claude Haiku in a loop to complete PRD tasks with periodic Opus reviews.
+**Ralph4days** — Tauri 2.5 desktop app for autonomous multi-agent task execution. Plays tasks in sequence using Claude Haiku with periodic Opus reviews.
 
 ## CRITICAL: Single Execution Path Policy
 
@@ -38,9 +38,13 @@ Key files:
 - Frontend: `src/{components,stores}/`
 - Specs: `.specs/`
 
-## Loop States
+## Execution Model
 
-Idle → Running ↔ Paused. Running → RateLimited (5min retry) → Running/Aborted. Running → Complete (all tasks done) or Aborted (stop/stagnation). Stagnation = 3 iterations with no changes to: tasks.yaml, features.yaml, disciplines.yaml, metadata.yaml, progress.txt, learnings.txt.
+**Ralph plays tasks in sequence, not in a loop.** Each Claude CLI session picks up the next pending task from the queue, executes it, and exits. Ralph then launches the next session for the next task. This is a linear pipeline, not an iteration loop.
+
+**A loop emerges only when tasks create more tasks.** A task can add new tasks to the queue (including a task whose job is to generate more tasks). When that happens, the sequence keeps going because there's always a next task — but that's an emergent property of the task graph, not a built-in loop mechanism.
+
+**States:** Idle → Running ↔ Paused. Running → RateLimited (5min retry) → Running/Aborted. Running → Complete (all tasks done) or Aborted (stop/stagnation). Stagnation = 3 iterations with no changes to: tasks.yaml, features.yaml, disciplines.yaml, metadata.yaml, progress.txt, learnings.txt.
 
 ## Target Project Structure
 
@@ -50,11 +54,11 @@ Projects need `.ralph/` with either:
 
 Additional files: `CLAUDE.RALPH.md` (recommended), `progress.txt`, `learnings.txt`.
 
-On loop start: backup `CLAUDE.md`, copy `CLAUDE.RALPH.md` to `CLAUDE.md`. On stop: restore backup. See SPEC-030 for details.
+On run start: backup `CLAUDE.md`, copy `CLAUDE.RALPH.md` to `CLAUDE.md`. On stop: restore backup. See SPEC-030 for details.
 
 ## Project Locking
 
-ONE project per session, chosen at startup. CLI mode (`ralph --project /path`) validates and locks immediately. Interactive mode (`ralph`) shows ProjectPicker modal (scans home for `.ralph/` folders, 5 levels, max 100). Validation: path exists, has `.ralph/db/` or `.ralph/prd.yaml` (auto-migrates). Commands: `validate_project_path`, `set_locked_project`, `get_locked_project`, `start_loop` (no path param).
+ONE project per session, chosen at startup. CLI mode (`ralph --project /path`) validates and locks immediately. Interactive mode (`ralph`) shows ProjectPicker modal (scans home for `.ralph/` folders, 5 levels, max 100). Validation: path exists, has `.ralph/db/` or `.ralph/prd.yaml` (auto-migrates). Commands: `validate_project_path`, `set_locked_project`, `get_locked_project`, `start_loop` (no path param — starts sequential task execution).
 
 ## Implementation Notes
 
@@ -63,7 +67,7 @@ ONE project per session, chosen at startup. CLI mode (`ralph --project /path`) v
 - **Timeout**: Uses system `timeout` command (900s default) wrapping Claude CLI subprocess
 - **Rate Limits**: Parses JSON stream for `overloaded_error`/`rate_limit_error` event types
 - **Prompts**: Inline file contents (no @file syntax): aggregates 4 YAML files into PRD section
-- **Stagnation**: SHA256 hash of 6 files (tasks.yaml, features.yaml, disciplines.yaml, metadata.yaml, progress.txt, learnings.txt) before/after iteration; abort after 3 unchanged iterations
+- **Stagnation**: SHA256 hash of 6 files (tasks.yaml, features.yaml, disciplines.yaml, metadata.yaml, progress.txt, learnings.txt) before/after each task session; abort after 3 consecutive sessions with no changes
 
 ## Code Comments Policy
 
@@ -103,7 +107,7 @@ Specs in `.specs/` (read `000_SPECIFICATION_FORMAT.md` first). Tests: `just test
 
 ## Environment
 
-Claude CLI required (`claude --version`). Projects need `.ralph/db/` (new format) or `.ralph/prd.yaml` (legacy, auto-migrates). Loop runs in project dir. Commits happen in Claude CLI sessions (not managed by Ralph).
+Claude CLI required (`claude --version`). Projects need `.ralph/db/` (new format) or `.ralph/prd.yaml` (legacy, auto-migrates). Task sessions run in project dir. Commits happen in Claude CLI sessions (not managed by Ralph).
 
 ## Documentation & Info Dumps
 

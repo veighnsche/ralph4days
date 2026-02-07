@@ -2,7 +2,7 @@
 
 ## Summary
 
-Successfully implemented project locking functionality for Ralph Loop. The application now enforces ONE project per session with two startup modes:
+Successfully implemented project locking functionality for Ralph. The application now enforces ONE project per session with two startup modes:
 
 1. **CLI Argument Mode**: `ralph --project /path/to/project` locks immediately
 2. **Interactive Mode**: ProjectPicker modal appears if no CLI arg provided
@@ -54,7 +54,7 @@ Successfully implemented project locking functionality for Ralph Loop. The appli
    - Added `lockedProject` prop
    - Displays locked project as read-only (path + name/.ralph)
    - Removed `projectPath` parameter from `start_loop` IPC call
-   - Simplified to: locked project display + max iterations + control buttons
+   - Simplified to: locked project display + execution controls
 
 ## Validation Logic
 
@@ -101,15 +101,14 @@ ProjectPicker modal appears:
 ### Main UI (Locked State)
 ```
 ┌─────────────────────────────────────────┐
-│ Ralph Loop                       [Idle] │
+│ Ralph Task Execution                │
+│                                    [Idle] │
 │                                         │
 │ Locked Project:                         │
 │ ┌─────────────────────────────────────┐ │
 │ │ /home/user/my-project               │ │
 │ │ my-project/.ralph                   │ │
 │ └─────────────────────────────────────┘ │
-│                                         │
-│ Max Iterations: [100]                   │
 │                                         │
 │ [Start] [Pause] [Resume] [Stop]         │
 └─────────────────────────────────────────┘
@@ -142,7 +141,7 @@ All checks passed ✓
 - [ ] Valid path enables "Lock Project" button
 - [ ] Locking project transitions to main UI
 - [ ] Locked project displays correctly (read-only)
-- [ ] Start loop works without passing project path
+- [ ] Start task execution works without passing project path
 - [ ] Launch with `--project /valid/path` → skips picker
 - [ ] Launch with `--project /invalid/path` → error + exit
 - [ ] Cannot change project during session

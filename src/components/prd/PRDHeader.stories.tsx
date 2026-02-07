@@ -16,7 +16,7 @@ type Story = StoryObj<typeof meta>
 
 const mockProject: ProjectInfo = {
   title: 'Ralph4days Development',
-  description: 'Autonomous multi-agent build loops with Claude',
+  description: 'Autonomous multi-agent task execution with Claude',
   created: '2026-02-01'
 }
 

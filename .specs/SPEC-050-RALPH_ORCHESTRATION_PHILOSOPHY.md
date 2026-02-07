@@ -9,16 +9,23 @@
 **Ralph is an ORCHESTRATOR, not a replacement for Claude Code.**
 
 Ralph does NOT re-implement functionalities that Claude Code already provides. Ralph's role is to:
-1. Launch Claude Code instances with appropriate flags and MCP servers
-2. Generate deterministic prompts based on user input
-3. Monitor Claude Code's output and state
-4. Interact with Claude Code **exactly as a human would**
+1. Play tasks in sequence from the database
+2. Launch Claude Code instances with appropriate flags and MCP servers for each task
+3. Generate deterministic prompts based on task content
+4. Monitor Claude Code's output and state
+5. Interact with Claude Code **exactly as a human would**
 
-**RALPH IS NOT AI.** Ralph only implements coded, deterministic behavior.
+**RALPH IS NOT AI.** Ralph only implements coded, deterministic behavior. Ralph plays tasks sequentially, not in a loop. A loop emerges only if tasks create more tasks.
 
-## Human vs Agent Task Creation
+## Sequential Task Execution Model
 
-### The Reality of Task Creation
+### Not a Loop — A Pipeline
+
+**Ralph plays tasks in sequence, not in a loop.** Each Claude Code session executes one pending task and exits. Ralph then launches the next session for the next task. This is a linear pipeline.
+
+**A loop emerges only when tasks create more tasks.** When a task adds new pending tasks to the queue (including a task whose job is to generate more tasks), the pipeline keeps running because there's always a next task. But this is an emergent property, not a built-in looping mechanism.
+
+### Human vs Agent Task Creation
 
 **Humans DO NOT write structured tasks.** Humans provide:
 - Unorganized yappings
@@ -40,7 +47,7 @@ Ralph must support TWO distinct task creation workflows:
 - Structured form pre-filled by an agent
 - Agent has already parsed requirements
 - Direct YAML database write
-- Used during autonomous loops
+- Used during sequential task execution
 
 #### 2. Human-Explained Tasks: "+ Explain Tasks" (Human Icon)
 - Semi-structured Q&A form
@@ -53,10 +60,10 @@ Ralph must support TWO distinct task creation workflows:
 
 ### As-If-Human Principle
 
-Ralph interacts with Claude Code **as if Ralph was a human user**:
+Ralph interacts with Claude Code **as if Ralph was a human user launching one-off Claude sessions**:
 
 ```
-Human → Ralph UI → Deterministic Prompt → Claude CLI → Tasks Created
+Ralph Task Queue → Pick Next Pending Task → Deterministic Prompt → Claude CLI Session → Execute Task → Task Complete → Repeat
 ```
 
 Ralph can:
@@ -77,9 +84,9 @@ Ralph cannot:
 
 Ralph's value-add:
 1. **Project structure enforcement** - `.ralph/db/` YAML schema
-2. **Loop orchestration** - Start/stop/pause/resume logic
-3. **Deterministic prompt generation** - PRD aggregation, context injection
-4. **State persistence** - Loop state, stagnation detection
+2. **Task sequence orchestration** - Start/stop/pause/resume logic, task queue management
+3. **Deterministic prompt generation** - Task aggregation, context injection
+4. **State persistence** - Execution state, stagnation detection
 5. **UI for monitoring** - Real-time Claude output display
 6. **Human input collection** - Forms → Prompts
 
@@ -175,7 +182,7 @@ Claude Code (MCP tool call)
 
 Ralph regenerates MCP servers and restarts Claude when:
 1. **Task type changes** - "create tasks" needs different tools than "review code"
-2. **User switches modes** - different MCP servers for loop mode vs single-task mode
+2. **User switches modes** - different MCP servers for task execution vs manual mode
 3. **Project changes** - different `.ralph/db/` path needs new resource URIs
 4. **Error recovery** - Claude instance crashed or stalled
 
@@ -385,24 +392,26 @@ Show real-time output:
 ## Related Specs
 
 - SPEC-010: Database Schema (YAML format)
-- SPEC-020: Loop Engine (when to use autonomous mode)
+- SPEC-020: Task Execution Engine (sequential task processing)
 - SPEC-030: CLAUDE.md Management (prompt context)
 - SPEC-040: Subprocess Management (Claude CLI invocation)
 
 ## Open Questions
 
-1. Should "Explain Tasks" be available during running loops or only when idle?
-2. How to handle conflicts if Claude creates tasks while loop is running?
+1. Should "Explain Tasks" be available during running task execution or only when idle?
+2. How to handle conflicts if Claude creates tasks while execution is running?
 3. Should we show a "use this prompt" option for advanced users who want to copy/paste?
 4. What MCP servers should be available to task-creation Claude instances?
 
 ## Summary
 
 Ralph is a thin orchestrator that:
-- Collects human ramblings via forms
-- Generates deterministic prompts
+- Plays tasks sequentially from the database
+- Generates deterministic prompts per task
 - Launches Claude Code instances
 - Monitors and displays output
 - **Never replaces Claude Code's capabilities**
 
-This keeps Ralph simple, maintainable, and focused on what it does best: orchestrating the build loop.
+A loop emerges naturally when tasks create more tasks. By default, Ralph just plays the task queue in sequence.
+
+This keeps Ralph simple, maintainable, and focused on what it does best: orchestrating sequential task execution.
