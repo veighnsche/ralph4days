@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::{AppHandle, State};
 
-// Recursive scan configuration
 const MAX_SCAN_DEPTH: usize = 5; // Max 5 levels deep
 const MAX_PROJECTS: usize = 100; // Max 100 projects returned
 const EXCLUDED_DIRS: &[&str] = &[
@@ -62,8 +61,6 @@ impl Drop for AppState {
 }
 
 impl AppState {
-    /// Build a PromptContext from current app state. Shared by MCP config generation and prompt preview.
-    /// Reuses the already-open database connection from AppState.db.
     fn build_prompt_context(
         &self,
         project_path: &std::path::Path,
@@ -104,7 +101,6 @@ impl AppState {
         })
     }
 
-    /// Generate MCP config for a terminal session by writing scripts to disk.
     fn generate_mcp_config(
         &self,
         mode: &str,
@@ -115,14 +111,12 @@ impl AppState {
             _ => prompt_builder::PromptType::Discuss,
         };
 
-        // Auto-load instruction overrides from .ralph/prompts/
         let mut overrides = std::collections::HashMap::new();
         let override_path = project_path
             .join(".ralph")
             .join("prompts")
             .join(format!("{mode}_instructions.md"));
         if let Ok(text) = std::fs::read_to_string(&override_path) {
-            // Determine the instruction section name for this mode
             let section_name = format!("{mode}_instructions");
             overrides.insert(section_name, text);
         }
@@ -155,7 +149,6 @@ impl AppState {
     }
 }
 
-/// Get a reference to the opened database. Fails if no project locked.
 fn get_db<'a>(
     state: &'a State<'a, AppState>,
 ) -> Result<std::sync::MutexGuard<'a, Option<SqliteDb>>, String> {
@@ -170,7 +163,6 @@ fn get_db<'a>(
 pub fn validate_project_path(path: String) -> Result<(), String> {
     let path = PathBuf::from(&path);
 
-    // Check path exists and is directory
     if !path.exists() {
         return Err(format!("Directory not found: {}", path.display()));
     }
@@ -178,7 +170,6 @@ pub fn validate_project_path(path: String) -> Result<(), String> {
         return Err(format!("Not a directory: {}", path.display()));
     }
 
-    // Check .ralph/ directory exists
     let ralph_dir = path.join(".ralph");
     if !ralph_dir.exists() {
         return Err(format!(
@@ -193,7 +184,6 @@ pub fn validate_project_path(path: String) -> Result<(), String> {
         ));
     }
 
-    // Check .ralph/db/ralph.db exists
     let db_file = ralph_dir.join("db").join("ralph.db");
     if !db_file.exists() {
         return Err(format!(
@@ -209,7 +199,6 @@ pub fn validate_project_path(path: String) -> Result<(), String> {
 pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(), String> {
     let path = PathBuf::from(&path);
 
-    // Check path exists and is directory
     if !path.exists() {
         return Err(format!("Directory not found: {}", path.display()));
     }
@@ -217,7 +206,6 @@ pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(
         return Err(format!("Not a directory: {}", path.display()));
     }
 
-    // Create .ralph/ directory
     let ralph_dir = path.join(".ralph");
     if ralph_dir.exists() {
         return Err(format!(".ralph/ already exists at {}", path.display()));
@@ -226,12 +214,10 @@ pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(
     std::fs::create_dir(&ralph_dir)
         .map_err(|e| format!("Failed to create .ralph/ directory: {e}"))?;
 
-    // Create .ralph/db/ directory
     let db_dir = ralph_dir.join("db");
     std::fs::create_dir(&db_dir)
         .map_err(|e| format!("Failed to create .ralph/db/ directory: {e}"))?;
 
-    // Create and initialize the SQLite database
     let db_path = db_dir.join("ralph.db");
     let db = SqliteDb::open(&db_path)?;
     db.seed_defaults()?;
@@ -239,8 +225,6 @@ pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(
         project_title.clone(),
         Some("Add project description here".to_owned()),
     )?;
-
-    // Create optional CLAUDE.RALPH.md template
     let claude_path = ralph_dir.join("CLAUDE.RALPH.md");
     let claude_template = format!(
         "# {project_title} - Ralph Context
@@ -275,29 +259,23 @@ Describe the architecture, tech stack, and key components.
 
 #[tauri::command]
 pub fn set_locked_project(state: State<'_, AppState>, path: String) -> Result<(), String> {
-    // Validate the project path first
     validate_project_path(path.clone())?;
 
-    // Canonicalize path (resolve symlinks)
     let canonical_path =
         std::fs::canonicalize(&path).map_err(|e| format!("Failed to resolve path: {e}"))?;
 
-    // Check if already locked
     let mut locked = state.locked_project.lock().map_err(|e| e.to_string())?;
     if locked.is_some() {
         return Err("Project already locked for this session".to_owned());
     }
 
-    // Open the SQLite database
     let db_path = canonical_path.join(".ralph").join("db").join("ralph.db");
     let db = SqliteDb::open(&db_path)?;
 
-    // Analyze the codebase for braindump prompts
     let snapshot = prompt_builder::snapshot::analyze(&canonical_path);
     let mut snap_guard = state.codebase_snapshot.lock().map_err(|e| e.to_string())?;
     *snap_guard = Some(snapshot);
 
-    // Store the database connection
     let mut db_guard = state.db.lock().map_err(|e| e.to_string())?;
     *db_guard = Some(db);
 
@@ -354,7 +332,6 @@ pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProj
         max_depth: usize,
         max_projects: usize,
     ) {
-        // Early return if limits hit
         if depth > max_depth || projects.len() >= max_projects {
             return;
         }
@@ -363,48 +340,38 @@ pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProj
             return;
         }
 
-        // Check if this directory has a .ralph folder
         let ralph_dir = path.join(".ralph");
         if ralph_dir.exists() && ralph_dir.is_dir() {
             let name = path
                 .file_name()
                 .and_then(|n| n.to_str())
-                .unwrap_or("Unknown").to_owned();
+                .unwrap_or("Unknown")
+                .to_owned();
 
             projects.push(RalphProject {
                 name,
                 path: path.to_string_lossy().to_string(),
             });
 
-            // Early return if we hit max projects
             if projects.len() >= max_projects {
                 return;
             }
         }
 
-        // Recursively scan subdirectories
         if let Ok(entries) = std::fs::read_dir(path) {
             for entry in entries.flatten() {
                 if let Ok(file_type) = entry.file_type() {
                     if file_type.is_dir() {
                         let entry_path = entry.path();
 
-                        // Check if directory should be excluded
                         if let Some(dir_name) = entry_path.file_name().and_then(|n| n.to_str()) {
                             if EXCLUDED_DIRS.contains(&dir_name) {
-                                continue; // Skip this directory
+                                continue;
                             }
                         }
 
-                        scan_recursive(
-                            &entry_path,
-                            projects,
-                            depth + 1,
-                            max_depth,
-                            max_projects,
-                        );
+                        scan_recursive(&entry_path, projects, depth + 1, max_depth, max_projects);
 
-                        // Early return if we hit max projects
                         if projects.len() >= max_projects {
                             return;
                         }
@@ -421,7 +388,6 @@ pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProj
 
 #[tauri::command]
 pub fn get_current_dir() -> Result<String, String> {
-    // Return the default scan location (home directory)
     let path = dirs::home_dir().ok_or("Failed to get home directory")?;
     Ok(path.to_string_lossy().to_string())
 }
@@ -467,18 +433,14 @@ pub fn create_task(
     Ok(task_id.to_string())
 }
 
-/// Normalize feature name to lowercase with hyphens, reject invalid chars
 fn normalize_feature_name(name: &str) -> Result<String, String> {
-    // Reject slashes, colons, and other special chars
     if name.contains('/') || name.contains(':') || name.contains('\\') {
         return Err("Feature name cannot contain /, :, or \\".to_owned());
     }
 
-    // Normalize: lowercase, replace whitespace with hyphens
     Ok(name.to_lowercase().trim().replace(char::is_whitespace, "-"))
 }
 
-/// Parse priority string to Priority enum
 fn parse_priority(priority: Option<&str>) -> Option<Priority> {
     priority.and_then(|p| match p {
         "low" => Some(Priority::Low),
@@ -489,7 +451,6 @@ fn parse_priority(priority: Option<&str>) -> Option<Priority> {
     })
 }
 
-/// Parse provenance string to TaskProvenance enum
 fn parse_provenance(provenance: Option<&str>) -> Option<sqlite_db::TaskProvenance> {
     provenance.and_then(|p| match p {
         "agent" => Some(sqlite_db::TaskProvenance::Agent),
@@ -727,7 +688,6 @@ pub fn create_discipline(
     let guard = get_db(&state)?;
     let db = guard.as_ref().unwrap();
 
-    // Normalize name (lowercase with hyphens)
     let normalized_name = name.to_lowercase().trim().replace(char::is_whitespace, "-");
 
     db.create_discipline(normalized_name, display_name, acronym, icon, color)
@@ -839,8 +799,8 @@ pub fn update_task(
 pub fn set_task_status(state: State<'_, AppState>, id: u32, status: String) -> Result<(), String> {
     let guard = get_db(&state)?;
     let db = guard.as_ref().unwrap();
-    let status = sqlite_db::TaskStatus::parse(&status)
-        .ok_or_else(|| format!("Invalid status: {status}"))?;
+    let status =
+        sqlite_db::TaskStatus::parse(&status).ok_or_else(|| format!("Invalid status: {status}"))?;
     db.set_task_status(id, status)
 }
 
@@ -906,7 +866,6 @@ pub fn delete_task_comment(
     db.delete_comment(task_id, comment_id)
 }
 
-// --- Query Commands ---
 
 #[tauri::command]
 pub fn get_tasks(state: State<'_, AppState>) -> Result<Vec<sqlite_db::Task>, String> {
@@ -967,7 +926,6 @@ pub fn get_project_info(state: State<'_, AppState>) -> Result<ProjectInfo, Strin
     })
 }
 
-// --- Prompt Builder Commands ---
 
 fn get_locked_project_path(state: &State<'_, AppState>) -> Result<PathBuf, String> {
     let locked = state.locked_project.lock().map_err(|e| e.to_string())?;
@@ -1088,7 +1046,6 @@ pub fn reset_prompt_instructions(
     }
 }
 
-// --- Recipe Editor Commands ---
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -1125,7 +1082,6 @@ pub fn get_recipe_sections(prompt_type: String) -> Result<Vec<SectionConfig>, St
             instruction_override: None,
         })
         .chain(
-            // Include sections NOT in this recipe as disabled
             all_meta
                 .iter()
                 .filter(|info| !names.contains(&info.name))
@@ -1146,7 +1102,6 @@ pub fn preview_custom_recipe(
 ) -> Result<PromptPreview, String> {
     let project_path = get_locked_project_path(&state)?;
 
-    // Build instruction overrides HashMap from enabled instruction sections
     let overrides: std::collections::HashMap<String, String> = sections
         .iter()
         .filter(|s| s.enabled && s.instruction_override.is_some())
@@ -1155,7 +1110,6 @@ pub fn preview_custom_recipe(
 
     let ctx = state.build_prompt_context(&project_path, user_input, overrides)?;
 
-    // Build only enabled sections in order
     let enabled_names: Vec<&str> = sections
         .iter()
         .filter(|s| s.enabled)
@@ -1252,7 +1206,6 @@ pub fn delete_recipe(state: State<'_, AppState>, name: String) -> Result<(), Str
     }
 }
 
-// --- PTY Commands ---
 
 #[tauri::command]
 pub fn create_pty_session(

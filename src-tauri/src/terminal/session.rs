@@ -2,14 +2,11 @@ use portable_pty::MasterPty;
 use std::io::Write;
 use std::sync::{Arc, Mutex};
 
-/// Per-session overrides for Claude Code. Model and thinking are task-configurable.
 pub struct SessionConfig {
     pub model: Option<String>,
     pub thinking: Option<bool>,
 }
 
-/// Build the `--settings` JSON for a PTY session.
-/// Fixed settings are always enforced. Model/thinking are optional overrides.
 pub(crate) fn build_settings_json(config: &SessionConfig) -> String {
     let mut settings = serde_json::Map::new();
 

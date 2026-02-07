@@ -1,17 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-/// Matches the actual `claude --output-format stream-json` output.
-///
-/// Examples:
-/// ```json
-/// {"type":"system","subtype":"init","session_id":"...","tools":[...]}
-/// {"type":"assistant","message":{"content":[{"type":"text","text":"hello"}]}}
-/// {"type":"result","subtype":"success","duration_ms":2686}
-/// ```
-///
-/// We use `serde_json::Value` for the message field since the structure varies
-/// by event type, and we only need to extract text content from assistant events.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClaudeStreamEvent {
     #[serde(rename = "type")]
@@ -25,7 +14,6 @@ pub struct ClaudeStreamEvent {
 }
 
 impl ClaudeStreamEvent {
-    /// Extract text content from an assistant event's nested message.content array.
     pub fn extract_text(&self) -> Option<String> {
         let message = self.message.as_ref()?;
         let content_arr = message.get("content")?.as_array()?;
