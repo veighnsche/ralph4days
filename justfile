@@ -184,17 +184,13 @@ list-mock:
     echo "Available mock projects:"
     for f in mock/*/; do
         name=$(basename "$f")
-        prd="${f}.ralph/prd.yaml"
-        metadata="${f}.ralph/db/metadata.yaml"
-        tasks_file="${f}.ralph/db/tasks.yaml"
-        if [ -f "$metadata" ]; then
-            title=$(grep "^  title:" "$metadata" | cut -d'"' -f2 || echo "N/A")
-            tasks=$(grep -c "^  - id:" "$tasks_file" 2>/dev/null || echo "0")
-            echo "  $name: $tasks tasks - $title [db format]"
-        elif [ -f "$prd" ]; then
-            title=$(grep "^  title:" "$prd" | cut -d'"' -f2 || echo "N/A")
-            tasks=$(grep -c "^  - id:" "$prd" || echo "0")
-            echo "  $name: $tasks tasks - $title [prd.yaml]"
+        db="${f}.ralph/db/ralph.db"
+        if [ -f "$db" ]; then
+            title=$(sqlite3 "$db" "SELECT title FROM metadata LIMIT 1;" 2>/dev/null || echo "N/A")
+            tasks=$(sqlite3 "$db" "SELECT COUNT(*) FROM tasks;" 2>/dev/null || echo "0")
+            echo "  $name: $tasks tasks - $title"
+        elif [ -d "${f}.ralph" ]; then
+            echo "  $name: (no database)"
         fi
     done
 
@@ -206,16 +202,12 @@ list-fixtures:
     echo "Available fixtures (read-only, use 'just reset-mock' for testing):"
     for f in fixtures/*/; do
         name=$(basename "$f")
-        prd="${f}.undetect-ralph/prd.yaml"
-        metadata="${f}.undetect-ralph/db/metadata.yaml"
-        tasks_file="${f}.undetect-ralph/db/tasks.yaml"
-        if [ -f "$metadata" ]; then
-            title=$(grep "^  title:" "$metadata" | cut -d'"' -f2 || echo "N/A")
-            tasks=$(grep -c "^  - id:" "$tasks_file" 2>/dev/null || echo "0")
-            echo "  $name: $tasks tasks - $title [db format]"
-        elif [ -f "$prd" ]; then
-            title=$(grep "^  title:" "$prd" | cut -d'"' -f2 || echo "N/A")
-            tasks=$(grep -c "^  - id:" "$prd" || echo "0")
-            echo "  $name: $tasks tasks - $title [prd.yaml]"
+        db="${f}.undetect-ralph/db/ralph.db"
+        if [ -f "$db" ]; then
+            title=$(sqlite3 "$db" "SELECT title FROM metadata LIMIT 1;" 2>/dev/null || echo "N/A")
+            tasks=$(sqlite3 "$db" "SELECT COUNT(*) FROM tasks;" 2>/dev/null || echo "0")
+            echo "  $name: $tasks tasks - $title"
+        elif [ -d "${f}.undetect-ralph" ]; then
+            echo "  $name: (no database)"
         fi
     done
