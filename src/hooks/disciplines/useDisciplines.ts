@@ -10,6 +10,7 @@ export interface DisciplineConfig {
   icon: LucideIcon
   color: string
   bgColor: string
+  stackId?: number
 }
 
 function resolveDisciplines(raw: DisciplineConfigWire[]): DisciplineConfig[] {
@@ -19,7 +20,8 @@ function resolveDisciplines(raw: DisciplineConfigWire[]): DisciplineConfig[] {
     acronym: d.acronym,
     icon: resolveIcon(d.icon),
     color: d.color,
-    bgColor: `color-mix(in oklch, ${d.color} 15%, transparent)`
+    bgColor: `color-mix(in oklch, ${d.color} 15%, transparent)`,
+    stackId: d.stackId
   }))
 }
 

@@ -3,7 +3,7 @@ use ralph_errors::{codes, ralph_err, RalphResultExt, ToStringErr};
 use ralph_macros::ipc_type;
 use sqlite_db::SqliteDb;
 use std::path::PathBuf;
-use tauri::State;
+use tauri::{Manager, State};
 
 const MAX_SCAN_DEPTH: usize = 5;
 const MAX_PROJECTS: usize = 100;
@@ -320,4 +320,15 @@ pub fn get_project_info(state: State<'_, AppState>) -> Result<ProjectInfo, Strin
         description: info.description.clone(),
         created: info.created,
     })
+}
+
+#[tauri::command]
+pub fn close_splash(app: tauri::AppHandle) {
+    if let Some(splash) = app.get_webview_window("splash") {
+        let _ = splash.close();
+    }
+    if let Some(main) = app.get_webview_window("main") {
+        let _ = main.show();
+        let _ = main.set_focus();
+    }
 }

@@ -2,7 +2,7 @@ mod commands;
 mod terminal;
 
 use commands::AppState;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use tauri_plugin_cli::CliExt;
 
 fn init_tracing() {
@@ -26,6 +26,7 @@ fn init_tracing() {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let _start = std::time::Instant::now();
     init_tracing();
 
     // WORKAROUND: WebKitGTK + NVIDIA + Wayland crash prevention
@@ -46,12 +47,27 @@ pub fn run() {
         .plugin(tauri_plugin_cli::init())
         .manage(AppState::default())
         .setup(|app| {
+            let setup_start = std::time::Instant::now();
+
+            if let Some(splash) = app.get_webview_window("splash") {
+                let _ = splash.emit("loading", "Initializing...");
+                tracing::debug!("Setup phase started at {:?}", setup_start.elapsed());
+            }
+
             if let Ok(matches) = app.cli().matches() {
                 if let Some(project_path) = matches.args.get("project") {
                     if let serde_json::Value::String(path_str) = &project_path.value {
+                        if let Some(splash) = app.get_webview_window("splash") {
+                            let _ = splash.emit("loading", "Validating project...");
+                        }
+
                         if let Err(e) = commands::validate_project_path(path_str.clone()) {
                             eprintln!("Failed to lock project: {e}");
                             std::process::exit(1);
+                        }
+
+                        if let Some(splash) = app.get_webview_window("splash") {
+                            let _ = splash.emit("loading", "Locking project...");
                         }
 
                         let state: &AppState = app.state::<AppState>().inner();
@@ -62,6 +78,8 @@ pub fn run() {
                     }
                 }
             }
+
+            tracing::debug!("Setup completed in {:?}", setup_start.elapsed());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -77,6 +95,7 @@ pub fn run() {
             commands::project::set_locked_project,
             commands::project::get_locked_project,
             commands::project::get_project_info,
+            commands::project::close_splash,
             commands::tasks::create_task,
             commands::tasks::update_task,
             commands::tasks::set_task_status,
@@ -96,6 +115,7 @@ pub fn run() {
             commands::features::create_discipline,
             commands::features::update_discipline,
             commands::features::delete_discipline,
+            commands::features::get_stack_metadata,
             commands::prompts::preview_custom_recipe,
             commands::prompts::list_recipe_configs,
             commands::prompts::get_recipe_config,

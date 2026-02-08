@@ -51,8 +51,8 @@ impl SqliteDb {
         self.conn
             .execute(
                 "INSERT INTO disciplines (name, display_name, acronym, icon, color, \
-                 system_prompt, skills, conventions, mcp_servers) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                 system_prompt, skills, conventions, mcp_servers, stack_id) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, NULL)",
                 rusqlite::params![
                     input.name,
                     input.display_name,
@@ -168,7 +168,7 @@ impl SqliteDb {
     pub fn get_disciplines(&self) -> Vec<Discipline> {
         let Ok(mut stmt) = self.conn.prepare(
             "SELECT name, display_name, acronym, icon, color, system_prompt, skills, \
-             conventions, mcp_servers \
+             conventions, mcp_servers, stack_id \
              FROM disciplines ORDER BY name",
         ) else {
             return vec![];
@@ -187,6 +187,7 @@ impl SqliteDb {
                 skills: serde_json::from_str(&skills_json).unwrap_or_default(),
                 conventions: row.get(7)?,
                 mcp_servers: serde_json::from_str(&mcp_json).unwrap_or_default(),
+                stack_id: row.get(9)?,
             })
         })
         .map_or_else(
@@ -403,8 +404,8 @@ impl SqliteDb {
                 self.conn
                     .execute(
                         "INSERT INTO disciplines (name, display_name, acronym, icon, color, \
-                         system_prompt, skills, conventions) \
-                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                         system_prompt, skills, conventions, stack_id) \
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
                         rusqlite::params![
                             name,
                             display_name,
@@ -413,7 +414,8 @@ impl SqliteDb {
                             color,
                             system_prompt,
                             skills,
-                            conventions
+                            conventions,
+                            stack
                         ],
                     )
                     .ralph_err(codes::DB_WRITE, "Failed to seed discipline")?;

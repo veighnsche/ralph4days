@@ -5,6 +5,7 @@ mod export;
 mod features;
 mod metadata;
 mod recipe_configs;
+pub mod stack_metadata;
 mod tasks;
 pub mod types;
 
@@ -66,6 +67,7 @@ impl SqliteDb {
             M::up(include_str!("migrations/001_initial.sql")),
             M::up(include_str!("migrations/002_feature_rag_fields.sql")),
             M::up(include_str!("migrations/003_recipe_configs.sql")),
+            M::up(include_str!("migrations/004_add_discipline_stack_id.sql")),
         ]);
 
         migrations
@@ -93,6 +95,7 @@ impl SqliteDb {
             M::up(include_str!("migrations/001_initial.sql")),
             M::up(include_str!("migrations/002_feature_rag_fields.sql")),
             M::up(include_str!("migrations/003_recipe_configs.sql")),
+            M::up(include_str!("migrations/004_add_discipline_stack_id.sql")),
         ]);
 
         migrations
@@ -127,6 +130,7 @@ impl SqliteDb {
             M::up(include_str!("migrations/001_initial.sql")),
             M::up(include_str!("migrations/002_feature_rag_fields.sql")),
             M::up(include_str!("migrations/003_recipe_configs.sql")),
+            M::up(include_str!("migrations/004_add_discipline_stack_id.sql")),
         ]);
 
         migrations

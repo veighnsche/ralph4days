@@ -7,9 +7,10 @@ export type DisciplineConfig = {
   color: string
   acronym: string
   systemPrompt?: string
-  skills: string[]
+  skills: Array<string>
   conventions?: string
-  mcpServers: McpServerConfigData[]
+  mcpServers: Array<McpServerConfigData>
+  stackId?: number
 }
 export type FeatureData = {
   name: string
@@ -17,12 +18,12 @@ export type FeatureData = {
   acronym: string
   description?: string
   created?: string
-  knowledgePaths: string[]
-  contextFiles: string[]
+  knowledgePaths: Array<string>
+  contextFiles: Array<string>
   architecture?: string
   boundaries?: string
-  learnings: FeatureLearningData[]
-  dependencies: string[]
+  learnings: Array<FeatureLearningData>
+  dependencies: Array<string>
 }
 export type FeatureLearningData = {
   text: string
@@ -58,18 +59,23 @@ export type GroupStats = {
 }
 export type InferredTaskStatus = 'ready' | 'waiting_on_deps' | 'externally_blocked' | 'in_progress' | 'done' | 'skipped'
 export type LearningSource = 'auto' | 'agent' | 'human' | 'opus_reviewed'
-export type McpServerConfigData = { name: string; command: string; args: string[]; env: { [key in string]: string } }
-export type McpServerConfig = { name: string; command: string; args: string[]; env: { [key in string]: string } }
+export type McpServerConfigData = {
+  name: string
+  command: string
+  args: Array<string>
+  env: { [key in string]: string }
+}
+export type McpServerConfig = { name: string; command: string; args: Array<string>; env: { [key in string]: string } }
 export type Priority = 'low' | 'medium' | 'high' | 'critical'
 export type ProjectInfo = { title: string; description?: string; created?: string }
 export type ProjectProgress = { totalTasks: number; doneTasks: number; progressPercent: number }
 export type PromptPreviewSection = { name: string; content: string }
-export type PromptPreview = { sections: PromptPreviewSection[]; fullPrompt: string }
+export type PromptPreview = { sections: Array<PromptPreviewSection>; fullPrompt: string }
 export type RalphProject = { name: string; path: string }
 export type RecipeConfigData = {
   name: string
   baseRecipe: string
-  sectionOrder: string[]
+  sectionOrder: Array<string>
   sections: { [key in string]: SectionSettingsData }
   created?: string
   updated?: string
@@ -77,7 +83,7 @@ export type RecipeConfigData = {
 export type RecipeConfigInput = {
   name: string
   baseRecipe: string
-  sectionOrder: string[]
+  sectionOrder: Array<string>
   sections: { [key in string]: SectionSettingsData }
 }
 export type SectionConfig = { name: string; enabled: boolean; instructionOverride?: string }
@@ -89,6 +95,16 @@ export type SectionInfo = {
   is_instruction: boolean
 }
 export type SectionSettingsData = { enabled: boolean; instructionOverride?: string }
+export type StackMetadataData = {
+  stackId: number
+  name: string
+  description: string
+  philosophy: string
+  visualIdentity: VisualIdentityData
+  whenToUse: Array<string>
+  disciplineCount: number
+  characteristics: Array<string>
+}
 export type TaskComment = { id: number; author: CommentAuthor; agent_task_id?: number; body: string; created?: string }
 export type TaskProvenance = 'agent' | 'human' | 'system'
 export type TaskStatus = 'pending' | 'in_progress' | 'done' | 'blocked' | 'skipped'
@@ -101,19 +117,19 @@ export type Task = {
   status: TaskStatus
   inferredStatus: InferredTaskStatus
   priority?: Priority
-  tags: string[]
-  dependsOn: number[]
+  tags: Array<string>
+  dependsOn: Array<number>
   blockedBy?: string
   created?: string
   updated?: string
   completed?: string
-  acceptanceCriteria: string[]
-  contextFiles: string[]
-  outputArtifacts: string[]
+  acceptanceCriteria: Array<string>
+  contextFiles: Array<string>
+  outputArtifacts: Array<string>
   hints?: string
   estimatedTurns?: number
   provenance?: TaskProvenance
-  comments: TaskComment[]
+  comments: Array<TaskComment>
   featureDisplayName: string
   featureAcronym: string
   disciplineDisplayName: string
@@ -121,3 +137,4 @@ export type Task = {
   disciplineIcon: string
   disciplineColor: string
 }
+export type VisualIdentityData = { style: string; theme: string; tone: string; references: string }

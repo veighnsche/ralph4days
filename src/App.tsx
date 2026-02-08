@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { getCurrentWindow, Window } from '@tauri-apps/api/window'
+import { invoke } from '@tauri-apps/api/core'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import { useEffect, useState } from 'react'
 import { BottomBar, ProjectSelector } from '@/components/app-shell'
 import { ErrorBoundary } from '@/components/shared'
@@ -20,11 +21,7 @@ function App() {
   // showing a black rectangle while React loads. Show it once we know what to render.
   useEffect(() => {
     if (!isLoadingProject) {
-      getCurrentWindow()
-        .show()
-        .then(() => Window.getByLabel('splash'))
-        .then(w => w?.close())
-        .catch(() => {})
+      invoke('close_splash').catch(() => {})
     }
   }, [isLoadingProject])
 

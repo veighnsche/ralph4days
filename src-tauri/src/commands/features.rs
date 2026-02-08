@@ -27,6 +27,7 @@ pub struct DisciplineConfig {
     pub skills: Vec<String>,
     pub conventions: Option<String>,
     pub mcp_servers: Vec<McpServerConfigData>,
+    pub stack_id: Option<u8>,
 }
 
 #[tauri::command]
@@ -54,6 +55,7 @@ pub fn get_disciplines_config(state: State<'_, AppState>) -> Result<Vec<Discipli
                     env: m.env.clone(),
                 })
                 .collect(),
+            stack_id: d.stack_id,
         })
         .collect())
 }
@@ -365,4 +367,50 @@ pub fn delete_feature(state: State<'_, AppState>, name: String) -> Result<(), St
 pub fn delete_discipline(state: State<'_, AppState>, name: String) -> Result<(), String> {
     let db = get_db(&state)?;
     db.delete_discipline(name)
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VisualIdentityData {
+    pub style: String,
+    pub theme: String,
+    pub tone: String,
+    pub references: String,
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StackMetadataData {
+    pub stack_id: u8,
+    pub name: String,
+    pub description: String,
+    pub philosophy: String,
+    pub visual_identity: VisualIdentityData,
+    pub when_to_use: Vec<String>,
+    pub discipline_count: u8,
+    pub characteristics: Vec<String>,
+}
+
+#[tauri::command]
+pub fn get_stack_metadata() -> Vec<StackMetadataData> {
+    sqlite_db::stack_metadata::get_all_stack_metadata()
+        .iter()
+        .map(|m| StackMetadataData {
+            stack_id: m.stack_id,
+            name: m.name.clone(),
+            description: m.description.clone(),
+            philosophy: m.philosophy.clone(),
+            visual_identity: VisualIdentityData {
+                style: m.visual_identity.style.clone(),
+                theme: m.visual_identity.theme.clone(),
+                tone: m.visual_identity.tone.clone(),
+                references: m.visual_identity.references.clone(),
+            },
+            when_to_use: m.when_to_use.clone(),
+            discipline_count: m.discipline_count,
+            characteristics: m.characteristics.clone(),
+        })
+        .collect()
 }

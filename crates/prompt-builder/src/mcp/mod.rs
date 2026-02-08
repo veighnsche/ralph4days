@@ -311,6 +311,7 @@ mod tests {
                 args: vec!["@anthropic/browser-tools".to_owned()],
                 env,
             }],
+            stack_id: None,
         }];
 
         let (_scripts, config) = generate(&ctx, &[McpTool::SetTaskStatus]);

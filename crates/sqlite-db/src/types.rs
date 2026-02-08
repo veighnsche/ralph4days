@@ -294,6 +294,8 @@ pub struct Discipline {
     pub conventions: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub mcp_servers: Vec<McpServerConfig>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stack_id: Option<u8>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
