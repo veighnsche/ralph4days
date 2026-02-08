@@ -1,0 +1,4 @@
+- README: overview, setup, usage, license
+- Inline docs only when non-obvious
+- Code examples are tested
+- Update docs when code changes

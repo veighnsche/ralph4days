@@ -1,0 +1,4 @@
+- Run tests before refactoring (establish baseline)
+- Refactor in small steps (rename, extract, inline)
+- Run tests after each step
+- Commit each successful refactor

@@ -1,0 +1,4 @@
+- Validate at API boundaries
+- Hash passwords (bcrypt, argon2)
+- Secrets in environment variables
+- Security headers configured

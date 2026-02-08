@@ -1,0 +1,4 @@
+- Write failing test first, then implement
+- Commit working code frequently (red → green → commit)
+- One feature per commit/PR
+- Fix broken builds immediately

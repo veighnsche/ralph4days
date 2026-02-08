@@ -1,0 +1,4 @@
+- Document architectural decisions (ADRs)
+- Create diagrams for complex systems
+- List alternatives considered
+- Explain trade-offs made

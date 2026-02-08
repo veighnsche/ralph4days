@@ -1,0 +1,4 @@
+- All infrastructure versioned in git
+- Deployments automated via CI/CD
+- Health checks on all services
+- Rollback procedures documented

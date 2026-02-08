@@ -1,0 +1,4 @@
+- Arrange/Act/Assert pattern
+- One assertion per test (or cohesive assertions)
+- Clear test names (should_do_X_when_Y)
+- Mock external dependencies
