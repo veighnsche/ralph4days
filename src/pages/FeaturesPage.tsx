@@ -17,8 +17,8 @@ import {
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { FeatureDetailTabContent } from '@/components/workspace/FeatureDetailTabContent'
-import { useFeatureStats } from '@/hooks/useFeatureStats'
-import { useWorkspaceActions } from '@/hooks/useWorkspaceActions'
+import { useFeatureStats } from '@/hooks/features'
+import { useWorkspaceActions } from '@/hooks/workspace'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
 export function FeaturesPage() {

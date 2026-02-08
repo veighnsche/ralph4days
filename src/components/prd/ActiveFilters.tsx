@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import type { FilterSetters, FilterState } from '@/hooks/usePRDFilters'
+import type { FilterSetters, FilterState } from '@/hooks/tasks'
 
 interface ActiveFiltersProps {
   filters: FilterState

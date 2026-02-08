@@ -1,5 +1,5 @@
+import { useInvoke } from '@/hooks/api'
 import type { Task } from '@/types/generated'
-import { useInvoke } from './useInvoke'
 
 export function usePRDData() {
   const { data, isLoading, error, refetch } = useInvoke<Task[]>('get_tasks')

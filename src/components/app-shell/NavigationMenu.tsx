@@ -10,8 +10,7 @@ import {
   Wrench
 } from 'lucide-react'
 import { useState } from 'react'
-import { PromptBuilderModal } from '@/components/PromptBuilderModal'
-import { Settings } from '@/components/Settings'
+import { PromptBuilderModal } from '@/components/prompt-builder'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -24,8 +23,9 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { useWorkspaceActions } from '@/hooks/useWorkspaceActions'
+import { useWorkspaceActions } from '@/hooks/workspace'
 import type { Page } from '@/pages/pageRegistry'
+import { Settings } from './Settings'
 
 interface NavigationMenuProps {
   currentPage: Page

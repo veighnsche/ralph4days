@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
+import { useInvoke } from '@/hooks/api'
 import type { FeatureData } from '@/types/generated'
-import { useInvoke } from './useInvoke'
 
 export interface FeatureConfig {
   name: string

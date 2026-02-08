@@ -26,11 +26,12 @@ vi.mock('@/lib/terminal', () => ({
   })
 }))
 
-vi.mock('@/hooks/useTabMeta', () => ({
+vi.mock('@/hooks/workspace/useTabMeta', () => ({
   useTabMeta: vi.fn()
 }))
 
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async importOriginal => ({
+  ...(await importOriginal<typeof import('lucide-react')>()),
   TerminalSquare: () => <svg data-testid="terminal-icon" />
 }))
 
@@ -57,7 +58,7 @@ describe('TerminalTabContent', () => {
   })
 
   it('sets tab metadata', async () => {
-    const { useTabMeta } = await import('@/hooks/useTabMeta')
+    const { useTabMeta } = await import('@/hooks/workspace/useTabMeta')
     render(<TerminalTabContent tab={mockTab} />)
 
     await waitFor(() => {

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { Terminal } from 'lucide-react'
 import { useState } from 'react'
-import type { BrowserTabsActions } from '@/hooks/useBrowserTabsActions'
+import type { BrowserTabsActions } from '@/hooks/workspace/useBrowserTabsActions'
 import { type BrowserTab, BrowserTabs } from './BrowserTabs'
 
 const meta = {

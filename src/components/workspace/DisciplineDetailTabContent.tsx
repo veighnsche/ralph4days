@@ -5,8 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useInvoke } from '@/hooks/useInvoke'
-import { useTabMeta } from '@/hooks/useTabMeta'
+import { useInvoke } from '@/hooks/api'
+import { useTabMeta } from '@/hooks/workspace'
 import { resolveIcon } from '@/lib/iconRegistry'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
@@ -156,8 +156,8 @@ export function DisciplineDetailTabContent({ tab }: { tab: WorkspaceTab }) {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-1.5">
-                  {discipline.skills.map((skill, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
+                  {discipline.skills.map(skill => (
+                    <Badge key={skill} variant="secondary" className="text-xs">
                       {skill}
                     </Badge>
                   ))}
@@ -193,7 +193,7 @@ export function DisciplineDetailTabContent({ tab }: { tab: WorkspaceTab }) {
               <CardContent>
                 <div className="space-y-3">
                   {discipline.mcpServers.map((server, index) => (
-                    <div key={index}>
+                    <div key={server.name}>
                       <div className="font-medium text-sm mb-2">{server.name}</div>
                       <div className="space-y-1.5">
                         <div className="text-xs">

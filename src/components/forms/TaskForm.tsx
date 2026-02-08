@@ -7,8 +7,8 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'
-import { useDisciplines } from '@/hooks/useDisciplines'
-import { useInvoke } from '@/hooks/useInvoke'
+import { useInvoke } from '@/hooks/api'
+import { useDisciplines } from '@/hooks/disciplines'
 import type { TaskFormData } from '@/lib/schemas'
 import type { FeatureData as Feature } from '@/types/generated'
 

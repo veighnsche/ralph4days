@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import type { FilterSetters } from '@/hooks/usePRDFilters'
+import type { FilterSetters } from '@/hooks/tasks'
 import { ActiveFilters } from './ActiveFilters'
 
 const meta = {

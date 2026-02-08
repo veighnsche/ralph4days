@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
-import { useDisciplines } from '@/hooks/useDisciplines'
-import { useInvoke } from '@/hooks/useInvoke'
+import { useInvoke } from '@/hooks/api'
 import { computeDisciplineStats, computeProjectProgress } from '@/lib/stats'
 import type { Task } from '@/types/generated'
+import { useDisciplines } from './useDisciplines'
 
 export function useDisciplineStats() {
   const { disciplines, error: disciplinesError } = useDisciplines()

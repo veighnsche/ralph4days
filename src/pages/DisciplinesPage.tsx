@@ -7,7 +7,7 @@ import { ItemGroup, ItemSeparator } from '@/components/ui/item'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DisciplineDetailTabContent } from '@/components/workspace/DisciplineDetailTabContent'
-import { useDisciplineStats } from '@/hooks/useDisciplineStats'
+import { useDisciplineStats } from '@/hooks/disciplines'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
 export function DisciplinesPage() {
@@ -109,8 +109,9 @@ export function DisciplinesPage() {
 
               return (
                 <div key={discipline.name}>
-                  <div
-                    className="p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                  <button
+                    type="button"
+                    className="w-full text-left p-4 hover:bg-muted/50 transition-colors cursor-pointer"
                     onClick={() => handleDisciplineClick(discipline.name, discipline.displayName)}>
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -141,7 +142,7 @@ export function DisciplinesPage() {
                         <div className="text-xs text-muted-foreground">complete</div>
                       </div>
                     </div>
-                  </div>
+                  </button>
                   {index < disciplines.length - 1 && <ItemSeparator />}
                 </div>
               )

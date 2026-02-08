@@ -1,11 +1,11 @@
-import type { BrowserTab } from '@/components/BrowserTabs'
-import { BrowserTabs } from '@/components/BrowserTabs'
-import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { type Model, ModelThinkingTabButton } from '@/components/ModelThinkingTabButton'
+import { type Model, ModelThinkingTabButton } from '@/components/model-thinking'
+import { ErrorBoundary } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { TerminalTabContent } from '@/components/workspace'
-import { useBrowserTabsActions } from '@/hooks/useBrowserTabsActions'
+import { useBrowserTabsActions } from '@/hooks/workspace'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
+import type { BrowserTab } from './BrowserTabs'
+import { BrowserTabs } from './BrowserTabs'
 
 export function WorkspacePanel() {
   const tabs = useWorkspaceStore(s => s.tabs)

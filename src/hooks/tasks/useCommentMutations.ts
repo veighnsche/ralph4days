@@ -1,18 +1,17 @@
 import { useState } from 'react'
-import { useInvokeMutation } from '@/hooks/useInvokeMutation'
-
-const INVALIDATE_KEYS = [['get_tasks']]
+import { QUERY_KEYS } from '@/constants/cache'
+import { useInvokeMutation } from '@/hooks/api'
 
 export function useCommentMutations(taskId: number) {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editBody, setEditBody] = useState('')
 
   const addCommentMutation = useInvokeMutation<{ taskId: number; author: string; body: string }>('add_task_comment', {
-    invalidateKeys: INVALIDATE_KEYS
+    invalidateKeys: QUERY_KEYS.TASKS
   })
 
   const editComment = useInvokeMutation<{ taskId: number; commentId: number; body: string }>('update_task_comment', {
-    invalidateKeys: INVALIDATE_KEYS,
+    invalidateKeys: QUERY_KEYS.TASKS,
     onSuccess: () => {
       setEditingId(null)
       setEditBody('')
@@ -20,7 +19,7 @@ export function useCommentMutations(taskId: number) {
   })
 
   const deleteComment = useInvokeMutation<{ taskId: number; commentId: number }>('delete_task_comment', {
-    invalidateKeys: INVALIDATE_KEYS
+    invalidateKeys: QUERY_KEYS.TASKS
   })
 
   const error = addCommentMutation.error ?? editComment.error ?? deleteComment.error

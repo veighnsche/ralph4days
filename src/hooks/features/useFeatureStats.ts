@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useInvoke } from '@/hooks/useInvoke'
+import { useInvoke } from '@/hooks/api'
 import { computeFeatureStats, computeProjectProgress } from '@/lib/stats'
 import type { FeatureData as Feature, Task } from '@/types/generated'
 

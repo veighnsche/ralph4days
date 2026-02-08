@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
+import { useInvoke } from '@/hooks/api'
 import { resolveIcon } from '@/lib/iconRegistry'
 import type { DisciplineConfig as DisciplineConfigWire } from '@/types/generated'
-import { useInvoke } from './useInvoke'
 
 export interface DisciplineConfig {
   name: string

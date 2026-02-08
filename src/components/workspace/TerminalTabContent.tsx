@@ -1,8 +1,8 @@
 import type { Terminal as XTerm } from '@xterm/xterm'
 import { TerminalSquare } from 'lucide-react'
 import { useRef, useState } from 'react'
-import { InlineError } from '@/components/InlineError'
-import { useTabMeta } from '@/hooks/useTabMeta'
+import { InlineError } from '@/components/shared'
+import { useTabMeta } from '@/hooks/workspace'
 import { Terminal, useTerminalSession } from '@/lib/terminal'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 

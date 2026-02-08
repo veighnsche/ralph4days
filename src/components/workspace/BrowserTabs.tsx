@@ -8,7 +8,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger
 } from '@/components/ui/context-menu'
-import type { BrowserTabsActions } from '@/hooks/useBrowserTabsActions'
+import type { BrowserTabsActions } from '@/hooks/workspace/useBrowserTabsActions'
 import { cn } from '@/lib/utils'
 
 export interface BrowserTab {

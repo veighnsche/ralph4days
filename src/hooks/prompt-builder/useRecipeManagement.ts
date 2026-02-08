@@ -1,12 +1,10 @@
 import { invoke } from '@tauri-apps/api/core'
 import { useEffect, useRef, useState } from 'react'
+import { QUERY_KEYS } from '@/constants/cache'
+import { useInvoke, useInvokeMutation } from '@/hooks/api'
 import { SECTION_REGISTRY } from '@/lib/recipe-registry'
 import type { RecipeConfigData, RecipeConfigInput } from '@/types/generated'
-import { useInvoke } from './useInvoke'
-import { useInvokeMutation } from './useInvokeMutation'
 import type { SectionBlock } from './useSectionConfiguration'
-
-const RECIPE_LIST_KEY = [['list_recipe_configs']]
 
 export function useRecipeManagement(
   open: boolean,
@@ -37,7 +35,7 @@ export function useRecipeManagement(
   }, [open])
 
   const saveMutation = useInvokeMutation<{ config: RecipeConfigInput }>('save_recipe_config', {
-    invalidateKeys: RECIPE_LIST_KEY,
+    invalidateKeys: QUERY_KEYS.RECIPE_LIST,
     onSuccess: (_data, variables) => {
       setRecipeName(variables.config.name)
       setSaveDialogOpen(false)
@@ -45,7 +43,7 @@ export function useRecipeManagement(
   })
 
   const deleteMutation = useInvokeMutation<{ name: string }>('delete_recipe_config', {
-    invalidateKeys: RECIPE_LIST_KEY,
+    invalidateKeys: QUERY_KEYS.RECIPE_LIST,
     onSuccess: () => {
       setRecipeName(null)
       loadRecipeSections(baseRecipe)

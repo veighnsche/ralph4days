@@ -1,9 +1,9 @@
 import { Play, Square } from 'lucide-react'
-import { LoopToggle } from '@/components/LoopToggle'
-import { NavigationMenu } from '@/components/NavigationMenu'
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
 import type { Page } from '@/pages/pageRegistry'
+import { LoopToggle } from './LoopToggle'
+import { NavigationMenu } from './NavigationMenu'
 
 interface BottomBarProps {
   lockedProject: string

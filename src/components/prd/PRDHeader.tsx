@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/c
 import { Input } from '@/components/ui/input'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
-import type { FilterSetters, FilterState } from '@/hooks/usePRDFilters'
+import type { FilterSetters, FilterState } from '@/hooks/tasks'
 import type { ProjectInfo } from '@/types/generated'
 import { ActiveFilters } from './ActiveFilters'
 import { FiltersModal } from './FiltersModal'

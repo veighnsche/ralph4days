@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -11,50 +11,37 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { type Model, useModelThinkingPreferences } from '@/hooks/useModelThinkingPreferences'
+import { type Model, useModelThinkingPreferences } from '@/hooks/preferences'
 import { cn } from '@/lib/utils'
 
-export type { Model } from '@/hooks/useModelThinkingPreferences'
+export type { Model } from '@/hooks/preferences'
 
-interface ModelThinkingPickerProps {
-  onAction: (model: Model, thinking: boolean) => void
-  actionLabel: string
-  actionIcon?: React.ReactNode
-  disabled?: boolean
-  variant?: 'default' | 'outline' | 'ghost'
-  size?: 'sm' | 'default' | 'lg'
-  className?: string
+interface ModelThinkingTabButtonProps {
+  onNewTab: (model: Model, thinking: boolean) => void
 }
 
-export function ModelThinkingPicker({
-  onAction,
-  actionLabel,
-  actionIcon,
-  disabled = false,
-  variant = 'default',
-  size = 'default',
-  className
-}: ModelThinkingPickerProps) {
+export function ModelThinkingTabButton({ onNewTab }: ModelThinkingTabButtonProps) {
   const { model, setModel, thinking, setThinking } = useModelThinkingPreferences()
 
-  const handleAction = () => {
-    onAction(model, thinking)
+  const handleNewTab = () => {
+    onNewTab(model, thinking)
   }
 
   return (
     <TooltipProvider>
-      <div className={cn('flex', className)}>
+      <div className="flex flex-none">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              type="button"
-              variant={variant}
-              size={size}
-              onClick={handleAction}
-              disabled={disabled}
-              className="rounded-r-none">
-              {actionIcon}
-              {actionLabel}
+              variant="ghost"
+              size="sm"
+              onClick={handleNewTab}
+              className={cn(
+                'h-7 px-2 rounded-md rounded-r-none',
+                'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+              )}>
+              <Plus className="h-4 w-4" />
+              <span className="sr-only">New terminal</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent>
@@ -72,13 +59,14 @@ export function ModelThinkingPicker({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              type="button"
-              variant={variant}
-              size={size}
-              disabled={disabled}
-              className="rounded-l-none border-l px-2">
-              <ChevronDown className="h-4 w-4" />
-              <span className="sr-only">Model options</span>
+              variant="ghost"
+              size="sm"
+              className={cn(
+                'h-7 px-1 rounded-md rounded-l-none border-l border-border/50',
+                'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+              )}>
+              <ChevronDown className="h-3 w-3" />
+              <span className="sr-only">Terminal options</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">

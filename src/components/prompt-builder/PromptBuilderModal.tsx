@@ -8,8 +8,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { ClipboardCopy, GripVertical, Save, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
-import { HighlightedPrompt } from '@/components/HighlightedPrompt'
-import { InlineError } from '@/components/InlineError'
+import { InlineError } from '@/components/shared'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -27,10 +26,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import { usePromptPreview } from '@/hooks/usePromptPreview'
-import { useRecipeManagement } from '@/hooks/useRecipeManagement'
-import { type SectionBlock, useSectionConfiguration } from '@/hooks/useSectionConfiguration'
+import {
+  type SectionBlock,
+  usePromptPreview,
+  useRecipeManagement,
+  useSectionConfiguration
+} from '@/hooks/prompt-builder'
 import { BUILT_IN_RECIPES, CATEGORY_COLORS, CATEGORY_GRADIENT_COLORS } from '@/lib/recipe-registry'
+import { HighlightedPrompt } from './HighlightedPrompt'
 
 interface PromptBuilderModalProps {
   open: boolean

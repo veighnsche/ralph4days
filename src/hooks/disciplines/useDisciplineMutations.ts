@@ -1,5 +1,5 @@
+import { useInvokeMutation } from '@/hooks/api'
 import type { DisciplineFormData } from '@/lib/schemas'
-import { useInvokeMutation } from './useInvokeMutation'
 
 interface CreateDisciplineParams {
   name: string
