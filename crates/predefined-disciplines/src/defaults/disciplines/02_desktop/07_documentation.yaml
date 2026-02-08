@@ -10,5 +10,8 @@ conventions: TODO
 skills: []
 system_prompt: TODO
 image_prompt:
-  positive: "TODO"
-  negative: "TODO"
+  positive: |
+    Black male, late 40s, short gray-streaked hair, tall build, full gray beard, wearing an absurdly elegant cream overcoat with luminous cream and ivory thread detailing over a crisp ivory shirt, cream-tinted reading glasses, standing imperiously with an ornate cream-bound tome held at his side, sleek ivory stylus pen behind ear with a brilliant warm glow at the tip, dramatic warm cream rim lighting, soft ivory ambient glow, inside a dark impossibly vast digital library cathedral bathed in warm cream light with towering shelves of glowing ivory holographic documents and sprawling cream-lit knowledge graph projections spanning the chamber behind him.
+
+  negative: |
+    young, action pose, combat, neon

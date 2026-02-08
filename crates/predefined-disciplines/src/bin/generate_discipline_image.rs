@@ -3,6 +3,20 @@ use predefined_disciplines::{
 };
 use ralph_external::DisciplinePrompts;
 
+fn radix_fmt(mut n: u64, base: u64) -> String {
+    const DIGITS: &[u8] = b"0123456789abcdefghijklmnopqrstuvwxyz";
+    if n == 0 {
+        return "0".to_owned();
+    }
+    let mut buf = Vec::new();
+    while n > 0 {
+        buf.push(DIGITS[(n % base) as usize]);
+        n /= base;
+    }
+    buf.reverse();
+    String::from_utf8(buf).unwrap()
+}
+
 struct Args {
     stack: u8,
     discipline: usize,
@@ -14,20 +28,27 @@ struct Args {
 
 fn parse_args() -> Args {
     let raw: Vec<String> = std::env::args().skip(1).collect();
-    let mut steps = 28u32;
-    let mut ratio_w = 1.0f64;
-    let mut ratio_h = 1.0f64;
-    let mut megapixels = 1.5f64;
+    let mut steps = 14u32;
+    let mut ratio_w = 9.0f64;
+    let mut ratio_h = 16.0f64;
+    let mut megapixels = 1.0f64;
     let mut positional = Vec::new();
     let mut i = 0;
 
     while i < raw.len() {
         match raw[i].as_str() {
             "--test" => steps = 1,
-            "--half" => steps = 14,
-            "--ratio-portrait" => {
-                ratio_w = 6.0;
-                ratio_h = 19.0;
+            "--prod" => {
+                steps = 28;
+                megapixels = 2.0;
+            }
+            "--ratio-square" => {
+                ratio_w = 1.0;
+                ratio_h = 1.0;
+            }
+            "--ratio-landscape" => {
+                ratio_w = 16.0;
+                ratio_h = 9.0;
             }
             "--ratio" => {
                 ratio_w = raw.get(i + 1).and_then(|s| s.parse().ok()).unwrap_or_else(|| {
@@ -57,16 +78,19 @@ fn parse_args() -> Args {
         eprintln!();
         eprintln!("Flags:");
         eprintln!("  --test             1 step (pipeline test)");
-        eprintln!("  --half             14 steps (preview)");
-        eprintln!("  --ratio W H        aspect ratio (default: 1 1)");
-        eprintln!("  --ratio-portrait   shorthand for --ratio 6 19");
-        eprintln!("  --mp N             megapixels (default: 1.5)");
+        eprintln!("  --prod             28 steps, 2MP (production quality)");
+        eprintln!("  --ratio W H        aspect ratio (default: 9 16)");
+        eprintln!("  --ratio-square     shorthand for --ratio 1 1");
+        eprintln!("  --ratio-landscape  shorthand for --ratio 16 9");
+        eprintln!("  --mp N             megapixels (default: 1)");
+        eprintln!();
+        eprintln!("Default: 14 steps, 1MP, 9:16 ratio");
         eprintln!();
         eprintln!("Examples:");
-        eprintln!("  generate-discipline-image 02 00");
-        eprintln!("  generate-discipline-image 02 00 --half");
-        eprintln!("  generate-discipline-image 02 00 --test --ratio-portrait");
-        eprintln!("  generate-discipline-image 02 00 --ratio 2 1 --mp 2.0");
+        eprintln!("  generate-discipline-image 03 00");
+        eprintln!("  generate-discipline-image 03 00 --prod");
+        eprintln!("  generate-discipline-image 03 00 --test --ratio-portrait");
+        eprintln!("  generate-discipline-image 03 00 --ratio 2 1 --mp 2.0");
         std::process::exit(1);
     }
 
@@ -137,20 +161,24 @@ async fn main() {
         std::process::exit(1);
     });
 
-    let prompt_txt = format!(
-        "positive_global:\n{}\n\nnegative_global:\n{}\n\npositive_stack:\n{}\n\nnegative_stack:\n{}\n\npositive_discipline:\n{}\n\nnegative_discipline:\n{}",
-        global.global.positive, global.global.negative,
-        stack_prompt.positive, stack_prompt.negative,
-        disc_prompt.positive, disc_prompt.negative,
+    let positive = format!(
+        "{} {} {}",
+        global.global.positive.trim(),
+        stack_prompt.positive.trim(),
+        disc_prompt.positive.trim(),
+    );
+    let negative = format!(
+        "{} {} {}",
+        global.global.negative.trim(),
+        stack_prompt.negative.trim(),
+        disc_prompt.negative.trim(),
     );
 
+    let prompt_txt = format!("positive:\n{positive}\n\nnegative:\n{negative}");
+
     let prompts = DisciplinePrompts {
-        positive_global: global.global.positive,
-        negative_global: global.global.negative,
-        positive_stack: stack_prompt.positive,
-        negative_stack: stack_prompt.negative,
-        positive_discipline: disc_prompt.positive.clone(),
-        negative_discipline: disc_prompt.negative.clone(),
+        positive,
+        negative,
     };
 
     eprintln!(
@@ -210,8 +238,14 @@ async fn main() {
             );
             std::fs::create_dir_all(&stack_dir).expect("Failed to create images directory");
 
+            let ts = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs();
+            let ts_b36 = radix_fmt(ts, 36);
+
             let output_path = format!(
-                "{stack_dir}/{:02}_{}_{}_{}x{}.png",
+                "{stack_dir}/{:02}_{}_{}_{}x{}_{ts_b36}.png",
                 args.discipline, discipline.name, args.steps, width, height
             );
             std::fs::write(&output_path, &image_bytes).expect("Failed to write output file");

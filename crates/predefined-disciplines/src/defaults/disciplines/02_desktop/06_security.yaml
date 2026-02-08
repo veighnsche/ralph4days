@@ -10,5 +10,8 @@ conventions: TODO
 skills: []
 system_prompt: TODO
 image_prompt:
-  positive: "TODO"
-  negative: "TODO"
+  positive: |
+    Middle Eastern female, mid 30s, slicked back bun, athletic build, wearing a pristine dark crimson leather jacket with hardened crimson shoulder armor plates, red-tinted chest pin, standing with feet planted and a sharp unwavering glare, brilliant crimson hexagonal shield projection radiating from the ornate pin, dramatic crimson rim lighting, deep red ambient glow, inside a dark fortified security operations center bathed in crimson light with enormous red threat maps and crimson encrypted data waterfalls cascading on massive red-lit screens behind her.
+
+  negative: |
+    friendly open posture, colorful, playful

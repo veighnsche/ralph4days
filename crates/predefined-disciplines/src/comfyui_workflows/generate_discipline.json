@@ -60,7 +60,7 @@
   },
   "67": {
     "inputs": {
-      "text": "__POSITIVE_DISCIPLINE__",
+      "text": "__POSITIVE__",
       "clip": [
         "62",
         0
@@ -84,9 +84,9 @@
   },
   "69": {
     "inputs": {
-      "seed": 445904554550601,
-      "steps": 28,
-      "cfg": 7,
+      "seed": 909396553000551,
+      "steps": 25,
+      "cfg": 4,
       "sampler_name": "res_multistep",
       "scheduler": "simple",
       "denoise": 1,
@@ -95,11 +95,11 @@
         0
       ],
       "positive": [
-        "82",
+        "67",
         0
       ],
       "negative": [
-        "84",
+        "71",
         0
       ],
       "latent_image": [
@@ -114,7 +114,7 @@
   },
   "70": {
     "inputs": {
-      "shift": 2.25,
+      "shift": 3,
       "model": [
         "66",
         0
@@ -127,7 +127,7 @@
   },
   "71": {
     "inputs": {
-      "text": "__NEGATIVE_STACK__",
+      "text": "__NEGATIVE__",
       "clip": [
         "62",
         0
@@ -136,122 +136,6 @@
     "class_type": "CLIPTextEncode",
     "_meta": {
       "title": "CLIP Text Encode (Negative Prompt)"
-    }
-  },
-  "76": {
-    "inputs": {
-      "text": "__POSITIVE_STACK__",
-      "clip": [
-        "62",
-        0
-      ]
-    },
-    "class_type": "CLIPTextEncode",
-    "_meta": {
-      "title": "CLIP Text Encode (Positive Prompt)"
-    }
-  },
-  "77": {
-    "inputs": {
-      "conditioning_1": [
-        "76",
-        0
-      ],
-      "conditioning_2": [
-        "67",
-        0
-      ]
-    },
-    "class_type": "ConditioningCombine",
-    "_meta": {
-      "title": "Conditioning (Combine)"
-    }
-  },
-  "78": {
-    "inputs": {
-      "text": "__NEGATIVE_DISCIPLINE__",
-      "clip": [
-        "62",
-        0
-      ]
-    },
-    "class_type": "CLIPTextEncode",
-    "_meta": {
-      "title": "CLIP Text Encode (Negative Prompt)"
-    }
-  },
-  "79": {
-    "inputs": {
-      "conditioning_1": [
-        "71",
-        0
-      ],
-      "conditioning_2": [
-        "78",
-        0
-      ]
-    },
-    "class_type": "ConditioningCombine",
-    "_meta": {
-      "title": "Conditioning (Combine)"
-    }
-  },
-  "81": {
-    "inputs": {
-      "text": "__POSITIVE_GLOBAL__",
-      "clip": [
-        "62",
-        0
-      ]
-    },
-    "class_type": "CLIPTextEncode",
-    "_meta": {
-      "title": "CLIP Text Encode (Positive Prompt)"
-    }
-  },
-  "82": {
-    "inputs": {
-      "conditioning_to": [
-        "77",
-        0
-      ],
-      "conditioning_from": [
-        "81",
-        0
-      ]
-    },
-    "class_type": "ConditioningConcat",
-    "_meta": {
-      "title": "Conditioning (Concat)"
-    }
-  },
-  "83": {
-    "inputs": {
-      "text": "__NEGATIVE_GLOBAL__",
-      "clip": [
-        "62",
-        0
-      ]
-    },
-    "class_type": "CLIPTextEncode",
-    "_meta": {
-      "title": "CLIP Text Encode (Negative Prompt)"
-    }
-  },
-  "84": {
-    "inputs": {
-      "conditioning_to": [
-        "79",
-        0
-      ],
-      "conditioning_from": [
-        "83",
-        0
-      ]
-    },
-    "class_type": "ConditioningConcat",
-    "_meta": {
-      "title": "Conditioning (Concat)"
     }
   }
 }

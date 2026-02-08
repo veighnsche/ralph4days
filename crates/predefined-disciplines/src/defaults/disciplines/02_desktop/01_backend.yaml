@@ -10,5 +10,8 @@ conventions: TODO
 skills: []
 system_prompt: TODO
 image_prompt:
-  positive: "TODO"
-  negative: "TODO"
+  positive: |
+    Black female, early 30s, short natural curls, athletic build, wearing a pristine orange bomber jacket with glowing amber circuit traces woven into the fabric, orange-tinted earrings, arms crossed staring down the viewer, luminous orange circuit-trace tattoo running up her neck pulsing with amber data, dramatic orange rim lighting, warm amber ambient glow, inside a massive dark underground server vault bathed in orange light with towering obsidian server monoliths and rivers of pulsing amber status lights stretching into the deep behind her.
+
+  negative: |
+    UI mockup, design tools, color palette

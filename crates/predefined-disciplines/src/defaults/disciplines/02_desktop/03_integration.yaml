@@ -10,5 +10,8 @@ conventions: TODO
 skills: []
 system_prompt: TODO
 image_prompt:
-  positive: "TODO"
-  negative: "TODO"
+  positive: |
+    Latina female, mid 20s, long braids woven with brilliantly glowing green fiber optic strands, tall build, wearing a sleek emerald-green technical jacket with luminous emerald piping, green-tinted belt buckle, standing tall with sharp deliberate gaze, dramatic emerald rim lighting, green ambient glow, inside a vast dark network operations bridge bathed in green light with enormous glowing emerald connection maps and interlocking green system diagrams spanning cathedral-high walls behind her.
+
+  negative: |
+    single isolated application, database tables

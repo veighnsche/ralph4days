@@ -10,5 +10,8 @@ conventions: TODO
 skills: []
 system_prompt: TODO
 image_prompt:
-  positive: "TODO"
-  negative: "TODO"
+  positive: |
+    Mixed-race non-binary person, late 20s, curly undercut hair, slim build, wearing an absurdly sleek black jacket with luminous gold trim and geometric gold accents, gold chain detail, standing with arms folded and a cold scrutinizing stare through an elaborate polished gold augmented monocle lens with rotating gold micro-rings over one eye, dramatic gold rim lighting, warm golden ambient glow, inside a dark sprawling quality assurance lab bathed in gold light with enormous wall-to-wall golden holographic test result matrices and cascading gold pass-fail indicators behind them.
+
+  negative: |
+    writing code, server rack, design tools

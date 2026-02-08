@@ -10,5 +10,8 @@ conventions: TODO
 skills: []
 system_prompt: TODO
 image_prompt:
-  positive: "TODO"
-  negative: "TODO"
+  positive: |
+    South Asian male, late 30s, neat side part, stocky build, trimmed beard, wearing an immaculate violet turtleneck with faint glowing purple data-flow patterns in the weave, violet-tinted wrist implant, standing with squared shoulders and commanding gaze, elaborate purple data-viz hologram constellation projected from the implant, dramatic violet rim lighting, purple ambient glow, inside a cavernous dark circular data operations center bathed in violet light with towering cascading purple holographic data columns and massive curved violet-lit display walls surrounding him.
+
+  negative: |
+    UI mockup, frontend components, server hardware

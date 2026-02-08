@@ -10,5 +10,8 @@ conventions: TODO
 skills: []
 system_prompt: TODO
 image_prompt:
-  positive: "TODO"
-  negative: "TODO"
+  positive: |
+    White male, early 40s, buzz cut, broad build, stubble, wearing a sharp steel-blue technical coat with reinforced steel-blue exoskeletal shoulder panels, blue-tinted visor on forehead, leaning forward with intense narrowed eyes, elaborate polished mechanical brace running the length of one forearm with glowing steel-blue indicators, dramatic steel-blue rim lighting, cold blue ambient glow, inside a dark cavernous industrial control room bathed in steel-blue light with wall-sized blue-lit system dashboards and massive heavy steel-blue infrastructure machinery behind him.
+
+  negative: |
+    UI design, frontend code, data visualization
