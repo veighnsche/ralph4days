@@ -21,7 +21,6 @@ impl RalphError {
             3000..=3299 => "TASK",
             4000..=4199 => "FEATURE",
             5000..=5099 => "LOOP_ENGINE",
-            6000..=6099 => "PROMPT_MCP",
             7000..=7099 => "TERMINAL",
             8000..=8099 => "FILESYSTEM",
             8100..=8199 => "INTERNAL",
@@ -82,13 +81,7 @@ pub trait ToStringErr<T> {
 
 impl<T, E: std::fmt::Display> ToStringErr<T> for Result<T, E> {
     fn err_str(self, code: u16) -> Result<T, String> {
-        self.map_err(|e| {
-            RalphError {
-                code,
-                message: e.to_string(),
-            }
-            .to_string()
-        })
+        self.map_err(|e| RalphError::new(code, e.to_string()).to_string())
     }
 }
 
@@ -103,22 +96,12 @@ macro_rules! ralph_err {
 #[macro_export]
 macro_rules! ralph_map_err {
     ($code:expr, $msg:expr) => {
-        |e| {
-            $crate::RalphError {
-                code: $code,
-                message: format!(concat!($msg, ": {}"), e),
-            }
-            .to_string()
-        }
+        |e| $crate::RalphError::new($code, format!(concat!($msg, ": {}"), e)).to_string()
     };
 }
 
 pub fn err_string(code: u16, message: impl Into<String>) -> String {
-    RalphError {
-        code,
-        message: message.into(),
-    }
-    .to_string()
+    RalphError::new(code, message.into()).to_string()
 }
 
 pub fn parse_ralph_error(error_str: &str) -> Option<RalphError> {
@@ -142,7 +125,6 @@ pub mod codes {
     pub const FEATURE_OPS: u16 = 4000;
     pub const DISCIPLINE_OPS: u16 = 4100;
     pub const LOOP_ENGINE: u16 = 5000;
-    pub const PROMPT_MCP: u16 = 6000;
     pub const TERMINAL: u16 = 7000;
     pub const FILESYSTEM: u16 = 8000;
     pub const INTERNAL: u16 = 8100;

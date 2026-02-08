@@ -1,9 +1,17 @@
 use sqlite_db::{
-    CommentAuthor, FeatureInput, FeatureLearning, Priority, SqliteDb, TaskInput, TaskStatus,
+    CommentAuthor, FeatureInput, FeatureLearning, FixedClock, Priority, SqliteDb, TaskInput,
+    TaskStatus,
 };
 
 fn create_test_db() -> SqliteDb {
-    let db = SqliteDb::open_in_memory().unwrap();
+    let clock = Box::new(FixedClock(
+        chrono::NaiveDate::from_ymd_opt(2026, 1, 1)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap()
+            .and_utc(),
+    ));
+    let db = SqliteDb::open_in_memory_with_clock(clock).unwrap();
     db.seed_defaults().unwrap();
     db
 }
@@ -39,7 +47,9 @@ fn test_create_task() {
         .unwrap();
 
     assert_eq!(task_id, 1);
-    assert_eq!(db.get_tasks().len(), 1);
+    let tasks = db.get_tasks();
+    assert_eq!(tasks.len(), 1);
+    assert_eq!(tasks[0].created, Some("2026-01-01".into()));
 }
 
 #[test]
@@ -448,7 +458,8 @@ fn test_create_feature() {
     })
     .unwrap();
     let features = db.get_features();
-    assert!(features.iter().any(|f| f.name == "auth"));
+    let f = features.iter().find(|f| f.name == "auth").unwrap();
+    assert_eq!(f.created, Some("2026-01-01".into()));
 }
 
 #[test]
@@ -606,6 +617,8 @@ fn test_append_feature_learning_basic() {
     db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
 
     let learning = FeatureLearning::auto_extracted("Auth expects User object".into(), 7, Some(42));
+    assert!(learning.created.is_empty());
+
     let added = db.append_feature_learning("auth", learning, 50).unwrap();
     assert!(added);
 
@@ -615,6 +628,7 @@ fn test_append_feature_learning_basic() {
     assert_eq!(f.learnings[0].text, "Auth expects User object");
     assert_eq!(f.learnings[0].iteration, Some(7));
     assert_eq!(f.learnings[0].task_id, Some(42));
+    assert_eq!(f.learnings[0].created, "2026-01-01T00:00:00+00:00");
 }
 
 #[test]
@@ -902,7 +916,10 @@ fn test_add_human_comment() {
     assert_eq!(task.comments[0].author, CommentAuthor::Human);
     assert_eq!(task.comments[0].body, "Use bcrypt");
     assert!(task.comments[0].agent_task_id.is_none());
-    assert!(task.comments[0].created.is_some());
+    assert_eq!(
+        task.comments[0].created,
+        Some("2026-01-01T00:00:00Z".into())
+    );
 }
 
 #[test]

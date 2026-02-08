@@ -173,6 +173,7 @@ impl ExtractionResult {
     /// assert_eq!(record.iteration_number, 3);
     /// assert_eq!(record.task_id, 12);
     /// assert_eq!(record.feature, "authentication");
+    /// assert!(record.timestamp.is_empty());
     /// ```
     pub fn into_record(
         self,
@@ -182,13 +183,14 @@ impl ExtractionResult {
         feature: String,
         discipline: String,
     ) -> IterationRecord {
+        // timestamp left empty — the persistence layer stamps it at write time
         IterationRecord {
             iteration_number,
             task_id,
             task_title,
             feature,
             discipline,
-            timestamp: chrono::Utc::now().to_rfc3339(),
+            timestamp: String::new(),
             outcome: self.outcome,
             summary: self.summary,
             errors: self.errors,

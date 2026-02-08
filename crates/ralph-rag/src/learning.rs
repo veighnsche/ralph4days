@@ -126,7 +126,7 @@ impl FeatureLearning {
             source: LearningSource::Auto,
             task_id,
             iteration: Some(iteration),
-            created: chrono::Utc::now().to_rfc3339(),
+            created: String::new(),
             hit_count: 1,
             reviewed: false,
             review_count: 0,
@@ -140,7 +140,7 @@ impl FeatureLearning {
             source: LearningSource::Agent,
             task_id,
             iteration: None,
-            created: chrono::Utc::now().to_rfc3339(),
+            created: String::new(),
             hit_count: 1,
             reviewed: false,
             review_count: 0,
@@ -149,12 +149,12 @@ impl FeatureLearning {
 
     pub fn from_human(text: String, reason: Option<String>) -> Self {
         Self {
-            text, // No sanitization for human input — they know what they're writing
+            text,
             reason,
             source: LearningSource::Human,
             task_id: None,
             iteration: None,
-            created: chrono::Utc::now().to_rfc3339(),
+            created: String::new(),
             hit_count: 1,
             reviewed: false,
             review_count: 0,

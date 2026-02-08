@@ -209,9 +209,11 @@ impl SqliteDb {
     pub fn append_feature_learning(
         &self,
         feature_name: &str,
-        learning: FeatureLearning,
+        mut learning: FeatureLearning,
         max_learnings: usize,
     ) -> Result<bool, String> {
+        learning.created = self.now().to_rfc3339();
+
         let learnings_json: String = self
             .conn
             .query_row(
