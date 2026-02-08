@@ -345,11 +345,10 @@ function SectionSettingsPanel({
     setLocalInstruction(section?.instructionOverride ?? '')
   }
 
-  const handleBlur = () => {
-    const committed = localInstruction || null
-    if (committed !== (section?.instructionOverride ?? null)) {
-      onInstructionCommit(committed)
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newValue = e.target.value
+    setLocalInstruction(newValue)
+    onInstructionCommit(newValue || null)
   }
 
   const handleReset = () => {
@@ -390,8 +389,7 @@ function SectionSettingsPanel({
       <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Instruction Override</p>
       <Textarea
         value={localInstruction}
-        onChange={e => setLocalInstruction(e.target.value)}
-        onBlur={handleBlur}
+        onChange={handleChange}
         placeholder="Leave empty to use default instructions..."
         className="flex-1 font-mono text-[11px] leading-relaxed resize-none"
       />
