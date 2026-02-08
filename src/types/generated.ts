@@ -12,6 +12,7 @@ export type DisciplineConfig = {
   mcpServers: Array<McpServerConfigData>
   stackId?: number
 }
+export type DisciplinePromptData = { subject: string; accentColor: string }
 export type FeatureData = {
   name: string
   displayName: string
@@ -57,6 +58,7 @@ export type GroupStats = {
   blocked: number
   skipped: number
 }
+export type ImagePromptData = { positive: string; negative: string }
 export type InferredTaskStatus = 'ready' | 'waiting_on_deps' | 'externally_blocked' | 'in_progress' | 'done' | 'skipped'
 export type LearningSource = 'auto' | 'agent' | 'human' | 'opus_reviewed'
 export type McpServerConfigData = {
@@ -104,6 +106,13 @@ export type StackMetadataData = {
   whenToUse: Array<string>
   disciplineCount: number
   characteristics: Array<string>
+}
+export type StackPromptsData = {
+  name: string
+  description: string
+  positive: string
+  negative: string
+  disciplines: { [key in string]: DisciplinePromptData }
 }
 export type TaskComment = { id: number; author: CommentAuthor; agent_task_id?: number; body: string; created?: string }
 export type TaskProvenance = 'agent' | 'human' | 'system'

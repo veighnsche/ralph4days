@@ -3,6 +3,7 @@ mod comments;
 mod disciplines;
 mod export;
 mod features;
+pub mod image_prompts;
 mod metadata;
 mod recipe_configs;
 pub mod stack_metadata;
