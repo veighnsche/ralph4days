@@ -1,0 +1,15 @@
+name: monorepo_deployment
+display_name: Monorepo & Deploy
+acronym: DPLY
+icon: Code
+color: "#94a3b8"
+description: TODO
+conventions: TODO
+skills: []
+system_prompt: TODO
+image_prompt:
+  positive: |
+    Nigerian male, late 30s, short tight curls, broad powerful build, trimmed goatee, wearing a chrome-plated silver longcoat with mirrored metallic panels across the chest and silver-lit seam detailing, heavy silver chain necklace, one hand gripping a massive chrome launch lever mounted on a steel console while surveying the deck with cold authority, dramatic silver rim lighting, cold chrome ambient glow, inside a dark massive launch platform command deck bathed in silver light with enormous chrome deployment pipeline tubes and parallel silver launch rails extending into the distance behind him, metallic reflections across every surface.
+
+  negative: |
+    waiting around, hesitating, broken machinery, idle conveyor belts, hands off the controls, sitting down, indecisive

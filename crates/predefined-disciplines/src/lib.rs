@@ -91,7 +91,19 @@ const STACK_DISCIPLINES: &[(u8, &[&str])] = &[
             include_str!("defaults/disciplines/02_desktop/07_documentation.yaml"),
         ],
     ),
-    // TODO: Add 03_saas and 04_mobile disciplines when created
+    (
+        3,
+        &[
+            include_str!("defaults/disciplines/03_saas/00_nextjs_app_router.yaml"),
+            include_str!("defaults/disciplines/03_saas/01_react_components.yaml"),
+            include_str!("defaults/disciplines/03_saas/02_api_routes.yaml"),
+            include_str!("defaults/disciplines/03_saas/03_database_prisma.yaml"),
+            include_str!("defaults/disciplines/03_saas/04_authentication.yaml"),
+            include_str!("defaults/disciplines/03_saas/05_monorepo_deployment.yaml"),
+            include_str!("defaults/disciplines/03_saas/06_testing.yaml"),
+            include_str!("defaults/disciplines/03_saas/07_documentation.yaml"),
+        ],
+    ),
 ];
 
 pub fn get_all_stack_metadata() -> Vec<StackMetadata> {

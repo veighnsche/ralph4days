@@ -1,0 +1,15 @@
+name: authentication
+display_name: Authentication
+acronym: AUTH
+icon: Code
+color: "#ef4444"
+description: TODO
+conventions: TODO
+skills: []
+system_prompt: TODO
+image_prompt:
+  positive: |
+    Japanese non-binary person, early 30s, sharp asymmetric black bob with a single crimson streak, slim build, wearing a high-collar crimson red jacket with glowing red access-denial symbols etched into the stiff collar and red-lit buttons down the front, red-tinted monocle over one eye with a tiny spinning authentication ring, holding up a glowing crimson keycard badge between two fingers while the other arm blocks the path forward palm-out, dramatic crimson rim lighting, deep red ambient glow, inside a dark imposing access control chamber bathed in crimson light with massive red-lit security gates on both sides and columns of scrolling red authentication tokens projected on the walls behind them.
+
+  negative: |
+    open unlocked gates, welcoming everyone in, stepping aside, no keycard, no badge, permissive, passive doorman, apologetic expression

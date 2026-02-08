@@ -7,10 +7,17 @@ philosophy: |
   React Server Components, server actions, and edge-first architecture.
 
 visual_identity:
-  style: "Corporate sleek - professional office characters"
-  theme: "Modern business attire, startup energy, high-stakes environment"
-  tone: "Fast, serious, move fast and break things"
-  references: "Silicon Valley office culture, tech startup aesthetics, professional but dynamic"
+  style: "Dark corporate cyberpunk - Arasaka Corp executives"
+  theme: "Absurdly luxurious sci-fi fashion, neon-lit corporate power fantasy, dominant presence"
+  tone: "Dominant, imposing, cold authority, corporate power"
+  references: "Cyberpunk 2077 Arasaka Corp, fashion editorial meets sci-fi, corporate dark fantasy"
+
+image_prompt:
+  positive: |
+    Digital illustration in flat cel-shaded style with bold clean outlines, sharp defined edges, minimal texture, smooth flat color fills with subtle gradients, three-quarter portrait from waist up, single person centered in frame, subject occupies lower two-thirds, dark sleek corporate cyberpunk aesthetic, polished obsidian and glass surfaces, cold ambient lighting, immaculate high-tech executive style, neon accent lighting, volumetric fog, dramatic cinematic composition, absurdly luxurious sci-fi fashion, dominant imposing stance, inside a dark imposing environment, consistent thick linework, no painterly brushstrokes.
+
+  negative: |
+    multiple characters, multiple people, crowd, group, two people, photograph, photorealistic, realistic skin texture, superhero, weapon, text, words, letters, typography, action figure, 3D render, plastic, military, writing, caption, title, worn clothing, patches, duct tape, dirty, grungy, street punk, smiling, friendly, warm, gentle, soft, relaxed, casual, peaceful, kind eyes, open smile, welcoming, empty background, solid color background, plain backdrop, photo studio, shooting energy, magic powers, combat, action pose, anime, manga, chibi, watercolor, oil painting, painterly brushstrokes, soft edges, sketch, pencil, rough texture, grainy, impressionist, abstract
 
 when_to_use:
   - "Building web SaaS products"

@@ -1,0 +1,15 @@
+name: testing
+display_name: Testing
+acronym: TEST
+icon: Code
+color: "#f97316"
+description: TODO
+conventions: TODO
+skills: []
+system_prompt: TODO
+image_prompt:
+  positive: |
+    Indian female, mid 30s, long dark braid draped over one shoulder, petite but intense build, wearing a sharp orange tactical jacket with glowing orange scanner lines running down both arms and orange-lit patch on the shoulder, orange-tinted augmented lens with rotating targeting rings mounted over one eye, leaning forward peering through the lens while running one finger along a cracked orange-lit glass surface on an examination table tracing the fault lines, dramatic orange rim lighting, warm orange ambient glow, inside a dark sprawling analysis laboratory bathed in orange light with wall-sized orange-highlighted structural cross-section diagrams and rows of glowing orange diagnostic monitors behind her.
+
+  negative: |
+    eyes closed, looking away from the cracks, ignoring problems, thumbs up approval, rubber stamping, not paying attention, lens removed
