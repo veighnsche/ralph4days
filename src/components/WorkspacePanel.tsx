@@ -4,14 +4,14 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { type Model, ModelThinkingTabButton } from '@/components/ModelThinkingTabButton'
 import { Button } from '@/components/ui/button'
 import { TerminalTabContent } from '@/components/workspace'
+import { useBrowserTabsActions } from '@/hooks/useBrowserTabsActions'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
 export function WorkspacePanel() {
   const tabs = useWorkspaceStore(s => s.tabs)
   const activeTabId = useWorkspaceStore(s => s.activeTabId)
-  const switchTab = useWorkspaceStore(s => s.switchTab)
-  const closeTab = useWorkspaceStore(s => s.closeTab)
   const openTab = useWorkspaceStore(s => s.openTab)
+  const tabActions = useBrowserTabsActions()
 
   const handleNewTab = (model: Model, thinking: boolean) => {
     openTab({
@@ -37,13 +37,7 @@ export function WorkspacePanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <BrowserTabs
-        tabs={browserTabs}
-        activeTabId={activeTabId}
-        onTabChange={switchTab}
-        onTabClose={closeTab}
-        newTabButton={newTabButton}
-      />
+      <BrowserTabs tabs={browserTabs} activeTabId={activeTabId} actions={tabActions} newTabButton={newTabButton} />
 
       <div className="flex-1 min-h-0 relative">
         {tabs.length === 0 ? (

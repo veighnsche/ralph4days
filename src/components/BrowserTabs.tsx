@@ -1,6 +1,14 @@
 import type { LucideIcon } from 'lucide-react'
 import { X } from 'lucide-react'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger
+} from '@/components/ui/context-menu'
+import type { BrowserTabsActions } from '@/hooks/useBrowserTabsActions'
 import { cn } from '@/lib/utils'
 
 export interface BrowserTab {
@@ -13,19 +21,20 @@ export interface BrowserTab {
 interface BrowserTabsProps {
   tabs: BrowserTab[]
   activeTabId: string
-  onTabChange: (tabId: string) => void
-  onTabClose?: (tabId: string) => void
+  actions: BrowserTabsActions
   newTabButton?: React.ReactNode
   className?: string
 }
 
 // WHY: Close buttons are mouse-only (tabIndex -1); Delete key for keyboard users (desktop convention)
-export function BrowserTabs({ tabs, activeTabId, onTabChange, onTabClose, newTabButton, className }: BrowserTabsProps) {
+export function BrowserTabs({ tabs, activeTabId, actions, newTabButton, className }: BrowserTabsProps) {
   const tabRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
   const focusTab = (id: string) => {
     tabRefs.current.get(id)?.focus()
-    onTabChange(id)
+    actions.switchTab(id)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent, tabId: string) => {
@@ -55,8 +64,8 @@ export function BrowserTabs({ tabs, activeTabId, onTabChange, onTabClose, newTab
         break
       case 'Delete': {
         const tab = tabs[idx]
-        if (onTabClose && tab.closeable !== false) {
-          onTabClose(tabId)
+        if (tab.closeable !== false) {
+          actions.closeTab(tabId)
         }
         break
       }
@@ -70,20 +79,45 @@ export function BrowserTabs({ tabs, activeTabId, onTabChange, onTabClose, newTab
     }
   }
 
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverIndex(index)
+  }
+
+  const handleDragEnd = () => {
+    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+      actions.reorderTabs(draggedIndex, dragOverIndex)
+    }
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }
+
   return (
     <div className={cn('flex items-end bg-muted/50 border-b border-border', className)}>
       <div
         role="tablist"
         aria-label="Workspace tabs"
         className="flex items-end gap-px min-w-0 flex-1 overflow-x-auto px-1 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {tabs.map(tab => {
+        {tabs.map((tab, index) => {
           const isActive = tab.id === activeTabId
           const TabIcon = tab.icon
+          const isDragging = draggedIndex === index
+          const isDragOver = dragOverIndex === index
 
-          return (
+          const tabElement = (
             <div
               key={tab.id}
               role="tab"
+              draggable
+              onDragStart={e => handleDragStart(e, index)}
+              onDragOver={e => handleDragOver(e, index)}
+              onDragEnd={handleDragEnd}
               ref={el => {
                 if (el) tabRefs.current.set(tab.id, el as unknown as HTMLButtonElement)
                 else tabRefs.current.delete(tab.id)
@@ -92,7 +126,7 @@ export function BrowserTabs({ tabs, activeTabId, onTabChange, onTabClose, newTab
               aria-selected={isActive}
               aria-controls={`tabpanel-${tab.id}`}
               tabIndex={isActive ? 0 : -1}
-              onClick={() => onTabChange(tab.id)}
+              onClick={() => actions.switchTab(tab.id)}
               onKeyDown={e => handleKeyDown(e, tab.id)}
               className={cn(
                 'group/tab flex items-center gap-1.5 h-8 min-w-0 max-w-[220px]',
@@ -101,31 +135,65 @@ export function BrowserTabs({ tabs, activeTabId, onTabChange, onTabClose, newTab
                 'outline-none transition-colors duration-100',
                 'select-none cursor-default',
                 'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
-                onTabClose && tab.closeable !== false ? 'pr-1' : 'pr-3',
+                tab.closeable !== false ? 'pr-1' : 'pr-3',
                 isActive && ['-mb-px bg-background text-foreground', 'border border-border border-b-background'],
                 !isActive && [
                   'text-muted-foreground',
                   'border border-transparent',
                   'hover:text-foreground hover:bg-accent/50'
-                ]
+                ],
+                isDragging && 'opacity-50',
+                isDragOver && 'ring-2 ring-ring ring-inset'
               )}>
               {TabIcon && <TabIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
               <span className="truncate">{tab.title}</span>
 
-              {onTabClose && tab.closeable !== false && (
+              {tab.closeable !== false && (
                 <button
                   type="button"
                   tabIndex={-1}
                   aria-label={`Close ${tab.title}`}
                   onClick={e => {
                     e.stopPropagation()
-                    onTabClose(tab.id)
+                    actions.closeTab(tab.id)
                   }}
                   className="h-5 w-5 rounded-sm shrink-0 inline-flex items-center justify-center transition-colors duration-100 text-muted-foreground hover:text-foreground hover:bg-muted">
                   <X className="h-3 w-3" aria-hidden="true" />
                 </button>
               )}
             </div>
+          )
+
+          const hasTabsToRight = index < tabs.length - 1
+          const hasOtherTabs = tabs.length > 1
+
+          return (
+            <ContextMenu key={tab.id}>
+              <ContextMenuTrigger asChild>{tabElement}</ContextMenuTrigger>
+              <ContextMenuContent>
+                <ContextMenuItem onClick={() => actions.newTabToRight(tab.id)}>New Tab to the Right</ContextMenuItem>
+                <ContextMenuSeparator />
+                {tab.closeable !== false && (
+                  <ContextMenuItem onClick={() => actions.closeTab(tab.id)}>Close</ContextMenuItem>
+                )}
+                {hasOtherTabs && (
+                  <ContextMenuItem onClick={() => actions.closeOthers(tab.id)}>Close Others</ContextMenuItem>
+                )}
+                {hasTabsToRight && (
+                  <ContextMenuItem onClick={() => actions.closeToRight(tab.id)}>
+                    Close Tabs to the Right
+                  </ContextMenuItem>
+                )}
+                {tabs.length > 0 && (
+                  <>
+                    <ContextMenuSeparator />
+                    <ContextMenuItem variant="destructive" onClick={() => actions.closeAll()}>
+                      Close All Tabs
+                    </ContextMenuItem>
+                  </>
+                )}
+              </ContextMenuContent>
+            </ContextMenu>
           )
         })}
       </div>
