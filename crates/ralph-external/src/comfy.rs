@@ -51,12 +51,55 @@ pub async fn check_available(config: &ComfyConfig) -> ComfyStatus {
     }
 }
 
+pub async fn generate_audio(
+    config: &ComfyConfig,
+    text: String,
+    workflow_name: &str,
+) -> Result<Vec<u8>, String> {
+    let workflow_path = get_workflow_path_by_name(config, workflow_name)?;
+
+    let workflow_json = std::fs::read_to_string(&workflow_path)
+        .map_err(|e| format!("Failed to read workflow file: {e}"))?;
+
+    let mut workflow: HashMap<String, WorkflowNode> = serde_json::from_str(&workflow_json)
+        .map_err(|e| format!("Failed to parse workflow JSON: {e}"))?;
+
+    inject_text(&mut workflow, text)?;
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(config.timeout_secs))
+        .build()
+        .map_err(|e| format!("Failed to build HTTP client: {e}"))?;
+
+    let prompt_request = PromptRequest { prompt: workflow };
+
+    let response = client
+        .post(format!("{}/prompt", config.api_url))
+        .json(&prompt_request)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to queue prompt: {e}"))?;
+
+    if !response.status().is_success() {
+        return Err(format!("ComfyUI error: HTTP {}", response.status()));
+    }
+
+    let queue_response: QueueResponse = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse queue response: {e}"))?;
+
+    poll_until_complete(&client, config, &queue_response.prompt_id).await?;
+
+    fetch_generated_output(&client, config, &queue_response.prompt_id, "audio").await
+}
+
 pub async fn generate_image(
     config: &ComfyConfig,
     positive_prompt: String,
     negative_prompt: String,
 ) -> Result<Vec<u8>, String> {
-    let workflow_path = get_workflow_path(config)?;
+    let workflow_path = get_workflow_path_by_name(config, &config.default_workflow)?;
 
     let workflow_json = std::fs::read_to_string(&workflow_path)
         .map_err(|e| format!("Failed to read workflow file: {e}"))?;
@@ -91,10 +134,13 @@ pub async fn generate_image(
 
     poll_until_complete(&client, config, &queue_response.prompt_id).await?;
 
-    fetch_generated_image(&client, config, &queue_response.prompt_id).await
+    fetch_generated_output(&client, config, &queue_response.prompt_id, "images").await
 }
 
-fn get_workflow_path(config: &ComfyConfig) -> Result<std::path::PathBuf, String> {
+fn get_workflow_path_by_name(
+    config: &ComfyConfig,
+    workflow_name: &str,
+) -> Result<std::path::PathBuf, String> {
     let config_dir = dirs::config_dir()
         .ok_or("No config directory on this platform")?
         .join("ralph")
@@ -103,7 +149,7 @@ fn get_workflow_path(config: &ComfyConfig) -> Result<std::path::PathBuf, String>
     std::fs::create_dir_all(&config_dir)
         .map_err(|e| format!("Failed to create workflows dir: {e}"))?;
 
-    let workflow_path = config_dir.join(&config.default_workflow);
+    let workflow_path = config_dir.join(workflow_name);
 
     if !workflow_path.starts_with(&config_dir) {
         return Err("Workflow path escapes workflows directory".into());
@@ -152,6 +198,34 @@ fn inject_prompts(
     Ok(())
 }
 
+fn inject_text(workflow: &mut HashMap<String, WorkflowNode>, text: String) -> Result<(), String> {
+    let mut found_text_input = false;
+
+    for node in workflow.values_mut() {
+        if let Some(text_field) = node.inputs.get("text") {
+            if text_field
+                .as_str()
+                .unwrap_or("")
+                .contains("tts_input_text")
+            {
+                node.inputs
+                    .insert("text".into(), serde_json::Value::String(text.clone()));
+                found_text_input = true;
+                break;
+            }
+        }
+    }
+
+    if !found_text_input {
+        return Err(
+            "Workflow must have a node with 'text' input containing 'tts_input_text' marker"
+                .into(),
+        );
+    }
+
+    Ok(())
+}
+
 async fn poll_until_complete(
     client: &reqwest::Client,
     config: &ComfyConfig,
@@ -183,10 +257,11 @@ async fn poll_until_complete(
     Err("Image generation timed out".into())
 }
 
-async fn fetch_generated_image(
+async fn fetch_generated_output(
     client: &reqwest::Client,
     config: &ComfyConfig,
     prompt_id: &str,
+    output_type: &str,
 ) -> Result<Vec<u8>, String> {
     let history_response = client
         .get(format!("{}/history/{}", config.api_url, prompt_id))
@@ -204,34 +279,38 @@ async fn fetch_generated_image(
         .and_then(|h| h.get("outputs"))
         .ok_or("No outputs in history")?;
 
-    let images = find_first_image_output(outputs).ok_or("No images in output")?;
+    let output_files =
+        find_first_output(outputs, output_type).ok_or("No outputs in generated result")?;
 
-    let filename = images
+    let filename = output_files
         .get(0)
-        .and_then(|img| img.get("filename"))
+        .and_then(|file| file.get("filename"))
         .and_then(|f| f.as_str())
-        .ok_or("No filename in image output")?;
+        .ok_or("No filename in output")?;
 
-    let image_response = client
+    let file_response = client
         .get(format!("{}/view?filename={}", config.api_url, filename))
         .send()
         .await
-        .map_err(|e| format!("Failed to fetch image: {e}"))?;
+        .map_err(|e| format!("Failed to fetch output file: {e}"))?;
 
-    let image_bytes = image_response
+    let file_bytes = file_response
         .bytes()
         .await
-        .map_err(|e| format!("Failed to read image bytes: {e}"))?;
+        .map_err(|e| format!("Failed to read output bytes: {e}"))?;
 
-    Ok(image_bytes.to_vec())
+    Ok(file_bytes.to_vec())
 }
 
-fn find_first_image_output(outputs: &serde_json::Value) -> Option<&serde_json::Value> {
+fn find_first_output(
+    outputs: &serde_json::Value,
+    output_type: &str,
+) -> Option<&serde_json::Value> {
     if let serde_json::Value::Object(map) = outputs {
         for value in map.values() {
-            if let Some(images) = value.get("images") {
-                if images.is_array() && !images.as_array().unwrap().is_empty() {
-                    return Some(images);
+            if let Some(output_array) = value.get(output_type) {
+                if output_array.is_array() && !output_array.as_array().unwrap().is_empty() {
+                    return Some(output_array);
                 }
             }
         }

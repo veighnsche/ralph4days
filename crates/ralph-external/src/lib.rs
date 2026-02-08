@@ -14,7 +14,9 @@ pub mod comfy;
 pub mod config;
 pub mod ollama;
 
-pub use comfy::{check_available as check_comfy_available, generate_image, ComfyStatus};
+pub use comfy::{
+    check_available as check_comfy_available, generate_audio, generate_image, ComfyStatus,
+};
 pub use config::{ComfyConfig, ExternalServicesConfig, OllamaConfig};
 pub use ollama::{
     check_available as check_ollama_available, embed_texts, generate_text, OllamaStatus,
