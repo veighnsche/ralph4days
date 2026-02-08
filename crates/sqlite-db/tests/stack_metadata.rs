@@ -8,7 +8,6 @@ struct StackAbout {
     description: String,
     philosophy: String,
     when_to_use: Vec<String>,
-    approach: String,
     discipline_count: u8,
     characteristics: Vec<String>,
 }
@@ -75,12 +74,6 @@ fn test_about_yaml_schema_validation() {
             "{stack_path}: when_to_use must have at least one item"
         );
 
-        assert!(
-            matches!(about.approach.as_str(), "mode-based" | "tech-specific"),
-            "{stack_path}: approach must be 'mode-based' or 'tech-specific', got '{}'",
-            about.approach
-        );
-
         assert_eq!(
             about.discipline_count, expected_disc_count,
             "{stack_path}: discipline_count should be {expected_disc_count}"
@@ -104,23 +97,4 @@ fn test_stack_0_empty_has_no_about_yaml() {
             "Stack 0 (empty) should NOT have ABOUT.yaml - it has zero disciplines"
         );
     }
-}
-
-#[test]
-fn test_approach_consistency() {
-    let generic = load_about("src/defaults/disciplines/01_generic")
-        .expect("Failed to load 01_generic/ABOUT.yaml");
-
-    assert_eq!(
-        generic.approach, "mode-based",
-        "Stack 1 (Generic) must be mode-based"
-    );
-
-    let desktop = load_about("src/defaults/disciplines/02_desktop")
-        .expect("Failed to load 02_desktop/ABOUT.yaml");
-
-    assert_eq!(
-        desktop.approach, "tech-specific",
-        "Stack 2 (Desktop) must be tech-specific"
-    );
 }

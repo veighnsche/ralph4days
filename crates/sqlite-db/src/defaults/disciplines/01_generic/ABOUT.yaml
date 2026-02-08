@@ -11,7 +11,6 @@ when_to_use:
   - "Projects with custom or unusual tech stacks"
   - "Learning Ralph without framework assumptions"
 
-approach: "mode-based"
 discipline_count: 8
 
 characteristics:

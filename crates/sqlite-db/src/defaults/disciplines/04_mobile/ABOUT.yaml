@@ -12,7 +12,6 @@ when_to_use:
   - "Firebase-backed applications"
   - "Deploying to App Store and Google Play"
 
-approach: "tech-specific"
 discipline_count: 8
 
 characteristics:

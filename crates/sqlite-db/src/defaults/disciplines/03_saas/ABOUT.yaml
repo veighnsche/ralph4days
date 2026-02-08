@@ -12,7 +12,6 @@ when_to_use:
   - "Postgres/Prisma-based applications"
   - "Deploying to Vercel"
 
-approach: "tech-specific"
 discipline_count: 8
 
 characteristics:
