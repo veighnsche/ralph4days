@@ -1,5 +1,5 @@
 use super::state::{get_db, AppState};
-use crate::errors::{codes, ralph_err};
+use ralph_errors::{codes, ralph_err};
 use serde::Deserialize;
 use tauri::State;
 
@@ -89,7 +89,7 @@ pub fn update_task(state: State<'_, AppState>, params: UpdateTaskParams) -> Resu
 pub fn set_task_status(state: State<'_, AppState>, id: u32, status: String) -> Result<(), String> {
     let db = get_db(&state)?;
     let status = sqlite_db::TaskStatus::parse(&status).ok_or_else(|| {
-        crate::errors::RalphError {
+        ralph_errors::RalphError {
             code: codes::TASK_VALIDATION,
             message: format!("Invalid status: {status}"),
         }

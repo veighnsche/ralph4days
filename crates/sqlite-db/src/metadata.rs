@@ -1,6 +1,6 @@
-use crate::errors::{codes, ralph_map_err};
 use crate::types::*;
 use crate::SqliteDb;
+use ralph_errors::{codes, ralph_map_err};
 
 impl SqliteDb {
     pub fn get_project_info(&self) -> ProjectMetadata {
@@ -28,7 +28,7 @@ impl SqliteDb {
         title: String,
         description: Option<String>,
     ) -> Result<(), String> {
-        let now = chrono::Utc::now().format("%Y-%m-%d").to_string();
+        let now = self.now().format("%Y-%m-%d").to_string();
 
         self.conn
             .execute(

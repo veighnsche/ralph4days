@@ -15,7 +15,7 @@ ralph-rag = { path = "../ralph-rag" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 chrono = { workspace = true }
-thiserror = { workspace = true }
+ralph-errors = { workspace = true }
 tracing = "0.1"
 ts-rs = { workspace = true }
 ralph-macros = { workspace = true }

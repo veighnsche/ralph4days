@@ -1,6 +1,6 @@
-use crate::errors::{codes, ralph_err, ralph_map_err};
 use crate::types::*;
 use crate::SqliteDb;
+use ralph_errors::{codes, ralph_err, ralph_map_err};
 use ralph_rag::{check_deduplication, select_for_pruning, DeduplicationResult, FeatureLearning};
 
 impl SqliteDb {
@@ -46,7 +46,7 @@ impl SqliteDb {
             );
         }
 
-        let now = chrono::Utc::now().format("%Y-%m-%d").to_string();
+        let now = self.now().format("%Y-%m-%d").to_string();
         let kp_json = serde_json::to_string(&input.knowledge_paths).unwrap_or_else(|_| "[]".into());
         let cf_json = serde_json::to_string(&input.context_files).unwrap_or_else(|_| "[]".into());
         let deps_json = serde_json::to_string(&input.dependencies).unwrap_or_else(|_| "[]".into());

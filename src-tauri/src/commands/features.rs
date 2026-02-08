@@ -1,5 +1,5 @@
 use super::state::{get_db, AppState};
-use crate::errors::{codes, ralph_err};
+use ralph_errors::{codes, ralph_err};
 use ralph_macros::ipc_type;
 use serde::Deserialize;
 use tauri::State;

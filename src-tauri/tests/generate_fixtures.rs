@@ -6,7 +6,7 @@
 //! Fixtures use .undetect-ralph/ (not .ralph/) so they're not detected as Ralph projects.
 //! The mock workflow (just dev-mock) renames .undetect-ralph/ to .ralph/ when copying.
 
-use sqlite_db::{FeatureInput, SqliteDb};
+use sqlite_db::{FeatureInput, FixedClock, SqliteDb};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -49,7 +49,7 @@ fn initialize_project_for_fixture(
 
     // Create and initialize the SQLite database
     let db_path = db_dir.join("ralph.db");
-    let db = SqliteDb::open(&db_path)?;
+    let db = SqliteDb::open_with_clock(&db_path, fixed_clock())?;
     db.seed_defaults()?;
     db.initialize_metadata(
         project_title.clone(),
@@ -88,10 +88,19 @@ Describe the architecture, tech stack, and key components.
     Ok(())
 }
 
-/// Open the fixture database
+fn fixed_clock() -> Box<dyn sqlite_db::Clock> {
+    Box::new(FixedClock(
+        chrono::NaiveDate::from_ymd_opt(2026, 1, 1)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap()
+            .and_utc(),
+    ))
+}
+
 fn open_fixture_db(fixture_path: &Path) -> SqliteDb {
     let db_path = fixture_path.join(".undetect-ralph/db/ralph.db");
-    SqliteDb::open(&db_path).unwrap()
+    SqliteDb::open_with_clock(&db_path, fixed_clock()).unwrap()
 }
 
 /// Generate 00-empty-project fixture (before initialization)
@@ -393,7 +402,6 @@ just dev-mock 03-with-tasks-project
     })
     .unwrap();
 
-    // Add a comment to task 1
     db.add_comment(
         1,
         sqlite_db::CommentAuthor::Agent,

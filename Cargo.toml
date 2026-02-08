@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "src-tauri",
+    "crates/ralph-errors",
     "crates/ralph-rag",
     "crates/sqlite-db",
     "crates/prompt-builder",
@@ -61,3 +62,4 @@ thiserror = "2"
 tokio = { version = "1", features = ["full"] }
 ts-rs = { version = "12", features = ["serde-compat"] }
 ralph-macros = { path = "crates/ralph-macros" }
+ralph-errors = { path = "crates/ralph-errors" }

@@ -1,5 +1,5 @@
-use super::state::{AppState, ToStringErr};
-use crate::errors::{codes, ralph_err};
+use super::state::AppState;
+use ralph_errors::{codes, ralph_err, ToStringErr};
 use ralph_macros::ipc_type;
 use sqlite_db::SqliteDb;
 use std::path::PathBuf;
@@ -123,7 +123,7 @@ pub fn initialize_ralph_project(
     }
 
     std::fs::create_dir(&ralph_dir).map_err(|e| {
-        crate::errors::RalphError {
+        ralph_errors::RalphError {
             code: codes::PROJECT_INIT,
             message: format!("Failed to create .ralph/ directory: {e}"),
         }
@@ -132,7 +132,7 @@ pub fn initialize_ralph_project(
 
     let db_dir = ralph_dir.join("db");
     std::fs::create_dir(&db_dir).map_err(|e| {
-        crate::errors::RalphError {
+        ralph_errors::RalphError {
             code: codes::PROJECT_INIT,
             message: format!("Failed to create .ralph/db/ directory: {e}"),
         }
@@ -173,7 +173,7 @@ Describe the architecture, tech stack, and key components.
     );
 
     std::fs::write(&claude_path, claude_template).map_err(|e| {
-        crate::errors::RalphError {
+        ralph_errors::RalphError {
             code: codes::FILESYSTEM,
             message: format!("Failed to create CLAUDE.RALPH.md: {e}"),
         }
@@ -185,7 +185,7 @@ Describe the architecture, tech stack, and key components.
 
 pub fn lock_project_validated(state: &AppState, path: String) -> Result<(), String> {
     let canonical_path = std::fs::canonicalize(&path).map_err(|e| {
-        crate::errors::RalphError {
+        ralph_errors::RalphError {
             code: codes::PROJECT_PATH,
             message: format!("Failed to resolve path: {e}"),
         }
@@ -256,7 +256,7 @@ pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProj
         PathBuf::from(dir)
     } else {
         dirs::home_dir().ok_or_else(|| {
-            crate::errors::RalphError {
+            ralph_errors::RalphError {
                 code: codes::FILESYSTEM,
                 message: "Failed to get home directory".to_owned(),
             }
@@ -330,7 +330,7 @@ pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProj
 #[tauri::command]
 pub fn get_current_dir() -> Result<String, String> {
     let path = dirs::home_dir().ok_or_else(|| {
-        crate::errors::RalphError {
+        ralph_errors::RalphError {
             code: codes::FILESYSTEM,
             message: "Failed to get home directory".to_owned(),
         }

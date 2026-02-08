@@ -6,6 +6,10 @@
 
 **No parallel implementations, feature flags, view toggles, or alternate modes.** When asked to "add a view" or "add a mode", interpret as: same data/logic/path, different presentation only. Consolidate or delete duplicates immediately. This prevents reward hacking and feature bloat.
 
+## CRITICAL: Centralized Error Handling
+
+**All Rust error types flow through `crates/ralph-errors`.** Never define `RalphError`, error code constants, or error macros in any other crate. Every crate that returns `Result<T, String>` must depend on `ralph-errors` and use `ralph_err!` / `ralph_map_err!` / `ToStringErr`. Domain-specific error enums (like `PromptError`) are allowed only when they don't use error codes and stay internal to their crate.
+
 ## CRITICAL: Ralph is the Thinnest Wrapper
 
 **Ralph is an ORCHESTRATOR, not a replacement for Claude Code.** Ralph interacts with Claude Code as if it were a human user. Ralph does NOT re-implement Claude Code's capabilities. See SPEC-050 for full details.

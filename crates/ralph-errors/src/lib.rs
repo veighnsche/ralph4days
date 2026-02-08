@@ -76,17 +76,43 @@ impl From<RalphError> for String {
     }
 }
 
+pub trait ToStringErr<T> {
+    fn err_str(self, code: u16) -> Result<T, String>;
+}
+
+impl<T, E: std::fmt::Display> ToStringErr<T> for Result<T, E> {
+    fn err_str(self, code: u16) -> Result<T, String> {
+        self.map_err(|e| {
+            RalphError {
+                code,
+                message: e.to_string(),
+            }
+            .to_string()
+        })
+    }
+}
+
+#[macro_export]
 macro_rules! ralph_err {
     ($code:expr, $($arg:tt)*) => {{
-        let err = $crate::errors::RalphError::new($code, format!($($arg)*));
+        let err = $crate::RalphError::new($code, format!($($arg)*));
         Err(err.to_string())
     }};
 }
 
-pub(crate) use ralph_err;
+#[macro_export]
+macro_rules! ralph_map_err {
+    ($code:expr, $msg:expr) => {
+        |e| {
+            $crate::RalphError {
+                code: $code,
+                message: format!(concat!($msg, ": {}"), e),
+            }
+            .to_string()
+        }
+    };
+}
 
-/// Parse a RalphError from an error string like "[R-2000] Database error"
-#[allow(dead_code)]
 pub fn parse_ralph_error(error_str: &str) -> Option<RalphError> {
     let re = regex::Regex::new(r"^\[R-(\d{4})\] (.*)$").ok()?;
     let caps = re.captures(error_str)?;
@@ -95,7 +121,6 @@ pub fn parse_ralph_error(error_str: &str) -> Option<RalphError> {
     Some(RalphError { code, message })
 }
 
-#[allow(dead_code)]
 pub mod codes {
     pub const PROJECT_PATH: u16 = 1000;
     pub const PROJECT_LOCK: u16 = 1100;
@@ -178,5 +203,33 @@ mod tests {
         assert!(template.contains("DATABASE"));
         assert!(template.contains("Failed to open database"));
         assert!(template.contains("## Error Report"));
+    }
+
+    #[test]
+    fn test_to_string_err_trait() {
+        let ok_result: Result<i32, std::io::Error> = Ok(42);
+        assert_eq!(ok_result.err_str(codes::INTERNAL).unwrap(), 42);
+
+        let err_result: Result<i32, String> = Err("something broke".to_owned());
+        let err = err_result.err_str(codes::INTERNAL).unwrap_err();
+        assert!(err.contains("[R-8100]"));
+        assert!(err.contains("something broke"));
+    }
+
+    #[test]
+    fn test_ralph_err_macro() {
+        let result: Result<(), String> = ralph_err!(codes::DB_OPEN, "test error {}", 42);
+        let err = result.unwrap_err();
+        assert!(err.contains("[R-2000]"));
+        assert!(err.contains("test error 42"));
+    }
+
+    #[test]
+    fn test_ralph_map_err_macro() {
+        let result: Result<(), String> =
+            Err("original".to_owned()).map_err(ralph_map_err!(codes::DB_WRITE, "wrapping"));
+        let err = result.unwrap_err();
+        assert!(err.contains("[R-2200]"));
+        assert!(err.contains("wrapping: original"));
     }
 }

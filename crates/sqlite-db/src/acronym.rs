@@ -1,4 +1,4 @@
-use crate::errors::{codes, ralph_err};
+use ralph_errors::{codes, ralph_err};
 
 pub fn validate_acronym_format(acronym: &str) -> Result<(), String> {
     if acronym.len() != 4 {

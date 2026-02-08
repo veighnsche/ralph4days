@@ -1,5 +1,4 @@
 mod commands;
-mod errors;
 mod terminal;
 
 use commands::AppState;

@@ -1,6 +1,6 @@
-use crate::errors::{codes, ralph_err, ralph_map_err};
 use crate::types::*;
 use crate::SqliteDb;
+use ralph_errors::{codes, ralph_err, ralph_map_err};
 use std::collections::HashSet;
 
 impl SqliteDb {
@@ -81,7 +81,7 @@ impl SqliteDb {
             })
             .map_err(ralph_map_err!(codes::DB_READ, "Failed to get next task ID"))?;
 
-        let now = chrono::Utc::now().format("%Y-%m-%d").to_string();
+        let now = self.now().format("%Y-%m-%d").to_string();
         let tags_json = serde_json::to_string(&input.tags)
             .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to serialize tags"))?;
         let depends_on_json = serde_json::to_string(&input.depends_on).map_err(ralph_map_err!(
@@ -225,7 +225,7 @@ impl SqliteDb {
             }
         }
 
-        let now = chrono::Utc::now().format("%Y-%m-%d").to_string();
+        let now = self.now().format("%Y-%m-%d").to_string();
         let tags_json = serde_json::to_string(&update.tags)
             .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to serialize tags"))?;
         let depends_on_json = serde_json::to_string(&update.depends_on).map_err(ralph_map_err!(
@@ -287,7 +287,7 @@ impl SqliteDb {
             return ralph_err!(codes::TASK_OPS, "Task {id} does not exist");
         }
 
-        let now = chrono::Utc::now().format("%Y-%m-%d").to_string();
+        let now = self.now().format("%Y-%m-%d").to_string();
 
         if status == TaskStatus::Done {
             self.conn

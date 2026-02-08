@@ -1,5 +1,5 @@
-use crate::errors::{codes, ralph_err, ralph_map_err};
 use crate::SqliteDb;
+use ralph_errors::{codes, ralph_err, ralph_map_err};
 use ralph_macros::ipc_type;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -36,7 +36,7 @@ pub struct RecipeConfigData {
 
 impl SqliteDb {
     pub fn save_recipe_config(&self, input: RecipeConfigInput) -> Result<(), String> {
-        let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
+        let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         let section_order_json = serde_json::to_string(&input.section_order)
             .map_err(ralph_map_err!(codes::DB_WRITE, "JSON error"))?;
         let sections_json = serde_json::to_string(&input.sections)

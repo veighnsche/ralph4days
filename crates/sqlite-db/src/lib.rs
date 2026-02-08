@@ -1,7 +1,6 @@
 pub mod acronym;
 mod comments;
 mod disciplines;
-mod errors;
 mod export;
 mod features;
 mod metadata;
@@ -23,13 +22,32 @@ pub use ralph_rag::{
     FeatureLearning, LearningSource,
 };
 
-use errors::{codes, ralph_map_err};
+use ralph_errors::{codes, ralph_map_err};
 use rusqlite::Connection;
 use rusqlite_migration::{Migrations, M};
 use std::path::Path;
 
+pub trait Clock: Send + Sync {
+    fn now(&self) -> chrono::DateTime<chrono::Utc>;
+}
+
+pub struct RealClock;
+impl Clock for RealClock {
+    fn now(&self) -> chrono::DateTime<chrono::Utc> {
+        chrono::Utc::now()
+    }
+}
+
+pub struct FixedClock(pub chrono::DateTime<chrono::Utc>);
+impl Clock for FixedClock {
+    fn now(&self) -> chrono::DateTime<chrono::Utc> {
+        self.0
+    }
+}
+
 pub struct SqliteDb {
     conn: Connection,
+    clock: Box<dyn Clock>,
 }
 
 impl SqliteDb {
@@ -54,7 +72,38 @@ impl SqliteDb {
             .to_latest(&mut conn)
             .map_err(ralph_map_err!(codes::DB_OPEN, "Failed to run migrations"))?;
 
-        Ok(Self { conn })
+        Ok(Self {
+            conn,
+            clock: Box::new(RealClock),
+        })
+    }
+
+    pub fn open_with_clock(path: &Path, clock: Box<dyn Clock>) -> Result<Self, String> {
+        let mut conn = Connection::open(path)
+            .map_err(ralph_map_err!(codes::DB_OPEN, "Failed to open database"))?;
+
+        conn.execute_batch(
+            "PRAGMA journal_mode = WAL;
+             PRAGMA synchronous = NORMAL;
+             PRAGMA foreign_keys = ON;",
+        )
+        .map_err(ralph_map_err!(codes::DB_OPEN, "Failed to set PRAGMAs"))?;
+
+        let migrations = Migrations::new(vec![
+            M::up(include_str!("migrations/001_initial.sql")),
+            M::up(include_str!("migrations/002_feature_rag_fields.sql")),
+            M::up(include_str!("migrations/003_recipe_configs.sql")),
+        ]);
+
+        migrations
+            .to_latest(&mut conn)
+            .map_err(ralph_map_err!(codes::DB_OPEN, "Failed to run migrations"))?;
+
+        Ok(Self { conn, clock })
+    }
+
+    pub(crate) fn now(&self) -> chrono::DateTime<chrono::Utc> {
+        self.clock.now()
     }
 
     pub fn execute_raw(&self, sql: &str) -> Result<(), String> {
@@ -64,6 +113,10 @@ impl SqliteDb {
     }
 
     pub fn open_in_memory() -> Result<Self, String> {
+        Self::open_in_memory_with_clock(Box::new(RealClock))
+    }
+
+    pub fn open_in_memory_with_clock(clock: Box<dyn Clock>) -> Result<Self, String> {
         let mut conn = Connection::open_in_memory().map_err(ralph_map_err!(
             codes::DB_OPEN,
             "Failed to open in-memory database"
@@ -82,6 +135,6 @@ impl SqliteDb {
             .to_latest(&mut conn)
             .map_err(ralph_map_err!(codes::DB_OPEN, "Failed to run migrations"))?;
 
-        Ok(Self { conn })
+        Ok(Self { conn, clock })
     }
 }

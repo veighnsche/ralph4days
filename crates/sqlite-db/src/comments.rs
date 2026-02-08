@@ -1,6 +1,6 @@
-use crate::errors::{codes, ralph_err, ralph_map_err};
 use crate::types::*;
 use crate::SqliteDb;
+use ralph_errors::{codes, ralph_err, ralph_map_err};
 use std::collections::HashMap;
 
 impl SqliteDb {
@@ -39,7 +39,7 @@ impl SqliteDb {
             return ralph_err!(codes::COMMENT_OPS, "Task {task_id} does not exist");
         }
 
-        let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
+        let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
 
         self.conn
             .execute(

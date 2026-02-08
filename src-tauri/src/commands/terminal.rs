@@ -1,6 +1,6 @@
-use super::state::{AppState, ToStringErr};
-use crate::errors::codes;
+use super::state::AppState;
 use crate::terminal::SessionConfig;
+use ralph_errors::{codes, ToStringErr};
 use tauri::{AppHandle, State};
 
 #[tauri::command]
@@ -16,7 +16,7 @@ pub fn create_pty_session(
     let project_path = locked
         .as_ref()
         .ok_or_else(|| {
-            crate::errors::RalphError {
+            ralph_errors::RalphError {
                 code: codes::PROJECT_LOCK,
                 message: "No project locked".to_owned(),
             }
@@ -75,7 +75,7 @@ pub fn create_pty_session_for_task(
     let project_path = locked
         .as_ref()
         .ok_or_else(|| {
-            crate::errors::RalphError {
+            ralph_errors::RalphError {
                 code: codes::PROJECT_LOCK,
                 message: "No project locked".to_owned(),
             }

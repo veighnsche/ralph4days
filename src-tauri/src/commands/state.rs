@@ -1,26 +1,10 @@
-use crate::errors::{codes, ralph_err};
 use crate::terminal::PTYManager;
 use prompt_builder::{CodebaseSnapshot, PromptContext};
+use ralph_errors::{codes, ralph_err, ToStringErr};
 use sqlite_db::SqliteDb;
 use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::State;
-
-pub(super) trait ToStringErr<T> {
-    fn err_str(self, code: u16) -> Result<T, String>;
-}
-
-impl<T, E: std::fmt::Display> ToStringErr<T> for Result<T, E> {
-    fn err_str(self, code: u16) -> Result<T, String> {
-        self.map_err(|e| {
-            crate::errors::RalphError {
-                code,
-                message: e.to_string(),
-            }
-            .to_string()
-        })
-    }
-}
 
 pub struct AppState {
     pub locked_project: Mutex<Option<PathBuf>>,
@@ -61,7 +45,7 @@ impl AppState {
 
         let db_guard = self.db.lock().err_str(codes::INTERNAL)?;
         let db = db_guard.as_ref().ok_or_else(|| {
-            crate::errors::RalphError {
+            ralph_errors::RalphError {
                 code: codes::PROJECT_LOCK,
                 message: "No project locked (database not open)".to_owned(),
             }
@@ -122,7 +106,7 @@ impl AppState {
         let (scripts, config_json) = prompt_builder::mcp::generate(&ctx, &recipe.mcp_tools);
 
         std::fs::create_dir_all(&self.mcp_dir).map_err(|e| {
-            crate::errors::RalphError {
+            ralph_errors::RalphError {
                 code: codes::FILESYSTEM,
                 message: format!("Failed to create MCP dir: {e}"),
             }
@@ -132,7 +116,7 @@ impl AppState {
         for script in &scripts {
             let script_path = self.mcp_dir.join(&script.filename);
             std::fs::write(&script_path, &script.content).map_err(|e| {
-                crate::errors::RalphError {
+                ralph_errors::RalphError {
                     code: codes::FILESYSTEM,
                     message: format!("Failed to write MCP script: {e}"),
                 }
@@ -143,7 +127,7 @@ impl AppState {
                 use std::os::unix::fs::PermissionsExt;
                 std::fs::set_permissions(&script_path, std::fs::Permissions::from_mode(0o755))
                     .map_err(|e| {
-                        crate::errors::RalphError {
+                        ralph_errors::RalphError {
                             code: codes::FILESYSTEM,
                             message: format!("Failed to chmod MCP script: {e}"),
                         }
@@ -154,7 +138,7 @@ impl AppState {
 
         let config_path = self.mcp_dir.join(format!("mcp-{mode}.json"));
         std::fs::write(&config_path, &config_json).map_err(|e| {
-            crate::errors::RalphError {
+            ralph_errors::RalphError {
                 code: codes::FILESYSTEM,
                 message: format!("Failed to write MCP config: {e}"),
             }
@@ -180,7 +164,7 @@ impl AppState {
         let (scripts, config_json) = prompt_builder::mcp::generate(&ctx, &recipe.mcp_tools);
 
         std::fs::create_dir_all(&self.mcp_dir).map_err(|e| {
-            crate::errors::RalphError {
+            ralph_errors::RalphError {
                 code: codes::FILESYSTEM,
                 message: format!("Failed to create MCP dir: {e}"),
             }
@@ -190,7 +174,7 @@ impl AppState {
         for script in &scripts {
             let script_path = self.mcp_dir.join(&script.filename);
             std::fs::write(&script_path, &script.content).map_err(|e| {
-                crate::errors::RalphError {
+                ralph_errors::RalphError {
                     code: codes::FILESYSTEM,
                     message: format!("Failed to write MCP script: {e}"),
                 }
@@ -201,7 +185,7 @@ impl AppState {
                 use std::os::unix::fs::PermissionsExt;
                 std::fs::set_permissions(&script_path, std::fs::Permissions::from_mode(0o755))
                     .map_err(|e| {
-                        crate::errors::RalphError {
+                        ralph_errors::RalphError {
                             code: codes::FILESYSTEM,
                             message: format!("Failed to chmod MCP script: {e}"),
                         }
@@ -212,7 +196,7 @@ impl AppState {
 
         let config_path = self.mcp_dir.join(format!("mcp-task-{task_id}.json"));
         std::fs::write(&config_path, &config_json).map_err(|e| {
-            crate::errors::RalphError {
+            ralph_errors::RalphError {
                 code: codes::FILESYSTEM,
                 message: format!("Failed to write MCP config: {e}"),
             }
@@ -244,7 +228,7 @@ pub(super) fn get_db<'a>(state: &'a State<'a, AppState>) -> Result<DbGuard<'a>, 
 pub(super) fn get_locked_project_path(state: &State<'_, AppState>) -> Result<PathBuf, String> {
     let locked = state.locked_project.lock().err_str(codes::INTERNAL)?;
     locked.as_ref().cloned().ok_or_else(|| {
-        crate::errors::RalphError {
+        ralph_errors::RalphError {
             code: codes::PROJECT_LOCK,
             message: "No project locked".to_owned(),
         }
