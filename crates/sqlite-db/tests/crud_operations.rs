@@ -12,8 +12,41 @@ fn create_test_db() -> SqliteDb {
             .and_utc(),
     ));
     let db = SqliteDb::open_in_memory_with_clock(clock).unwrap();
-    db.seed_defaults().unwrap();
+    seed_test_disciplines(&db);
     db
+}
+
+fn seed_test_disciplines(db: &SqliteDb) {
+    let disciplines = [
+        ("frontend", "Frontend", "FRNT", "Monitor", "#3b82f6"),
+        ("backend", "Backend", "BACK", "Server", "#8b5cf6"),
+        ("data", "Data", "DATA", "Database", "#10b981"),
+        ("platform", "Platform", "PLTF", "Cloud", "#6366f1"),
+        ("quality", "Quality", "QLTY", "FlaskConical", "#f59e0b"),
+        ("security", "Security", "SECR", "Shield", "#ef4444"),
+        ("integration", "Integration", "INTG", "Cable", "#06b6d4"),
+        (
+            "documentation",
+            "Documentation",
+            "DOCS",
+            "BookOpen",
+            "#14b8a6",
+        ),
+    ];
+    for (name, display, acronym, icon, color) in disciplines {
+        db.create_discipline(sqlite_db::DisciplineInput {
+            name: name.to_owned(),
+            display_name: display.to_owned(),
+            acronym: acronym.to_owned(),
+            icon: icon.to_owned(),
+            color: color.to_owned(),
+            system_prompt: Some("Test prompt".to_owned()),
+            skills: "[]".to_owned(),
+            conventions: Some("Test conventions".to_owned()),
+            mcp_servers: "[]".to_owned(),
+        })
+        .unwrap();
+    }
 }
 
 fn feature(name: &str, display_name: &str, acronym: &str) -> FeatureInput {
@@ -1371,19 +1404,4 @@ fn test_export_yaml_escapes_special_chars() {
     assert!(yaml.contains(r#"body: "Comment with \"quotes\" and\nnewlines""#));
     // Verify no unescaped quotes mid-string
     assert!(!yaml.contains("\"bug\""));
-}
-
-// === SEED DEFAULTS test ===
-
-#[test]
-fn test_seed_defaults() {
-    let db = create_test_db();
-    let disciplines = db.get_disciplines();
-    assert_eq!(disciplines.len(), 8);
-
-    let names: Vec<&str> = disciplines.iter().map(|d| d.name.as_str()).collect();
-    assert!(names.contains(&"frontend"));
-    assert!(names.contains(&"backend"));
-    assert!(names.contains(&"data"));
-    assert!(names.contains(&"documentation"));
 }

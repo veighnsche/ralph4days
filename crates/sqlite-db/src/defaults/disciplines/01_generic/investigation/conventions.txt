@@ -1,4 +1,0 @@
-- Add logging/prints to trace execution
-- Document findings in task comments or .docs/
-- Create minimal reproduction cases
-- Identify root cause before proposing fixes
