@@ -5,7 +5,7 @@ use serde::Deserialize;
 use tauri::State;
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct McpServerConfigData {
     pub name: String,
@@ -203,33 +203,112 @@ pub fn update_feature(
     })
 }
 
+#[derive(Deserialize)]
+pub struct CreateDisciplineParams {
+    pub name: String,
+    pub display_name: String,
+    pub acronym: String,
+    pub icon: String,
+    pub color: String,
+    pub system_prompt: Option<String>,
+    pub skills: Option<Vec<String>>,
+    pub conventions: Option<String>,
+    pub mcp_servers: Option<Vec<McpServerConfigData>>,
+}
+
 #[tauri::command]
 pub fn create_discipline(
     state: State<'_, AppState>,
-    name: String,
-    display_name: String,
-    acronym: String,
-    icon: String,
-    color: String,
+    params: CreateDisciplineParams,
 ) -> Result<(), String> {
     let db = get_db(&state)?;
 
-    let normalized_name = name.to_lowercase().trim().replace(char::is_whitespace, "-");
+    let normalized_name = params
+        .name
+        .to_lowercase()
+        .trim()
+        .replace(char::is_whitespace, "-");
 
-    db.create_discipline(normalized_name, display_name, acronym, icon, color)
+    let skills_json = serde_json::to_string(&params.skills.unwrap_or_default())
+        .map_err(|e| format!("[DISCIPLINE_OPS] Failed to serialize skills: {e}"))?;
+
+    let mcp_servers: Vec<sqlite_db::McpServerConfig> = params
+        .mcp_servers
+        .unwrap_or_default()
+        .iter()
+        .map(|m| sqlite_db::McpServerConfig {
+            name: m.name.clone(),
+            command: m.command.clone(),
+            args: m.args.clone(),
+            env: m.env.clone(),
+        })
+        .collect();
+
+    let mcp_json = serde_json::to_string(&mcp_servers)
+        .map_err(|e| format!("[DISCIPLINE_OPS] Failed to serialize mcp_servers: {e}"))?;
+
+    db.create_discipline(sqlite_db::DisciplineInput {
+        name: normalized_name,
+        display_name: params.display_name,
+        acronym: params.acronym,
+        icon: params.icon,
+        color: params.color,
+        system_prompt: params.system_prompt,
+        skills: skills_json,
+        conventions: params.conventions,
+        mcp_servers: mcp_json,
+    })
+}
+
+#[derive(Deserialize)]
+pub struct UpdateDisciplineParams {
+    pub name: String,
+    pub display_name: String,
+    pub acronym: String,
+    pub icon: String,
+    pub color: String,
+    pub system_prompt: Option<String>,
+    pub skills: Option<Vec<String>>,
+    pub conventions: Option<String>,
+    pub mcp_servers: Option<Vec<McpServerConfigData>>,
 }
 
 #[tauri::command]
 pub fn update_discipline(
     state: State<'_, AppState>,
-    name: String,
-    display_name: String,
-    acronym: String,
-    icon: String,
-    color: String,
+    params: UpdateDisciplineParams,
 ) -> Result<(), String> {
     let db = get_db(&state)?;
-    db.update_discipline(name, display_name, acronym, icon, color)
+
+    let skills_json = serde_json::to_string(&params.skills.unwrap_or_default())
+        .map_err(|e| format!("[DISCIPLINE_OPS] Failed to serialize skills: {e}"))?;
+
+    let mcp_servers: Vec<sqlite_db::McpServerConfig> = params
+        .mcp_servers
+        .unwrap_or_default()
+        .iter()
+        .map(|m| sqlite_db::McpServerConfig {
+            name: m.name.clone(),
+            command: m.command.clone(),
+            args: m.args.clone(),
+            env: m.env.clone(),
+        })
+        .collect();
+
+    let mcp_json = serde_json::to_string(&mcp_servers)
+        .map_err(|e| format!("[DISCIPLINE_OPS] Failed to serialize mcp_servers: {e}"))?;
+
+    db.update_discipline(sqlite_db::DisciplineInput {
+        name: params.name,
+        display_name: params.display_name,
+        acronym: params.acronym,
+        icon: params.icon,
+        color: params.color,
+        system_prompt: params.system_prompt,
+        skills: skills_json,
+        conventions: params.conventions,
+        mcp_servers: mcp_json,
+    })
 }
 
 #[tauri::command]

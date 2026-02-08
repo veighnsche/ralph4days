@@ -6,10 +6,25 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { ItemGroup, ItemSeparator } from '@/components/ui/item'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
+import { DisciplineDetailTabContent } from '@/components/workspace/DisciplineDetailTabContent'
 import { useDisciplineStats } from '@/hooks/useDisciplineStats'
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
 export function DisciplinesPage() {
   const { disciplines, statsMap, progress, isLoading } = useDisciplineStats()
+  const openTab = useWorkspaceStore(state => state.openTab)
+
+  const handleDisciplineClick = (disciplineName: string, displayName: string) => {
+    openTab({
+      type: 'discipline-detail',
+      component: DisciplineDetailTabContent,
+      title: displayName,
+      closeable: true,
+      data: {
+        entityId: disciplineName
+      }
+    })
+  }
 
   if (isLoading) {
     return (
@@ -94,7 +109,9 @@ export function DisciplinesPage() {
 
               return (
                 <div key={discipline.name}>
-                  <div className="p-4 hover:bg-muted/50 transition-colors">
+                  <div
+                    className="p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => handleDisciplineClick(discipline.name, discipline.displayName)}>
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         <div

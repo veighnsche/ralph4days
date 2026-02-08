@@ -49,7 +49,7 @@ pub fn preview_custom_recipe(
         })
         .collect();
 
-    let ctx = state.build_prompt_context(&project_path, user_input, overrides)?;
+    let ctx = state.build_prompt_context(&project_path, user_input, overrides, None)?;
 
     let enabled_names: Vec<&str> = sections
         .iter()

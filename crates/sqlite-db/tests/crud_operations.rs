@@ -764,13 +764,17 @@ fn test_add_feature_context_file_rejects_parent_traversal() {
 #[test]
 fn test_create_discipline() {
     let db = create_test_db();
-    db.create_discipline(
-        "custom".into(),
-        "Custom".into(),
-        "CUST".into(),
-        "Wrench".into(),
-        "#ff0000".into(),
-    )
+    db.create_discipline(sqlite_db::DisciplineInput {
+        name: "custom".to_owned(),
+        display_name: "Custom".to_owned(),
+        acronym: "CUST".to_owned(),
+        icon: "Wrench".to_owned(),
+        color: "#ff0000".to_owned(),
+        system_prompt: None,
+        skills: "[]".to_owned(),
+        conventions: None,
+        mcp_servers: "[]".to_owned(),
+    })
     .unwrap();
     let disciplines = db.get_disciplines();
     assert!(disciplines.iter().any(|d| d.name == "custom"));
@@ -780,13 +784,17 @@ fn test_create_discipline() {
 fn test_create_duplicate_discipline_rejected() {
     let db = create_test_db();
     // "backend" already seeded
-    let result = db.create_discipline(
-        "backend".into(),
-        "Backend2".into(),
-        "BAC2".into(),
-        "Server".into(),
-        "#000".into(),
-    );
+    let result = db.create_discipline(sqlite_db::DisciplineInput {
+        name: "backend".to_owned(),
+        display_name: "Backend2".to_owned(),
+        acronym: "BAC2".to_owned(),
+        icon: "Server".to_owned(),
+        color: "#000".to_owned(),
+        system_prompt: None,
+        skills: "[]".to_owned(),
+        conventions: None,
+        mcp_servers: "[]".to_owned(),
+    });
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("already exists"));
 }
@@ -794,21 +802,29 @@ fn test_create_duplicate_discipline_rejected() {
 #[test]
 fn test_update_discipline() {
     let db = create_test_db();
-    db.create_discipline(
-        "custom".into(),
-        "Custom".into(),
-        "CUST".into(),
-        "Wrench".into(),
-        "#ff0000".into(),
-    )
+    db.create_discipline(sqlite_db::DisciplineInput {
+        name: "custom".to_owned(),
+        display_name: "Custom".to_owned(),
+        acronym: "CUST".to_owned(),
+        icon: "Wrench".to_owned(),
+        color: "#ff0000".to_owned(),
+        system_prompt: None,
+        skills: "[]".to_owned(),
+        conventions: None,
+        mcp_servers: "[]".to_owned(),
+    })
     .unwrap();
-    db.update_discipline(
-        "custom".into(),
-        "Custom Updated".into(),
-        "CUST".into(),
-        "Star".into(),
-        "#00ff00".into(),
-    )
+    db.update_discipline(sqlite_db::DisciplineInput {
+        name: "custom".to_owned(),
+        display_name: "Custom Updated".to_owned(),
+        acronym: "CUST".to_owned(),
+        icon: "Star".to_owned(),
+        color: "#00ff00".to_owned(),
+        system_prompt: None,
+        skills: "[]".to_owned(),
+        conventions: None,
+        mcp_servers: "[]".to_owned(),
+    })
     .unwrap();
 
     let disciplines = db.get_disciplines();
@@ -821,13 +837,17 @@ fn test_update_discipline() {
 #[test]
 fn test_delete_discipline() {
     let db = create_test_db();
-    db.create_discipline(
-        "custom".into(),
-        "Custom".into(),
-        "CUST".into(),
-        "Wrench".into(),
-        "#ff0000".into(),
-    )
+    db.create_discipline(sqlite_db::DisciplineInput {
+        name: "custom".to_owned(),
+        display_name: "Custom".to_owned(),
+        acronym: "CUST".to_owned(),
+        icon: "Wrench".to_owned(),
+        color: "#ff0000".to_owned(),
+        system_prompt: None,
+        skills: "[]".to_owned(),
+        conventions: None,
+        mcp_servers: "[]".to_owned(),
+    })
     .unwrap();
     let initial = db.get_disciplines().len();
     db.delete_discipline("custom".into()).unwrap();

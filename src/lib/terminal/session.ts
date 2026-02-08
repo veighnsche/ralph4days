@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react'
 export interface TerminalSessionConfig {
   sessionId: string
   mcpMode?: string
+  taskId?: number
   model?: string | null
   thinking?: boolean | null
 }
@@ -23,17 +24,26 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
   handlersRef.current = handlers
 
   useEffect(() => {
-    invoke('create_pty_session', {
-      sessionId: config.sessionId,
-      mcpMode: config.mcpMode || 'interactive',
-      model: config.model || null,
-      thinking: config.thinking ?? null
-    }).catch(err => handlersRef.current.onError?.(String(err)))
+    if (config.taskId !== undefined) {
+      invoke('create_pty_session_for_task', {
+        sessionId: config.sessionId,
+        taskId: config.taskId,
+        model: config.model || null,
+        thinking: config.thinking ?? null
+      }).catch(err => handlersRef.current.onError?.(String(err)))
+    } else {
+      invoke('create_pty_session', {
+        sessionId: config.sessionId,
+        mcpMode: config.mcpMode || 'interactive',
+        model: config.model || null,
+        thinking: config.thinking ?? null
+      }).catch(err => handlersRef.current.onError?.(String(err)))
+    }
 
     return () => {
       invoke('terminate_pty_session', { sessionId: config.sessionId }).catch(() => {})
     }
-  }, [config.sessionId, config.mcpMode, config.model, config.thinking])
+  }, [config.sessionId, config.mcpMode, config.taskId, config.model, config.thinking])
 
   useEffect(() => {
     const unlisten = listen<{ session_id: string; data: string }>('ralph://pty_output', event => {

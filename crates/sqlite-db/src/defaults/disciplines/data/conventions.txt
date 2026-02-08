@@ -1,0 +1,28 @@
+## Naming
+- Tables: snake_case, plural (users, order_items)
+- Columns: snake_case (first_name, created_at)
+- Indexes: idx_table_column (idx_users_email)
+- Foreign keys: fk_table_column (fk_orders_user_id)
+- Primary keys: id (or composite for junction tables)
+
+## Structure
+- Migrations: YYYY_MM_DD_HHMMSS_description.sql
+- Seeds: seed_[environment]_[entity].sql
+- Queries: organized by domain/feature
+- Schema docs: docs/database-schema.md with ERD
+
+## Patterns
+- Use SERIAL/AUTOINCREMENT for primary keys unless UUID required
+- Timestamps: created_at, updated_at (NOT NULL DEFAULT CURRENT_TIMESTAMP)
+- Soft deletes: deleted_at (nullable timestamp)
+- Foreign keys with ON DELETE/UPDATE actions
+- Check constraints for business rules
+- Use transactions for multi-table operations
+
+## Quality Standards
+- Every table has a primary key
+- Foreign keys have indexes
+- Nullable columns are intentional (default NOT NULL)
+- Enums stored as TEXT with CHECK constraints or separate tables
+- Avoid BLOB for large files (store references instead)
+- Add comments to complex schema elements

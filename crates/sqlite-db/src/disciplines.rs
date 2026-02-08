@@ -3,58 +3,67 @@ use crate::types::*;
 use crate::SqliteDb;
 
 impl SqliteDb {
-    pub fn create_discipline(
-        &self,
-        name: String,
-        display_name: String,
-        acronym: String,
-        icon: String,
-        color: String,
-    ) -> Result<(), String> {
-        if name.trim().is_empty() {
+    pub fn create_discipline(&self, input: crate::types::DisciplineInput) -> Result<(), String> {
+        if input.name.trim().is_empty() {
             return ralph_err!(codes::DISCIPLINE_OPS, "Discipline name cannot be empty");
         }
-        if display_name.trim().is_empty() {
+        if input.display_name.trim().is_empty() {
             return ralph_err!(
                 codes::DISCIPLINE_OPS,
                 "Discipline display name cannot be empty"
             );
         }
 
-        crate::acronym::validate_acronym_format(&acronym)?;
+        crate::acronym::validate_acronym_format(&input.acronym)?;
 
         let exists: bool = self
             .conn
             .query_row(
                 "SELECT COUNT(*) > 0 FROM disciplines WHERE name = ?1",
-                [&name],
+                [&input.name],
                 |row| row.get(0),
             )
             .map_err(ralph_map_err!(codes::DB_READ, "Failed to check discipline"))?;
         if exists {
-            return ralph_err!(codes::DISCIPLINE_OPS, "Discipline '{name}' already exists");
+            return ralph_err!(
+                codes::DISCIPLINE_OPS,
+                "Discipline '{}' already exists",
+                input.name
+            );
         }
 
         let acronym_exists: bool = self
             .conn
             .query_row(
                 "SELECT COUNT(*) > 0 FROM disciplines WHERE acronym = ?1",
-                [&acronym],
+                [&input.acronym],
                 |row| row.get(0),
             )
             .map_err(ralph_map_err!(codes::DB_READ, "Failed to check acronym"))?;
         if acronym_exists {
             return ralph_err!(
                 codes::DISCIPLINE_OPS,
-                "Acronym '{acronym}' is already used by another discipline"
+                "Acronym '{}' is already used by another discipline",
+                input.acronym
             );
         }
 
         self.conn
             .execute(
-                "INSERT INTO disciplines (name, display_name, acronym, icon, color) \
-                 VALUES (?1, ?2, ?3, ?4, ?5)",
-                rusqlite::params![name, display_name, acronym, icon, color],
+                "INSERT INTO disciplines (name, display_name, acronym, icon, color, \
+                 system_prompt, skills, conventions, mcp_servers) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                rusqlite::params![
+                    input.name,
+                    input.display_name,
+                    input.acronym,
+                    input.icon,
+                    input.color,
+                    input.system_prompt,
+                    input.skills,
+                    input.conventions,
+                    input.mcp_servers
+                ],
             )
             .map_err(ralph_map_err!(
                 codes::DB_WRITE,
@@ -64,56 +73,69 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn update_discipline(
-        &self,
-        name: String,
-        display_name: String,
-        acronym: String,
-        icon: String,
-        color: String,
-    ) -> Result<(), String> {
-        if display_name.trim().is_empty() {
+    pub fn update_discipline(&self, input: crate::types::DisciplineInput) -> Result<(), String> {
+        if input.display_name.trim().is_empty() {
             return ralph_err!(
                 codes::DISCIPLINE_OPS,
                 "Discipline display name cannot be empty"
             );
         }
 
-        crate::acronym::validate_acronym_format(&acronym)?;
+        crate::acronym::validate_acronym_format(&input.acronym)?;
 
         let exists: bool = self
             .conn
             .query_row(
                 "SELECT COUNT(*) > 0 FROM disciplines WHERE name = ?1",
-                [&name],
+                [&input.name],
                 |row| row.get(0),
             )
             .map_err(ralph_map_err!(codes::DB_READ, "Failed to check discipline"))?;
         if !exists {
-            return ralph_err!(codes::DISCIPLINE_OPS, "Discipline '{name}' does not exist");
+            return ralph_err!(
+                codes::DISCIPLINE_OPS,
+                "Discipline '{}' does not exist",
+                input.name
+            );
         }
 
         let acronym_conflict: bool = self
             .conn
             .query_row(
                 "SELECT COUNT(*) > 0 FROM disciplines WHERE acronym = ?1 AND name != ?2",
-                rusqlite::params![acronym, name],
+                rusqlite::params![input.acronym, input.name],
                 |row| row.get(0),
             )
             .map_err(ralph_map_err!(codes::DB_READ, "Failed to check acronym"))?;
         if acronym_conflict {
             return ralph_err!(
                 codes::DISCIPLINE_OPS,
-                "Acronym '{acronym}' is already used by another discipline"
+                "Acronym '{}' is already used by another discipline",
+                input.acronym
             );
         }
 
         self.conn
             .execute(
-                "UPDATE disciplines SET display_name = ?1, acronym = ?2, icon = ?3, color = ?4 WHERE name = ?5",
-                rusqlite::params![display_name, acronym, icon, color, name],
+                "UPDATE disciplines SET display_name = ?1, acronym = ?2, icon = ?3, color = ?4, \
+                 system_prompt = ?5, skills = ?6, conventions = ?7, mcp_servers = ?8 \
+                 WHERE name = ?9",
+                rusqlite::params![
+                    input.display_name,
+                    input.acronym,
+                    input.icon,
+                    input.color,
+                    input.system_prompt,
+                    input.skills,
+                    input.conventions,
+                    input.mcp_servers,
+                    input.name
+                ],
             )
-            .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to update discipline"))?;
+            .map_err(ralph_map_err!(
+                codes::DB_WRITE,
+                "Failed to update discipline"
+            ))?;
 
         Ok(())
     }
@@ -184,19 +206,91 @@ impl SqliteDb {
 
     pub fn seed_defaults(&self) -> Result<(), String> {
         let defaults = [
-            ("frontend", "Frontend", "FRNT", "Monitor", "#3b82f6"),
-            ("backend", "Backend", "BACK", "Server", "#8b5cf6"),
-            ("wiring", "Wiring", "WIRE", "Cable", "#06b6d4"),
-            ("database", "Database", "DTBS", "Database", "#10b981"),
-            ("testing", "Testing", "TEST", "FlaskConical", "#f59e0b"),
-            ("infra", "Infrastructure", "INFR", "Cloud", "#6366f1"),
-            ("security", "Security", "SECR", "Shield", "#ef4444"),
-            ("docs", "Documentation", "DOCS", "BookOpen", "#14b8a6"),
-            ("design", "Design", "DSGN", "Palette", "#ec4899"),
-            ("api", "API", "APIS", "Plug", "#84cc16"),
+            (
+                "frontend",
+                "Frontend",
+                "FRNT",
+                "Monitor",
+                "#3b82f6",
+                include_str!("defaults/disciplines/frontend/system_prompt.txt"),
+                include_str!("defaults/disciplines/frontend/skills.json"),
+                include_str!("defaults/disciplines/frontend/conventions.txt"),
+            ),
+            (
+                "backend",
+                "Backend",
+                "BACK",
+                "Server",
+                "#8b5cf6",
+                include_str!("defaults/disciplines/backend/system_prompt.txt"),
+                include_str!("defaults/disciplines/backend/skills.json"),
+                include_str!("defaults/disciplines/backend/conventions.txt"),
+            ),
+            (
+                "data",
+                "Data",
+                "DATA",
+                "Database",
+                "#10b981",
+                include_str!("defaults/disciplines/data/system_prompt.txt"),
+                include_str!("defaults/disciplines/data/skills.json"),
+                include_str!("defaults/disciplines/data/conventions.txt"),
+            ),
+            (
+                "platform",
+                "Platform",
+                "PLTF",
+                "Cloud",
+                "#6366f1",
+                include_str!("defaults/disciplines/platform/system_prompt.txt"),
+                include_str!("defaults/disciplines/platform/skills.json"),
+                include_str!("defaults/disciplines/platform/conventions.txt"),
+            ),
+            (
+                "quality",
+                "Quality",
+                "QLTY",
+                "FlaskConical",
+                "#f59e0b",
+                include_str!("defaults/disciplines/quality/system_prompt.txt"),
+                include_str!("defaults/disciplines/quality/skills.json"),
+                include_str!("defaults/disciplines/quality/conventions.txt"),
+            ),
+            (
+                "security",
+                "Security",
+                "SECR",
+                "Shield",
+                "#ef4444",
+                include_str!("defaults/disciplines/security/system_prompt.txt"),
+                include_str!("defaults/disciplines/security/skills.json"),
+                include_str!("defaults/disciplines/security/conventions.txt"),
+            ),
+            (
+                "integration",
+                "Integration",
+                "INTG",
+                "Cable",
+                "#06b6d4",
+                include_str!("defaults/disciplines/integration/system_prompt.txt"),
+                include_str!("defaults/disciplines/integration/skills.json"),
+                include_str!("defaults/disciplines/integration/conventions.txt"),
+            ),
+            (
+                "documentation",
+                "Documentation",
+                "DOCS",
+                "BookOpen",
+                "#14b8a6",
+                include_str!("defaults/disciplines/documentation/system_prompt.txt"),
+                include_str!("defaults/disciplines/documentation/skills.json"),
+                include_str!("defaults/disciplines/documentation/conventions.txt"),
+            ),
         ];
 
-        for (name, display_name, acronym, icon, color) in defaults {
+        for (name, display_name, acronym, icon, color, system_prompt, skills, conventions) in
+            defaults
+        {
             let exists: bool = self
                 .conn
                 .query_row(
@@ -209,9 +303,19 @@ impl SqliteDb {
             if !exists {
                 self.conn
                     .execute(
-                        "INSERT INTO disciplines (name, display_name, acronym, icon, color) \
-                         VALUES (?1, ?2, ?3, ?4, ?5)",
-                        rusqlite::params![name, display_name, acronym, icon, color],
+                        "INSERT INTO disciplines (name, display_name, acronym, icon, color, \
+                         system_prompt, skills, conventions) \
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                        rusqlite::params![
+                            name,
+                            display_name,
+                            acronym,
+                            icon,
+                            color,
+                            system_prompt,
+                            skills,
+                            conventions
+                        ],
                     )
                     .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to seed discipline"))?;
             }

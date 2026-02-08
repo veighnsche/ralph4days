@@ -103,6 +103,7 @@ pub fn run() {
             commands::prompts::save_recipe_config,
             commands::prompts::delete_recipe_config,
             commands::terminal::create_pty_session,
+            commands::terminal::create_pty_session_for_task,
             commands::terminal::send_terminal_input,
             commands::terminal::resize_pty,
             commands::terminal::terminate_pty_session,

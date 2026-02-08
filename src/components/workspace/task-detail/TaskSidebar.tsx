@@ -1,11 +1,14 @@
-import { Bot, Cog, User } from 'lucide-react'
+import { Bot, Cog, Play, User } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { INFERRED_STATUS_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from '@/constants/prd'
 import { formatDate } from '@/lib/formatDate'
 import { resolveIcon } from '@/lib/iconRegistry'
 import { shouldShowInferredStatus } from '@/lib/taskStatus'
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { Task } from '@/types/generated'
+import { TerminalTabContent } from '../TerminalTabContent'
 import { PropertyRow } from './PropertyRow'
 
 const PROVENANCE_CONFIG = {
@@ -19,6 +22,19 @@ export function TaskSidebar({ task }: { task: Task }) {
   const StatusIcon = statusConfig.icon
   const priorityConfig = task.priority ? PRIORITY_CONFIG[task.priority] : null
   const DisciplineIcon = resolveIcon(task.disciplineIcon)
+  const openTab = useWorkspaceStore(state => state.openTab)
+
+  const handleExecute = () => {
+    openTab({
+      type: 'terminal',
+      component: TerminalTabContent,
+      title: `Task #${task.id.toString().padStart(3, '0')}`,
+      closeable: true,
+      data: {
+        taskId: task.id
+      }
+    })
+  }
 
   return (
     <div className="px-4 py-4 space-y-0.5 overflow-y-auto h-full">
@@ -79,6 +95,13 @@ export function TaskSidebar({ task }: { task: Task }) {
             )}
         </div>
       </PropertyRow>
+
+      <div className="pt-2 pb-1">
+        <Button onClick={handleExecute} size="sm" className="w-full h-8" disabled={task.status === 'done'}>
+          <Play className="h-3.5 w-3.5 mr-1.5" />
+          Execute Task
+        </Button>
+      </div>
 
       <PropertyRow label="Priority">
         {priorityConfig ? (

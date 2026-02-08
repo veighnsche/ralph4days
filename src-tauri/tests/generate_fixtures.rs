@@ -539,6 +539,58 @@ just dev-mock 04-dev-project
     })
     .unwrap();
 
+    // Create custom disciplines (not in defaults)
+    db.create_discipline(sqlite_db::DisciplineInput {
+        name: "design".to_owned(),
+        display_name: "Design".to_owned(),
+        acronym: "DSGN".to_owned(),
+        icon: "Palette".to_owned(),
+        color: "#ec4899".to_owned(),
+        system_prompt: Some("You are a design specialist focused on UI/UX.".to_owned()),
+        skills: "[]".to_owned(),
+        conventions: None,
+        mcp_servers: "[]".to_owned(),
+    })
+    .unwrap();
+    db.create_discipline(sqlite_db::DisciplineInput {
+        name: "testing".to_owned(),
+        display_name: "Testing".to_owned(),
+        acronym: "TEST".to_owned(),
+        icon: "TestTube".to_owned(),
+        color: "#22c55e".to_owned(),
+        system_prompt: Some(
+            "You are a testing specialist focused on quality assurance.".to_owned(),
+        ),
+        skills: "[]".to_owned(),
+        conventions: None,
+        mcp_servers: "[]".to_owned(),
+    })
+    .unwrap();
+    db.create_discipline(sqlite_db::DisciplineInput {
+        name: "docs".to_owned(),
+        display_name: "Docs".to_owned(),
+        acronym: "DOC2".to_owned(),
+        icon: "BookOpen".to_owned(),
+        color: "#3b82f6".to_owned(),
+        system_prompt: Some("You are a documentation specialist.".to_owned()),
+        skills: "[]".to_owned(),
+        conventions: None,
+        mcp_servers: "[]".to_owned(),
+    })
+    .unwrap();
+    db.create_discipline(sqlite_db::DisciplineInput {
+        name: "database".to_owned(),
+        display_name: "Database".to_owned(),
+        acronym: "DABA".to_owned(),
+        icon: "Database".to_owned(),
+        color: "#f97316".to_owned(),
+        system_prompt: Some("You are a database specialist.".to_owned()),
+        skills: "[]".to_owned(),
+        conventions: None,
+        mcp_servers: "[]".to_owned(),
+    })
+    .unwrap();
+
     // --- Tasks ---
     // All tasks created as pending via API, then we use execute_raw() to set varied statuses.
 

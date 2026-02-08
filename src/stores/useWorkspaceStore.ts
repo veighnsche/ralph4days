@@ -28,6 +28,7 @@ export interface WorkspaceTab {
     sessionId?: string // For output tabs
     model?: string // For terminal tabs (haiku, sonnet, opus)
     thinking?: boolean // For terminal tabs (extended thinking)
+    taskId?: number // For task execution terminals
   }
 }
 

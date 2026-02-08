@@ -54,6 +54,7 @@ impl AppState {
         project_path: &std::path::Path,
         user_input: Option<String>,
         instruction_overrides: std::collections::HashMap<String, String>,
+        target_task_id: Option<u32>,
     ) -> Result<PromptContext, String> {
         let ralph_dir = project_path.join(".ralph");
         let db_path = ralph_dir.join("db").join("ralph.db");
@@ -88,7 +89,7 @@ impl AppState {
             db_path: db_path.to_string_lossy().to_string(),
             script_dir: self.mcp_dir.to_string_lossy().to_string(),
             user_input,
-            target_task_id: None,
+            target_task_id,
             target_feature: None,
             codebase_snapshot: snapshot,
             instruction_overrides,
@@ -116,7 +117,7 @@ impl AppState {
         }
 
         let recipe = prompt_builder::recipes::get(prompt_type);
-        let ctx = self.build_prompt_context(project_path, None, overrides)?;
+        let ctx = self.build_prompt_context(project_path, None, overrides, None)?;
 
         let (scripts, config_json) = prompt_builder::mcp::generate(&ctx, &recipe.mcp_tools);
 
@@ -152,6 +153,64 @@ impl AppState {
         }
 
         let config_path = self.mcp_dir.join(format!("mcp-{mode}.json"));
+        std::fs::write(&config_path, &config_json).map_err(|e| {
+            crate::errors::RalphError {
+                code: codes::FILESYSTEM,
+                message: format!("Failed to write MCP config: {e}"),
+            }
+            .to_string()
+        })?;
+
+        Ok(config_path)
+    }
+
+    pub(super) fn generate_mcp_config_for_task(
+        &self,
+        task_id: u32,
+        project_path: &std::path::Path,
+    ) -> Result<PathBuf, String> {
+        let ctx = self.build_prompt_context(
+            project_path,
+            None,
+            std::collections::HashMap::new(),
+            Some(task_id),
+        )?;
+
+        let recipe = prompt_builder::recipes::get(prompt_builder::PromptType::TaskExecution);
+        let (scripts, config_json) = prompt_builder::mcp::generate(&ctx, &recipe.mcp_tools);
+
+        std::fs::create_dir_all(&self.mcp_dir).map_err(|e| {
+            crate::errors::RalphError {
+                code: codes::FILESYSTEM,
+                message: format!("Failed to create MCP dir: {e}"),
+            }
+            .to_string()
+        })?;
+
+        for script in &scripts {
+            let script_path = self.mcp_dir.join(&script.filename);
+            std::fs::write(&script_path, &script.content).map_err(|e| {
+                crate::errors::RalphError {
+                    code: codes::FILESYSTEM,
+                    message: format!("Failed to write MCP script: {e}"),
+                }
+                .to_string()
+            })?;
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                std::fs::set_permissions(&script_path, std::fs::Permissions::from_mode(0o755))
+                    .map_err(|e| {
+                        crate::errors::RalphError {
+                            code: codes::FILESYSTEM,
+                            message: format!("Failed to chmod MCP script: {e}"),
+                        }
+                        .to_string()
+                    })?;
+            }
+        }
+
+        let config_path = self.mcp_dir.join(format!("mcp-task-{task_id}.json"));
         std::fs::write(&config_path, &config_json).map_err(|e| {
             crate::errors::RalphError {
                 code: codes::FILESYSTEM,

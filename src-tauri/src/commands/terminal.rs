@@ -61,3 +61,34 @@ pub fn resize_pty(
 pub fn terminate_pty_session(state: State<'_, AppState>, session_id: String) -> Result<(), String> {
     state.pty_manager.terminate(&session_id)
 }
+
+#[tauri::command]
+pub fn create_pty_session_for_task(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    session_id: String,
+    task_id: u32,
+    model: Option<String>,
+    thinking: Option<bool>,
+) -> Result<(), String> {
+    let locked = state.locked_project.lock().err_str(codes::INTERNAL)?;
+    let project_path = locked
+        .as_ref()
+        .ok_or_else(|| {
+            crate::errors::RalphError {
+                code: codes::PROJECT_LOCK,
+                message: "No project locked".to_owned(),
+            }
+            .to_string()
+        })?
+        .clone();
+    drop(locked);
+
+    let mcp_config = Some(state.generate_mcp_config_for_task(task_id, &project_path)?);
+
+    let config = SessionConfig { model, thinking };
+
+    state
+        .pty_manager
+        .create_session(app, session_id, &project_path, mcp_config, config)
+}

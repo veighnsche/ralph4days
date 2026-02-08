@@ -265,6 +265,19 @@ pub struct FeatureInput {
     pub dependencies: Vec<String>,
 }
 
+#[derive(Debug, Clone)]
+pub struct DisciplineInput {
+    pub name: String,
+    pub display_name: String,
+    pub acronym: String,
+    pub icon: String,
+    pub color: String,
+    pub system_prompt: Option<String>,
+    pub skills: String,
+    pub conventions: Option<String>,
+    pub mcp_servers: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Discipline {
     pub name: String,

@@ -3,7 +3,7 @@ import { Layers } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { DisciplineFormFields } from '@/components/forms/DisciplineForm'
-import { useInvokeMutation } from '@/hooks/useInvokeMutation'
+import { useDisciplineMutations } from '@/hooks/useDisciplineMutations'
 import { type DisciplineFormData, disciplineSchema } from '@/lib/schemas'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
@@ -11,6 +11,7 @@ import { EntityFormTabContent } from './EntityFormTabContent'
 
 export function DisciplineFormTabContent({ tab }: { tab: WorkspaceTab }) {
   const closeTab = useWorkspaceStore(s => s.closeTab)
+  const { createDiscipline, isCreating, createError } = useDisciplineMutations()
 
   const form = useForm<DisciplineFormData>({
     resolver: zodResolver(disciplineSchema),
@@ -23,22 +24,14 @@ export function DisciplineFormTabContent({ tab }: { tab: WorkspaceTab }) {
     }
   })
 
-  const createDiscipline = useInvokeMutation<Record<string, unknown>>('create_discipline', {
-    invalidateKeys: [['get_disciplines_config'], ['get_tasks']],
-    onSuccess: () => {
+  const handleSubmit = async (data: DisciplineFormData) => {
+    try {
+      await createDiscipline(data)
       toast.success('Discipline created')
       closeTab(tab.id)
+    } catch (err) {
+      toast.error(String(err))
     }
-  })
-
-  const handleSubmit = (data: DisciplineFormData) => {
-    createDiscipline.mutate({
-      name: data.name || data.displayName,
-      displayName: data.displayName,
-      acronym: data.acronym,
-      icon: data.icon,
-      color: data.color
-    })
   }
 
   return (
@@ -48,10 +41,10 @@ export function DisciplineFormTabContent({ tab }: { tab: WorkspaceTab }) {
       entityName="Discipline"
       form={form}
       onSubmit={handleSubmit}
-      isPending={createDiscipline.isPending}
-      error={createDiscipline.error}
-      onErrorDismiss={createDiscipline.reset}>
-      <DisciplineFormFields disabled={createDiscipline.isPending} />
+      isPending={isCreating}
+      error={createError}
+      onErrorDismiss={() => {}}>
+      <DisciplineFormFields disabled={isCreating} />
     </EntityFormTabContent>
   )
 }

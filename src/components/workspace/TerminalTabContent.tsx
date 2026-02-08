@@ -17,7 +17,8 @@ export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
   const session = useTerminalSession(
     {
       sessionId: tab.id,
-      mcpMode: 'interactive',
+      mcpMode: tab.data?.taskId !== undefined ? undefined : 'interactive',
+      taskId: tab.data?.taskId,
       model: tab.data?.model,
       thinking: tab.data?.thinking
     },
