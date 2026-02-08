@@ -92,6 +92,31 @@ pub fn validate_project_path(path: String) -> Result<(), String> {
     Ok(())
 }
 
+fn seed_disciplines_for_stack(db: &SqliteDb, stack: u8) -> Result<(), String> {
+    let defs = predefined_disciplines::get_disciplines_for_stack(stack);
+    if defs.is_empty() && stack != 0 {
+        return ralph_err!(
+            codes::DISCIPLINE_OPS,
+            "No disciplines defined for stack {stack}"
+        );
+    }
+    for d in defs {
+        let skills_json = serde_json::to_string(&d.skills).unwrap_or_else(|_| "[]".to_owned());
+        db.create_discipline(sqlite_db::DisciplineInput {
+            name: d.name,
+            display_name: d.display_name,
+            acronym: d.acronym,
+            icon: d.icon,
+            color: d.color,
+            system_prompt: Some(d.system_prompt),
+            skills: skills_json,
+            conventions: Some(d.conventions),
+            mcp_servers: "[]".to_owned(),
+        })?;
+    }
+    Ok(())
+}
+
 #[tauri::command]
 #[tracing::instrument]
 pub fn initialize_ralph_project(
@@ -131,7 +156,7 @@ pub fn initialize_ralph_project(
 
     let db_path = db_dir.join("ralph.db");
     let db = SqliteDb::open(&db_path)?;
-    db.seed_for_stack(stack)?;
+    seed_disciplines_for_stack(&db, stack)?;
     db.initialize_metadata(
         project_title.clone(),
         Some("Add project description here".to_owned()),

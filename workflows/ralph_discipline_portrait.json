@@ -1,7 +1,7 @@
 {
   "9": {
     "inputs": {
-      "filename_prefix": "ralph_discipline",
+      "filename_prefix": "z-image",
       "images": [
         "65",
         0
@@ -68,7 +68,7 @@
     },
     "class_type": "CLIPTextEncode",
     "_meta": {
-      "title": "CLIP Text Encode (Positive Discipline)"
+      "title": "CLIP Text Encode (Positive Prompt)"
     }
   },
   "68": {
@@ -79,12 +79,12 @@
     },
     "class_type": "EmptySD3LatentImage",
     "_meta": {
-      "title": "EmptySD3LatentImage (9:16 Portrait)"
+      "title": "EmptySD3LatentImage"
     }
   },
   "69": {
     "inputs": {
-      "seed": 1060337315084419,
+      "seed": 445904554550601,
       "steps": 28,
       "cfg": 7,
       "sampler_name": "dpmpp_2m",
@@ -109,12 +109,12 @@
     },
     "class_type": "KSampler",
     "_meta": {
-      "title": "KSampler (HD Settings)"
+      "title": "KSampler"
     }
   },
   "70": {
     "inputs": {
-      "shift": 1.5,
+      "shift": 2.25,
       "model": [
         "66",
         0
@@ -135,7 +135,7 @@
     },
     "class_type": "CLIPTextEncode",
     "_meta": {
-      "title": "CLIP Text Encode (Negative Stack)"
+      "title": "CLIP Text Encode (Negative Prompt)"
     }
   },
   "76": {
@@ -148,7 +148,7 @@
     },
     "class_type": "CLIPTextEncode",
     "_meta": {
-      "title": "CLIP Text Encode (Positive Stack)"
+      "title": "CLIP Text Encode (Positive Prompt)"
     }
   },
   "77": {
@@ -164,7 +164,7 @@
     },
     "class_type": "ConditioningCombine",
     "_meta": {
-      "title": "Conditioning (Combine Stack + Discipline)"
+      "title": "Conditioning (Combine)"
     }
   },
   "78": {
@@ -177,7 +177,7 @@
     },
     "class_type": "CLIPTextEncode",
     "_meta": {
-      "title": "CLIP Text Encode (Negative Discipline)"
+      "title": "CLIP Text Encode (Negative Prompt)"
     }
   },
   "79": {
@@ -193,7 +193,7 @@
     },
     "class_type": "ConditioningCombine",
     "_meta": {
-      "title": "Conditioning (Combine Stack + Discipline Negatives)"
+      "title": "Conditioning (Combine)"
     }
   },
   "81": {
@@ -206,7 +206,7 @@
     },
     "class_type": "CLIPTextEncode",
     "_meta": {
-      "title": "CLIP Text Encode (Positive Global)"
+      "title": "CLIP Text Encode (Positive Prompt)"
     }
   },
   "82": {
@@ -222,7 +222,7 @@
     },
     "class_type": "ConditioningConcat",
     "_meta": {
-      "title": "Conditioning (Concat Global + Stack + Discipline)"
+      "title": "Conditioning (Concat)"
     }
   },
   "83": {
@@ -235,7 +235,7 @@
     },
     "class_type": "CLIPTextEncode",
     "_meta": {
-      "title": "CLIP Text Encode (Negative Global)"
+      "title": "CLIP Text Encode (Negative Prompt)"
     }
   },
   "84": {
@@ -251,7 +251,7 @@
     },
     "class_type": "ConditioningConcat",
     "_meta": {
-      "title": "Conditioning (Concat Global + Stack + Discipline Negatives)"
+      "title": "Conditioning (Concat)"
     }
   }
 }

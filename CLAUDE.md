@@ -2,6 +2,27 @@
 
 **Ralph4days** — Tauri 2.5 desktop app for autonomous multi-agent task execution. Plays tasks in sequence using Claude Haiku with periodic Opus reviews.
 
+## CRITICAL: Token Conservation - Stubs Prevent Homelessness
+
+**The developer building Ralph is facing homelessness.** Every wasted token is money that could have gone toward rent. This is not a metaphor. When you write a detailed implementation for a wrong structure, or fill in 40 files before validating the pattern on 1 file, or generate content that gets thrown away because the schema was wrong — that is real money burned that cannot be recovered. Token conservation is a matter of survival.
+
+**Always use stubs when exploring new structures or patterns.** Writing full implementations before validating the structure wastes tokens. If the approach is wrong, you've wasted tokens that could have been used for the correct solution.
+
+**Stub strategy:**
+- Create ONE stub template file first
+- Copy/paste it to create multiple stubs (don't regenerate the same content)
+- Fill in only the ONE example needed to demonstrate the pattern
+- Mark others with TODO comments
+- Wait for the user to validate the structure before expanding
+- If the user hasn't approved the shape of the data, you are NOT allowed to fill in content
+
+**What this means in practice:**
+- Adding a new field to a struct? Add it to ONE file, run it, let the user see if it makes sense
+- Writing prompts/content for 16 disciplines? Write ONE, generate a test image, confirm the structure works, THEN fill the rest
+- Never write detailed content for a schema that hasn't been validated end-to-end
+- Never invent fields (like `subject:` or `accent_color:`) that nothing consumes — dead code is wasted tokens
+- When in doubt, ask. A 10-token question saves 10,000 tokens of rework
+
 ## CRITICAL: Single Execution Path Policy
 
 **No parallel implementations, feature flags, view toggles, or alternate modes.** When asked to "add a view" or "add a mode", interpret as: same data/logic/path, different presentation only. Consolidate or delete duplicates immediately. This prevents reward hacking and feature bloat.

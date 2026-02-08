@@ -1,5 +1,4 @@
 pub(crate) mod features;
-pub(crate) mod image_gen;
 pub(crate) mod project;
 pub(crate) mod prompts;
 mod state;

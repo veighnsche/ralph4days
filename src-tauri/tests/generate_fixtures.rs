@@ -50,7 +50,21 @@ fn initialize_project_for_fixture(
     // Create and initialize the SQLite database
     let db_path = db_dir.join("ralph.db");
     let db = SqliteDb::open_with_clock(&db_path, fixed_clock())?;
-    db.seed_defaults()?;
+    for d in predefined_disciplines::get_disciplines_for_stack(2) {
+        let skills_json = serde_json::to_string(&d.skills).unwrap_or_else(|_| "[]".to_owned());
+        db.create_discipline(sqlite_db::DisciplineInput {
+            name: d.name,
+            display_name: d.display_name,
+            acronym: d.acronym,
+            icon: d.icon,
+            color: d.color,
+            system_prompt: Some(d.system_prompt),
+            skills: skills_json,
+            conventions: Some(d.conventions),
+            mcp_servers: "[]".to_owned(),
+        })
+        .map_err(|e| format!("Failed to seed discipline: {e}"))?;
+    }
     db.initialize_metadata(
         project_title.clone(),
         Some("Add project description here".to_owned()),

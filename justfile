@@ -4,6 +4,14 @@
 
 set shell := ["bash", "-cu"]
 
+# Generate a discipline portrait (production, 28 steps)
+generate-discipline-image STACK DISCIPLINE:
+    cargo run -p predefined-disciplines --bin generate-discipline-image -- {{STACK}} {{DISCIPLINE}}
+
+# Generate a discipline portrait (test, 1 step)
+generate-discipline-image-test STACK DISCIPLINE:
+    cargo run -p predefined-disciplines --bin generate-discipline-image -- --test {{STACK}} {{DISCIPLINE}}
+
 # Default recipe: show available commands
 default:
     @just --list

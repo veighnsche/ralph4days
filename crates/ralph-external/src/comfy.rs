@@ -1,4 +1,5 @@
 use crate::config::ComfyConfig;
+use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::Duration;
@@ -10,19 +11,26 @@ pub struct ComfyStatus {
 }
 
 #[derive(Debug, Serialize)]
-struct PromptRequest {
-    prompt: HashMap<String, WorkflowNode>,
+pub(crate) struct PromptRequest {
+    pub prompt: HashMap<String, WorkflowNode>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct WorkflowNode {
-    inputs: HashMap<String, serde_json::Value>,
-    class_type: String,
+pub(crate) struct WorkflowNode {
+    pub inputs: HashMap<String, serde_json::Value>,
+    pub class_type: String,
 }
 
 #[derive(Debug, Deserialize)]
-struct QueueResponse {
-    prompt_id: String,
+pub(crate) struct QueueResponse {
+    pub prompt_id: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct GenerationProgress {
+    pub step: u32,
+    pub total: u32,
+    pub node: String,
 }
 
 pub async fn check_available(config: &ComfyConfig) -> ComfyStatus {
@@ -56,7 +64,7 @@ pub async fn generate_audio(
     text: String,
     workflow_name: &str,
 ) -> Result<Vec<u8>, String> {
-    let workflow_path = get_workflow_path_by_name(config, workflow_name)?;
+    let workflow_path = get_workflow_path_by_name(workflow_name)?;
 
     let workflow_json = std::fs::read_to_string(&workflow_path)
         .map_err(|e| format!("Failed to read workflow file: {e}"))?;
@@ -66,32 +74,7 @@ pub async fn generate_audio(
 
     inject_text(&mut workflow, text)?;
 
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(config.timeout_secs))
-        .build()
-        .map_err(|e| format!("Failed to build HTTP client: {e}"))?;
-
-    let prompt_request = PromptRequest { prompt: workflow };
-
-    let response = client
-        .post(format!("{}/prompt", config.api_url))
-        .json(&prompt_request)
-        .send()
-        .await
-        .map_err(|e| format!("Failed to queue prompt: {e}"))?;
-
-    if !response.status().is_success() {
-        return Err(format!("ComfyUI error: HTTP {}", response.status()));
-    }
-
-    let queue_response: QueueResponse = response
-        .json()
-        .await
-        .map_err(|e| format!("Failed to parse queue response: {e}"))?;
-
-    poll_until_complete(&client, config, &queue_response.prompt_id).await?;
-
-    fetch_generated_output(&client, config, &queue_response.prompt_id, "audio").await
+    run_workflow(config, workflow, "audio", |_| {}).await
 }
 
 pub async fn generate_image(
@@ -99,7 +82,7 @@ pub async fn generate_image(
     positive_prompt: String,
     negative_prompt: String,
 ) -> Result<Vec<u8>, String> {
-    let workflow_path = get_workflow_path_by_name(config, &config.default_workflow)?;
+    let workflow_path = get_workflow_path_by_name(&config.default_workflow)?;
 
     let workflow_json = std::fs::read_to_string(&workflow_path)
         .map_err(|e| format!("Failed to read workflow file: {e}"))?;
@@ -109,6 +92,30 @@ pub async fn generate_image(
 
     inject_prompts(&mut workflow, positive_prompt, negative_prompt)?;
 
+    run_workflow(config, workflow, "images", |_| {}).await
+}
+
+/// Queue a workflow, wait for completion via WebSocket, fetch output bytes.
+pub(crate) async fn run_workflow(
+    config: &ComfyConfig,
+    workflow: HashMap<String, WorkflowNode>,
+    output_type: &str,
+    on_progress: impl Fn(GenerationProgress),
+) -> Result<Vec<u8>, String> {
+    let client_id = uuid::Uuid::new_v4().to_string();
+
+    let ws_url = config
+        .api_url
+        .replace("http://", "ws://")
+        .replace("https://", "wss://");
+    let ws_url = format!("{ws_url}/ws?clientId={client_id}");
+
+    let (ws_stream, _) = tokio_tungstenite::connect_async(&ws_url)
+        .await
+        .map_err(|e| format!("Failed to connect WebSocket: {e}"))?;
+
+    let (_, mut read) = ws_stream.split();
+
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(config.timeout_secs))
         .build()
@@ -132,15 +139,68 @@ pub async fn generate_image(
         .await
         .map_err(|e| format!("Failed to parse queue response: {e}"))?;
 
-    poll_until_complete(&client, config, &queue_response.prompt_id).await?;
+    let prompt_id = &queue_response.prompt_id;
 
-    fetch_generated_output(&client, config, &queue_response.prompt_id, "images").await
+    let timeout = tokio::time::sleep(Duration::from_secs(config.timeout_secs));
+    tokio::pin!(timeout);
+
+    loop {
+        tokio::select! {
+            msg = read.next() => {
+                let Some(Ok(msg)) = msg else { continue };
+                let tokio_tungstenite::tungstenite::Message::Text(text) = msg else { continue };
+
+                let Ok(data) = serde_json::from_str::<serde_json::Value>(&text) else { continue };
+
+                let msg_type = data.get("type").and_then(|t| t.as_str()).unwrap_or("");
+                let msg_data = data.get("data");
+
+                match msg_type {
+                    "progress" => {
+                        if let Some(d) = msg_data {
+                            let pid = d.get("prompt_id").and_then(|p| p.as_str()).unwrap_or("");
+                            if pid == prompt_id {
+                                let step = d.get("value").and_then(serde_json::Value::as_u64).unwrap_or(0) as u32;
+                                let total = d.get("max").and_then(serde_json::Value::as_u64).unwrap_or(0) as u32;
+                                let node = d.get("node").and_then(|v| v.as_str()).unwrap_or("").to_owned();
+                                on_progress(GenerationProgress { step, total, node });
+                            }
+                        }
+                    }
+                    "executed" => {
+                        if let Some(d) = msg_data {
+                            let pid = d.get("prompt_id").and_then(|p| p.as_str()).unwrap_or("");
+                            if pid == prompt_id && d.get("output").and_then(|o| o.get(output_type)).is_some() {
+                                break;
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            () = &mut timeout => {
+                return Err("Generation timed out".into());
+            }
+        }
+    }
+
+    fetch_generated_output(&client, config, prompt_id, output_type).await
 }
 
-fn get_workflow_path_by_name(
-    config: &ComfyConfig,
-    workflow_name: &str,
-) -> Result<std::path::PathBuf, String> {
+pub(crate) fn randomize_seed(workflow: &mut HashMap<String, WorkflowNode>) {
+    let seed = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos() as u64;
+
+    for node in workflow.values_mut() {
+        if node.class_type == "KSampler" {
+            node.inputs.insert("seed".into(), serde_json::json!(seed));
+        }
+    }
+}
+
+fn get_workflow_path_by_name(workflow_name: &str) -> Result<std::path::PathBuf, String> {
     let config_dir = dirs::config_dir()
         .ok_or("No config directory on this platform")?
         .join("ralph")
@@ -203,13 +263,9 @@ fn inject_text(workflow: &mut HashMap<String, WorkflowNode>, text: String) -> Re
 
     for node in workflow.values_mut() {
         if let Some(text_field) = node.inputs.get("text") {
-            if text_field
-                .as_str()
-                .unwrap_or("")
-                .contains("tts_input_text")
-            {
+            if text_field.as_str().unwrap_or("").contains("tts_input_text") {
                 node.inputs
-                    .insert("text".into(), serde_json::Value::String(text.clone()));
+                    .insert("text".into(), serde_json::Value::String(text));
                 found_text_input = true;
                 break;
             }
@@ -218,43 +274,11 @@ fn inject_text(workflow: &mut HashMap<String, WorkflowNode>, text: String) -> Re
 
     if !found_text_input {
         return Err(
-            "Workflow must have a node with 'text' input containing 'tts_input_text' marker"
-                .into(),
+            "Workflow must have a node with 'text' input containing 'tts_input_text' marker".into(),
         );
     }
 
     Ok(())
-}
-
-async fn poll_until_complete(
-    client: &reqwest::Client,
-    config: &ComfyConfig,
-    prompt_id: &str,
-) -> Result<(), String> {
-    let max_polls = config.timeout_secs / 5;
-
-    for _ in 0..max_polls {
-        tokio::time::sleep(Duration::from_secs(5)).await;
-
-        let history_response = client
-            .get(format!("{}/history/{}", config.api_url, prompt_id))
-            .send()
-            .await
-            .map_err(|e| format!("Failed to check history: {e}"))?;
-
-        if history_response.status().is_success() {
-            let history: serde_json::Value = history_response
-                .json()
-                .await
-                .map_err(|e| format!("Failed to parse history: {e}"))?;
-
-            if history.get(prompt_id).is_some() {
-                return Ok(());
-            }
-        }
-    }
-
-    Err("Image generation timed out".into())
 }
 
 async fn fetch_generated_output(
@@ -284,8 +308,8 @@ async fn fetch_generated_output(
 
     let filename = output_files
         .get(0)
-        .and_then(|file| file.get("filename"))
-        .and_then(|f| f.as_str())
+        .and_then(|file: &serde_json::Value| file.get("filename"))
+        .and_then(|f: &serde_json::Value| f.as_str())
         .ok_or("No filename in output")?;
 
     let file_response = client
@@ -302,10 +326,10 @@ async fn fetch_generated_output(
     Ok(file_bytes.to_vec())
 }
 
-fn find_first_output(
-    outputs: &serde_json::Value,
+fn find_first_output<'a>(
+    outputs: &'a serde_json::Value,
     output_type: &str,
-) -> Option<&serde_json::Value> {
+) -> Option<&'a serde_json::Value> {
     if let serde_json::Value::Object(map) = outputs {
         for value in map.values() {
             if let Some(output_array) = value.get(output_type) {

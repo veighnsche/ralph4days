@@ -18,6 +18,9 @@ tokio = { version = "1", features = ["time"] }
 thiserror = "2"
 ralph-errors = { workspace = true }
 dirs = "5"
+tokio-tungstenite = { version = "0.26", features = ["native-tls"] }
+futures-util = "0.3"
+uuid = { version = "1", features = ["v4"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt"] }

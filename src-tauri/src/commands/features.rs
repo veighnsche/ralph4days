@@ -395,7 +395,7 @@ pub struct StackMetadataData {
 
 #[tauri::command]
 pub fn get_stack_metadata() -> Vec<StackMetadataData> {
-    sqlite_db::stack_metadata::get_all_stack_metadata()
+    predefined_disciplines::get_all_stack_metadata()
         .iter()
         .map(|m| StackMetadataData {
             stack_id: m.stack_id,
