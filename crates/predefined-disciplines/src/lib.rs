@@ -104,6 +104,19 @@ const STACK_DISCIPLINES: &[(u8, &[&str])] = &[
             include_str!("defaults/disciplines/03_saas/07_documentation.yaml"),
         ],
     ),
+    (
+        4,
+        &[
+            include_str!("defaults/disciplines/04_mobile/00_flutter_ui.yaml"),
+            include_str!("defaults/disciplines/04_mobile/01_dart_logic.yaml"),
+            include_str!("defaults/disciplines/04_mobile/02_firebase_backend.yaml"),
+            include_str!("defaults/disciplines/04_mobile/03_state_management.yaml"),
+            include_str!("defaults/disciplines/04_mobile/04_platform_integration.yaml"),
+            include_str!("defaults/disciplines/04_mobile/05_testing.yaml"),
+            include_str!("defaults/disciplines/04_mobile/06_app_distribution.yaml"),
+            include_str!("defaults/disciplines/04_mobile/07_documentation.yaml"),
+        ],
+    ),
 ];
 
 pub fn get_all_stack_metadata() -> Vec<StackMetadata> {
