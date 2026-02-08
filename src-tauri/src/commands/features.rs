@@ -1,4 +1,4 @@
-use super::state::{get_db, normalize_feature_name, AppState};
+use super::state::{get_db, AppState};
 use crate::errors::{codes, ralph_err};
 use ralph_macros::ipc_type;
 use serde::Deserialize;
@@ -54,29 +54,6 @@ pub fn get_disciplines_config(state: State<'_, AppState>) -> Result<Vec<Discipli
                     env: m.env.clone(),
                 })
                 .collect(),
-        })
-        .collect())
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FeatureConfig {
-    pub name: String,
-    pub display_name: String,
-    pub acronym: String,
-}
-
-#[tauri::command]
-pub fn get_features_config(state: State<'_, AppState>) -> Result<Vec<FeatureConfig>, String> {
-    let db = get_db(&state)?;
-    Ok(db
-        .get_features()
-        .iter()
-        .map(|f| FeatureConfig {
-            name: f.name.clone(),
-            display_name: f.display_name.clone(),
-            acronym: f.acronym.clone(),
         })
         .collect())
 }
@@ -181,10 +158,8 @@ pub fn create_feature(
 ) -> Result<(), String> {
     let db = get_db(&state)?;
 
-    let normalized_name = normalize_feature_name(&params.name)?;
-
     db.create_feature(sqlite_db::FeatureInput {
-        name: normalized_name,
+        name: params.name,
         display_name: params.display_name,
         acronym: params.acronym,
         description: params.description,

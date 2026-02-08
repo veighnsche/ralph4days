@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { PageContent, PageHeader, PageLayout } from '@/components/layout/PageLayout'
 import { PRDBody } from '@/components/prd/PRDBody'
 import { PRDHeader } from '@/components/prd/PRDHeader'
@@ -7,7 +8,8 @@ import { useInvoke } from '@/hooks/useInvoke'
 import { usePRDData } from '@/hooks/usePRDData'
 import { usePRDFilters } from '@/hooks/usePRDFilters'
 import { useWorkspaceActions } from '@/hooks/useWorkspaceActions'
-import type { ProjectInfo, ProjectProgress } from '@/types/generated'
+import { computeProjectProgress, getAllTags } from '@/lib/stats'
+import type { ProjectInfo } from '@/types/generated'
 
 // TODO: Implement task-bound terminal system (POC tested 2026-02-06)
 // - Add play button to tasks, bind to terminal, generate task prompt
@@ -15,15 +17,17 @@ import type { ProjectInfo, ProjectProgress } from '@/types/generated'
 
 export function TasksPage() {
   const { tasks, isLoading: tasksLoading, error } = usePRDData()
-  const { data: progress } = useInvoke<ProjectProgress>('get_project_progress')
-  const { data: allTags = [] } = useInvoke<string[]>('get_all_tags')
   const { data: projectInfo } = useInvoke<ProjectInfo>('get_project_info')
+
+  const allTags = useMemo(() => getAllTags(tasks ?? []), [tasks])
+  const progress = useMemo(() => computeProjectProgress(tasks ?? []), [tasks])
+
   const { filters, setters, filteredTasks, clearFilters } = usePRDFilters(tasks, allTags)
   const { openBraindumpTab, openTaskDetailTab } = useWorkspaceActions()
 
-  const totalTasks = progress?.totalTasks ?? 0
-  const doneTasks = progress?.doneTasks ?? 0
-  const progressPercent = progress?.progressPercent ?? 0
+  const totalTasks = progress.totalTasks
+  const doneTasks = progress.doneTasks
+  const progressPercent = progress.progressPercent
 
   const loading = tasksLoading
 

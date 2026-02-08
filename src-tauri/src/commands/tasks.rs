@@ -1,4 +1,4 @@
-use super::state::{get_db, normalize_feature_name, parse_priority, parse_provenance, AppState};
+use super::state::{get_db, AppState};
 use crate::errors::{codes, ralph_err};
 use serde::Deserialize;
 use tauri::State;
@@ -9,7 +9,7 @@ pub struct CreateTaskParams {
     pub discipline: String,
     pub title: String,
     pub description: Option<String>,
-    pub priority: Option<String>,
+    pub priority: Option<sqlite_db::Priority>,
     pub tags: Vec<String>,
     pub depends_on: Option<Vec<u32>>,
     pub acceptance_criteria: Option<Vec<String>>,
@@ -17,7 +17,7 @@ pub struct CreateTaskParams {
     pub output_artifacts: Option<Vec<String>>,
     pub hints: Option<String>,
     pub estimated_turns: Option<u32>,
-    pub provenance: Option<String>,
+    pub provenance: Option<sqlite_db::TaskProvenance>,
 }
 
 #[derive(Deserialize)]
@@ -27,7 +27,7 @@ pub struct UpdateTaskParams {
     pub discipline: String,
     pub title: String,
     pub description: Option<String>,
-    pub priority: Option<String>,
+    pub priority: Option<sqlite_db::Priority>,
     pub tags: Vec<String>,
     pub depends_on: Option<Vec<u32>>,
     pub acceptance_criteria: Option<Vec<String>>,
@@ -35,7 +35,7 @@ pub struct UpdateTaskParams {
     pub output_artifacts: Option<Vec<String>>,
     pub hints: Option<String>,
     pub estimated_turns: Option<u32>,
-    pub provenance: Option<String>,
+    pub provenance: Option<sqlite_db::TaskProvenance>,
 }
 
 #[tauri::command]
@@ -43,11 +43,11 @@ pub fn create_task(state: State<'_, AppState>, params: CreateTaskParams) -> Resu
     let db = get_db(&state)?;
 
     let task_input = sqlite_db::TaskInput {
-        feature: normalize_feature_name(&params.feature)?,
+        feature: params.feature,
         discipline: params.discipline,
         title: params.title,
         description: params.description,
-        priority: parse_priority(params.priority.as_deref()),
+        priority: params.priority,
         tags: params.tags,
         depends_on: params.depends_on.unwrap_or_default(),
         acceptance_criteria: params.acceptance_criteria,
@@ -55,7 +55,7 @@ pub fn create_task(state: State<'_, AppState>, params: CreateTaskParams) -> Resu
         output_artifacts: params.output_artifacts.unwrap_or_default(),
         hints: params.hints,
         estimated_turns: params.estimated_turns,
-        provenance: parse_provenance(params.provenance.as_deref()),
+        provenance: params.provenance,
     };
 
     let task_id = db.create_task(task_input)?;
@@ -67,11 +67,11 @@ pub fn update_task(state: State<'_, AppState>, params: UpdateTaskParams) -> Resu
     let db = get_db(&state)?;
 
     let task_input = sqlite_db::TaskInput {
-        feature: normalize_feature_name(&params.feature)?,
+        feature: params.feature,
         discipline: params.discipline,
         title: params.title,
         description: params.description,
-        priority: parse_priority(params.priority.as_deref()),
+        priority: params.priority,
         tags: params.tags,
         depends_on: params.depends_on.unwrap_or_default(),
         acceptance_criteria: params.acceptance_criteria,
@@ -79,7 +79,7 @@ pub fn update_task(state: State<'_, AppState>, params: UpdateTaskParams) -> Resu
         output_artifacts: params.output_artifacts.unwrap_or_default(),
         hints: params.hints,
         estimated_turns: params.estimated_turns,
-        provenance: parse_provenance(params.provenance.as_deref()),
+        provenance: params.provenance,
     };
 
     db.update_task(params.id, task_input)
@@ -146,32 +146,4 @@ pub fn delete_task_comment(
 pub fn get_tasks(state: State<'_, AppState>) -> Result<Vec<sqlite_db::Task>, String> {
     let db = get_db(&state)?;
     Ok(db.get_tasks())
-}
-
-#[tauri::command]
-pub fn get_feature_stats(state: State<'_, AppState>) -> Result<Vec<sqlite_db::GroupStats>, String> {
-    let db = get_db(&state)?;
-    Ok(db.get_feature_stats())
-}
-
-#[tauri::command]
-pub fn get_discipline_stats(
-    state: State<'_, AppState>,
-) -> Result<Vec<sqlite_db::GroupStats>, String> {
-    let db = get_db(&state)?;
-    Ok(db.get_discipline_stats())
-}
-
-#[tauri::command]
-pub fn get_project_progress(
-    state: State<'_, AppState>,
-) -> Result<sqlite_db::ProjectProgress, String> {
-    let db = get_db(&state)?;
-    Ok(db.get_project_progress())
-}
-
-#[tauri::command]
-pub fn get_all_tags(state: State<'_, AppState>) -> Result<Vec<String>, String> {
-    let db = get_db(&state)?;
-    Ok(db.get_all_tags())
 }

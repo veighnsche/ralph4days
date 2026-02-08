@@ -1,25 +1,24 @@
+import { useMemo } from 'react'
 import { useInvoke } from '@/hooks/useInvoke'
-import type { FeatureData as Feature, GroupStats, ProjectProgress } from '@/types/generated'
+import { computeFeatureStats, computeProjectProgress } from '@/lib/stats'
+import type { FeatureData as Feature, Task } from '@/types/generated'
 
 export function useFeatureStats() {
   const { data: features = [], isLoading: featuresLoading, error: featuresError } = useInvoke<Feature[]>('get_features')
-  const { data: featureStats = [], isLoading: statsLoading } = useInvoke<GroupStats[]>('get_feature_stats')
-  const { data: progress } = useInvoke<ProjectProgress>('get_project_progress')
+  const { data: tasks = [], isLoading: tasksLoading } = useInvoke<Task[]>('get_tasks')
 
-  const statsMap = new Map<string, GroupStats>()
-  for (const stat of featureStats) {
-    statsMap.set(stat.name, stat)
-  }
+  const statsMap = useMemo(() => computeFeatureStats(tasks, features), [tasks, features])
+  const progress = useMemo(() => computeProjectProgress(tasks), [tasks])
 
   return {
     features,
     statsMap,
     progress: {
-      total: progress?.totalTasks ?? 0,
-      done: progress?.doneTasks ?? 0,
-      percent: progress?.progressPercent ?? 0
+      total: progress.totalTasks,
+      done: progress.doneTasks,
+      percent: progress.progressPercent
     },
-    isLoading: featuresLoading || statsLoading,
+    isLoading: featuresLoading || tasksLoading,
     error: featuresError ? String(featuresError) : null
   }
 }

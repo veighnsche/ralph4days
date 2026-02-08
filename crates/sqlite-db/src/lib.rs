@@ -6,16 +6,14 @@ mod export;
 mod features;
 mod metadata;
 mod recipe_configs;
-mod stats;
 mod tasks;
 pub mod types;
 
 // Re-export public types
 pub use recipe_configs::{RecipeConfigData, RecipeConfigInput, SectionSettingsData};
 pub use types::{
-    CommentAuthor, Discipline, Feature, FeatureInput, GroupStats, InferredTaskStatus,
-    McpServerConfig, Priority, ProjectMetadata, ProjectProgress, Task, TaskComment, TaskInput,
-    TaskProvenance, TaskStatus,
+    CommentAuthor, Discipline, Feature, FeatureInput, InferredTaskStatus, McpServerConfig,
+    Priority, ProjectMetadata, Task, TaskComment, TaskInput, TaskProvenance, TaskStatus,
 };
 
 // Re-export ralph-rag learning types used by consumers

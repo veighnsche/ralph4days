@@ -192,33 +192,3 @@ pub(super) fn get_locked_project_path(state: &State<'_, AppState>) -> Result<Pat
         .to_string()
     })
 }
-
-pub(super) fn normalize_feature_name(name: &str) -> Result<String, String> {
-    if name.contains('/') || name.contains(':') || name.contains('\\') {
-        return ralph_err!(
-            codes::FEATURE_OPS,
-            "Feature name cannot contain /, :, or \\"
-        );
-    }
-
-    Ok(name.to_lowercase().trim().replace(char::is_whitespace, "-"))
-}
-
-pub(super) fn parse_priority(priority: Option<&str>) -> Option<sqlite_db::Priority> {
-    priority.and_then(|p| match p {
-        "low" => Some(sqlite_db::Priority::Low),
-        "medium" => Some(sqlite_db::Priority::Medium),
-        "high" => Some(sqlite_db::Priority::High),
-        "critical" => Some(sqlite_db::Priority::Critical),
-        _ => None,
-    })
-}
-
-pub(super) fn parse_provenance(provenance: Option<&str>) -> Option<sqlite_db::TaskProvenance> {
-    provenance.and_then(|p| match p {
-        "agent" => Some(sqlite_db::TaskProvenance::Agent),
-        "human" => Some(sqlite_db::TaskProvenance::Human),
-        "system" => Some(sqlite_db::TaskProvenance::System),
-        _ => None,
-    })
-}

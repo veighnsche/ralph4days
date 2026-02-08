@@ -1,15 +1,25 @@
-import type { FeatureConfig } from '@/types/generated'
+import { useMemo } from 'react'
+import type { FeatureData } from '@/types/generated'
 import { useInvoke } from './useInvoke'
 
-export type { FeatureConfig }
+export interface FeatureConfig {
+  name: string
+  displayName: string
+  acronym: string
+}
 
 export function useFeatures() {
-  const { data, error } = useInvoke<FeatureConfig[]>('get_features_config', undefined, {
+  const { data, error } = useInvoke<FeatureData[]>('get_features', undefined, {
     staleTime: 5 * 60 * 1000
   })
 
+  const features = useMemo(
+    () => data?.map(f => ({ name: f.name, displayName: f.displayName, acronym: f.acronym })) ?? [],
+    [data]
+  )
+
   return {
-    features: data ?? [],
+    features,
     error: error ? String(error) : null
   }
 }

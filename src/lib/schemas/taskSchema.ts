@@ -1,7 +1,14 @@
 import { z } from 'zod'
+import { normalizeFeatureName } from '@/lib/acronym'
 
 export const taskSchema = z.object({
-  feature: z.string().min(1, 'Feature is required'),
+  feature: z
+    .string()
+    .min(1, 'Feature is required')
+    .refine(name => !(name.includes('/') || name.includes(':') || name.includes('\\')), {
+      message: 'Feature name cannot contain /, :, or \\'
+    })
+    .transform(normalizeFeatureName),
   discipline: z.string().min(1, 'Discipline is required'),
   title: z.string().min(1, 'Title is required'),
   description: z.string(),

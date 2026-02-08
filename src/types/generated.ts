@@ -11,7 +11,6 @@ export type DisciplineConfig = {
   conventions?: string
   mcpServers: McpServerConfigData[]
 }
-export type FeatureConfig = { name: string; displayName: string; acronym: string }
 export type FeatureData = {
   name: string
   displayName: string
