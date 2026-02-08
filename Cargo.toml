@@ -8,6 +8,7 @@ members = [
     "crates/sqlite-db",
     "crates/prompt-builder",
     "crates/ralph-macros",
+    "crates/predefined-disciplines",
 ]
 
 [workspace.package]

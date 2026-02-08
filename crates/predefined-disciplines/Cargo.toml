@@ -1,0 +1,19 @@
+[package]
+name = "predefined-disciplines"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "generate-discipline-image"
+path = "src/bin/generate_discipline_image.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_yaml = "0.9"
+ralph-external = { path = "../ralph-external" }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+
+[lints]
+workspace = true

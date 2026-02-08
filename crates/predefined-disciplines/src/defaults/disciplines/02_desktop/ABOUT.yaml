@@ -1,0 +1,34 @@
+stack_id: 2
+name: "Desktop (Tauri + React)"
+description: "Cross-platform desktop applications with Rust backend and React frontend"
+
+philosophy: |
+  Optimized for Tauri 2.5 desktop apps with Rust/TypeScript split.
+  Each discipline provides domain-specific tooling and expertise.
+
+visual_identity:
+  style: "1990s action cartoons - bold character designs"
+  theme: "Hannah-Barbera meets action anime, strong silhouettes, dynamic poses"
+  tone: "Traditional, powerful, builders and makers"
+  references: "90s Saturday morning cartoons, classic superhero teams, action-oriented characters"
+
+when_to_use:
+  - "Building desktop applications with web technologies"
+  - "Tauri + React + TypeScript projects"
+  - "SQLite-backed local-first applications"
+
+discipline_count: 8
+
+characteristics:
+  - "Rust backend expertise (Tauri commands, async, rusqlite)"
+  - "React 19 frontend patterns (TanStack Query, Zustand)"
+  - "Type-safe IPC bridge (TypeScript ↔ Rust)"
+  - "Desktop UI conventions (density, keyboard shortcuts)"
+  - "MCP servers: shadcn-ui, tailwindcss"
+
+image_prompt:
+  positive: |
+    A single stylized figure or character-like object centered in frame against a dark gradient background (deep charcoal fading to black). The subject has bold geometric shapes and strong silhouettes reminiscent of 90s action cartoons: chunky proportions, exaggerated features, clean angular forms like action figures or maquettes. Lit with theatrical three-point lighting creating deep shadows and bright rim lights that emphasize the character's edges and create a hero pose feeling. The background is simple and dramatic, fading from a colored wash at the top to pure black at the bottom. Composition places the character in a dynamic stance or power pose, silhouette reads clearly even in shadow. Film grain texture. The mood is heroic, energetic, nostalgic — like promotional photos of 90s action figures or Saturday morning cartoon key art.
+
+  negative: |
+    realistic human, photorealistic person, actual photograph of human, candid photo, portrait, selfie, cute, kawaii, soft, rounded, feminine, pastel colors, muted tones, desaturated, corporate, business suit, office, professional, minimalist, clean modern design, iPhone aesthetic, flat design, vector art, logo, icon, sketch, line art, watercolor, painterly, impressionist, abstract, bokeh background with lights, lens flare, dutch angle, wide angle distortion

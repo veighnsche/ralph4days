@@ -1,0 +1,14 @@
+# TODO: Fill in discipline definition
+
+name: platform
+display_name: TODO
+acronym: PLTF
+icon: Code
+color: "#808080"
+description: TODO
+conventions: TODO
+skills: []
+system_prompt: TODO
+image_prompt:
+  positive: "TODO"
+  negative: "TODO"

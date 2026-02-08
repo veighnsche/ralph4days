@@ -1,0 +1,32 @@
+stack_id: 1
+name: "Generic"
+description: "Language-agnostic work modes for any codebase"
+
+philosophy: |
+  Disciplines are HOW you work, not WHAT you build with.
+  Focus on methodology and practices, not tech-specific tools.
+
+visual_identity:
+  style: "Industrial mechanical - faceless representations"
+  theme: "Tangible objects: servers, circuit boards, terminals, cables, screens"
+  tone: "Universal, functional, impersonal"
+  references: "Technical diagrams, isometric hardware illustrations, blueprint aesthetics"
+
+when_to_use:
+  - "Existing codebases in any language"
+  - "Projects with custom or unusual tech stacks"
+  - "Learning Ralph without framework assumptions"
+
+discipline_count: 8
+
+characteristics:
+  - "No tech stack assumptions"
+  - "Universal development practices"
+  - "Focus on work methodology over tooling"
+
+image_prompt:
+  positive: |
+    A single industrial object or mechanical apparatus centered in frame against a dark gradient background (deep slate gray fading to black). The subject is a tangible piece of hardware or engineering equipment: circuit boards, server racks, oscilloscopes, mechanical tools, cables, terminals, CRT monitors. Rendered with technical precision like a product photograph from an industrial catalog. Lit with cold fluorescent overhead lighting creating sharp shadows and metallic reflections. No human figures — only objects and machines. The aesthetic is blueprint meets catalog photography: clinical, precise, functional. Muted color palette with steel grays, copper traces, and one dominant accent color. Film grain texture. The mood is methodical, impersonal, and quietly powerful — like opening a well-organized toolbox.
+
+  negative: |
+    human figure, person, character, face, eyes, hands, cartoon, anime, stylized, cute, kawaii, soft, rounded, colorful, saturated, neon, glowing, fantasy, magical, organic, natural, plants, animals, watercolor, painterly, sketch, line art, vector, flat design, logo, icon, text, typography, busy background, multiple objects, cluttered
