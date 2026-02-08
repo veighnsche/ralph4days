@@ -2,11 +2,20 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 #[derive(Debug, Deserialize, Serialize)]
+struct VisualIdentity {
+    style: String,
+    theme: String,
+    tone: String,
+    references: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 struct StackAbout {
     stack_id: u8,
     name: String,
     description: String,
     philosophy: String,
+    visual_identity: VisualIdentity,
     when_to_use: Vec<String>,
     discipline_count: u8,
     characteristics: Vec<String>,
@@ -67,6 +76,23 @@ fn test_about_yaml_schema_validation() {
         assert!(
             !about.philosophy.is_empty(),
             "{stack_path}: philosophy cannot be empty"
+        );
+
+        assert!(
+            !about.visual_identity.style.is_empty(),
+            "{stack_path}: visual_identity.style cannot be empty"
+        );
+        assert!(
+            !about.visual_identity.theme.is_empty(),
+            "{stack_path}: visual_identity.theme cannot be empty"
+        );
+        assert!(
+            !about.visual_identity.tone.is_empty(),
+            "{stack_path}: visual_identity.tone cannot be empty"
+        );
+        assert!(
+            !about.visual_identity.references.is_empty(),
+            "{stack_path}: visual_identity.references cannot be empty"
         );
 
         assert!(

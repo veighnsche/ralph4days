@@ -6,6 +6,12 @@ philosophy: |
   Native-quality mobile experiences with single codebase.
   Firebase backend, platform-specific integrations when needed.
 
+visual_identity:
+  style: "Anime-inspired - soft and approachable characters"
+  theme: "Cute, feminine, rounded shapes, friendly aesthetic"
+  tone: "Accessible, user-friendly, delightful"
+  references: "Kawaii culture, modern anime character design, mobile game aesthetics"
+
 when_to_use:
   - "Building iOS and Android apps"
   - "Flutter 3+ projects"

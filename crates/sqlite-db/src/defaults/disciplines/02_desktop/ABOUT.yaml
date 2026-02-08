@@ -6,6 +6,12 @@ philosophy: |
   Optimized for Tauri 2.5 desktop apps with Rust/TypeScript split.
   Each discipline provides domain-specific tooling and expertise.
 
+visual_identity:
+  style: "1990s action cartoons - bold character designs"
+  theme: "Hannah-Barbera meets action anime, strong silhouettes, dynamic poses"
+  tone: "Traditional, powerful, builders and makers"
+  references: "90s Saturday morning cartoons, classic superhero teams, action-oriented characters"
+
 when_to_use:
   - "Building desktop applications with web technologies"
   - "Tauri + React + TypeScript projects"

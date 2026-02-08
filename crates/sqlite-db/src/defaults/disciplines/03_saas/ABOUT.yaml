@@ -6,6 +6,12 @@ philosophy: |
   Full-stack web apps optimized for Vercel's platform.
   React Server Components, server actions, and edge-first architecture.
 
+visual_identity:
+  style: "Corporate sleek - professional office characters"
+  theme: "Modern business attire, startup energy, high-stakes environment"
+  tone: "Fast, serious, move fast and break things"
+  references: "Silicon Valley office culture, tech startup aesthetics, professional but dynamic"
+
 when_to_use:
   - "Building web SaaS products"
   - "Next.js 14+ with App Router"
