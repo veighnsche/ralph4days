@@ -1,0 +1,22 @@
+stack_id: 2
+name: "Desktop (Tauri + React)"
+description: "Cross-platform desktop applications with Rust backend and React frontend"
+
+philosophy: |
+  Optimized for Tauri 2.5 desktop apps with Rust/TypeScript split.
+  Each discipline provides domain-specific tooling and expertise.
+
+when_to_use:
+  - "Building desktop applications with web technologies"
+  - "Tauri + React + TypeScript projects"
+  - "SQLite-backed local-first applications"
+
+approach: "tech-specific"
+discipline_count: 8
+
+characteristics:
+  - "Rust backend expertise (Tauri commands, async, rusqlite)"
+  - "React 19 frontend patterns (TanStack Query, Zustand)"
+  - "Type-safe IPC bridge (TypeScript ↔ Rust)"
+  - "Desktop UI conventions (density, keyboard shortcuts)"
+  - "MCP servers: shadcn-ui, tailwindcss"

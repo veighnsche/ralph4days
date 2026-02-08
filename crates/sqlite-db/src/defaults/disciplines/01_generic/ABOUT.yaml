@@ -1,0 +1,20 @@
+stack_id: 1
+name: "Generic"
+description: "Language-agnostic work modes for any codebase"
+
+philosophy: |
+  Disciplines are HOW you work, not WHAT you build with.
+  Focus on methodology and practices, not tech-specific tools.
+
+when_to_use:
+  - "Existing codebases in any language"
+  - "Projects with custom or unusual tech stacks"
+  - "Learning Ralph without framework assumptions"
+
+approach: "mode-based"
+discipline_count: 8
+
+characteristics:
+  - "No tech stack assumptions"
+  - "Universal development practices"
+  - "Focus on work methodology over tooling"

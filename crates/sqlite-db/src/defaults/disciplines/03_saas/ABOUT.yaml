@@ -1,0 +1,24 @@
+stack_id: 3
+name: "SaaS (Next.js + Vercel)"
+description: "Modern web SaaS applications with Next.js App Router and Vercel deployment"
+
+philosophy: |
+  Full-stack web apps optimized for Vercel's platform.
+  React Server Components, server actions, and edge-first architecture.
+
+when_to_use:
+  - "Building web SaaS products"
+  - "Next.js 14+ with App Router"
+  - "Postgres/Prisma-based applications"
+  - "Deploying to Vercel"
+
+approach: "tech-specific"
+discipline_count: 8
+
+characteristics:
+  - "Next.js App Router expertise (RSC, server actions)"
+  - "Monorepo patterns (Turborepo workspaces)"
+  - "Database-first design (Prisma, type-safe queries)"
+  - "Authentication patterns (NextAuth.js, Clerk)"
+  - "Vercel platform optimization (edge functions, ISR)"
+  - "MCP servers: shadcn-ui, tailwindcss"
