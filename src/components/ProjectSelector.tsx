@@ -16,8 +16,15 @@ interface ProjectSelectorProps {
   onProjectSelected: (path: string) => void
 }
 
+const STACK_OPTIONS = [
+  { value: 0, label: 'Empty', description: 'No disciplines (complete freedom)' },
+  { value: 1, label: 'Generic', description: '8 mode-based disciplines (language-agnostic)' },
+  { value: 2, label: 'Tauri + React', description: '8 tech-specific disciplines (desktop apps)' }
+] as const
+
 export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
   const [initPath, setInitPath] = useState('')
+  const [stack, setStack] = useState<number>(2)
   const [initializing, setInitializing] = useState(false)
   const [initError, setInitError] = useState<string | null>(null)
   const [openError, setOpenError] = useState<string | null>(null)
@@ -50,7 +57,7 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
     setInitializing(true)
     try {
       const title = initPath.split('/').pop() || 'Project'
-      await invoke('initialize_ralph_project', { path: initPath, projectTitle: title })
+      await invoke('initialize_ralph_project', { path: initPath, projectTitle: title, stack })
       await invoke('set_locked_project', { path: initPath })
       onProjectSelected(initPath)
     } catch (err) {
@@ -76,9 +83,29 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
       <DialogContent className="max-w-[700px]" showCloseButton={false}>
         <div className="grid grid-cols-[1fr_auto_1fr] gap-4">
           <div className="flex flex-col">
-            <DialogTitle>Initialize Existing Project</DialogTitle>
+            <DialogTitle>Add Ralph to Existing Project</DialogTitle>
             <FieldGroup className="flex-1">
-              <div className="flex-1">
+              <div className="flex-1 space-y-4">
+                <Field>
+                  <FieldLabel>Tech Stack</FieldLabel>
+                  <Select value={String(stack)} onValueChange={value => setStack(Number(value))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STACK_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={String(opt.value)}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{opt.label}</span>
+                            <span className="text-xs text-muted-foreground">{opt.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FieldDescription>Disciplines to seed for this project</FieldDescription>
+                </Field>
+
                 <Field>
                   <FieldLabel>Project Directory</FieldLabel>
                   <InputGroup>
@@ -93,13 +120,13 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
                       </InputGroupButton>
                     </InputGroupAddon>
                   </InputGroup>
-                  <FieldDescription>Creates .ralph/ folder with template files</FieldDescription>
+                  <FieldDescription>Creates .ralph/ folder with selected disciplines</FieldDescription>
                 </Field>
               </div>
 
               <InlineError error={initError} onDismiss={() => setInitError(null)} />
               <Button onClick={handleInitialize} disabled={!initPath || initializing} className="w-full">
-                {initializing ? 'Initializing...' : 'Initialize Ralph'}
+                {initializing ? 'Initializing...' : 'Add Ralph'}
               </Button>
             </FieldGroup>
           </div>

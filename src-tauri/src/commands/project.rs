@@ -94,8 +94,12 @@ pub fn validate_project_path(path: String) -> Result<(), String> {
 
 #[tauri::command]
 #[tracing::instrument]
-pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(), String> {
-    tracing::info!("Initializing Ralph project");
+pub fn initialize_ralph_project(
+    path: String,
+    project_title: String,
+    stack: u8,
+) -> Result<(), String> {
+    tracing::info!("Initializing Ralph project with stack {}", stack);
     let path = PathBuf::from(&path);
 
     if !path.exists() {
@@ -137,7 +141,7 @@ pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(
 
     let db_path = db_dir.join("ralph.db");
     let db = SqliteDb::open(&db_path)?;
-    db.seed_defaults()?;
+    db.seed_for_stack(stack)?;
     db.initialize_metadata(
         project_title.clone(),
         Some("Add project description here".to_owned()),

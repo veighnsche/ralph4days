@@ -1362,10 +1362,11 @@ fn test_export_yaml_escapes_special_chars() {
 fn test_seed_defaults() {
     let db = create_test_db();
     let disciplines = db.get_disciplines();
-    assert_eq!(disciplines.len(), 10);
+    assert_eq!(disciplines.len(), 8);
 
     let names: Vec<&str> = disciplines.iter().map(|d| d.name.as_str()).collect();
     assert!(names.contains(&"frontend"));
     assert!(names.contains(&"backend"));
-    assert!(names.contains(&"api"));
+    assert!(names.contains(&"data"));
+    assert!(names.contains(&"documentation"));
 }
