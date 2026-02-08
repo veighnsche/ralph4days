@@ -9,7 +9,7 @@ use tauri::{AppHandle, Emitter};
 use super::events::{PtyClosedEvent, PtyOutputEvent};
 use super::session::{build_settings_json, PTYSession, SessionConfig};
 
-use ralph_errors::{codes, ToStringErr};
+use ralph_errors::{codes, ralph_map_err, ToStringErr};
 
 pub struct PTYManager {
     sessions: Arc<Mutex<HashMap<String, PTYSession>>>,
@@ -48,11 +48,10 @@ impl PTYManager {
             let sessions = self.sessions.lock().err_str(codes::INTERNAL)?;
             if sessions.contains_key(&session_id) {
                 tracing::error!("PTY session already exists");
-                return Err(ralph_errors::RalphError {
-                    code: codes::TERMINAL,
-                    message: format!("PTY session already exists: {session_id}"),
-                }
-                .to_string());
+                return ralph_errors::ralph_err!(
+                    codes::TERMINAL,
+                    "PTY session already exists: {session_id}"
+                );
             }
         }
 
@@ -68,11 +67,7 @@ impl PTYManager {
             })
             .map_err(|e| {
                 tracing::error!(error = %e, "Failed to open PTY");
-                ralph_errors::RalphError {
-                    code: codes::TERMINAL,
-                    message: format!("Failed to open PTY: {e}"),
-                }
-                .to_string()
+                ralph_errors::err_string(codes::TERMINAL, format!("Failed to open PTY: {e}"))
             })?;
 
         tracing::debug!("PTY opened successfully");
@@ -103,33 +98,23 @@ impl PTYManager {
 
         let child = pair.slave.spawn_command(cmd).map_err(|e| {
             tracing::error!(error = %e, "Failed to spawn Claude CLI");
-            ralph_errors::RalphError {
-                code: codes::TERMINAL,
-                message: format!("Failed to spawn claude: {e}"),
-            }
-            .to_string()
+            ralph_errors::err_string(codes::TERMINAL, format!("Failed to spawn claude: {e}"))
         })?;
 
         tracing::info!("Claude CLI subprocess spawned successfully");
 
         let child = Arc::new(Mutex::new(child));
 
-        let writer: Box<dyn Write + Send> = pair.master.take_writer().map_err(|e| {
-            ralph_errors::RalphError {
-                code: codes::TERMINAL,
-                message: format!("Failed to take PTY writer: {e}"),
-            }
-            .to_string()
-        })?;
+        let writer: Box<dyn Write + Send> = pair
+            .master
+            .take_writer()
+            .map_err(ralph_map_err!(codes::TERMINAL, "Failed to take PTY writer"))?;
         let writer = Arc::new(Mutex::new(writer));
 
-        let mut reader = pair.master.try_clone_reader().map_err(|e| {
-            ralph_errors::RalphError {
-                code: codes::TERMINAL,
-                message: format!("Failed to clone PTY reader: {e}"),
-            }
-            .to_string()
-        })?;
+        let mut reader = pair.master.try_clone_reader().map_err(ralph_map_err!(
+            codes::TERMINAL,
+            "Failed to clone PTY reader"
+        ))?;
 
         let sid = session_id.clone();
         let app_clone = app;
@@ -211,22 +196,14 @@ impl PTYManager {
         let writer = {
             let sessions = self.sessions.lock().err_str(codes::INTERNAL)?;
             let session = sessions.get(session_id).ok_or_else(|| {
-                ralph_errors::RalphError {
-                    code: codes::TERMINAL,
-                    message: format!("No PTY session: {session_id}"),
-                }
-                .to_string()
+                ralph_errors::err_string(codes::TERMINAL, format!("No PTY session: {session_id}"))
             })?;
             Arc::clone(&session.writer)
         };
         let mut guard = writer.lock().err_str(codes::INTERNAL)?;
         guard.write_all(data).map_err(|e| {
             tracing::error!(session_id, error = %e, "Failed to write to PTY");
-            ralph_errors::RalphError {
-                code: codes::TERMINAL,
-                message: format!("Failed to write to PTY: {e}"),
-            }
-            .to_string()
+            ralph_errors::err_string(codes::TERMINAL, format!("Failed to write to PTY: {e}"))
         })?;
 
         tracing::trace!(session_id, bytes = data.len(), "Sent input to PTY");
@@ -237,11 +214,7 @@ impl PTYManager {
     pub fn resize(&self, session_id: &str, cols: u16, rows: u16) -> Result<(), String> {
         let sessions = self.sessions.lock().err_str(codes::INTERNAL)?;
         let session = sessions.get(session_id).ok_or_else(|| {
-            ralph_errors::RalphError {
-                code: codes::TERMINAL,
-                message: format!("No PTY session: {session_id}"),
-            }
-            .to_string()
+            ralph_errors::err_string(codes::TERMINAL, format!("No PTY session: {session_id}"))
         })?;
         session
             .master
@@ -253,11 +226,7 @@ impl PTYManager {
             })
             .map_err(|e| {
                 tracing::error!(session_id, error = %e, cols, rows, "Failed to resize PTY");
-                ralph_errors::RalphError {
-                    code: codes::TERMINAL,
-                    message: format!("Failed to resize PTY: {e}"),
-                }
-                .to_string()
+                ralph_errors::err_string(codes::TERMINAL, format!("Failed to resize PTY: {e}"))
             })?;
 
         tracing::debug!(session_id, cols, rows, "PTY resized");

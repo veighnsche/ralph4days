@@ -113,6 +113,14 @@ macro_rules! ralph_map_err {
     };
 }
 
+pub fn err_string(code: u16, message: impl Into<String>) -> String {
+    RalphError {
+        code,
+        message: message.into(),
+    }
+    .to_string()
+}
+
 pub fn parse_ralph_error(error_str: &str) -> Option<RalphError> {
     let re = regex::Regex::new(r"^\[R-(\d{4})\] (.*)$").ok()?;
     let caps = re.captures(error_str)?;
@@ -222,6 +230,13 @@ mod tests {
         let err = result.unwrap_err();
         assert!(err.contains("[R-2000]"));
         assert!(err.contains("test error 42"));
+    }
+
+    #[test]
+    fn test_err_string() {
+        let s = err_string(codes::TERMINAL, "session not found");
+        assert!(s.contains("[R-7000]"));
+        assert!(s.contains("session not found"));
     }
 
     #[test]

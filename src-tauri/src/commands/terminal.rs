@@ -15,13 +15,7 @@ pub fn create_pty_session(
     let locked = state.locked_project.lock().err_str(codes::INTERNAL)?;
     let project_path = locked
         .as_ref()
-        .ok_or_else(|| {
-            ralph_errors::RalphError {
-                code: codes::PROJECT_LOCK,
-                message: "No project locked".to_owned(),
-            }
-            .to_string()
-        })?
+        .ok_or_else(|| ralph_errors::err_string(codes::PROJECT_LOCK, "No project locked"))?
         .clone();
     drop(locked);
 
@@ -74,13 +68,7 @@ pub fn create_pty_session_for_task(
     let locked = state.locked_project.lock().err_str(codes::INTERNAL)?;
     let project_path = locked
         .as_ref()
-        .ok_or_else(|| {
-            ralph_errors::RalphError {
-                code: codes::PROJECT_LOCK,
-                message: "No project locked".to_owned(),
-            }
-            .to_string()
-        })?
+        .ok_or_else(|| ralph_errors::err_string(codes::PROJECT_LOCK, "No project locked"))?
         .clone();
     drop(locked);
 

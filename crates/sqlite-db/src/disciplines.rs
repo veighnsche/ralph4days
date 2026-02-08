@@ -386,7 +386,7 @@ impl SqliteDb {
                     include_str!("defaults/disciplines/documentation/conventions.txt"),
                 ),
             ],
-            _ => return Err(format!("Unsupported stack: {stack}. Valid stacks: 0 (empty), 1 (generic), 2 (tauri+react)")),
+            _ => return ralph_err!(codes::DISCIPLINE_OPS, "Unsupported stack: {stack}. Valid stacks: 0 (empty), 1 (generic), 2 (tauri+react)"),
         };
 
         for (name, display_name, acronym, icon, color, system_prompt, skills, conventions) in

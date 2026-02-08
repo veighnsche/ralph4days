@@ -89,11 +89,7 @@ pub fn update_task(state: State<'_, AppState>, params: UpdateTaskParams) -> Resu
 pub fn set_task_status(state: State<'_, AppState>, id: u32, status: String) -> Result<(), String> {
     let db = get_db(&state)?;
     let status = sqlite_db::TaskStatus::parse(&status).ok_or_else(|| {
-        ralph_errors::RalphError {
-            code: codes::TASK_VALIDATION,
-            message: format!("Invalid status: {status}"),
-        }
-        .to_string()
+        ralph_errors::err_string(codes::TASK_VALIDATION, format!("Invalid status: {status}"))
     })?;
     db.set_task_status(id, status)
 }

@@ -1,6 +1,6 @@
 use crate::terminal::PTYManager;
 use prompt_builder::{CodebaseSnapshot, PromptContext};
-use ralph_errors::{codes, ralph_err, ToStringErr};
+use ralph_errors::{codes, ralph_err, ralph_map_err, ToStringErr};
 use sqlite_db::SqliteDb;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -45,11 +45,7 @@ impl AppState {
 
         let db_guard = self.db.lock().err_str(codes::INTERNAL)?;
         let db = db_guard.as_ref().ok_or_else(|| {
-            ralph_errors::RalphError {
-                code: codes::PROJECT_LOCK,
-                message: "No project locked (database not open)".to_owned(),
-            }
-            .to_string()
+            ralph_errors::err_string(codes::PROJECT_LOCK, "No project locked (database not open)")
         })?;
 
         let snapshot = {
@@ -105,47 +101,7 @@ impl AppState {
 
         let (scripts, config_json) = prompt_builder::mcp::generate(&ctx, &recipe.mcp_tools);
 
-        std::fs::create_dir_all(&self.mcp_dir).map_err(|e| {
-            ralph_errors::RalphError {
-                code: codes::FILESYSTEM,
-                message: format!("Failed to create MCP dir: {e}"),
-            }
-            .to_string()
-        })?;
-
-        for script in &scripts {
-            let script_path = self.mcp_dir.join(&script.filename);
-            std::fs::write(&script_path, &script.content).map_err(|e| {
-                ralph_errors::RalphError {
-                    code: codes::FILESYSTEM,
-                    message: format!("Failed to write MCP script: {e}"),
-                }
-                .to_string()
-            })?;
-            #[cfg(unix)]
-            {
-                use std::os::unix::fs::PermissionsExt;
-                std::fs::set_permissions(&script_path, std::fs::Permissions::from_mode(0o755))
-                    .map_err(|e| {
-                        ralph_errors::RalphError {
-                            code: codes::FILESYSTEM,
-                            message: format!("Failed to chmod MCP script: {e}"),
-                        }
-                        .to_string()
-                    })?;
-            }
-        }
-
-        let config_path = self.mcp_dir.join(format!("mcp-{mode}.json"));
-        std::fs::write(&config_path, &config_json).map_err(|e| {
-            ralph_errors::RalphError {
-                code: codes::FILESYSTEM,
-                message: format!("Failed to write MCP config: {e}"),
-            }
-            .to_string()
-        })?;
-
-        Ok(config_path)
+        self.write_mcp_artifacts(&scripts, &config_json, format!("mcp-{mode}.json"))
     }
 
     pub(super) fn generate_mcp_config_for_task(
@@ -163,45 +119,42 @@ impl AppState {
         let recipe = prompt_builder::recipes::get(prompt_builder::PromptType::TaskExecution);
         let (scripts, config_json) = prompt_builder::mcp::generate(&ctx, &recipe.mcp_tools);
 
-        std::fs::create_dir_all(&self.mcp_dir).map_err(|e| {
-            ralph_errors::RalphError {
-                code: codes::FILESYSTEM,
-                message: format!("Failed to create MCP dir: {e}"),
-            }
-            .to_string()
-        })?;
+        self.write_mcp_artifacts(&scripts, &config_json, format!("mcp-task-{task_id}.json"))
+    }
 
-        for script in &scripts {
+    fn write_mcp_artifacts(
+        &self,
+        scripts: &[prompt_builder::McpScript],
+        config_json: &str,
+        config_filename: String,
+    ) -> Result<PathBuf, String> {
+        std::fs::create_dir_all(&self.mcp_dir).map_err(ralph_map_err!(
+            codes::FILESYSTEM,
+            "Failed to create MCP dir"
+        ))?;
+
+        for script in scripts {
             let script_path = self.mcp_dir.join(&script.filename);
-            std::fs::write(&script_path, &script.content).map_err(|e| {
-                ralph_errors::RalphError {
-                    code: codes::FILESYSTEM,
-                    message: format!("Failed to write MCP script: {e}"),
-                }
-                .to_string()
-            })?;
+            std::fs::write(&script_path, &script.content).map_err(ralph_map_err!(
+                codes::FILESYSTEM,
+                "Failed to write MCP script"
+            ))?;
             #[cfg(unix)]
             {
                 use std::os::unix::fs::PermissionsExt;
                 std::fs::set_permissions(&script_path, std::fs::Permissions::from_mode(0o755))
-                    .map_err(|e| {
-                        ralph_errors::RalphError {
-                            code: codes::FILESYSTEM,
-                            message: format!("Failed to chmod MCP script: {e}"),
-                        }
-                        .to_string()
-                    })?;
+                    .map_err(ralph_map_err!(
+                        codes::FILESYSTEM,
+                        "Failed to chmod MCP script"
+                    ))?;
             }
         }
 
-        let config_path = self.mcp_dir.join(format!("mcp-task-{task_id}.json"));
-        std::fs::write(&config_path, &config_json).map_err(|e| {
-            ralph_errors::RalphError {
-                code: codes::FILESYSTEM,
-                message: format!("Failed to write MCP config: {e}"),
-            }
-            .to_string()
-        })?;
+        let config_path = self.mcp_dir.join(config_filename);
+        std::fs::write(&config_path, config_json).map_err(ralph_map_err!(
+            codes::FILESYSTEM,
+            "Failed to write MCP config"
+        ))?;
 
         Ok(config_path)
     }
@@ -227,11 +180,8 @@ pub(super) fn get_db<'a>(state: &'a State<'a, AppState>) -> Result<DbGuard<'a>, 
 
 pub(super) fn get_locked_project_path(state: &State<'_, AppState>) -> Result<PathBuf, String> {
     let locked = state.locked_project.lock().err_str(codes::INTERNAL)?;
-    locked.as_ref().cloned().ok_or_else(|| {
-        ralph_errors::RalphError {
-            code: codes::PROJECT_LOCK,
-            message: "No project locked".to_owned(),
-        }
-        .to_string()
-    })
+    locked
+        .as_ref()
+        .cloned()
+        .ok_or_else(|| ralph_errors::err_string(codes::PROJECT_LOCK, "No project locked"))
 }

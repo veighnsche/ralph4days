@@ -1,5 +1,5 @@
 use super::state::AppState;
-use ralph_errors::{codes, ralph_err, ToStringErr};
+use ralph_errors::{codes, ralph_err, ralph_map_err, ToStringErr};
 use ralph_macros::ipc_type;
 use sqlite_db::SqliteDb;
 use std::path::PathBuf;
@@ -122,22 +122,16 @@ pub fn initialize_ralph_project(
         );
     }
 
-    std::fs::create_dir(&ralph_dir).map_err(|e| {
-        ralph_errors::RalphError {
-            code: codes::PROJECT_INIT,
-            message: format!("Failed to create .ralph/ directory: {e}"),
-        }
-        .to_string()
-    })?;
+    std::fs::create_dir(&ralph_dir).map_err(ralph_map_err!(
+        codes::PROJECT_INIT,
+        "Failed to create .ralph/ directory"
+    ))?;
 
     let db_dir = ralph_dir.join("db");
-    std::fs::create_dir(&db_dir).map_err(|e| {
-        ralph_errors::RalphError {
-            code: codes::PROJECT_INIT,
-            message: format!("Failed to create .ralph/db/ directory: {e}"),
-        }
-        .to_string()
-    })?;
+    std::fs::create_dir(&db_dir).map_err(ralph_map_err!(
+        codes::PROJECT_INIT,
+        "Failed to create .ralph/db/ directory"
+    ))?;
 
     let db_path = db_dir.join("ralph.db");
     let db = SqliteDb::open(&db_path)?;
@@ -172,25 +166,19 @@ Describe the architecture, tech stack, and key components.
 "
     );
 
-    std::fs::write(&claude_path, claude_template).map_err(|e| {
-        ralph_errors::RalphError {
-            code: codes::FILESYSTEM,
-            message: format!("Failed to create CLAUDE.RALPH.md: {e}"),
-        }
-        .to_string()
-    })?;
+    std::fs::write(&claude_path, claude_template).map_err(ralph_map_err!(
+        codes::FILESYSTEM,
+        "Failed to create CLAUDE.RALPH.md"
+    ))?;
 
     Ok(())
 }
 
 pub fn lock_project_validated(state: &AppState, path: String) -> Result<(), String> {
-    let canonical_path = std::fs::canonicalize(&path).map_err(|e| {
-        ralph_errors::RalphError {
-            code: codes::PROJECT_PATH,
-            message: format!("Failed to resolve path: {e}"),
-        }
-        .to_string()
-    })?;
+    let canonical_path = std::fs::canonicalize(&path).map_err(ralph_map_err!(
+        codes::PROJECT_PATH,
+        "Failed to resolve path"
+    ))?;
 
     let mut locked = state.locked_project.lock().err_str(codes::INTERNAL)?;
     if locked.is_some() {
@@ -256,11 +244,7 @@ pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProj
         PathBuf::from(dir)
     } else {
         dirs::home_dir().ok_or_else(|| {
-            ralph_errors::RalphError {
-                code: codes::FILESYSTEM,
-                message: "Failed to get home directory".to_owned(),
-            }
-            .to_string()
+            ralph_errors::err_string(codes::FILESYSTEM, "Failed to get home directory")
         })?
     };
 
@@ -330,11 +314,7 @@ pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProj
 #[tauri::command]
 pub fn get_current_dir() -> Result<String, String> {
     let path = dirs::home_dir().ok_or_else(|| {
-        ralph_errors::RalphError {
-            code: codes::FILESYSTEM,
-            message: "Failed to get home directory".to_owned(),
-        }
-        .to_string()
+        ralph_errors::err_string(codes::FILESYSTEM, "Failed to get home directory")
     })?;
     Ok(path.to_string_lossy().to_string())
 }

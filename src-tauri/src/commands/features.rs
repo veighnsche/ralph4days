@@ -1,5 +1,5 @@
 use super::state::{get_db, AppState};
-use ralph_errors::{codes, ralph_err};
+use ralph_errors::{codes, ralph_err, ralph_map_err};
 use ralph_macros::ipc_type;
 use serde::Deserialize;
 use tauri::State;
@@ -229,8 +229,9 @@ pub fn create_discipline(
         .trim()
         .replace(char::is_whitespace, "-");
 
-    let skills_json = serde_json::to_string(&params.skills.unwrap_or_default())
-        .map_err(|e| format!("[DISCIPLINE_OPS] Failed to serialize skills: {e}"))?;
+    let skills_json = serde_json::to_string(&params.skills.unwrap_or_default()).map_err(
+        ralph_map_err!(codes::DISCIPLINE_OPS, "Failed to serialize skills"),
+    )?;
 
     let mcp_servers: Vec<sqlite_db::McpServerConfig> = params
         .mcp_servers
@@ -244,8 +245,10 @@ pub fn create_discipline(
         })
         .collect();
 
-    let mcp_json = serde_json::to_string(&mcp_servers)
-        .map_err(|e| format!("[DISCIPLINE_OPS] Failed to serialize mcp_servers: {e}"))?;
+    let mcp_json = serde_json::to_string(&mcp_servers).map_err(ralph_map_err!(
+        codes::DISCIPLINE_OPS,
+        "Failed to serialize mcp_servers"
+    ))?;
 
     db.create_discipline(sqlite_db::DisciplineInput {
         name: normalized_name,
@@ -280,8 +283,9 @@ pub fn update_discipline(
 ) -> Result<(), String> {
     let db = get_db(&state)?;
 
-    let skills_json = serde_json::to_string(&params.skills.unwrap_or_default())
-        .map_err(|e| format!("[DISCIPLINE_OPS] Failed to serialize skills: {e}"))?;
+    let skills_json = serde_json::to_string(&params.skills.unwrap_or_default()).map_err(
+        ralph_map_err!(codes::DISCIPLINE_OPS, "Failed to serialize skills"),
+    )?;
 
     let mcp_servers: Vec<sqlite_db::McpServerConfig> = params
         .mcp_servers
@@ -295,8 +299,10 @@ pub fn update_discipline(
         })
         .collect();
 
-    let mcp_json = serde_json::to_string(&mcp_servers)
-        .map_err(|e| format!("[DISCIPLINE_OPS] Failed to serialize mcp_servers: {e}"))?;
+    let mcp_json = serde_json::to_string(&mcp_servers).map_err(ralph_map_err!(
+        codes::DISCIPLINE_OPS,
+        "Failed to serialize mcp_servers"
+    ))?;
 
     db.update_discipline(sqlite_db::DisciplineInput {
         name: params.name,
