@@ -1,8 +1,8 @@
+use crate::errors::{codes, ralph_map_err};
 use crate::types::*;
 use crate::SqliteDb;
 
 impl SqliteDb {
-    /// Get project metadata.
     pub fn get_project_info(&self) -> ProjectMetadata {
         self.conn
             .query_row(
@@ -23,7 +23,6 @@ impl SqliteDb {
             })
     }
 
-    /// Initialize metadata singleton row. Called during project setup.
     pub fn initialize_metadata(
         &self,
         title: String,
@@ -37,7 +36,7 @@ impl SqliteDb {
                  VALUES (1, ?1, ?2, ?3)",
                 rusqlite::params![title, description, now],
             )
-            .map_err(|e| format!("Failed to initialize metadata: {e}"))?;
+            .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to initialize metadata"))?;
 
         Ok(())
     }

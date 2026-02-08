@@ -9,13 +9,21 @@ use tauri::{AppHandle, Emitter};
 use super::events::{PtyClosedEvent, PtyOutputEvent};
 use super::session::{build_settings_json, PTYSession, SessionConfig};
 
+use crate::errors::codes;
+
 trait ToStringErr<T> {
     fn err_str(self) -> Result<T, String>;
 }
 
 impl<T, E: std::fmt::Display> ToStringErr<T> for Result<T, E> {
     fn err_str(self) -> Result<T, String> {
-        self.map_err(|e| e.to_string())
+        self.map_err(|e| {
+            crate::errors::RalphError {
+                code: codes::INTERNAL,
+                message: e.to_string(),
+            }
+            .to_string()
+        })
     }
 }
 
@@ -44,11 +52,14 @@ impl PTYManager {
         mcp_config: Option<PathBuf>,
         config: SessionConfig,
     ) -> Result<(), String> {
-        // Reject duplicate session IDs to prevent leaking the old PTY process
         {
             let sessions = self.sessions.lock().err_str()?;
             if sessions.contains_key(&session_id) {
-                return Err(format!("PTY session already exists: {session_id}"));
+                return Err(crate::errors::RalphError {
+                    code: codes::TERMINAL,
+                    message: format!("PTY session already exists: {session_id}"),
+                }
+                .to_string());
             }
         }
 
@@ -62,11 +73,16 @@ impl PTYManager {
                 pixel_width: 0,
                 pixel_height: 0,
             })
-            .map_err(|e| format!("Failed to open PTY: {e}"))?;
+            .map_err(|e| {
+                crate::errors::RalphError {
+                    code: codes::TERMINAL,
+                    message: format!("Failed to open PTY: {e}"),
+                }
+                .to_string()
+            })?;
 
         let mut cmd = CommandBuilder::new("claude");
         cmd.cwd(working_dir);
-        // Interactive sessions — no -p, no --output-format stream-json
 
         cmd.args(["--permission-mode", "bypassPermissions"]);
         cmd.arg("--verbose");
@@ -86,20 +102,38 @@ impl PTYManager {
         let child = pair
             .slave
             .spawn_command(cmd)
-            .map_err(|e| format!("Failed to spawn claude: {e}"))?;
+            .map_err(|e| {
+                crate::errors::RalphError {
+                    code: codes::TERMINAL,
+                    message: format!("Failed to spawn claude: {e}"),
+                }
+                .to_string()
+            })?;
 
         let child = Arc::new(Mutex::new(child));
 
         let writer: Box<dyn Write + Send> = pair
             .master
             .take_writer()
-            .map_err(|e| format!("Failed to take PTY writer: {e}"))?;
+            .map_err(|e| {
+                crate::errors::RalphError {
+                    code: codes::TERMINAL,
+                    message: format!("Failed to take PTY writer: {e}"),
+                }
+                .to_string()
+            })?;
         let writer = Arc::new(Mutex::new(writer));
 
         let mut reader = pair
             .master
             .try_clone_reader()
-            .map_err(|e| format!("Failed to clone PTY reader: {e}"))?;
+            .map_err(|e| {
+                crate::errors::RalphError {
+                    code: codes::TERMINAL,
+                    message: format!("Failed to clone PTY reader: {e}"),
+                }
+                .to_string()
+            })?;
 
         let sid = session_id.clone();
         let app_clone = app;
@@ -161,20 +195,36 @@ impl PTYManager {
             let sessions = self.sessions.lock().err_str()?;
             let session = sessions
                 .get(session_id)
-                .ok_or_else(|| format!("No PTY session: {session_id}"))?;
+                .ok_or_else(|| {
+                    crate::errors::RalphError {
+                        code: codes::TERMINAL,
+                        message: format!("No PTY session: {session_id}"),
+                    }
+                    .to_string()
+                })?;
             Arc::clone(&session.writer)
         };
         let mut guard = writer.lock().err_str()?;
-        guard
-            .write_all(data)
-            .map_err(|e| format!("Failed to write to PTY: {e}"))
+        guard.write_all(data).map_err(|e| {
+            crate::errors::RalphError {
+                code: codes::TERMINAL,
+                message: format!("Failed to write to PTY: {e}"),
+            }
+            .to_string()
+        })
     }
 
     pub fn resize(&self, session_id: &str, cols: u16, rows: u16) -> Result<(), String> {
         let sessions = self.sessions.lock().err_str()?;
         let session = sessions
             .get(session_id)
-            .ok_or_else(|| format!("No PTY session: {session_id}"))?;
+            .ok_or_else(|| {
+                crate::errors::RalphError {
+                    code: codes::TERMINAL,
+                    message: format!("No PTY session: {session_id}"),
+                }
+                .to_string()
+            })?;
         session
             .master
             .resize(PtySize {
@@ -183,11 +233,16 @@ impl PTYManager {
                 pixel_width: 0,
                 pixel_height: 0,
             })
-            .map_err(|e| format!("Failed to resize PTY: {e}"))
+            .map_err(|e| {
+                crate::errors::RalphError {
+                    code: codes::TERMINAL,
+                    message: format!("Failed to resize PTY: {e}"),
+                }
+                .to_string()
+            })
     }
 
     pub fn terminate(&self, session_id: &str) -> Result<(), String> {
-        // Remove session from map first, then kill outside the lock
         let session = {
             let mut sessions = self.sessions.lock().err_str()?;
             sessions.remove(session_id)
@@ -219,8 +274,4 @@ mod tests {
         let sessions = manager.sessions.lock().unwrap();
         assert_eq!(sessions.len(), 0);
     }
-
-    // Note: Full integration tests for create_session, send_input, resize, and terminate
-    // require mocking Tauri AppHandle and spawning actual PTY processes.
-    // These should be covered by Tauri WebDriver E2E tests (see .docs/007_TESTING_STRATEGY.md)
 }

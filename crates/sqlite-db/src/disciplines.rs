@@ -1,8 +1,8 @@
+use crate::errors::{codes, ralph_err, ralph_map_err};
 use crate::types::*;
 use crate::SqliteDb;
 
 impl SqliteDb {
-    /// Create a new discipline.
     pub fn create_discipline(
         &self,
         name: String,
@@ -12,15 +12,14 @@ impl SqliteDb {
         color: String,
     ) -> Result<(), String> {
         if name.trim().is_empty() {
-            return Err("Discipline name cannot be empty".to_owned());
+            return ralph_err!(codes::DISCIPLINE_OPS, "Discipline name cannot be empty");
         }
         if display_name.trim().is_empty() {
-            return Err("Discipline display name cannot be empty".to_owned());
+            return ralph_err!(codes::DISCIPLINE_OPS, "Discipline display name cannot be empty");
         }
 
         crate::acronym::validate_acronym_format(&acronym)?;
 
-        // Check name uniqueness
         let exists: bool = self
             .conn
             .query_row(
@@ -28,12 +27,11 @@ impl SqliteDb {
                 [&name],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check discipline: {e}"))?;
+            .map_err(ralph_map_err!(codes::DB_READ, "Failed to check discipline"))?;
         if exists {
-            return Err(format!("Discipline '{name}' already exists"));
+            return ralph_err!(codes::DISCIPLINE_OPS, "Discipline '{name}' already exists");
         }
 
-        // Check acronym uniqueness
         let acronym_exists: bool = self
             .conn
             .query_row(
@@ -41,11 +39,12 @@ impl SqliteDb {
                 [&acronym],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check acronym: {e}"))?;
+            .map_err(ralph_map_err!(codes::DB_READ, "Failed to check acronym"))?;
         if acronym_exists {
-            return Err(format!(
+            return ralph_err!(
+                codes::DISCIPLINE_OPS,
                 "Acronym '{acronym}' is already used by another discipline"
-            ));
+            );
         }
 
         self.conn
@@ -54,12 +53,11 @@ impl SqliteDb {
                  VALUES (?1, ?2, ?3, ?4, ?5)",
                 rusqlite::params![name, display_name, acronym, icon, color],
             )
-            .map_err(|e| format!("Failed to insert discipline: {e}"))?;
+            .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to insert discipline"))?;
 
         Ok(())
     }
 
-    /// Update an existing discipline. Preserves: system_prompt, skills, conventions, mcp_servers.
     pub fn update_discipline(
         &self,
         name: String,
@@ -69,12 +67,11 @@ impl SqliteDb {
         color: String,
     ) -> Result<(), String> {
         if display_name.trim().is_empty() {
-            return Err("Discipline display name cannot be empty".to_owned());
+            return ralph_err!(codes::DISCIPLINE_OPS, "Discipline display name cannot be empty");
         }
 
         crate::acronym::validate_acronym_format(&acronym)?;
 
-        // Verify discipline exists
         let exists: bool = self
             .conn
             .query_row(
@@ -82,12 +79,11 @@ impl SqliteDb {
                 [&name],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check discipline: {e}"))?;
+            .map_err(ralph_map_err!(codes::DB_READ, "Failed to check discipline"))?;
         if !exists {
-            return Err(format!("Discipline '{name}' does not exist"));
+            return ralph_err!(codes::DISCIPLINE_OPS, "Discipline '{name}' does not exist");
         }
 
-        // Check acronym uniqueness (exclude self)
         let acronym_conflict: bool = self
             .conn
             .query_row(
@@ -95,66 +91,63 @@ impl SqliteDb {
                 rusqlite::params![acronym, name],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("Failed to check acronym: {e}"))?;
+            .map_err(ralph_map_err!(codes::DB_READ, "Failed to check acronym"))?;
         if acronym_conflict {
-            return Err(format!(
+            return ralph_err!(
+                codes::DISCIPLINE_OPS,
                 "Acronym '{acronym}' is already used by another discipline"
-            ));
+            );
         }
 
-        // Update only mutable fields (preserves system_prompt, skills, conventions, mcp_servers)
         self.conn
             .execute(
                 "UPDATE disciplines SET display_name = ?1, acronym = ?2, icon = ?3, color = ?4 WHERE name = ?5",
                 rusqlite::params![display_name, acronym, icon, color, name],
             )
-            .map_err(|e| format!("Failed to update discipline: {e}"))?;
+            .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to update discipline"))?;
 
         Ok(())
     }
 
-    /// Delete a discipline by name. Fails if any tasks reference it.
     pub fn delete_discipline(&self, name: String) -> Result<(), String> {
-        // Check if any tasks reference this discipline
         let mut stmt = self
             .conn
             .prepare("SELECT id, title FROM tasks WHERE discipline = ?1")
-            .map_err(|e| format!("Failed to prepare query: {e}"))?;
+            .map_err(ralph_map_err!(codes::DB_READ, "Failed to prepare query"))?;
 
         let tasks: Vec<(u32, String)> = stmt
             .query_map([&name], |row| Ok((row.get(0)?, row.get(1)?)))
-            .map_err(|e| format!("Failed to query tasks: {e}"))?
+            .map_err(ralph_map_err!(codes::DB_READ, "Failed to query tasks"))?
             .filter_map(std::result::Result::ok)
             .collect();
 
         if let Some((task_id, task_title)) = tasks.first() {
-            return Err(format!(
+            return ralph_err!(
+                codes::DISCIPLINE_OPS,
                 "Cannot delete discipline '{name}': task {task_id} ('{task_title}') belongs to it"
-            ));
+            );
         }
 
         let affected = self
             .conn
             .execute("DELETE FROM disciplines WHERE name = ?1", [&name])
-            .map_err(|e| format!("Failed to delete discipline: {e}"))?;
+            .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to delete discipline"))?;
 
         if affected == 0 {
-            return Err(format!("Discipline '{name}' does not exist"));
+            return ralph_err!(codes::DISCIPLINE_OPS, "Discipline '{name}' does not exist");
         }
 
         Ok(())
     }
 
-    /// Get all disciplines.
     pub fn get_disciplines(&self) -> Vec<Discipline> {
-        let mut stmt = self
-            .conn
-            .prepare(
-                "SELECT name, display_name, acronym, icon, color, system_prompt, skills, \
-                 conventions, mcp_servers \
-                 FROM disciplines ORDER BY name",
-            )
-            .unwrap();
+        let Ok(mut stmt) = self.conn.prepare(
+            "SELECT name, display_name, acronym, icon, color, system_prompt, skills, \
+             conventions, mcp_servers \
+             FROM disciplines ORDER BY name",
+        ) else {
+            return vec![];
+        };
 
         stmt.query_map([], |row| {
             let skills_json: String = row.get(6)?;
@@ -171,12 +164,9 @@ impl SqliteDb {
                 mcp_servers: serde_json::from_str(&mcp_json).unwrap_or_default(),
             })
         })
-        .unwrap()
-        .filter_map(std::result::Result::ok)
-        .collect()
+        .map_or_else(|_| vec![], |rows| rows.filter_map(std::result::Result::ok).collect())
     }
 
-    /// Seed 10 default disciplines. Skips any that already exist.
     pub fn seed_defaults(&self) -> Result<(), String> {
         let defaults = [
             ("frontend", "Frontend", "FRNT", "Monitor", "#3b82f6"),
@@ -192,7 +182,6 @@ impl SqliteDb {
         ];
 
         for (name, display_name, acronym, icon, color) in defaults {
-            // Skip if already exists
             let exists: bool = self
                 .conn
                 .query_row(
@@ -200,7 +189,7 @@ impl SqliteDb {
                     [name],
                     |row| row.get(0),
                 )
-                .map_err(|e| format!("Failed to check discipline: {e}"))?;
+                .map_err(ralph_map_err!(codes::DB_READ, "Failed to check discipline"))?;
 
             if !exists {
                 self.conn
@@ -209,7 +198,7 @@ impl SqliteDb {
                          VALUES (?1, ?2, ?3, ?4, ?5)",
                         rusqlite::params![name, display_name, acronym, icon, color],
                     )
-                    .map_err(|e| format!("Failed to seed discipline '{name}': {e}"))?;
+                    .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to seed discipline"))?;
             }
         }
 

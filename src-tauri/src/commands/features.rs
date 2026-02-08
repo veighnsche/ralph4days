@@ -1,4 +1,5 @@
 use super::state::{get_db, normalize_feature_name, AppState};
+use crate::errors::{codes, ralph_err};
 use ralph_macros::ipc_type;
 use serde::Deserialize;
 use tauri::State;
@@ -274,7 +275,7 @@ pub fn append_feature_learning(
         Some("auto") | None => {
             sqlite_db::FeatureLearning::auto_extracted(text, iteration.unwrap_or(0), task_id)
         }
-        Some(other) => return Err(format!("Invalid learning source: {other}")),
+        Some(other) => return ralph_err!(codes::FEATURE_OPS, "Invalid learning source: {other}"),
     };
 
     db.append_feature_learning(&feature_name, learning, 50)

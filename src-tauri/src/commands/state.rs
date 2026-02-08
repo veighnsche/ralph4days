@@ -1,3 +1,4 @@
+use crate::errors::{codes, ralph_err};
 use crate::terminal::PTYManager;
 use prompt_builder::{CodebaseSnapshot, PromptContext};
 use sqlite_db::SqliteDb;
@@ -6,12 +7,18 @@ use std::sync::Mutex;
 use tauri::State;
 
 pub(super) trait ToStringErr<T> {
-    fn err_str(self) -> Result<T, String>;
+    fn err_str(self, code: u16) -> Result<T, String>;
 }
 
 impl<T, E: std::fmt::Display> ToStringErr<T> for Result<T, E> {
-    fn err_str(self) -> Result<T, String> {
-        self.map_err(|e| e.to_string())
+    fn err_str(self, code: u16) -> Result<T, String> {
+        self.map_err(|e| {
+            crate::errors::RalphError {
+                code,
+                message: e.to_string(),
+            }
+            .to_string()
+        })
     }
 }
 
@@ -51,16 +58,24 @@ impl AppState {
         let ralph_dir = project_path.join(".ralph");
         let db_path = ralph_dir.join("db").join("ralph.db");
 
-        let db_guard = self.db.lock().err_str()?;
+        let db_guard = self.db.lock().err_str(codes::INTERNAL)?;
         let db = db_guard
             .as_ref()
-            .ok_or_else(|| "No project locked (database not open)".to_owned())?;
+            .ok_or_else(|| {
+                crate::errors::RalphError {
+                    code: codes::PROJECT_LOCK,
+                    message: "No project locked (database not open)".to_owned(),
+                }
+                .to_string()
+            })?;
 
-        let snapshot = self
-            .codebase_snapshot
-            .lock()
-            .err_str()?
-            .clone();
+        let snapshot = {
+            let mut snap_guard = self.codebase_snapshot.lock().err_str(codes::INTERNAL)?;
+            if snap_guard.is_none() {
+                *snap_guard = Some(prompt_builder::snapshot::analyze(project_path));
+            }
+            snap_guard.clone()
+        };
 
         Ok(PromptContext {
             features: db.get_features(),
@@ -108,23 +123,47 @@ impl AppState {
         let (scripts, config_json) = prompt_builder::mcp::generate(&ctx, &recipe.mcp_tools);
 
         std::fs::create_dir_all(&self.mcp_dir)
-            .map_err(|e| format!("Failed to create MCP dir: {e}"))?;
+            .map_err(|e| {
+                crate::errors::RalphError {
+                    code: codes::FILESYSTEM,
+                    message: format!("Failed to create MCP dir: {e}"),
+                }
+                .to_string()
+            })?;
 
         for script in &scripts {
             let script_path = self.mcp_dir.join(&script.filename);
             std::fs::write(&script_path, &script.content)
-                .map_err(|e| format!("Failed to write MCP script: {e}"))?;
+                .map_err(|e| {
+                    crate::errors::RalphError {
+                        code: codes::FILESYSTEM,
+                        message: format!("Failed to write MCP script: {e}"),
+                    }
+                    .to_string()
+                })?;
             #[cfg(unix)]
             {
                 use std::os::unix::fs::PermissionsExt;
                 std::fs::set_permissions(&script_path, std::fs::Permissions::from_mode(0o755))
-                    .map_err(|e| format!("Failed to chmod MCP script: {e}"))?;
+                    .map_err(|e| {
+                        crate::errors::RalphError {
+                            code: codes::FILESYSTEM,
+                            message: format!("Failed to chmod MCP script: {e}"),
+                        }
+                        .to_string()
+                    })?;
             }
         }
 
         let config_path = self.mcp_dir.join(format!("mcp-{mode}.json"));
         std::fs::write(&config_path, &config_json)
-            .map_err(|e| format!("Failed to write MCP config: {e}"))?;
+            .map_err(|e| {
+                crate::errors::RalphError {
+                    code: codes::FILESYSTEM,
+                    message: format!("Failed to write MCP config: {e}"),
+                }
+                .to_string()
+            })?;
 
         Ok(config_path)
     }
@@ -141,24 +180,30 @@ impl std::ops::Deref for DbGuard<'_> {
 }
 
 pub(super) fn get_db<'a>(state: &'a State<'a, AppState>) -> Result<DbGuard<'a>, String> {
-    let guard = state.db.lock().err_str()?;
+    let guard = state.db.lock().err_str(codes::INTERNAL)?;
     if guard.is_none() {
-        return Err("No project locked (database not open)".to_owned());
+        return ralph_err!(codes::PROJECT_LOCK, "No project locked (database not open)");
     }
     Ok(DbGuard(guard))
 }
 
 pub(super) fn get_locked_project_path(state: &State<'_, AppState>) -> Result<PathBuf, String> {
-    let locked = state.locked_project.lock().err_str()?;
+    let locked = state.locked_project.lock().err_str(codes::INTERNAL)?;
     locked
         .as_ref()
         .cloned()
-        .ok_or_else(|| "No project locked".to_owned())
+        .ok_or_else(|| {
+            crate::errors::RalphError {
+                code: codes::PROJECT_LOCK,
+                message: "No project locked".to_owned(),
+            }
+            .to_string()
+        })
 }
 
 pub(super) fn normalize_feature_name(name: &str) -> Result<String, String> {
     if name.contains('/') || name.contains(':') || name.contains('\\') {
-        return Err("Feature name cannot contain /, :, or \\".to_owned());
+        return ralph_err!(codes::FEATURE_OPS, "Feature name cannot contain /, :, or \\");
     }
 
     Ok(name.to_lowercase().trim().replace(char::is_whitespace, "-"))

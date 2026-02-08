@@ -1,4 +1,5 @@
 use super::state::{AppState, ToStringErr};
+use crate::errors::{codes, ralph_err};
 use ralph_macros::ipc_type;
 use sqlite_db::SqliteDb;
 use std::path::PathBuf;
@@ -48,32 +49,35 @@ pub fn validate_project_path(path: String) -> Result<(), String> {
     let path = PathBuf::from(&path);
 
     if !path.exists() {
-        return Err(format!("Directory not found: {}", path.display()));
+        return ralph_err!(codes::PROJECT_PATH, "Directory not found: {}", path.display());
     }
     if !path.is_dir() {
-        return Err(format!("Not a directory: {}", path.display()));
+        return ralph_err!(codes::PROJECT_PATH, "Not a directory: {}", path.display());
     }
 
     let ralph_dir = path.join(".ralph");
     if !ralph_dir.exists() {
-        return Err(format!(
+        return ralph_err!(
+            codes::PROJECT_PATH,
             "No .ralph/ folder. Initialize with:\n  ralph --init \"{}\"",
             path.display()
-        ));
+        );
     }
     if !ralph_dir.is_dir() {
-        return Err(format!(
+        return ralph_err!(
+            codes::PROJECT_PATH,
             "{} exists but is not a directory",
             ralph_dir.display()
-        ));
+        );
     }
 
     let db_file = ralph_dir.join("db").join("ralph.db");
     if !db_file.exists() {
-        return Err(format!(
+        return ralph_err!(
+            codes::PROJECT_PATH,
             "No .ralph/db/ralph.db found. Initialize with:\n  ralph --init \"{}\"",
             path.display()
-        ));
+        );
     }
 
     Ok(())
@@ -84,23 +88,35 @@ pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(
     let path = PathBuf::from(&path);
 
     if !path.exists() {
-        return Err(format!("Directory not found: {}", path.display()));
+        return ralph_err!(codes::PROJECT_PATH, "Directory not found: {}", path.display());
     }
     if !path.is_dir() {
-        return Err(format!("Not a directory: {}", path.display()));
+        return ralph_err!(codes::PROJECT_PATH, "Not a directory: {}", path.display());
     }
 
     let ralph_dir = path.join(".ralph");
     if ralph_dir.exists() {
-        return Err(format!(".ralph/ already exists at {}", path.display()));
+        return ralph_err!(codes::PROJECT_INIT, ".ralph/ already exists at {}", path.display());
     }
 
     std::fs::create_dir(&ralph_dir)
-        .map_err(|e| format!("Failed to create .ralph/ directory: {e}"))?;
+        .map_err(|e| {
+            crate::errors::RalphError {
+                code: codes::PROJECT_INIT,
+                message: format!("Failed to create .ralph/ directory: {e}"),
+            }
+            .to_string()
+        })?;
 
     let db_dir = ralph_dir.join("db");
     std::fs::create_dir(&db_dir)
-        .map_err(|e| format!("Failed to create .ralph/db/ directory: {e}"))?;
+        .map_err(|e| {
+            crate::errors::RalphError {
+                code: codes::PROJECT_INIT,
+                message: format!("Failed to create .ralph/db/ directory: {e}"),
+            }
+            .to_string()
+        })?;
 
     let db_path = db_dir.join("ralph.db");
     let db = SqliteDb::open(&db_path)?;
@@ -136,31 +152,36 @@ Describe the architecture, tech stack, and key components.
     );
 
     std::fs::write(&claude_path, claude_template)
-        .map_err(|e| format!("Failed to create CLAUDE.RALPH.md: {e}"))?;
+        .map_err(|e| {
+            crate::errors::RalphError {
+                code: codes::FILESYSTEM,
+                message: format!("Failed to create CLAUDE.RALPH.md: {e}"),
+            }
+            .to_string()
+        })?;
 
     Ok(())
 }
 
-#[tauri::command]
-pub fn set_locked_project(state: State<'_, AppState>, path: String) -> Result<(), String> {
-    validate_project_path(path.clone())?;
+pub fn lock_project_validated(state: &AppState, path: String) -> Result<(), String> {
+    let canonical_path = std::fs::canonicalize(&path)
+        .map_err(|e| {
+            crate::errors::RalphError {
+                code: codes::PROJECT_PATH,
+                message: format!("Failed to resolve path: {e}"),
+            }
+            .to_string()
+        })?;
 
-    let canonical_path =
-        std::fs::canonicalize(&path).map_err(|e| format!("Failed to resolve path: {e}"))?;
-
-    let mut locked = state.locked_project.lock().err_str()?;
+    let mut locked = state.locked_project.lock().err_str(codes::INTERNAL)?;
     if locked.is_some() {
-        return Err("Project already locked for this session".to_owned());
+        return ralph_err!(codes::PROJECT_LOCK, "Project already locked for this session");
     }
 
     let db_path = canonical_path.join(".ralph").join("db").join("ralph.db");
     let db = SqliteDb::open(&db_path)?;
 
-    let snapshot = prompt_builder::snapshot::analyze(&canonical_path);
-    let mut snap_guard = state.codebase_snapshot.lock().err_str()?;
-    *snap_guard = Some(snapshot);
-
-    let mut db_guard = state.db.lock().err_str()?;
+    let mut db_guard = state.db.lock().err_str(codes::INTERNAL)?;
     *db_guard = Some(db);
 
     *locked = Some(canonical_path);
@@ -168,34 +189,40 @@ pub fn set_locked_project(state: State<'_, AppState>, path: String) -> Result<()
 }
 
 #[tauri::command]
+pub fn set_locked_project(state: State<'_, AppState>, path: String) -> Result<(), String> {
+    validate_project_path(path.clone())?;
+    lock_project_validated(&state, path)
+}
+
+#[tauri::command]
 pub fn get_locked_project(state: State<'_, AppState>) -> Result<Option<String>, String> {
-    let locked = state.locked_project.lock().err_str()?;
+    let locked = state.locked_project.lock().err_str(codes::INTERNAL)?;
     Ok(locked.as_ref().map(|p| p.to_string_lossy().to_string()))
 }
 
 #[tauri::command]
 pub fn start_loop() -> Result<(), String> {
-    Err("Not implemented".to_owned())
+    ralph_err!(codes::LOOP_ENGINE, "Not implemented")
 }
 
 #[tauri::command]
 pub fn pause_loop() -> Result<(), String> {
-    Err("Not implemented".to_owned())
+    ralph_err!(codes::LOOP_ENGINE, "Not implemented")
 }
 
 #[tauri::command]
 pub fn resume_loop() -> Result<(), String> {
-    Err("Not implemented".to_owned())
+    ralph_err!(codes::LOOP_ENGINE, "Not implemented")
 }
 
 #[tauri::command]
 pub fn stop_loop() -> Result<(), String> {
-    Err("Not implemented".to_owned())
+    ralph_err!(codes::LOOP_ENGINE, "Not implemented")
 }
 
 #[tauri::command]
 pub fn get_loop_state() -> Result<(), String> {
-    Err("Not implemented".to_owned())
+    ralph_err!(codes::LOOP_ENGINE, "Not implemented")
 }
 
 // TODO: Rename these commands to reflect sequential task execution rather than "loop"
@@ -206,7 +233,13 @@ pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProj
     let scan_path = if let Some(dir) = root_dir {
         PathBuf::from(dir)
     } else {
-        dirs::home_dir().ok_or("Failed to get home directory")?
+        dirs::home_dir().ok_or_else(|| {
+            crate::errors::RalphError {
+                code: codes::FILESYSTEM,
+                message: "Failed to get home directory".to_owned(),
+            }
+            .to_string()
+        })?
     };
 
     let mut projects = Vec::new();
@@ -274,7 +307,13 @@ pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProj
 
 #[tauri::command]
 pub fn get_current_dir() -> Result<String, String> {
-    let path = dirs::home_dir().ok_or("Failed to get home directory")?;
+    let path = dirs::home_dir().ok_or_else(|| {
+        crate::errors::RalphError {
+            code: codes::FILESYSTEM,
+            message: "Failed to get home directory".to_owned(),
+        }
+        .to_string()
+    })?;
     Ok(path.to_string_lossy().to_string())
 }
 

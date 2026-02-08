@@ -1,4 +1,5 @@
 mod commands;
+mod errors;
 mod terminal;
 
 use commands::AppState;
@@ -31,8 +32,8 @@ pub fn run() {
                             std::process::exit(1);
                         }
 
-                        let state: tauri::State<AppState> = app.state();
-                        if let Err(e) = commands::set_locked_project(state, path_str.clone()) {
+                        let state: &AppState = app.state::<AppState>().inner();
+                        if let Err(e) = commands::lock_project_validated(state, path_str.clone()) {
                             eprintln!("Error: {e}");
                             std::process::exit(1);
                         }

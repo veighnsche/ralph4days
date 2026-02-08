@@ -4,22 +4,21 @@ use crate::SqliteDb;
 impl SqliteDb {
     /// Get task counts grouped by feature.
     pub fn get_feature_stats(&self) -> Vec<GroupStats> {
-        let mut stmt = self
-            .conn
-            .prepare(
-                "SELECT f.name, f.display_name, \
-                 COUNT(t.id) as total, \
-                 SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) as done, \
-                 SUM(CASE WHEN t.status = 'pending' THEN 1 ELSE 0 END) as pending, \
-                 SUM(CASE WHEN t.status = 'in_progress' THEN 1 ELSE 0 END) as in_progress, \
-                 SUM(CASE WHEN t.status = 'blocked' THEN 1 ELSE 0 END) as blocked, \
-                 SUM(CASE WHEN t.status = 'skipped' THEN 1 ELSE 0 END) as skipped \
-                 FROM features f \
-                 LEFT JOIN tasks t ON f.name = t.feature \
-                 GROUP BY f.name, f.display_name \
-                 ORDER BY f.name",
-            )
-            .unwrap();
+        let Ok(mut stmt) = self.conn.prepare(
+            "SELECT f.name, f.display_name, \
+             COUNT(t.id) as total, \
+             SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) as done, \
+             SUM(CASE WHEN t.status = 'pending' THEN 1 ELSE 0 END) as pending, \
+             SUM(CASE WHEN t.status = 'in_progress' THEN 1 ELSE 0 END) as in_progress, \
+             SUM(CASE WHEN t.status = 'blocked' THEN 1 ELSE 0 END) as blocked, \
+             SUM(CASE WHEN t.status = 'skipped' THEN 1 ELSE 0 END) as skipped \
+             FROM features f \
+             LEFT JOIN tasks t ON f.name = t.feature \
+             GROUP BY f.name, f.display_name \
+             ORDER BY f.name",
+        ) else {
+            return vec![];
+        };
 
         stmt.query_map([], |row| {
             Ok(GroupStats {
@@ -33,29 +32,26 @@ impl SqliteDb {
                 skipped: row.get(7)?,
             })
         })
-        .unwrap()
-        .filter_map(std::result::Result::ok)
-        .collect()
+        .map_or_else(|_| vec![], |rows| rows.filter_map(std::result::Result::ok).collect())
     }
 
     /// Get task counts grouped by discipline.
     pub fn get_discipline_stats(&self) -> Vec<GroupStats> {
-        let mut stmt = self
-            .conn
-            .prepare(
-                "SELECT d.name, d.display_name, \
-                 COUNT(t.id) as total, \
-                 SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) as done, \
-                 SUM(CASE WHEN t.status = 'pending' THEN 1 ELSE 0 END) as pending, \
-                 SUM(CASE WHEN t.status = 'in_progress' THEN 1 ELSE 0 END) as in_progress, \
-                 SUM(CASE WHEN t.status = 'blocked' THEN 1 ELSE 0 END) as blocked, \
-                 SUM(CASE WHEN t.status = 'skipped' THEN 1 ELSE 0 END) as skipped \
-                 FROM disciplines d \
-                 LEFT JOIN tasks t ON d.name = t.discipline \
-                 GROUP BY d.name, d.display_name \
-                 ORDER BY d.name",
-            )
-            .unwrap();
+        let Ok(mut stmt) = self.conn.prepare(
+            "SELECT d.name, d.display_name, \
+             COUNT(t.id) as total, \
+             SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) as done, \
+             SUM(CASE WHEN t.status = 'pending' THEN 1 ELSE 0 END) as pending, \
+             SUM(CASE WHEN t.status = 'in_progress' THEN 1 ELSE 0 END) as in_progress, \
+             SUM(CASE WHEN t.status = 'blocked' THEN 1 ELSE 0 END) as blocked, \
+             SUM(CASE WHEN t.status = 'skipped' THEN 1 ELSE 0 END) as skipped \
+             FROM disciplines d \
+             LEFT JOIN tasks t ON d.name = t.discipline \
+             GROUP BY d.name, d.display_name \
+             ORDER BY d.name",
+        ) else {
+            return vec![];
+        };
 
         stmt.query_map([], |row| {
             Ok(GroupStats {
@@ -69,9 +65,7 @@ impl SqliteDb {
                 skipped: row.get(7)?,
             })
         })
-        .unwrap()
-        .filter_map(std::result::Result::ok)
-        .collect()
+        .map_or_else(|_| vec![], |rows| rows.filter_map(std::result::Result::ok).collect())
     }
 
     /// Get overall project progress.
@@ -96,15 +90,17 @@ impl SqliteDb {
 
     /// Get sorted unique tags from all tasks.
     pub fn get_all_tags(&self) -> Vec<String> {
-        let mut stmt = self.conn.prepare("SELECT tags FROM tasks").unwrap();
+        let Ok(mut stmt) = self.conn.prepare("SELECT tags FROM tasks") else {
+            return vec![];
+        };
 
         let mut tags = std::collections::BTreeSet::new();
-        let rows = stmt
-            .query_map([], |row| {
-                let json: String = row.get(0)?;
-                Ok(json)
-            })
-            .unwrap();
+        let Ok(rows) = stmt.query_map([], |row| {
+            let json: String = row.get(0)?;
+            Ok(json)
+        }) else {
+            return vec![];
+        };
 
         for row in rows.flatten() {
             let task_tags: Vec<String> = serde_json::from_str(&row).unwrap_or_default();

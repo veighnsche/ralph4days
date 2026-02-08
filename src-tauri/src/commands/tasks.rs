@@ -1,4 +1,5 @@
 use super::state::{get_db, normalize_feature_name, parse_priority, parse_provenance, AppState};
+use crate::errors::{codes, ralph_err};
 use serde::Deserialize;
 use tauri::State;
 
@@ -93,8 +94,13 @@ pub fn update_task(
 #[tauri::command]
 pub fn set_task_status(state: State<'_, AppState>, id: u32, status: String) -> Result<(), String> {
     let db = get_db(&state)?;
-    let status =
-        sqlite_db::TaskStatus::parse(&status).ok_or_else(|| format!("Invalid status: {status}"))?;
+    let status = sqlite_db::TaskStatus::parse(&status).ok_or_else(|| {
+        crate::errors::RalphError {
+            code: codes::TASK_VALIDATION,
+            message: format!("Invalid status: {status}"),
+        }
+        .to_string()
+    })?;
     db.set_task_status(id, status)
 }
 
@@ -116,7 +122,7 @@ pub fn add_task_comment(
     let comment_author = match author.as_str() {
         "human" => sqlite_db::CommentAuthor::Human,
         "agent" => sqlite_db::CommentAuthor::Agent,
-        _ => return Err(format!("Invalid author: {author}")),
+        _ => return ralph_err!(codes::COMMENT_OPS, "Invalid author: {author}"),
     };
     db.add_comment(task_id, comment_author, agent_task_id, body)
 }
