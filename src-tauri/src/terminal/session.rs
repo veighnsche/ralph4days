@@ -2,6 +2,7 @@ use portable_pty::MasterPty;
 use std::io::Write;
 use std::sync::{Arc, Mutex};
 
+#[derive(Debug)]
 pub struct SessionConfig {
     pub model: Option<String>,
     pub thinking: Option<bool>,

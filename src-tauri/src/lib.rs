@@ -6,8 +6,29 @@ use commands::AppState;
 use tauri::Manager;
 use tauri_plugin_cli::CliExt;
 
+fn init_tracing() {
+    use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+
+    let filter = EnvFilter::try_from_default_env()
+        .or_else(|_| {
+            EnvFilter::try_new(if cfg!(debug_assertions) {
+                "ralph4days=debug,sqlite_db=debug,prompt_builder=debug"
+            } else {
+                "ralph4days=info,sqlite_db=info,prompt_builder=info"
+            })
+        })
+        .unwrap();
+
+    tracing_subscriber::registry()
+        .with(filter)
+        .with(fmt::layer().with_target(true).with_line_number(true))
+        .init();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    init_tracing();
+
     // WORKAROUND: WebKitGTK + NVIDIA + Wayland crash prevention
     // See: https://github.com/tauri-apps/tauri/issues/9394
     // __NV_DISABLE_EXPLICIT_SYNC=1 targets the specific NVIDIA sync issue
@@ -17,6 +38,8 @@ pub fn run() {
     {
         std::env::set_var("__NV_DISABLE_EXPLICIT_SYNC", "1");
     };
+
+    tracing::info!("Starting Ralph4days");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())

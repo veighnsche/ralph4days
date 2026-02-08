@@ -45,10 +45,13 @@ pub struct ProjectInfo {
 }
 
 #[tauri::command]
+#[tracing::instrument]
 pub fn validate_project_path(path: String) -> Result<(), String> {
+    tracing::debug!("Validating project path");
     let path = PathBuf::from(&path);
 
     if !path.exists() {
+        tracing::error!(path = %path.display(), "Directory not found");
         return ralph_err!(
             codes::PROJECT_PATH,
             "Directory not found: {}",
@@ -77,6 +80,7 @@ pub fn validate_project_path(path: String) -> Result<(), String> {
 
     let db_file = ralph_dir.join("db").join("ralph.db");
     if !db_file.exists() {
+        tracing::error!(path = %path.display(), "No .ralph/db/ralph.db found");
         return ralph_err!(
             codes::PROJECT_PATH,
             "No .ralph/db/ralph.db found. Initialize with:\n  ralph --init \"{}\"",
@@ -84,11 +88,14 @@ pub fn validate_project_path(path: String) -> Result<(), String> {
         );
     }
 
+    tracing::info!(path = %path.display(), "Project path validated successfully");
     Ok(())
 }
 
 #[tauri::command]
+#[tracing::instrument]
 pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(), String> {
+    tracing::info!("Initializing Ralph project");
     let path = PathBuf::from(&path);
 
     if !path.exists() {

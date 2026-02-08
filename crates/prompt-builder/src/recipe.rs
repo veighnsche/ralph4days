@@ -58,18 +58,52 @@ pub fn build_sections(recipe: &Recipe, ctx: &PromptContext) -> Vec<PromptSection
 }
 
 /// Execute a recipe: run each section, concatenate non-None results.
+#[tracing::instrument(skip(recipe, ctx), fields(recipe_name = recipe.name))]
 pub fn execute_recipe(recipe: &Recipe, ctx: &PromptContext) -> Result<PromptOutput, PromptError> {
+    tracing::debug!(
+        section_count = recipe.sections.len(),
+        mcp_tool_count = recipe.mcp_tools.len(),
+        "Executing prompt recipe"
+    );
+
     let mut prompt = String::new();
+    let mut sections_built = 0;
     for section in &recipe.sections {
         if let Some(text) = (section.build)(ctx) {
+            tracing::trace!(
+                section_name = section.name,
+                content_len = text.len(),
+                "Section built"
+            );
             prompt.push_str(&text);
             prompt.push_str("\n\n");
+            sections_built += 1;
+        } else {
+            tracing::trace!(
+                section_name = section.name,
+                "Section skipped (returned None)"
+            );
         }
     }
     // Trim trailing whitespace
     let prompt = prompt.trim_end().to_owned();
 
+    tracing::debug!(
+        sections_built,
+        total_sections = recipe.sections.len(),
+        prompt_length = prompt.len(),
+        "Prompt sections built"
+    );
+
     let (mcp_scripts, mcp_config_json) = mcp::generate(ctx, &recipe.mcp_tools);
+
+    tracing::info!(
+        recipe_name = recipe.name,
+        prompt_length = prompt.len(),
+        mcp_scripts_count = mcp_scripts.len(),
+        "Prompt recipe executed successfully"
+    );
+
     Ok(PromptOutput {
         prompt,
         mcp_scripts,
