@@ -1,0 +1,22 @@
+positive_global:
+Vertical 9:16 portrait photograph. Shot through subtle tilt-shift lens giving miniature-world softness to edges. Shallow depth of field with single plane of sharp focus, everything else gently falling off. Consistent grain structure resembling medium-format film stock. The mood is quiet, contemplative, and slightly romanticized — like a beautifully lit diorama viewed through glass. Color palette is muted and desaturated with one dominant accent color. The image should feel like a still from a Wes Anderson film crossed with a product catalog — precise, intentional, and deeply tactile.
+
+
+negative_global:
+blurry, out of focus, motion blur, noise, grain clumps, banding, jpeg artifacts, compression, pixelated, low resolution, upscaled, oversaturated, neon, garish, HDR tonemapping, lens flare, chromatic aberration, vignette, fisheye distortion, split image, collage, grid, multiple panels, border, frame, text, words, letters, numbers, typography, caption, subtitle, watermark, signature, logo, brand name, icon overlay, UI elements, buttons, menus, screenshot, browser chrome
+
+
+positive_stack:
+A single professional figure centered in frame, professional portrait illustration. Modern contemporary aesthetic with clean lines and sophisticated composition. The subject is poised and confident with intelligent expression, wearing modern casual-tech clothing (contemporary silhouettes in teal and charcoal tones). Lit with refined studio lighting emphasizing thoughtful presence and calm focus. Subtle accent lighting in teal creates visual interest without drama. Background is elegant and understated, neutral gradient fading from soft dark tones. Composition conveys confidence, intelligence, and creative capability — a modern professional builder and maker. Illustration style with polished finish, smooth gradients, contemporary aesthetic. The mood is approachable expertise, calm capability, thoughtful precision.
+
+
+negative_stack:
+action figure, cartoon character, superhero, weapon, sword, combat, exaggerated proportions, cel-shaded, thick outlines, dynamic action pose, power stance, heroic stance, gaming character, weapon wielding, aggressive, loud colors, rainbow, neon, oversaturated, photorealistic human face, actual photograph of person, selfie, candid photo, cute kawaii, soft rounded shapes, pastel colors, business formal suit, office setting, corporate stiff, military gear, fantasy costume, flat design, vector logo, line art, sketch, multiple characters, busy background
+
+
+positive_discipline:
+A confident frontend engineer in stylized professional portrait: modern clean aesthetic, sharp angular features with intelligent expression. Wearing contemporary casual-tech clothing: fitted tech hoodie or minimal button-up in teal and charcoal, designer glasses with thin frames perched thoughtfully. One hand gestures toward an elegant interface mockup or design canvas visible in background (soft blurred). Modern minimal tech aesthetic, understated sophistication. Soft professional studio lighting with subtle teal accent glow. Warm approachable personality with creative focus. Clean vector illustration style with smooth gradients, polished finish, professional product design aesthetic. Minimalist composition against neutral gradient background. Calm focused expression, poised and capable, embodying thoughtful design-driven philosophy. Illustration, vector art, contemporary illustration, polished, professional portrait, design-focused, minimalist tech aesthetic, intelligent eyes, creative confidence, approachable expert, soft studio lighting, teal accent lighting, neutral elegant background
+
+
+negative_discipline:
+action figure, cartoon character, weapon, sword, aggressive pose, combat stance, exaggerated proportions, cel-shaded, thick outlines, loud colors, rainbow RGB, gaming character, superhero, battle ready, oversized accessories, fantasy, military, formal corporate suit, photorealistic, actual photograph, realistic skin texture, 3D render, plastic shiny, multiple people, busy background, chaotic composition

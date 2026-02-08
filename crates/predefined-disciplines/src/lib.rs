@@ -125,11 +125,15 @@ pub struct GlobalPromptPair {
 
 const GLOBAL_IMAGE_PROMPTS: &str = include_str!("image_prompts.yaml");
 
-pub const DISCIPLINE_WORKFLOW: &str =
-    include_str!("comfyui_workflows/generate_discipline_main.json");
+const DISCIPLINE_WORKFLOW_TEMPLATE: &str =
+    include_str!("comfyui_workflows/generate_discipline.json");
 
-pub const DISCIPLINE_WORKFLOW_TEST: &str =
-    include_str!("comfyui_workflows/generate_discipline_main_test.json");
+pub fn get_discipline_workflow(steps: u32, width: u32, height: u32) -> String {
+    DISCIPLINE_WORKFLOW_TEMPLATE
+        .replace("\"__STEPS__\"", &steps.to_string())
+        .replace("\"__WIDTH__\"", &width.to_string())
+        .replace("\"__HEIGHT__\"", &height.to_string())
+}
 
 pub fn get_global_image_prompts() -> GlobalImagePrompts {
     serde_yaml::from_str(GLOBAL_IMAGE_PROMPTS).expect("embedded image_prompts.yaml is valid")

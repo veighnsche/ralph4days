@@ -7,10 +7,10 @@ philosophy: |
   Each discipline provides domain-specific tooling and expertise.
 
 visual_identity:
-  style: "1990s action cartoons - bold character designs"
-  theme: "Hannah-Barbera meets action anime, strong silhouettes, dynamic poses"
-  tone: "Traditional, powerful, builders and makers"
-  references: "90s Saturday morning cartoons, classic superhero teams, action-oriented characters"
+  style: "Professional design illustration - contemporary tech aesthetic"
+  theme: "Modern designer/engineer portraits with tech-forward sensibility, clean lines, minimalist composition"
+  tone: "Intelligent, creative, approachable, thoughtfully precise"
+  references: "Product design aesthetics, tech conference speaker photos, creative professional portraits, modern illustration"
 
 when_to_use:
   - "Building desktop applications with web technologies"
@@ -28,7 +28,7 @@ characteristics:
 
 image_prompt:
   positive: |
-    A single stylized figure or character-like object centered in frame against a dark gradient background (deep charcoal fading to black). The subject has bold geometric shapes and strong silhouettes reminiscent of 90s action cartoons: chunky proportions, exaggerated features, clean angular forms like action figures or maquettes. Lit with theatrical three-point lighting creating deep shadows and bright rim lights that emphasize the character's edges and create a hero pose feeling. The background is simple and dramatic, fading from a colored wash at the top to pure black at the bottom. Composition places the character in a dynamic stance or power pose, silhouette reads clearly even in shadow. Film grain texture. The mood is heroic, energetic, nostalgic — like promotional photos of 90s action figures or Saturday morning cartoon key art.
+    A single professional figure centered in frame, professional portrait illustration. Modern contemporary aesthetic with clean lines and sophisticated composition. The subject is poised and confident with intelligent expression, wearing modern casual-tech clothing (contemporary silhouettes in teal and charcoal tones). Lit with refined studio lighting emphasizing thoughtful presence and calm focus. Subtle accent lighting in teal creates visual interest without drama. Background is elegant and understated, neutral gradient fading from soft dark tones. Composition conveys confidence, intelligence, and creative capability — a modern professional builder and maker. Illustration style with polished finish, smooth gradients, contemporary aesthetic. The mood is approachable expertise, calm capability, thoughtful precision.
 
   negative: |
-    realistic human, photorealistic person, actual photograph of human, candid photo, portrait, selfie, cute, kawaii, soft, rounded, feminine, pastel colors, muted tones, desaturated, corporate, business suit, office, professional, minimalist, clean modern design, iPhone aesthetic, flat design, vector art, logo, icon, sketch, line art, watercolor, painterly, impressionist, abstract, bokeh background with lights, lens flare, dutch angle, wide angle distortion
+    action figure, cartoon character, superhero, weapon, sword, combat, exaggerated proportions, cel-shaded, thick outlines, dynamic action pose, power stance, heroic stance, gaming character, weapon wielding, aggressive, loud colors, rainbow, neon, oversaturated, photorealistic human face, actual photograph of person, selfie, candid photo, cute kawaii, soft rounded shapes, pastel colors, business formal suit, office setting, corporate stiff, military gear, fantasy costume, flat design, vector logo, line art, sketch, multiple characters, busy background

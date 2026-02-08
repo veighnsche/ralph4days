@@ -144,6 +144,8 @@ pub(crate) async fn run_workflow(
     let timeout = tokio::time::sleep(Duration::from_secs(config.timeout_secs));
     tokio::pin!(timeout);
 
+    let mut execution_started = false;
+
     loop {
         tokio::select! {
             msg = read.next() => {
@@ -157,6 +159,7 @@ pub(crate) async fn run_workflow(
 
                 match msg_type {
                     "progress" => {
+                        execution_started = true;
                         if let Some(d) = msg_data {
                             let pid = d.get("prompt_id").and_then(|p| p.as_str()).unwrap_or("");
                             if pid == prompt_id {
@@ -167,10 +170,33 @@ pub(crate) async fn run_workflow(
                             }
                         }
                     }
+                    "progress_state" => {
+                        execution_started = true;
+                    }
+                    "status" => {
+                        if execution_started {
+                            let queue_remaining = msg_data
+                                .and_then(|d| d.get("status"))
+                                .and_then(|s| s.get("exec_info"))
+                                .and_then(|e| e.get("queue_remaining"))
+                                .and_then(serde_json::Value::as_u64);
+                            if queue_remaining == Some(0) {
+                                break;
+                            }
+                        }
+                    }
+                    "executing" => {
+                        if let Some(d) = msg_data {
+                            let node = d.get("node");
+                            if node.is_none() || node.map_or(false, |n| n.is_null()) {
+                                break;
+                            }
+                        }
+                    }
                     "executed" => {
                         if let Some(d) = msg_data {
                             let pid = d.get("prompt_id").and_then(|p| p.as_str()).unwrap_or("");
-                            if pid == prompt_id && d.get("output").and_then(|o| o.get(output_type)).is_some() {
+                            if pid == prompt_id && d.get("output").is_some() {
                                 break;
                             }
                         }
