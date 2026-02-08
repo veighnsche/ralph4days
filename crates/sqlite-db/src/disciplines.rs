@@ -15,7 +15,10 @@ impl SqliteDb {
             return ralph_err!(codes::DISCIPLINE_OPS, "Discipline name cannot be empty");
         }
         if display_name.trim().is_empty() {
-            return ralph_err!(codes::DISCIPLINE_OPS, "Discipline display name cannot be empty");
+            return ralph_err!(
+                codes::DISCIPLINE_OPS,
+                "Discipline display name cannot be empty"
+            );
         }
 
         crate::acronym::validate_acronym_format(&acronym)?;
@@ -53,7 +56,10 @@ impl SqliteDb {
                  VALUES (?1, ?2, ?3, ?4, ?5)",
                 rusqlite::params![name, display_name, acronym, icon, color],
             )
-            .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to insert discipline"))?;
+            .map_err(ralph_map_err!(
+                codes::DB_WRITE,
+                "Failed to insert discipline"
+            ))?;
 
         Ok(())
     }
@@ -67,7 +73,10 @@ impl SqliteDb {
         color: String,
     ) -> Result<(), String> {
         if display_name.trim().is_empty() {
-            return ralph_err!(codes::DISCIPLINE_OPS, "Discipline display name cannot be empty");
+            return ralph_err!(
+                codes::DISCIPLINE_OPS,
+                "Discipline display name cannot be empty"
+            );
         }
 
         crate::acronym::validate_acronym_format(&acronym)?;
@@ -131,7 +140,10 @@ impl SqliteDb {
         let affected = self
             .conn
             .execute("DELETE FROM disciplines WHERE name = ?1", [&name])
-            .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to delete discipline"))?;
+            .map_err(ralph_map_err!(
+                codes::DB_WRITE,
+                "Failed to delete discipline"
+            ))?;
 
         if affected == 0 {
             return ralph_err!(codes::DISCIPLINE_OPS, "Discipline '{name}' does not exist");
@@ -164,7 +176,10 @@ impl SqliteDb {
                 mcp_servers: serde_json::from_str(&mcp_json).unwrap_or_default(),
             })
         })
-        .map_or_else(|_| vec![], |rows| rows.filter_map(std::result::Result::ok).collect())
+        .map_or_else(
+            |_| vec![],
+            |rows| rows.filter_map(std::result::Result::ok).collect(),
+        )
     }
 
     pub fn seed_defaults(&self) -> Result<(), String> {

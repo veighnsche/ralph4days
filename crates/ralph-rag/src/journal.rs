@@ -185,8 +185,9 @@ pub fn read_journal(project_path: &Path, feature_name: &str) -> Vec<JournalEntry
 /// Count journal entries for a feature without loading them all.
 pub fn count_entries(project_path: &Path, feature_name: &str) -> usize {
     let path = journal_path(project_path, feature_name);
-    std::fs::read_to_string(&path)
-        .map_or(0, |content| content.lines().filter(|l| !l.trim().is_empty()).count())
+    std::fs::read_to_string(&path).map_or(0, |content| {
+        content.lines().filter(|l| !l.trim().is_empty()).count()
+    })
 }
 
 /// List all features that have journal files.

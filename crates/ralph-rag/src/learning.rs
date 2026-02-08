@@ -72,7 +72,9 @@ impl LearningSource {
 #[derive(Debug)]
 pub enum DeduplicationResult {
     Unique,
-    Duplicate { existing_index: usize },
+    Duplicate {
+        existing_index: usize,
+    },
     Conflict {
         existing_index: usize,
         new_text: String,
@@ -360,22 +362,23 @@ impl<'de> Deserialize<'de> for FeatureLearning {
                         serde::de::Error::custom(
                             "FeatureLearning map must have a 'text' field (string)",
                         )
-                    })?.to_owned();
+                    })?
+                    .to_owned();
 
                 let reason = map
                     .get("reason")
                     .and_then(|v| v.as_str())
                     .map(std::borrow::ToOwned::to_owned);
 
-                let source = map
-                    .get("source")
-                    .and_then(|v| v.as_str())
-                    .map_or(LearningSource::Auto, |s| match s {
-                        "agent" => LearningSource::Agent,
-                        "human" => LearningSource::Human,
-                        "opus_reviewed" => LearningSource::OpusReviewed,
-                        _ => LearningSource::Auto,
-                    });
+                let source =
+                    map.get("source")
+                        .and_then(|v| v.as_str())
+                        .map_or(LearningSource::Auto, |s| match s {
+                            "agent" => LearningSource::Agent,
+                            "human" => LearningSource::Human,
+                            "opus_reviewed" => LearningSource::OpusReviewed,
+                            _ => LearningSource::Auto,
+                        });
 
                 let task_id = map
                     .get("task_id")
@@ -388,8 +391,12 @@ impl<'de> Deserialize<'de> for FeatureLearning {
                 let created = map
                     .get("created")
                     .and_then(|v| v.as_str())
-                    .unwrap_or("").to_owned();
-                let hit_count = map.get("hit_count").and_then(serde_json::Value::as_u64).unwrap_or(1) as u32;
+                    .unwrap_or("")
+                    .to_owned();
+                let hit_count = map
+                    .get("hit_count")
+                    .and_then(serde_json::Value::as_u64)
+                    .unwrap_or(1) as u32;
                 let reviewed = map
                     .get("reviewed")
                     .and_then(serde_json::Value::as_bool)

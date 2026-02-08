@@ -37,10 +37,10 @@ pub struct RecipeConfigData {
 impl SqliteDb {
     pub fn save_recipe_config(&self, input: RecipeConfigInput) -> Result<(), String> {
         let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
-        let section_order_json =
-            serde_json::to_string(&input.section_order).map_err(ralph_map_err!(codes::DB_WRITE, "JSON error"))?;
-        let sections_json =
-            serde_json::to_string(&input.sections).map_err(ralph_map_err!(codes::DB_WRITE, "JSON error"))?;
+        let section_order_json = serde_json::to_string(&input.section_order)
+            .map_err(ralph_map_err!(codes::DB_WRITE, "JSON error"))?;
+        let sections_json = serde_json::to_string(&input.sections)
+            .map_err(ralph_map_err!(codes::DB_WRITE, "JSON error"))?;
 
         let exists: bool = self
             .conn
@@ -49,7 +49,10 @@ impl SqliteDb {
                 [&input.name],
                 |row| row.get(0),
             )
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to check recipe config"))?;
+            .map_err(ralph_map_err!(
+                codes::DB_READ,
+                "Failed to check recipe config"
+            ))?;
 
         if exists {
             self.conn
@@ -64,7 +67,10 @@ impl SqliteDb {
                         input.name,
                     ],
                 )
-                .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to update recipe config"))?;
+                .map_err(ralph_map_err!(
+                    codes::DB_WRITE,
+                    "Failed to update recipe config"
+                ))?;
         } else {
             self.conn
                 .execute(
@@ -116,7 +122,10 @@ impl SqliteDb {
             Err(e) => ralph_err!(codes::DB_READ, "Failed to query recipe config: {e}"),
             Ok((name, base_recipe, section_order_json, sections_json, created, updated)) => {
                 let section_order: Vec<String> = serde_json::from_str(&section_order_json)
-                    .map_err(ralph_map_err!(codes::DB_READ, "Failed to parse section_order"))?;
+                    .map_err(ralph_map_err!(
+                        codes::DB_READ,
+                        "Failed to parse section_order"
+                    ))?;
                 let sections: HashMap<String, SectionSettingsData> =
                     serde_json::from_str(&sections_json)
                         .map_err(ralph_map_err!(codes::DB_READ, "Failed to parse sections"))?;
@@ -140,9 +149,15 @@ impl SqliteDb {
 
         let names = stmt
             .query_map([], |row| row.get(0))
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to query recipe configs"))?
+            .map_err(ralph_map_err!(
+                codes::DB_READ,
+                "Failed to query recipe configs"
+            ))?
             .collect::<Result<Vec<String>, _>>()
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to collect recipe config names"))?;
+            .map_err(ralph_map_err!(
+                codes::DB_READ,
+                "Failed to collect recipe config names"
+            ))?;
 
         Ok(names)
     }
@@ -151,7 +166,10 @@ impl SqliteDb {
         let rows = self
             .conn
             .execute("DELETE FROM recipe_configs WHERE name = ?1", [name])
-            .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to delete recipe config"))?;
+            .map_err(ralph_map_err!(
+                codes::DB_WRITE,
+                "Failed to delete recipe config"
+            ))?;
         if rows == 0 {
             return ralph_err!(codes::DB_READ, "Recipe config \"{name}\" not found");
         }

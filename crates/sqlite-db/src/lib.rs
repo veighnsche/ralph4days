@@ -33,8 +33,8 @@ pub struct SqliteDb {
 
 impl SqliteDb {
     pub fn open(path: &Path) -> Result<Self, String> {
-        let mut conn =
-            Connection::open(path).map_err(ralph_map_err!(codes::DB_OPEN, "Failed to open database"))?;
+        let mut conn = Connection::open(path)
+            .map_err(ralph_map_err!(codes::DB_OPEN, "Failed to open database"))?;
 
         conn.execute_batch(
             "PRAGMA journal_mode = WAL;
@@ -63,8 +63,10 @@ impl SqliteDb {
     }
 
     pub fn open_in_memory() -> Result<Self, String> {
-        let mut conn = Connection::open_in_memory()
-            .map_err(ralph_map_err!(codes::DB_OPEN, "Failed to open in-memory database"))?;
+        let mut conn = Connection::open_in_memory().map_err(ralph_map_err!(
+            codes::DB_OPEN,
+            "Failed to open in-memory database"
+        ))?;
 
         conn.execute_batch("PRAGMA foreign_keys = ON;")
             .map_err(ralph_map_err!(codes::DB_OPEN, "Failed to set PRAGMAs"))?;

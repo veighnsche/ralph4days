@@ -7,7 +7,8 @@ fn build(ctx: &PromptContext) -> Option<String> {
     if snap.is_empty_project {
         return Some(
             "## Codebase State\n\n\
-             This is a greenfield project. No source code files detected yet.".to_owned(),
+             This is a greenfield project. No source code files detected yet."
+                .to_owned(),
         );
     }
 

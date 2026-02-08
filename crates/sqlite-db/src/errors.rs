@@ -22,10 +22,13 @@ pub(crate) use ralph_err;
 
 macro_rules! ralph_map_err {
     ($code:expr, $msg:expr) => {
-        |e| $crate::errors::RalphError {
-            code: $code,
-            message: format!(concat!($msg, ": {}"), e),
-        }.to_string()
+        |e| {
+            $crate::errors::RalphError {
+                code: $code,
+                message: format!(concat!($msg, ": {}"), e),
+            }
+            .to_string()
+        }
     };
 }
 

@@ -56,10 +56,7 @@ pub fn build_sections(prompt_type: PromptType, ctx: &PromptContext) -> Vec<Promp
 }
 
 /// Build sections from an arbitrary list of section names. Pure function — no I/O.
-pub fn build_custom_sections(
-    section_names: &[&str],
-    ctx: &PromptContext,
-) -> Vec<PromptSection> {
+pub fn build_custom_sections(section_names: &[&str], ctx: &PromptContext) -> Vec<PromptSection> {
     recipe::build_sections_from_names(section_names, ctx)
 }
 

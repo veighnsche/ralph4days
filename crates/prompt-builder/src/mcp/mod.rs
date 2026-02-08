@@ -185,9 +185,8 @@ fn generate_config(ctx: &PromptContext, filename: &str) -> String {
                 .collect();
             let args_str = args.join(",");
 
-            let mut server = format!(
-                "\"{name}\":{{\"command\":\"{command}\",\"args\":[{args_str}]"
-            );
+            let mut server =
+                format!("\"{name}\":{{\"command\":\"{command}\",\"args\":[{args_str}]");
 
             if !mcp.env.is_empty() {
                 let env_entries: Vec<String> = mcp

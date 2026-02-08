@@ -23,7 +23,11 @@ impl SqliteDb {
             )
             .map_err(ralph_map_err!(codes::DB_READ, "Failed to check feature"))?;
         if exists {
-            return ralph_err!(codes::FEATURE_OPS, "Feature '{}' already exists", input.name);
+            return ralph_err!(
+                codes::FEATURE_OPS,
+                "Feature '{}' already exists",
+                input.name
+            );
         }
 
         let acronym_exists: bool = self
@@ -86,7 +90,11 @@ impl SqliteDb {
             )
             .map_err(ralph_map_err!(codes::DB_READ, "Failed to check feature"))?;
         if !exists {
-            return ralph_err!(codes::FEATURE_OPS, "Feature '{}' does not exist", input.name);
+            return ralph_err!(
+                codes::FEATURE_OPS,
+                "Feature '{}' does not exist",
+                input.name
+            );
         }
 
         let acronym_conflict: bool = self
@@ -192,7 +200,10 @@ impl SqliteDb {
                 dependencies: serde_json::from_str(&deps_json).unwrap_or_default(),
             })
         })
-        .map_or_else(|_| vec![], |rows| rows.filter_map(std::result::Result::ok).collect())
+        .map_or_else(
+            |_| vec![],
+            |rows| rows.filter_map(std::result::Result::ok).collect(),
+        )
     }
 
     pub fn append_feature_learning(
@@ -216,14 +227,17 @@ impl SqliteDb {
         match check_deduplication(&learning.text, &learnings) {
             DeduplicationResult::Duplicate { existing_index } => {
                 learnings[existing_index].record_re_observation();
-                let updated =
-                    serde_json::to_string(&learnings).map_err(ralph_map_err!(codes::DB_WRITE, "JSON error"))?;
+                let updated = serde_json::to_string(&learnings)
+                    .map_err(ralph_map_err!(codes::DB_WRITE, "JSON error"))?;
                 self.conn
                     .execute(
                         "UPDATE features SET learnings = ?1 WHERE name = ?2",
                         rusqlite::params![updated, feature_name],
                     )
-                    .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to update learnings"))?;
+                    .map_err(ralph_map_err!(
+                        codes::DB_WRITE,
+                        "Failed to update learnings"
+                    ))?;
                 Ok(false)
             }
             DeduplicationResult::Conflict {
@@ -233,14 +247,17 @@ impl SqliteDb {
                 learnings[existing_index] = learning;
                 learnings[existing_index].reason =
                     Some(format!("Replaced conflicting learning: {new_text}"));
-                let updated =
-                    serde_json::to_string(&learnings).map_err(ralph_map_err!(codes::DB_WRITE, "JSON error"))?;
+                let updated = serde_json::to_string(&learnings)
+                    .map_err(ralph_map_err!(codes::DB_WRITE, "JSON error"))?;
                 self.conn
                     .execute(
                         "UPDATE features SET learnings = ?1 WHERE name = ?2",
                         rusqlite::params![updated, feature_name],
                     )
-                    .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to update learnings"))?;
+                    .map_err(ralph_map_err!(
+                        codes::DB_WRITE,
+                        "Failed to update learnings"
+                    ))?;
                 Ok(true)
             }
             DeduplicationResult::Unique => {
@@ -262,14 +279,17 @@ impl SqliteDb {
                     );
                 }
 
-                let updated =
-                    serde_json::to_string(&learnings).map_err(ralph_map_err!(codes::DB_WRITE, "JSON error"))?;
+                let updated = serde_json::to_string(&learnings)
+                    .map_err(ralph_map_err!(codes::DB_WRITE, "JSON error"))?;
                 self.conn
                     .execute(
                         "UPDATE features SET learnings = ?1 WHERE name = ?2",
                         rusqlite::params![updated, feature_name],
                     )
-                    .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to update learnings"))?;
+                    .map_err(ralph_map_err!(
+                        codes::DB_WRITE,
+                        "Failed to update learnings"
+                    ))?;
                 Ok(true)
             }
         }
@@ -299,14 +319,17 @@ impl SqliteDb {
 
         learnings.remove(index);
 
-        let updated =
-            serde_json::to_string(&learnings).map_err(ralph_map_err!(codes::DB_WRITE, "JSON error"))?;
+        let updated = serde_json::to_string(&learnings)
+            .map_err(ralph_map_err!(codes::DB_WRITE, "JSON error"))?;
         self.conn
             .execute(
                 "UPDATE features SET learnings = ?1 WHERE name = ?2",
                 rusqlite::params![updated, feature_name],
             )
-            .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to update learnings"))?;
+            .map_err(ralph_map_err!(
+                codes::DB_WRITE,
+                "Failed to update learnings"
+            ))?;
 
         Ok(())
     }
@@ -348,13 +371,17 @@ impl SqliteDb {
 
         files.push(file_path.to_owned());
 
-        let updated = serde_json::to_string(&files).map_err(ralph_map_err!(codes::DB_WRITE, "JSON error"))?;
+        let updated =
+            serde_json::to_string(&files).map_err(ralph_map_err!(codes::DB_WRITE, "JSON error"))?;
         self.conn
             .execute(
                 "UPDATE features SET context_files = ?1 WHERE name = ?2",
                 rusqlite::params![updated, feature_name],
             )
-            .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to update context_files"))?;
+            .map_err(ralph_map_err!(
+                codes::DB_WRITE,
+                "Failed to update context_files"
+            ))?;
 
         Ok(true)
     }

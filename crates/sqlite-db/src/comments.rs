@@ -15,10 +15,16 @@ impl SqliteDb {
             return ralph_err!(codes::COMMENT_OPS, "Comment body cannot be empty");
         }
         if author == CommentAuthor::Agent && agent_task_id.is_none() {
-            return ralph_err!(codes::COMMENT_OPS, "agent_task_id is required for agent comments");
+            return ralph_err!(
+                codes::COMMENT_OPS,
+                "agent_task_id is required for agent comments"
+            );
         }
         if author == CommentAuthor::Human && agent_task_id.is_some() {
-            return ralph_err!(codes::COMMENT_OPS, "agent_task_id must not be set for human comments");
+            return ralph_err!(
+                codes::COMMENT_OPS,
+                "agent_task_id must not be set for human comments"
+            );
         }
 
         let exists: bool = self
@@ -135,7 +141,10 @@ impl SqliteDb {
                 created: row.get(4)?,
             })
         })
-        .map_or_else(|_| vec![], |rows| rows.filter_map(std::result::Result::ok).collect())
+        .map_or_else(
+            |_| vec![],
+            |rows| rows.filter_map(std::result::Result::ok).collect(),
+        )
     }
 
     pub(crate) fn get_all_comments_by_task(&self) -> HashMap<u32, Vec<TaskComment>> {
