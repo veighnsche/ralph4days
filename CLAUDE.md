@@ -87,6 +87,106 @@ Comments explain **WHY**, never WHAT or HOW. The code itself is the source of tr
 
 **Rule of thumb:** Before writing a comment, ask: "Would a competent developer misunderstand this code without it?" If no, don't write it.
 
+## Coding Standards
+
+Follow these patterns to pass linting on first commit. Pre-commit hooks run biome (frontend) and clippy (backend).
+
+### Frontend (React/TypeScript)
+
+**JSX String Props:**
+```tsx
+// ✅ CORRECT - No curly braces for string literals
+<Input placeholder="Enter text here" />
+
+// ❌ WRONG - Unnecessary curly braces
+<Input placeholder={'Enter text here'} />
+```
+
+**Icon Imports:**
+```tsx
+// ✅ CORRECT - Named imports
+import { Code, Palette, Database } from 'lucide-react'
+const Icon = someCondition ? Code : Palette
+
+// ❌ WRONG - Dynamic namespace access
+import * as Icons from 'lucide-react'
+const Icon = Icons[iconName]  // Prevents tree-shaking
+```
+
+**React Keys:**
+```tsx
+// ✅ CORRECT - Use unique identifiers
+{items.map(item => <div key={item.id}>{item.name}</div>)}
+
+// ❌ WRONG - Array index as key
+{items.map((item, index) => <div key={index}>{item.name}</div>)}
+```
+
+**Interactive Elements:**
+```tsx
+// ✅ CORRECT - Proper semantic element with keyboard support
+<button onClick={handleClick} className="...">
+  Click me
+</button>
+
+// ✅ CORRECT - Interactive div with role and keyboard handler
+<div
+  role="button"
+  tabIndex={0}
+  onClick={handleClick}
+  onKeyDown={e => e.key === 'Enter' && handleClick()}
+  className="cursor-pointer">
+  Click me
+</div>
+
+// ❌ WRONG - Interactive div without role/keyboard support
+<div onClick={handleClick} className="cursor-pointer">
+  Click me
+</div>
+```
+
+### Backend (Rust)
+
+**Function Parameters:**
+```rust
+// ✅ CORRECT - Use struct for >7 parameters
+pub struct CreateUserInput {
+    pub name: String,
+    pub email: String,
+    pub role: String,
+    pub department: String,
+    // ... 10 more fields
+}
+
+pub fn create_user(&self, input: CreateUserInput) -> Result<(), String> {
+    // Implementation
+}
+
+// ❌ WRONG - Too many parameters (clippy::too_many_arguments)
+pub fn create_user(
+    &self,
+    name: String,
+    email: String,
+    role: String,
+    department: String,
+    title: String,
+    phone: String,
+    address: String,
+    city: String,
+) -> Result<(), String> { }
+```
+
+**String Conversions:**
+```rust
+// ✅ CORRECT - Use .to_owned() for string literals
+let s = "hello".to_owned();
+
+// ❌ WRONG - Don't use .to_string() on &str (clippy::str_to_string)
+let s = "hello".to_string();
+```
+
+**Why these rules matter:** Linting catches performance issues (tree-shaking), accessibility problems (keyboard navigation), and idiomatic patterns. Following these patterns from the start prevents pre-commit hook failures and reduces back-and-forth iterations.
+
 ## Tech Stack
 
 **Frontend:** React 19 (with React Compiler — never use manual useMemo/useCallback/React.memo), TypeScript, Vite, Tailwind v4, Zustand, Lucide Icons
