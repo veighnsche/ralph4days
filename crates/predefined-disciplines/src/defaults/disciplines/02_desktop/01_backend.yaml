@@ -11,7 +11,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Black female, early 30s, short natural curls, athletic build, wearing a pristine orange bomber jacket with glowing amber circuit traces woven into the fabric, orange-tinted earrings, arms crossed staring down the viewer, luminous orange circuit-trace tattoo running up her neck pulsing with amber data, dramatic orange rim lighting, warm amber ambient glow, inside a massive dark underground server vault bathed in orange light with towering obsidian server monoliths and rivers of pulsing amber status lights stretching into the deep behind her.
+    Black male, early 30s, short high-top fade, strong build, wearing an orange plaid flannel shirt with sleeves rolled up over a thermal undershirt, orange-tinted safety glasses pushed up on his forehead, arms crossed staring down the viewer, inside a humming 80s server room with floor-to-ceiling beige mainframe cabinets covered in blinking orange status lights and amber LED readouts, thick orange cables snaking across the floor, orange fire extinguisher on the wall, warm amber fluorescent tube lighting overhead, orange watercolor wash bleeding through the scene, amber paint dripping downward.
 
   negative: |
-    UI mockup, design tools, color palette
+    white skin, modern servers, cloud, UI mockup, clean, meek, timid

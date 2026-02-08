@@ -5,7 +5,7 @@
 
 global:
   positive: |
-    Professional polished illustration, shallow depth of field, studio lighting, clean composition.
+    Three-quarter portrait from waist up, single person centered in frame, subject occupies lower two-thirds, professional polished illustration, shallow depth of field, studio lighting, clean composition.
 
   negative: |
-    blurry, noise, jpeg artifacts, text, watermark, logo, multiple panels, collage, low resolution
+    multiple characters, multiple people, crowd, group, two people, full body, legs visible, blurry, noise, jpeg artifacts, text, watermark, logo, multiple panels, collage, low resolution

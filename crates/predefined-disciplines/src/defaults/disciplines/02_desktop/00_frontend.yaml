@@ -33,7 +33,7 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    Young East Asian male, short styled hair, slim build, wearing an absurdly sharp tailored teal jacket with luminous cyan LED piping along every seam, teal-tinted glasses, standing with chin raised and piercing gaze, translucent teal holographic UI wireframes cascading from his outstretched fingertips, dramatic cyan rim lighting, teal ambient glow, inside a dark towering glass-walled design atrium bathed in teal light with enormous floating cyan holographic UI mockups and banks of curved teal-lit monitors behind him.
+    White male, 19 years old, shaggy sandy blond hair falling over his eyes, skinny lanky build, wearing a faded teal concert tee tucked into acid wash jeans with a teal canvas belt, teal Walkman clipped to his pocket with cyan foam headphones around his neck, leaning against the doorframe with a cocky grin, inside his cluttered 80s bedroom with a teal CRT monitor glowing on a messy desk covered in teal floppy disks and cyan soda cans, teal neon clock on the wall, band posters peeling off the walls, teal watercolor wash flooding the background, cyan paint bleeding and dripping downward.
 
   negative: |
-    server rack, terminal only, database
+    woman, female, modern clothing, smartphone, corporate, executive, boring, meek, old, mature

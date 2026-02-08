@@ -11,7 +11,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Mixed-race non-binary person, late 20s, curly undercut hair, slim build, wearing an absurdly sleek black jacket with luminous gold trim and geometric gold accents, gold chain detail, standing with arms folded and a cold scrutinizing stare through an elaborate polished gold augmented monocle lens with rotating gold micro-rings over one eye, dramatic gold rim lighting, warm golden ambient glow, inside a dark sprawling quality assurance lab bathed in gold light with enormous wall-to-wall golden holographic test result matrices and cascading gold pass-fail indicators behind them.
+    White female, early 30s, short permed brown hair with gold barrettes, petite sharp build, wearing a gold blazer with padded shoulders over a cream blouse with a gold brooch, gold digital Casio watch, one hand holding a gold clipboard at her side and the other hand holding a gold pencil pointing at the viewer with a skeptical raised eyebrow expression, inside an 80s quality control inspection room with gold-framed test certificates covering the walls, a gold-lit lightbox table for examining transparencies, gold rubber stamps and gold ink pads on the desk, gold watercolor wash bleeding through the scene, golden paint dripping downward.
 
   negative: |
-    writing code, server rack, design tools
+    man, male, modern laptop, cloud, writing code, server rack, casual, meek

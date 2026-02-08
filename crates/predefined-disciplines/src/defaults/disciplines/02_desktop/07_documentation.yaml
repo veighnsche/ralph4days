@@ -11,7 +11,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Black male, late 40s, short gray-streaked hair, tall build, full gray beard, wearing an absurdly elegant cream overcoat with luminous cream and ivory thread detailing over a crisp ivory shirt, cream-tinted reading glasses, standing imperiously with an ornate cream-bound tome held at his side, sleek ivory stylus pen behind ear with a brilliant warm glow at the tip, dramatic warm cream rim lighting, soft ivory ambient glow, inside a dark impossibly vast digital library cathedral bathed in warm cream light with towering shelves of glowing ivory holographic documents and sprawling cream-lit knowledge graph projections spanning the chamber behind him.
+    White male, late 50s, balding with a ring of gray hair and thick cream-framed reading glasses, tall thin build, wearing a cream wool cardigan with elbow patches over an ivory button-down shirt and cream corduroy pants, cream pen protector in shirt pocket, holding an ivory hardcover reference manual open in one hand, standing in a warm 80s public library with floor-to-ceiling cream wooden bookshelves crammed with ivory-spined books, cream card catalog drawers with brass handles, ivory reading lamps with warm bulbs on oak tables, cream watercolor wash bleeding through the scene, ivory paint dripping downward.
 
   negative: |
-    young, action pose, combat, neon
+    young, modern, digital, hologram, ebook, tablet, action pose, neon, cool, trendy

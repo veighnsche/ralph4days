@@ -14,10 +14,10 @@ visual_identity:
 
 image_prompt:
   positive: |
-    Digital illustration in art nouveau fantasy style with elegant flowing linework, luminous color palette, ornate organic details, three-quarter portrait from waist up, single person centered in frame, subject occupies lower two-thirds, high elvish fantasy aesthetic, living wood and crystal architecture, warm golden ambient light mixed with cool starlight, flowing elegant robes and armor, noble selfless bearing, strict but compassionate expression, ancient wisdom, organic curves and natural forms, pointed elvish ears, ethereal glow, inside an elvish sanctuary.
+    Digital illustration in art nouveau fantasy style with elegant flowing linework, luminous color palette, ornate organic details, high elvish fantasy aesthetic, living wood and crystal architecture, warm golden ambient light mixed with cool starlight, flowing elegant robes and armor, noble selfless bearing, strict but compassionate expression, ancient wisdom, organic curves and natural forms, pointed elvish ears, ethereal glow, inside an elvish sanctuary.
 
   negative: |
-    multiple characters, multiple people, crowd, group, two people, photograph, photorealistic, realistic skin texture, superhero, weapon drawn aggressively, text, words, letters, typography, 3D render, plastic, modern clothing, technology, screens, monitors, cyberpunk, neon, urban, concrete, metal machinery, grungy, dirty, dark evil aesthetic, orc, goblin, undead, cartoon, chibi, anime, manga, cel-shaded, flat colors, harsh edges, smirking, arrogant, cruel, selfish, lazy posture, slouching, empty background, solid color background, plain backdrop
+    photograph, photorealistic, realistic skin texture, superhero, weapon drawn aggressively, text, words, letters, typography, 3D render, plastic, modern clothing, technology, screens, monitors, cyberpunk, neon, urban, concrete, metal machinery, grungy, dirty, dark evil aesthetic, orc, goblin, undead, cartoon, chibi, anime, manga, cel-shaded, flat colors, harsh edges, smirking, arrogant, cruel, selfish, lazy posture, slouching, empty background, solid color background, plain backdrop
 
 when_to_use:
   - "Building iOS and Android apps"
