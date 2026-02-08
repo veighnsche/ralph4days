@@ -1,6 +1,5 @@
 use predefined_disciplines::{
-    get_discipline_workflow, get_disciplines_for_stack, get_global_image_prompts,
-    get_stack_metadata,
+    get_disciplines_for_stack, get_global_image_prompts, get_stack_metadata, DISCIPLINE_WORKFLOW,
 };
 use ralph_external::DisciplinePrompts;
 
@@ -88,26 +87,21 @@ fn parse_args() -> Args {
     }
 }
 
-fn compute_dimensions(ratio_w: f64, ratio_h: f64, megapixels: f64) -> (u32, u32) {
-    let total_pixels = megapixels * 1_048_576.0;
-    let w = (total_pixels * ratio_w / ratio_h).sqrt();
-    let h = (total_pixels * ratio_h / ratio_w).sqrt();
-    let w = ((w / 8.0).round() * 8.0) as u32;
-    let h = ((h / 8.0).round() * 8.0) as u32;
-    (w, h)
-}
-
 #[tokio::main]
 async fn main() {
     let args = parse_args();
-    let (width, height) = compute_dimensions(args.ratio_w, args.ratio_h, args.megapixels);
+    let (width, height) =
+        ralph_external::compute_dimensions(args.ratio_w, args.ratio_h, args.megapixels);
 
     eprintln!(
         "Settings: {} steps, {}x{} ({:.1}MP, ratio {}:{})",
         args.steps, width, height, args.megapixels, args.ratio_w, args.ratio_h
     );
 
-    let workflow = get_discipline_workflow(args.steps, width, height);
+    let mut workflow: std::collections::HashMap<String, ralph_external::WorkflowNode> =
+        serde_json::from_str(DISCIPLINE_WORKFLOW).expect("embedded workflow is valid JSON");
+    ralph_external::set_steps(&mut workflow, args.steps);
+    ralph_external::set_dimensions(&mut workflow, width, height);
     let global = get_global_image_prompts();
 
     let stack = get_stack_metadata(args.stack).unwrap_or_else(|| {
@@ -184,7 +178,7 @@ async fn main() {
     let result = ralph_external::generate_discipline_portrait_with_progress(
         &config,
         prompts,
-        &workflow,
+        &mut workflow,
         |p| {
             let filled = (p.step as usize * 30) / p.total.max(1) as usize;
             let empty = 30 - filled;

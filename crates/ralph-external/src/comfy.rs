@@ -16,7 +16,7 @@ pub(crate) struct PromptRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub(crate) struct WorkflowNode {
+pub struct WorkflowNode {
     pub inputs: HashMap<String, serde_json::Value>,
     pub class_type: String,
 }
@@ -213,7 +213,7 @@ pub(crate) async fn run_workflow(
     fetch_generated_output(&client, config, prompt_id, output_type).await
 }
 
-pub(crate) fn randomize_seed(workflow: &mut HashMap<String, WorkflowNode>) {
+pub fn randomize_seed(workflow: &mut HashMap<String, WorkflowNode>) {
     let seed = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
@@ -224,6 +224,36 @@ pub(crate) fn randomize_seed(workflow: &mut HashMap<String, WorkflowNode>) {
             node.inputs.insert("seed".into(), serde_json::json!(seed));
         }
     }
+}
+
+pub fn set_steps(workflow: &mut HashMap<String, WorkflowNode>, steps: u32) {
+    for node in workflow.values_mut() {
+        if node.class_type == "KSampler" {
+            node.inputs.insert("steps".into(), serde_json::json!(steps));
+        }
+    }
+}
+
+pub fn set_dimensions(workflow: &mut HashMap<String, WorkflowNode>, width: u32, height: u32) {
+    for node in workflow.values_mut() {
+        if node.class_type.contains("Latent") {
+            if node.inputs.contains_key("width") {
+                node.inputs.insert("width".into(), serde_json::json!(width));
+            }
+            if node.inputs.contains_key("height") {
+                node.inputs.insert("height".into(), serde_json::json!(height));
+            }
+        }
+    }
+}
+
+pub fn compute_dimensions(ratio_w: f64, ratio_h: f64, megapixels: f64) -> (u32, u32) {
+    let total_pixels = megapixels * 1_048_576.0;
+    let w = (total_pixels * ratio_w / ratio_h).sqrt();
+    let h = (total_pixels * ratio_h / ratio_w).sqrt();
+    let w = ((w / 8.0).round() * 8.0) as u32;
+    let h = ((h / 8.0).round() * 8.0) as u32;
+    (w, h)
 }
 
 fn get_workflow_path_by_name(workflow_name: &str) -> Result<std::path::PathBuf, String> {

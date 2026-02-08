@@ -11,6 +11,7 @@ path = "src/bin/generate_discipline_image.rs"
 
 [dependencies]
 serde = { workspace = true }
+serde_json = { workspace = true }
 serde_yaml = "0.9"
 ralph-external = { path = "../ralph-external" }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }

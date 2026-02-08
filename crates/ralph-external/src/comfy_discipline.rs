@@ -13,24 +13,21 @@ pub struct DisciplinePrompts {
 pub async fn generate_discipline_portrait(
     config: &crate::config::ComfyConfig,
     prompts: DisciplinePrompts,
-    workflow_json: &str,
+    workflow: &mut HashMap<String, WorkflowNode>,
 ) -> Result<Vec<u8>, String> {
-    generate_discipline_portrait_with_progress(config, prompts, workflow_json, |_| {}).await
+    generate_discipline_portrait_with_progress(config, prompts, workflow, |_| {}).await
 }
 
 pub async fn generate_discipline_portrait_with_progress(
     config: &crate::config::ComfyConfig,
     prompts: DisciplinePrompts,
-    workflow_json: &str,
+    workflow: &mut HashMap<String, WorkflowNode>,
     on_progress: impl Fn(GenerationProgress),
 ) -> Result<Vec<u8>, String> {
-    let mut workflow: HashMap<String, WorkflowNode> = serde_json::from_str(workflow_json)
-        .map_err(|e| format!("Failed to parse workflow JSON: {e}"))?;
+    inject_discipline_prompts(workflow, prompts)?;
+    randomize_seed(workflow);
 
-    inject_discipline_prompts(&mut workflow, prompts)?;
-    randomize_seed(&mut workflow);
-
-    run_workflow(config, workflow, "images", on_progress).await
+    run_workflow(config, std::mem::take(workflow), "images", on_progress).await
 }
 
 fn inject_discipline_prompts(

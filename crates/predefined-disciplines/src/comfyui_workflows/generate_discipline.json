@@ -73,8 +73,8 @@
   },
   "68": {
     "inputs": {
-      "width": "__WIDTH__",
-      "height": "__HEIGHT__",
+      "width": 1024,
+      "height": 1024,
       "batch_size": 1
     },
     "class_type": "EmptySD3LatentImage",
@@ -85,7 +85,7 @@
   "69": {
     "inputs": {
       "seed": 445904554550601,
-      "steps": "__STEPS__",
+      "steps": 28,
       "cfg": 7,
       "sampler_name": "res_multistep",
       "scheduler": "simple",
