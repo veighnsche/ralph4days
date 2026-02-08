@@ -4,6 +4,7 @@ members = [
     "src-tauri",
     "crates/ralph-errors",
     "crates/ralph-rag",
+    "crates/ralph-external",
     "crates/sqlite-db",
     "crates/prompt-builder",
     "crates/ralph-macros",

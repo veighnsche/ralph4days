@@ -16,6 +16,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 sqlite-db = { path = "../crates/sqlite-db" }
 prompt-builder = { path = "../crates/prompt-builder" }
+ralph-external = { path = "../crates/ralph-external" }
 ralph-errors = { workspace = true }
 tauri = { version = "2", default-features = false, features = ["wry", "dynamic-acl"] }
 tauri-plugin-opener = "2"
