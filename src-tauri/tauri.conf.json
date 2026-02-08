@@ -13,6 +13,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
+        "label": "main",
         "title": "Ralph4days",
         "width": 1400,
         "height": 900,
@@ -22,7 +23,19 @@
         "resizable": true,
         "maximizable": true,
         "decorations": true,
-        "transparent": false
+        "transparent": false,
+        "visible": false
+      },
+      {
+        "label": "splash",
+        "url": "splash.html",
+        "width": 400,
+        "height": 250,
+        "decorations": false,
+        "skipTaskbar": true,
+        "visible": true,
+        "center": true,
+        "resizable": false
       }
     ],
     "security": {

@@ -49,7 +49,11 @@ pub fn validate_project_path(path: String) -> Result<(), String> {
     let path = PathBuf::from(&path);
 
     if !path.exists() {
-        return ralph_err!(codes::PROJECT_PATH, "Directory not found: {}", path.display());
+        return ralph_err!(
+            codes::PROJECT_PATH,
+            "Directory not found: {}",
+            path.display()
+        );
     }
     if !path.is_dir() {
         return ralph_err!(codes::PROJECT_PATH, "Not a directory: {}", path.display());
@@ -88,7 +92,11 @@ pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(
     let path = PathBuf::from(&path);
 
     if !path.exists() {
-        return ralph_err!(codes::PROJECT_PATH, "Directory not found: {}", path.display());
+        return ralph_err!(
+            codes::PROJECT_PATH,
+            "Directory not found: {}",
+            path.display()
+        );
     }
     if !path.is_dir() {
         return ralph_err!(codes::PROJECT_PATH, "Not a directory: {}", path.display());
@@ -96,27 +104,29 @@ pub fn initialize_ralph_project(path: String, project_title: String) -> Result<(
 
     let ralph_dir = path.join(".ralph");
     if ralph_dir.exists() {
-        return ralph_err!(codes::PROJECT_INIT, ".ralph/ already exists at {}", path.display());
+        return ralph_err!(
+            codes::PROJECT_INIT,
+            ".ralph/ already exists at {}",
+            path.display()
+        );
     }
 
-    std::fs::create_dir(&ralph_dir)
-        .map_err(|e| {
-            crate::errors::RalphError {
-                code: codes::PROJECT_INIT,
-                message: format!("Failed to create .ralph/ directory: {e}"),
-            }
-            .to_string()
-        })?;
+    std::fs::create_dir(&ralph_dir).map_err(|e| {
+        crate::errors::RalphError {
+            code: codes::PROJECT_INIT,
+            message: format!("Failed to create .ralph/ directory: {e}"),
+        }
+        .to_string()
+    })?;
 
     let db_dir = ralph_dir.join("db");
-    std::fs::create_dir(&db_dir)
-        .map_err(|e| {
-            crate::errors::RalphError {
-                code: codes::PROJECT_INIT,
-                message: format!("Failed to create .ralph/db/ directory: {e}"),
-            }
-            .to_string()
-        })?;
+    std::fs::create_dir(&db_dir).map_err(|e| {
+        crate::errors::RalphError {
+            code: codes::PROJECT_INIT,
+            message: format!("Failed to create .ralph/db/ directory: {e}"),
+        }
+        .to_string()
+    })?;
 
     let db_path = db_dir.join("ralph.db");
     let db = SqliteDb::open(&db_path)?;
@@ -151,31 +161,32 @@ Describe the architecture, tech stack, and key components.
 "
     );
 
-    std::fs::write(&claude_path, claude_template)
-        .map_err(|e| {
-            crate::errors::RalphError {
-                code: codes::FILESYSTEM,
-                message: format!("Failed to create CLAUDE.RALPH.md: {e}"),
-            }
-            .to_string()
-        })?;
+    std::fs::write(&claude_path, claude_template).map_err(|e| {
+        crate::errors::RalphError {
+            code: codes::FILESYSTEM,
+            message: format!("Failed to create CLAUDE.RALPH.md: {e}"),
+        }
+        .to_string()
+    })?;
 
     Ok(())
 }
 
 pub fn lock_project_validated(state: &AppState, path: String) -> Result<(), String> {
-    let canonical_path = std::fs::canonicalize(&path)
-        .map_err(|e| {
-            crate::errors::RalphError {
-                code: codes::PROJECT_PATH,
-                message: format!("Failed to resolve path: {e}"),
-            }
-            .to_string()
-        })?;
+    let canonical_path = std::fs::canonicalize(&path).map_err(|e| {
+        crate::errors::RalphError {
+            code: codes::PROJECT_PATH,
+            message: format!("Failed to resolve path: {e}"),
+        }
+        .to_string()
+    })?;
 
     let mut locked = state.locked_project.lock().err_str(codes::INTERNAL)?;
     if locked.is_some() {
-        return ralph_err!(codes::PROJECT_LOCK, "Project already locked for this session");
+        return ralph_err!(
+            codes::PROJECT_LOCK,
+            "Project already locked for this session"
+        );
     }
 
     let db_path = canonical_path.join(".ralph").join("db").join("ralph.db");

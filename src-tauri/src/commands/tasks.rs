@@ -39,10 +39,7 @@ pub struct UpdateTaskParams {
 }
 
 #[tauri::command]
-pub fn create_task(
-    state: State<'_, AppState>,
-    params: CreateTaskParams,
-) -> Result<String, String> {
+pub fn create_task(state: State<'_, AppState>, params: CreateTaskParams) -> Result<String, String> {
     let db = get_db(&state)?;
 
     let task_input = sqlite_db::TaskInput {
@@ -66,10 +63,7 @@ pub fn create_task(
 }
 
 #[tauri::command]
-pub fn update_task(
-    state: State<'_, AppState>,
-    params: UpdateTaskParams,
-) -> Result<(), String> {
+pub fn update_task(state: State<'_, AppState>, params: UpdateTaskParams) -> Result<(), String> {
     let db = get_db(&state)?;
 
     let task_input = sqlite_db::TaskInput {

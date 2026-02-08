@@ -59,15 +59,13 @@ impl AppState {
         let db_path = ralph_dir.join("db").join("ralph.db");
 
         let db_guard = self.db.lock().err_str(codes::INTERNAL)?;
-        let db = db_guard
-            .as_ref()
-            .ok_or_else(|| {
-                crate::errors::RalphError {
-                    code: codes::PROJECT_LOCK,
-                    message: "No project locked (database not open)".to_owned(),
-                }
-                .to_string()
-            })?;
+        let db = db_guard.as_ref().ok_or_else(|| {
+            crate::errors::RalphError {
+                code: codes::PROJECT_LOCK,
+                message: "No project locked (database not open)".to_owned(),
+            }
+            .to_string()
+        })?;
 
         let snapshot = {
             let mut snap_guard = self.codebase_snapshot.lock().err_str(codes::INTERNAL)?;
@@ -122,25 +120,23 @@ impl AppState {
 
         let (scripts, config_json) = prompt_builder::mcp::generate(&ctx, &recipe.mcp_tools);
 
-        std::fs::create_dir_all(&self.mcp_dir)
-            .map_err(|e| {
-                crate::errors::RalphError {
-                    code: codes::FILESYSTEM,
-                    message: format!("Failed to create MCP dir: {e}"),
-                }
-                .to_string()
-            })?;
+        std::fs::create_dir_all(&self.mcp_dir).map_err(|e| {
+            crate::errors::RalphError {
+                code: codes::FILESYSTEM,
+                message: format!("Failed to create MCP dir: {e}"),
+            }
+            .to_string()
+        })?;
 
         for script in &scripts {
             let script_path = self.mcp_dir.join(&script.filename);
-            std::fs::write(&script_path, &script.content)
-                .map_err(|e| {
-                    crate::errors::RalphError {
-                        code: codes::FILESYSTEM,
-                        message: format!("Failed to write MCP script: {e}"),
-                    }
-                    .to_string()
-                })?;
+            std::fs::write(&script_path, &script.content).map_err(|e| {
+                crate::errors::RalphError {
+                    code: codes::FILESYSTEM,
+                    message: format!("Failed to write MCP script: {e}"),
+                }
+                .to_string()
+            })?;
             #[cfg(unix)]
             {
                 use std::os::unix::fs::PermissionsExt;
@@ -156,14 +152,13 @@ impl AppState {
         }
 
         let config_path = self.mcp_dir.join(format!("mcp-{mode}.json"));
-        std::fs::write(&config_path, &config_json)
-            .map_err(|e| {
-                crate::errors::RalphError {
-                    code: codes::FILESYSTEM,
-                    message: format!("Failed to write MCP config: {e}"),
-                }
-                .to_string()
-            })?;
+        std::fs::write(&config_path, &config_json).map_err(|e| {
+            crate::errors::RalphError {
+                code: codes::FILESYSTEM,
+                message: format!("Failed to write MCP config: {e}"),
+            }
+            .to_string()
+        })?;
 
         Ok(config_path)
     }
@@ -189,21 +184,21 @@ pub(super) fn get_db<'a>(state: &'a State<'a, AppState>) -> Result<DbGuard<'a>, 
 
 pub(super) fn get_locked_project_path(state: &State<'_, AppState>) -> Result<PathBuf, String> {
     let locked = state.locked_project.lock().err_str(codes::INTERNAL)?;
-    locked
-        .as_ref()
-        .cloned()
-        .ok_or_else(|| {
-            crate::errors::RalphError {
-                code: codes::PROJECT_LOCK,
-                message: "No project locked".to_owned(),
-            }
-            .to_string()
-        })
+    locked.as_ref().cloned().ok_or_else(|| {
+        crate::errors::RalphError {
+            code: codes::PROJECT_LOCK,
+            message: "No project locked".to_owned(),
+        }
+        .to_string()
+    })
 }
 
 pub(super) fn normalize_feature_name(name: &str) -> Result<String, String> {
     if name.contains('/') || name.contains(':') || name.contains('\\') {
-        return ralph_err!(codes::FEATURE_OPS, "Feature name cannot contain /, :, or \\");
+        return ralph_err!(
+            codes::FEATURE_OPS,
+            "Feature name cannot contain /, :, or \\"
+        );
     }
 
     Ok(name.to_lowercase().trim().replace(char::is_whitespace, "-"))

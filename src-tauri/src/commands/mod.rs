@@ -5,5 +5,5 @@ mod state;
 pub(crate) mod tasks;
 pub(crate) mod terminal;
 
-pub use project::{set_locked_project, validate_project_path};
+pub use project::{lock_project_validated, validate_project_path};
 pub use state::AppState;

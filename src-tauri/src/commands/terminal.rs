@@ -13,13 +13,16 @@ pub fn create_pty_session(
     thinking: Option<bool>,
 ) -> Result<(), String> {
     let locked = state.locked_project.lock().err_str(codes::INTERNAL)?;
-    let project_path = locked.as_ref().ok_or_else(|| {
-        crate::errors::RalphError {
-            code: codes::PROJECT_LOCK,
-            message: "No project locked".to_owned(),
-        }
-        .to_string()
-    })?.clone();
+    let project_path = locked
+        .as_ref()
+        .ok_or_else(|| {
+            crate::errors::RalphError {
+                code: codes::PROJECT_LOCK,
+                message: "No project locked".to_owned(),
+            }
+            .to_string()
+        })?
+        .clone();
     drop(locked);
 
     let mcp_config = if let Some(mode) = mcp_mode {

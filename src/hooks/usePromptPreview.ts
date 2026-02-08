@@ -5,20 +5,48 @@ import type { SectionBlock } from './useSectionConfiguration'
 
 export type { PromptPreview }
 
+function rebuildPreviewWithUserInput(base: PromptPreview, userInput: string, sections: SectionBlock[]): PromptPreview {
+  if (!userInput.trim()) {
+    return base
+  }
+
+  const userInputSection = {
+    name: 'user_input',
+    content: `## User's Input\n\n${userInput}`
+  }
+
+  const userInputIndex = sections.findIndex(s => s.name === 'user_input' && s.enabled)
+
+  if (userInputIndex === -1) {
+    return base
+  }
+
+  const newSections = [...base.sections]
+  newSections.splice(userInputIndex, 0, userInputSection)
+
+  const fullPrompt = newSections.map(s => s.content).join('\n\n')
+
+  return {
+    sections: newSections,
+    fullPrompt
+  }
+}
+
 export function usePromptPreview(open: boolean, sections: SectionBlock[]) {
+  const [basePreview, setBasePreview] = useState<PromptPreview | null>(null)
   const [preview, setPreview] = useState<PromptPreview | null>(null)
-  const [previewTrigger, setPreviewTrigger] = useState(0)
   const [previewError, setPreviewError] = useState<string | null>(null)
   const userInputRef = useRef('')
 
   useEffect(() => {
     if (!open) {
       userInputRef.current = ''
+      setBasePreview(null)
+      setPreview(null)
       return
     }
   }, [open])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: previewTrigger is an intentional re-fire signal for userInputRef changes without making every keystroke a state update
   useEffect(() => {
     if (!open || sections.length === 0) return
     let ignore = false
@@ -31,11 +59,12 @@ export function usePromptPreview(open: boolean, sections: SectionBlock[]) {
         }))
         const result = await invoke<PromptPreview>('preview_custom_recipe', {
           sections: wireSections,
-          userInput: userInputRef.current || null
+          userInput: null
         })
         if (!ignore) {
-          setPreview(result)
+          setBasePreview(result)
           setPreviewError(null)
+          setPreview(rebuildPreviewWithUserInput(result, userInputRef.current, sections))
         }
       } catch (err) {
         if (!ignore) {
@@ -48,11 +77,13 @@ export function usePromptPreview(open: boolean, sections: SectionBlock[]) {
       ignore = true
       clearTimeout(timer)
     }
-  }, [open, sections, previewTrigger])
+  }, [open, sections])
 
   const handleUserInputChange = (value: string) => {
     userInputRef.current = value
-    setPreviewTrigger(n => n + 1)
+    if (basePreview) {
+      setPreview(rebuildPreviewWithUserInput(basePreview, value, sections))
+    }
   }
 
   const handleCopy = async () => {

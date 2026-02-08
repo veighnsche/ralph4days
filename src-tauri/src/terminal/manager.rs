@@ -99,41 +99,32 @@ impl PTYManager {
             cmd.args(["--mcp-config", &mcp_config.to_string_lossy()]);
         }
 
-        let child = pair
-            .slave
-            .spawn_command(cmd)
-            .map_err(|e| {
-                crate::errors::RalphError {
-                    code: codes::TERMINAL,
-                    message: format!("Failed to spawn claude: {e}"),
-                }
-                .to_string()
-            })?;
+        let child = pair.slave.spawn_command(cmd).map_err(|e| {
+            crate::errors::RalphError {
+                code: codes::TERMINAL,
+                message: format!("Failed to spawn claude: {e}"),
+            }
+            .to_string()
+        })?;
 
         let child = Arc::new(Mutex::new(child));
 
-        let writer: Box<dyn Write + Send> = pair
-            .master
-            .take_writer()
-            .map_err(|e| {
-                crate::errors::RalphError {
-                    code: codes::TERMINAL,
-                    message: format!("Failed to take PTY writer: {e}"),
-                }
-                .to_string()
-            })?;
+        let writer: Box<dyn Write + Send> = pair.master.take_writer().map_err(|e| {
+            crate::errors::RalphError {
+                code: codes::TERMINAL,
+                message: format!("Failed to take PTY writer: {e}"),
+            }
+            .to_string()
+        })?;
         let writer = Arc::new(Mutex::new(writer));
 
-        let mut reader = pair
-            .master
-            .try_clone_reader()
-            .map_err(|e| {
-                crate::errors::RalphError {
-                    code: codes::TERMINAL,
-                    message: format!("Failed to clone PTY reader: {e}"),
-                }
-                .to_string()
-            })?;
+        let mut reader = pair.master.try_clone_reader().map_err(|e| {
+            crate::errors::RalphError {
+                code: codes::TERMINAL,
+                message: format!("Failed to clone PTY reader: {e}"),
+            }
+            .to_string()
+        })?;
 
         let sid = session_id.clone();
         let app_clone = app;
@@ -182,10 +173,7 @@ impl PTYManager {
             _reader_handle: Some(reader_handle),
         };
 
-        self.sessions
-            .lock()
-            .err_str()?
-            .insert(session_id, session);
+        self.sessions.lock().err_str()?.insert(session_id, session);
 
         Ok(())
     }
@@ -193,15 +181,13 @@ impl PTYManager {
     pub fn send_input(&self, session_id: &str, data: &[u8]) -> Result<(), String> {
         let writer = {
             let sessions = self.sessions.lock().err_str()?;
-            let session = sessions
-                .get(session_id)
-                .ok_or_else(|| {
-                    crate::errors::RalphError {
-                        code: codes::TERMINAL,
-                        message: format!("No PTY session: {session_id}"),
-                    }
-                    .to_string()
-                })?;
+            let session = sessions.get(session_id).ok_or_else(|| {
+                crate::errors::RalphError {
+                    code: codes::TERMINAL,
+                    message: format!("No PTY session: {session_id}"),
+                }
+                .to_string()
+            })?;
             Arc::clone(&session.writer)
         };
         let mut guard = writer.lock().err_str()?;
@@ -216,15 +202,13 @@ impl PTYManager {
 
     pub fn resize(&self, session_id: &str, cols: u16, rows: u16) -> Result<(), String> {
         let sessions = self.sessions.lock().err_str()?;
-        let session = sessions
-            .get(session_id)
-            .ok_or_else(|| {
-                crate::errors::RalphError {
-                    code: codes::TERMINAL,
-                    message: format!("No PTY session: {session_id}"),
-                }
-                .to_string()
-            })?;
+        let session = sessions.get(session_id).ok_or_else(|| {
+            crate::errors::RalphError {
+                code: codes::TERMINAL,
+                message: format!("No PTY session: {session_id}"),
+            }
+            .to_string()
+        })?;
         session
             .master
             .resize(PtySize {

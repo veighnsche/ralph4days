@@ -141,3 +141,24 @@ Dominant accent color: #84cc16 lime green. A vintage telephone switchboard stret
 ```
 modern phone, smartphone, rotary phone handset, telephone receiver, cord tangled mess, broken plugs, exposed copper wire, sparks, electrical damage, bright overhead fluorescent, white walls, plastic housing, beige plastic, faded yellow, pink tones, blue tones, cool lighting, digital display, LED screen
 ```
+
+---
+
+## Splash Screen
+
+<!-- Generate at 1200×750 (8:5) — Z-Image will output this natively. Downscale to 400×250 for public/splash.png -->
+
+**Global Prompt (replaces the 4:1 panoramic global for this image only):**
+```
+Photograph at 8:5 aspect ratio. The scene is shot through a subtle tilt-shift lens giving a miniature-world softness to the edges. The overall mood is quiet, contemplative, and slightly romanticized — like a beautifully lit diorama viewed through glass. Color palette is muted and desaturated with deep near-black shadows that dominate the frame. Consistent grain structure throughout, resembling medium-format film stock. Shallow depth of field with a single plane of sharp focus and everything else gently falling off. The image should feel like a still from a Wes Anderson film crossed with a product catalog — precise, intentional, and deeply tactile. The background is near-black (#09090b) occupying most of the frame, with the subject matter small, centered, and intimately lit.
+```
+
+**Prompt:**
+```
+A single small workbench in the dead center of a vast dark room, seen from slightly above. On the bench: a miniature brass orrery mid-rotation, a tiny glowing amber desk lamp, a neat stack of index cards, and a mechanical pocket watch with its back open showing gears. The bench is warmly lit by the amber lamp in a tight pool of light — everything beyond the bench edge falls into deep near-black darkness. The brass orrery catches warm amber highlights on its spinning rings. The watch gears gleam. The index cards have a soft cream tone. The overall impression is a tiny command center preparing for something — quiet industry, precision instruments, ordered calm before action. The surrounding darkness is vast and unbroken, occupying at least 60% of the frame. Shot at a gentle overhead angle. Still-life photography where a single warm amber light source illuminates a small island of detail against an ocean of darkness.
+```
+
+**Negative:**
+```
+people, faces, hands, fingers, human figures, text, words, letters, numbers, typography, caption, watermark, signature, logo, brand name, UI elements, screenshot, bright room, fully lit scene, white background, light background, multiple light sources, overhead lighting, fluorescent, neon, vivid saturated colors, HDR tonemapping, lens flare, cartoon, anime, illustration, 3D render, CGI, plastic, glossy, oversaturated, split image, collage, grid, border, frame, computer, monitor, keyboard, phone, modern electronics, screen glow, blue tones, cool tones, green tones, purple tones
+```

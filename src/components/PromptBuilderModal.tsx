@@ -7,7 +7,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { ClipboardCopy, GripVertical, Save, Trash2, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { HighlightedPrompt } from '@/components/HighlightedPrompt'
 import { InlineError } from '@/components/InlineError'
 import { Badge } from '@/components/ui/badge'
@@ -236,19 +236,11 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
 
 function DebouncedUserInput({ onDebouncedChange }: { onDebouncedChange: (value: string) => void }) {
   const [value, setValue] = useState('')
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-    }
-  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value
     setValue(newValue)
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => onDebouncedChange(newValue), 300)
+    onDebouncedChange(newValue)
   }
 
   return (

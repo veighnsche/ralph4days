@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { getCurrentWindow } from '@tauri-apps/api/window'
+import { getCurrentWindow, Window } from '@tauri-apps/api/window'
 import { useEffect, useState } from 'react'
 import { BottomBar } from '@/components/BottomBar'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
@@ -16,6 +16,18 @@ function App() {
   const queryClient = useQueryClient()
 
   const { data: lockedProject, isLoading: isLoadingProject } = useInvoke<string | null>('get_locked_project')
+
+  // WHY: Window starts hidden (visible:false in tauri.conf.json) to avoid
+  // showing a black rectangle while React loads. Show it once we know what to render.
+  useEffect(() => {
+    if (!isLoadingProject) {
+      getCurrentWindow()
+        .show()
+        .then(() => Window.getByLabel('splash'))
+        .then(w => w?.close())
+        .catch(() => {})
+    }
+  }, [isLoadingProject])
 
   // WHY: Tauri window title must be set via API, not document.title
   useEffect(() => {
