@@ -35,10 +35,10 @@ Use `just --list` for all commands. Key ones: `just dev`, `just test`, `just bui
 
 ## Architecture
 
-Frontend (React 19/Zustand) → IPC → Backend (Tauri/Rust: yaml_db, loop_engine, claude_client, prompt_builder) → subprocess → Claude CLI (--output-format stream-json, --max-turns 50)
+Frontend (React 19/Zustand) → IPC → Backend (Tauri/Rust: sqlite-db, loop_engine, claude_client, prompt_builder) → subprocess → Claude CLI (--output-format stream-json, --max-turns 50)
 
 Key files:
-- Backend: `src-tauri/src/{yaml_db/,loop_engine,claude_client,prompt_builder,commands}.rs`
+- Backend: `src-tauri/src/{commands/,terminal/,lib.rs}` + `crates/{sqlite-db,prompt-builder,ralph-*}/`
 - Frontend: `src/{components,stores}/`
 - Specs: `.specs/`
 
@@ -48,13 +48,13 @@ Key files:
 
 **A loop emerges only when tasks create more tasks.** A task can add new tasks to the queue (including a task whose job is to generate more tasks). When that happens, the sequence keeps going because there's always a next task — but that's an emergent property of the task graph, not a built-in loop mechanism.
 
-**States:** Idle → Running ↔ Paused. Running → RateLimited (5min retry) → Running/Aborted. Running → Complete (all tasks done) or Aborted (stop/stagnation). Stagnation = 3 iterations with no changes to: tasks.yaml, features.yaml, disciplines.yaml, metadata.yaml, progress.txt, learnings.txt.
+**States:** Idle → Running ↔ Paused. Running → RateLimited (5min retry) → Running/Aborted. Running → Complete (all tasks done) or Aborted (stop/stagnation). Stagnation = 3 iterations with no changes to: `.ralph/db/ralph.db`, `progress.txt`, `learnings.txt`.
 
 ## Target Project Structure
 
-Projects need `.ralph/` with either:
-- **New format (preferred):** `.ralph/db/` containing `tasks.yaml`, `features.yaml`, `disciplines.yaml`, `metadata.yaml`
-- **Legacy format:** `.ralph/prd.yaml` (auto-migrates to new format on first use)
+Projects need `.ralph/` with:
+- **Database:** `.ralph/db/ralph.db` (SQLite) containing tasks, features, disciplines, metadata tables
+- **Legacy migration:** Old `.ralph/prd.yaml` auto-migrates to SQLite on first use
 
 Additional files: `CLAUDE.RALPH.md` (recommended), `progress.txt`, `learnings.txt`.
 
@@ -62,16 +62,16 @@ On run start: backup `CLAUDE.md`, copy `CLAUDE.RALPH.md` to `CLAUDE.md`. On stop
 
 ## Project Locking
 
-ONE project per session, chosen at startup. CLI mode (`ralph --project /path`) validates and locks immediately. Interactive mode (`ralph`) shows ProjectPicker modal (scans home for `.ralph/` folders, 5 levels, max 100). Validation: path exists, has `.ralph/db/` or `.ralph/prd.yaml` (auto-migrates). Commands: `validate_project_path`, `set_locked_project`, `get_locked_project`, `start_loop` (no path param — starts sequential task execution).
+ONE project per session, chosen at startup. CLI mode (`ralph --project /path`) validates and locks immediately. Interactive mode (`ralph`) shows ProjectPicker modal (scans home for `.ralph/` folders, 5 levels, max 100). Validation: path exists, has `.ralph/db/ralph.db` or `.ralph/prd.yaml` (auto-migrates to SQLite). Commands: `validate_project_path`, `set_locked_project`, `get_locked_project`, `start_loop` (no path param — starts sequential task execution).
 
 ## Implementation Notes
 
-- **Database**: Multi-file YAML database in `.ralph/db/` (tasks, features, disciplines, metadata). Old `prd.yaml` auto-migrates on first use.
-- **Concurrency**: File locking via fs2 crate prevents race conditions during bulk task creation
+- **Database**: SQLite at `.ralph/db/ralph.db` with WAL mode. Tables: tasks, features, disciplines, metadata, task_comments. Old `prd.yaml` auto-migrates on first use.
+- **Concurrency**: SQLite transactions + foreign key constraints ensure data integrity
 - **Timeout**: Uses system `timeout` command (900s default) wrapping Claude CLI subprocess
 - **Rate Limits**: Parses JSON stream for `overloaded_error`/`rate_limit_error` event types
-- **Prompts**: Inline file contents (no @file syntax): aggregates 4 YAML files into PRD section
-- **Stagnation**: SHA256 hash of 6 files (tasks.yaml, features.yaml, disciplines.yaml, metadata.yaml, progress.txt, learnings.txt) before/after each task session; abort after 3 consecutive sessions with no changes
+- **Prompts**: Built by prompt-builder crate, queries SQLite for current project state
+- **Stagnation**: SHA256 hash of database + progress/learnings files before/after each task session; abort after 3 consecutive sessions with no changes
 
 ## Code Comments Policy
 
@@ -211,7 +211,7 @@ Specs in `.specs/` (read `000_SPECIFICATION_FORMAT.md` first). Tests: `just test
 
 ## Environment
 
-Claude CLI required (`claude --version`). Projects need `.ralph/db/` (new format) or `.ralph/prd.yaml` (legacy, auto-migrates). Task sessions run in project dir. Commits happen in Claude CLI sessions (not managed by Ralph).
+Claude CLI required (`claude --version`). Projects need `.ralph/db/ralph.db` (SQLite) or `.ralph/prd.yaml` (legacy, auto-migrates). Task sessions run in project dir. Commits happen in Claude CLI sessions (not managed by Ralph).
 
 ## Documentation & Info Dumps
 
@@ -223,15 +223,16 @@ Claude CLI required (`claude --version`). Projects need `.ralph/db/` (new format
 
 ## Database Schema
 
-**New multi-file YAML format** (`.ralph/db/`):
-- `tasks.yaml`: Task records (id, feature, discipline, title, description, status, priority, tags, depends_on, acceptance_criteria, etc.)
-- `features.yaml`: Feature definitions (name, display_name, description, created) - auto-populated when creating tasks
-- `disciplines.yaml`: Discipline definitions (name, display_name, icon, color) - 10 defaults, user-customizable
-- `metadata.yaml`: Project metadata (title, description, created) and counters (highest task ID per feature+discipline)
+**SQLite database** at `.ralph/db/ralph.db` with these tables:
+- `tasks`: Task records (id, feature, discipline, title, description, status, priority, tags JSON, depends_on JSON, acceptance_criteria JSON, etc.)
+- `features`: Feature definitions (name PK, display_name, description, created, knowledge_paths JSON, context_files JSON, architecture, boundaries, learnings, dependencies JSON)
+- `disciplines`: Discipline definitions (name PK, display_name, acronym, icon, color, system_prompt, skills JSON, conventions, mcp_servers JSON)
+- `metadata`: Project metadata (singleton row: schema_version, project_title, project_description, project_created)
+- `task_comments`: Comments on tasks (id, task_id FK, author, agent_task_id, body, created)
 
 **Features:**
-- Thread-safe task creation with file locking (prevents race conditions)
-- Auto-migration from old `prd.yaml` format
-- Atomic writes (temp files + rename pattern)
-- Dependency validation (ensures depends_on references exist)
-- Auto-populate features and disciplines on task creation
+- ACID transactions with WAL mode for concurrency
+- Foreign key constraints (tasks reference features+disciplines)
+- Auto-migration from old `prd.yaml` YAML format
+- Rusqlite with versioned migrations (see `crates/sqlite-db/src/migrations/`)
+- JSON columns for arrays (tags, depends_on, etc.)
