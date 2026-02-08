@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { create } from 'zustand'
+import { MAX_TABS } from '@/constants/workspace'
 import type { DisciplineConfig } from '@/hooks/disciplines'
 import type { FeatureData as Feature, Task } from '@/types/generated'
 
@@ -46,8 +47,6 @@ interface WorkspaceStore {
   // WHY: Tab content updates title/icon via this method (browser pattern, not parent-driven)
   setTabMeta: (tabId: string, meta: { title?: string; icon?: LucideIcon }) => void
 }
-
-const MAX_TABS = 10
 
 function generateTabId(tab: Omit<WorkspaceTab, 'id'> & { id?: string }): string {
   if (tab.id) return tab.id

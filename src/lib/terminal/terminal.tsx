@@ -3,8 +3,7 @@ import { WebLinksAddon } from '@xterm/addon-web-links'
 import { Terminal as XTerm } from '@xterm/xterm'
 import { useEffect, useRef } from 'react'
 import '@xterm/xterm/css/xterm.css'
-
-const TERMINAL_BG = '#0a0a0a'
+import { TERMINAL_BG } from '@/constants/terminal'
 
 interface TerminalProps {
   onReady?: (terminal: XTerm) => void

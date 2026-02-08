@@ -1,7 +1,5 @@
 import { useState } from 'react'
-
-const STORAGE_KEY_MODEL = 'ralph.preferences.model'
-const STORAGE_KEY_THINKING = 'ralph.preferences.thinking'
+import { STORAGE_KEYS } from '@/constants/storage'
 
 const VALID_MODELS = ['haiku', 'sonnet', 'opus'] as const
 export type Model = (typeof VALID_MODELS)[number]
@@ -12,25 +10,25 @@ function isValidModel(value: string | null): value is Model {
 
 export function useModelThinkingPreferences() {
   const [model, setModelState] = useState<Model>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY_MODEL)
+    const saved = localStorage.getItem(STORAGE_KEYS.MODEL)
     return isValidModel(saved) ? saved : 'sonnet'
   })
 
   const [thinking, setThinkingState] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY_THINKING)
+    const saved = localStorage.getItem(STORAGE_KEYS.THINKING)
     return saved === 'true'
   })
 
   const setModel = (value: Model) => {
     setModelState(value)
     if (isValidModel(value)) {
-      localStorage.setItem(STORAGE_KEY_MODEL, value)
+      localStorage.setItem(STORAGE_KEYS.MODEL, value)
     }
   }
 
   const setThinking = (value: boolean) => {
     setThinkingState(value)
-    localStorage.setItem(STORAGE_KEY_THINKING, String(value))
+    localStorage.setItem(STORAGE_KEYS.THINKING, String(value))
   }
 
   return {
