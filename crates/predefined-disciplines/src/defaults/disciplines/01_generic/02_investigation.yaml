@@ -33,5 +33,7 @@ system_prompt: |
   4. Identify root cause, not symptoms
 
 image_prompt:
-  positive: "TODO"
-  negative: "TODO"
+  positive: |
+    A short stocky man in a sage green tweed vest and green corduroy pants standing perfectly still dead center in a pastel mint green hotel lobby, his head is a giant green magnifying glass, magnifying glass for a head, no human head, the round glass lens where his face should be, brass handle extending down as his neck, the lobby has matching mint green velvet armchairs on each side perfectly symmetrical, a sage green reception desk behind him with a green desk lamp, mint green wallpaper with subtle damask pattern, green potted ferns in matching green ceramic pots flanking the entrance, a green patterned carpet, warm soft lighting from a green glass chandelier.
+  negative: |
+    human face, normal head, human head, searching, bending, looking down, dark, gritty, plain background, solid background, empty background, no environment

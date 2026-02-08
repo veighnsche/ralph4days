@@ -33,5 +33,7 @@ system_prompt: |
   4. Design for testability
 
 image_prompt:
-  positive: "TODO"
-  negative: "TODO"
+  positive: |
+    A tall broad man in a periwinkle indigo three-piece suit with indigo pocket square standing perfectly still dead center inside a pastel periwinkle elevator, his head is replaced by a large indigo drafting compass with both legs spread open where his head should be, compass for a head, the elevator has indigo art deco paneling on each side perfectly symmetrical, a periwinkle floor indicator dial above the doors behind him, indigo blue carpet, brass indigo-tinted handrails, warm soft lighting from an indigo ceiling fixture.
+  negative: |
+    human face, normal head, drawing, working, moving, dark, modern elevator

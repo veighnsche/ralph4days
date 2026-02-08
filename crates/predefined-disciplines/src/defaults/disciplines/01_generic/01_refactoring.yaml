@@ -34,6 +34,6 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    A precision machinist's set of calipers and micrometers laid out on a felt-lined wooden case. The main piece is a vernier caliper in brushed stainless steel, jaws slightly open, with fine engraved measurement markings visible. Next to it: a set of gauge blocks in descending size, perfectly aligned. A magnifying loupe sits nearby. The felt is deep violet. Everything is immaculately clean and precisely arranged — the tools of someone who measures twice and cuts once. Precision instruments, vernier caliper, brushed steel, engraved markings, gauge blocks, magnifying loupe, felt-lined case, product photography, technical catalog, cold fluorescent lighting, sharp shadows, metallic reflections, muted palette with violet accent, film grain, clinical precision, obsessive organization
+    A tall thin woman in a lavender violet pencil skirt suit with violet buttons standing perfectly still dead center in a pastel lavender laundromat, her head is replaced by a large violet vernier caliper with jaws slightly open where her head should be, caliper for a head, the laundromat has rows of lavender washing machines on each side perfectly symmetrical, violet detergent bottles lined up on a shelf, soft lavender linoleum floor, pastel violet walls, warm soft lighting.
   negative: |
-    human figure, person, cartoon, stylized, cute, colorful, neon, fantasy, organic, watercolor, sketch, vector, flat design, text, busy background, multiple scenes
+    human face, normal head, messy, dirty laundry, working, moving, dark

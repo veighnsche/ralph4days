@@ -34,5 +34,7 @@ system_prompt: |
   4. Vulnerability management (patch dependencies)
 
 image_prompt:
-  positive: "TODO"
-  negative: "TODO"
+  positive: |
+    A broad heavyset woman in a coral red blazer and salmon pink pants standing perfectly still dead center in a pastel coral flower shop, her head is replaced by a large red brass padlock where her head should be, padlock for a head, the shackle arching upward, the flower shop has matching coral red flower buckets on each side perfectly symmetrical filled with salmon pink roses, a red tiled floor, coral wallpaper with floral pattern, red ribbon spools on the counter behind her, warm soft lighting.
+  negative: |
+    human face, normal head, locking, unlocking, keys, dark, threatening
