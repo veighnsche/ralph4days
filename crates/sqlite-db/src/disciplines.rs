@@ -1,6 +1,6 @@
 use crate::types::*;
 use crate::SqliteDb;
-use ralph_errors::{codes, ralph_err, ralph_map_err};
+use ralph_errors::{codes, ralph_err, RalphResultExt};
 
 impl SqliteDb {
     pub fn create_discipline(&self, input: crate::types::DisciplineInput) -> Result<(), String> {
@@ -23,7 +23,7 @@ impl SqliteDb {
                 [&input.name],
                 |row| row.get(0),
             )
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to check discipline"))?;
+            .ralph_err(codes::DB_READ, "Failed to check discipline")?;
         if exists {
             return ralph_err!(
                 codes::DISCIPLINE_OPS,
@@ -39,7 +39,7 @@ impl SqliteDb {
                 [&input.acronym],
                 |row| row.get(0),
             )
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to check acronym"))?;
+            .ralph_err(codes::DB_READ, "Failed to check acronym")?;
         if acronym_exists {
             return ralph_err!(
                 codes::DISCIPLINE_OPS,
@@ -65,10 +65,7 @@ impl SqliteDb {
                     input.mcp_servers
                 ],
             )
-            .map_err(ralph_map_err!(
-                codes::DB_WRITE,
-                "Failed to insert discipline"
-            ))?;
+            .ralph_err(codes::DB_WRITE, "Failed to insert discipline")?;
 
         Ok(())
     }
@@ -90,7 +87,7 @@ impl SqliteDb {
                 [&input.name],
                 |row| row.get(0),
             )
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to check discipline"))?;
+            .ralph_err(codes::DB_READ, "Failed to check discipline")?;
         if !exists {
             return ralph_err!(
                 codes::DISCIPLINE_OPS,
@@ -106,7 +103,7 @@ impl SqliteDb {
                 rusqlite::params![input.acronym, input.name],
                 |row| row.get(0),
             )
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to check acronym"))?;
+            .ralph_err(codes::DB_READ, "Failed to check acronym")?;
         if acronym_conflict {
             return ralph_err!(
                 codes::DISCIPLINE_OPS,
@@ -132,10 +129,7 @@ impl SqliteDb {
                     input.name
                 ],
             )
-            .map_err(ralph_map_err!(
-                codes::DB_WRITE,
-                "Failed to update discipline"
-            ))?;
+            .ralph_err(codes::DB_WRITE, "Failed to update discipline")?;
 
         Ok(())
     }
@@ -144,11 +138,11 @@ impl SqliteDb {
         let mut stmt = self
             .conn
             .prepare("SELECT id, title FROM tasks WHERE discipline = ?1")
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to prepare query"))?;
+            .ralph_err(codes::DB_READ, "Failed to prepare query")?;
 
         let tasks: Vec<(u32, String)> = stmt
             .query_map([&name], |row| Ok((row.get(0)?, row.get(1)?)))
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to query tasks"))?
+            .ralph_err(codes::DB_READ, "Failed to query tasks")?
             .filter_map(std::result::Result::ok)
             .collect();
 
@@ -162,10 +156,7 @@ impl SqliteDb {
         let affected = self
             .conn
             .execute("DELETE FROM disciplines WHERE name = ?1", [&name])
-            .map_err(ralph_map_err!(
-                codes::DB_WRITE,
-                "Failed to delete discipline"
-            ))?;
+            .ralph_err(codes::DB_WRITE, "Failed to delete discipline")?;
 
         if affected == 0 {
             return ralph_err!(codes::DISCIPLINE_OPS, "Discipline '{name}' does not exist");
@@ -399,7 +390,7 @@ impl SqliteDb {
                     [name],
                     |row| row.get(0),
                 )
-                .map_err(ralph_map_err!(codes::DB_READ, "Failed to check discipline"))?;
+                .ralph_err(codes::DB_READ, "Failed to check discipline")?;
 
             if !exists {
                 self.conn
@@ -418,7 +409,7 @@ impl SqliteDb {
                             conventions
                         ],
                     )
-                    .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to seed discipline"))?;
+                    .ralph_err(codes::DB_WRITE, "Failed to seed discipline")?;
             }
         }
 

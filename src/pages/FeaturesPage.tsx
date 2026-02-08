@@ -5,15 +5,38 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
-import { ItemGroup, ItemSeparator } from '@/components/ui/item'
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemSeparator,
+  ItemTitle
+} from '@/components/ui/item'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
+import { FeatureDetailTabContent } from '@/components/workspace/FeatureDetailTabContent'
 import { useFeatureStats } from '@/hooks/useFeatureStats'
 import { useWorkspaceActions } from '@/hooks/useWorkspaceActions'
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
 export function FeaturesPage() {
   const { features, statsMap, progress, isLoading, error } = useFeatureStats()
   const { openBraindumpTab } = useWorkspaceActions()
+  const openTab = useWorkspaceStore(state => state.openTab)
+
+  const handleFeatureClick = (name: string, displayName: string) => {
+    openTab({
+      type: 'feature-detail',
+      component: FeatureDetailTabContent,
+      title: displayName,
+      closeable: true,
+      data: {
+        entityId: name
+      }
+    })
+  }
 
   if (isLoading) {
     return (
@@ -122,30 +145,38 @@ export function FeaturesPage() {
 
               return (
                 <div key={feature.name}>
-                  <div className="p-4 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-medium">{feature.displayName}</h3>
-                          <Badge variant="outline" className="text-xs">
-                            {stats.total} tasks
-                          </Badge>
-                        </div>
-                        {feature.description && (
-                          <p className="text-sm text-muted-foreground mb-2">{feature.description}</p>
-                        )}
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Item
+                    size="sm"
+                    className="cursor-pointer hover:bg-muted/50"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleFeatureClick(feature.name, feature.displayName)}
+                    onKeyDown={e => e.key === 'Enter' && handleFeatureClick(feature.name, feature.displayName)}>
+                    <ItemContent>
+                      <ItemTitle>
+                        {feature.displayName}
+                        <Badge variant="outline" className="font-mono text-xs">
+                          {feature.acronym}
+                        </Badge>
+                      </ItemTitle>
+                      {feature.description && <ItemDescription>{feature.description}</ItemDescription>}
+                    </ItemContent>
+                    <ItemActions>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           {stats.done > 0 && <span>{stats.done} done</span>}
                           {stats.inProgress > 0 && <span>{stats.inProgress} in progress</span>}
                           {stats.pending > 0 && <span>{stats.pending} pending</span>}
                         </div>
+                        <Badge variant="outline" className="text-xs">
+                          {stats.total} tasks
+                        </Badge>
+                        <div className="text-right shrink-0 min-w-[48px]">
+                          <div className="text-sm font-semibold">{featureProgress}%</div>
+                        </div>
                       </div>
-                      <div className="text-right shrink-0">
-                        <div className="text-lg font-semibold">{featureProgress}%</div>
-                        <div className="text-xs text-muted-foreground">complete</div>
-                      </div>
-                    </div>
-                  </div>
+                    </ItemActions>
+                  </Item>
                   {index < features.length - 1 && <ItemSeparator />}
                 </div>
               )

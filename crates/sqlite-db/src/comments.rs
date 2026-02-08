@@ -1,6 +1,6 @@
 use crate::types::*;
 use crate::SqliteDb;
-use ralph_errors::{codes, ralph_err, ralph_map_err};
+use ralph_errors::{codes, ralph_err, RalphResultExt};
 use std::collections::HashMap;
 
 impl SqliteDb {
@@ -34,7 +34,7 @@ impl SqliteDb {
                 [task_id],
                 |row| row.get(0),
             )
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to check task"))?;
+            .ralph_err(codes::DB_READ, "Failed to check task")?;
         if !exists {
             return ralph_err!(codes::COMMENT_OPS, "Task {task_id} does not exist");
         }
@@ -47,7 +47,7 @@ impl SqliteDb {
                  VALUES (?1, ?2, ?3, ?4, ?5)",
                 rusqlite::params![task_id, author.as_str(), agent_task_id, body, now],
             )
-            .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to insert comment"))?;
+            .ralph_err(codes::DB_WRITE, "Failed to insert comment")?;
 
         Ok(())
     }
@@ -69,7 +69,7 @@ impl SqliteDb {
                 [task_id],
                 |row| row.get(0),
             )
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to check task"))?;
+            .ralph_err(codes::DB_READ, "Failed to check task")?;
         if !task_exists {
             return ralph_err!(codes::COMMENT_OPS, "Task {task_id} does not exist");
         }
@@ -80,7 +80,7 @@ impl SqliteDb {
                 "UPDATE task_comments SET body = ?1 WHERE id = ?2 AND task_id = ?3",
                 rusqlite::params![body, comment_id, task_id],
             )
-            .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to update comment"))?;
+            .ralph_err(codes::DB_WRITE, "Failed to update comment")?;
 
         if affected == 0 {
             return ralph_err!(
@@ -100,7 +100,7 @@ impl SqliteDb {
                 [task_id],
                 |row| row.get(0),
             )
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to check task"))?;
+            .ralph_err(codes::DB_READ, "Failed to check task")?;
         if !task_exists {
             return ralph_err!(codes::COMMENT_OPS, "Task {task_id} does not exist");
         }
@@ -111,7 +111,7 @@ impl SqliteDb {
                 "DELETE FROM task_comments WHERE id = ?1 AND task_id = ?2",
                 rusqlite::params![comment_id, task_id],
             )
-            .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to delete comment"))?;
+            .ralph_err(codes::DB_WRITE, "Failed to delete comment")?;
 
         if affected == 0 {
             return ralph_err!(

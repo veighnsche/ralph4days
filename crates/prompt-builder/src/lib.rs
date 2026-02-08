@@ -1,5 +1,4 @@
 pub mod context;
-pub mod error;
 pub mod mcp;
 pub mod output;
 pub mod recipe;
@@ -10,7 +9,6 @@ pub mod stagnation;
 
 // Re-exports for convenience
 pub use context::PromptContext;
-pub use error::PromptError;
 pub use output::{McpScript, PromptOutput};
 pub use recipe::PromptSection;
 pub use sections::metadata::SectionInfo;
@@ -44,7 +42,7 @@ impl PromptType {
 }
 
 /// Build a prompt from a recipe. Pure function — no I/O.
-pub fn build(prompt_type: PromptType, ctx: &PromptContext) -> Result<PromptOutput, PromptError> {
+pub fn build(prompt_type: PromptType, ctx: &PromptContext) -> PromptOutput {
     let recipe = recipes::get(prompt_type);
     recipe::execute_recipe(&recipe, ctx)
 }

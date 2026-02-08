@@ -1,6 +1,6 @@
 use crate::types::*;
 use crate::SqliteDb;
-use ralph_errors::{codes, ralph_err, ralph_map_err};
+use ralph_errors::{codes, ralph_err, RalphResultExt};
 use std::collections::HashSet;
 
 impl SqliteDb {
@@ -32,7 +32,7 @@ impl SqliteDb {
                 [&input.feature],
                 |row| row.get(0),
             )
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to check feature"))?;
+            .ralph_err(codes::DB_READ, "Failed to check feature")?;
         if !feature_exists {
             return ralph_err!(
                 codes::TASK_VALIDATION,
@@ -48,7 +48,7 @@ impl SqliteDb {
                 [&input.discipline],
                 |row| row.get(0),
             )
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to check discipline"))?;
+            .ralph_err(codes::DB_READ, "Failed to check discipline")?;
         if !discipline_exists {
             return ralph_err!(
                 codes::TASK_VALIDATION,
@@ -65,7 +65,7 @@ impl SqliteDb {
                     [dep_id],
                     |row| row.get(0),
                 )
-                .map_err(ralph_map_err!(codes::DB_READ, "Failed to check dependency"))?;
+                .ralph_err(codes::DB_READ, "Failed to check dependency")?;
             if !dep_exists {
                 return ralph_err!(
                     codes::TASK_VALIDATION,
@@ -79,27 +79,19 @@ impl SqliteDb {
             .query_row("SELECT COALESCE(MAX(id), 0) + 1 FROM tasks", [], |row| {
                 row.get(0)
             })
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to get next task ID"))?;
+            .ralph_err(codes::DB_READ, "Failed to get next task ID")?;
 
         let now = self.now().format("%Y-%m-%d").to_string();
         let tags_json = serde_json::to_string(&input.tags)
-            .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to serialize tags"))?;
-        let depends_on_json = serde_json::to_string(&input.depends_on).map_err(ralph_map_err!(
-            codes::DB_WRITE,
-            "Failed to serialize depends_on"
-        ))?;
-        let ac_json =
-            serde_json::to_string(&input.acceptance_criteria.unwrap_or_default()).map_err(
-                ralph_map_err!(codes::DB_WRITE, "Failed to serialize acceptance_criteria"),
-            )?;
-        let cf_json = serde_json::to_string(&input.context_files).map_err(ralph_map_err!(
-            codes::DB_WRITE,
-            "Failed to serialize context_files"
-        ))?;
-        let oa_json = serde_json::to_string(&input.output_artifacts).map_err(ralph_map_err!(
-            codes::DB_WRITE,
-            "Failed to serialize output_artifacts"
-        ))?;
+            .ralph_err(codes::DB_WRITE, "Failed to serialize tags")?;
+        let depends_on_json = serde_json::to_string(&input.depends_on)
+            .ralph_err(codes::DB_WRITE, "Failed to serialize depends_on")?;
+        let ac_json = serde_json::to_string(&input.acceptance_criteria.unwrap_or_default())
+            .ralph_err(codes::DB_WRITE, "Failed to serialize acceptance_criteria")?;
+        let cf_json = serde_json::to_string(&input.context_files)
+            .ralph_err(codes::DB_WRITE, "Failed to serialize context_files")?;
+        let oa_json = serde_json::to_string(&input.output_artifacts)
+            .ralph_err(codes::DB_WRITE, "Failed to serialize output_artifacts")?;
 
         self.conn
             .execute(
@@ -126,7 +118,7 @@ impl SqliteDb {
                     input.provenance.map(|p| p.as_str().to_owned()),
                 ],
             )
-            .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to insert task"))?;
+            .ralph_err(codes::DB_WRITE, "Failed to insert task")?;
 
         tracing::info!(
             task_id = next_id,
@@ -158,7 +150,7 @@ impl SqliteDb {
                 [id],
                 |row| row.get(0),
             )
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to check task"))?;
+            .ralph_err(codes::DB_READ, "Failed to check task")?;
         if !exists {
             return ralph_err!(codes::TASK_OPS, "Task {id} does not exist");
         }
@@ -170,7 +162,7 @@ impl SqliteDb {
                 [&update.feature],
                 |row| row.get(0),
             )
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to check feature"))?;
+            .ralph_err(codes::DB_READ, "Failed to check feature")?;
         if !feature_exists {
             return ralph_err!(
                 codes::TASK_VALIDATION,
@@ -186,7 +178,7 @@ impl SqliteDb {
                 [&update.discipline],
                 |row| row.get(0),
             )
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to check discipline"))?;
+            .ralph_err(codes::DB_READ, "Failed to check discipline")?;
         if !discipline_exists {
             return ralph_err!(
                 codes::TASK_VALIDATION,
@@ -203,7 +195,7 @@ impl SqliteDb {
                     [dep_id],
                     |row| row.get(0),
                 )
-                .map_err(ralph_map_err!(codes::DB_READ, "Failed to check dependency"))?;
+                .ralph_err(codes::DB_READ, "Failed to check dependency")?;
             if !dep_exists {
                 return ralph_err!(
                     codes::TASK_VALIDATION,
@@ -227,23 +219,15 @@ impl SqliteDb {
 
         let now = self.now().format("%Y-%m-%d").to_string();
         let tags_json = serde_json::to_string(&update.tags)
-            .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to serialize tags"))?;
-        let depends_on_json = serde_json::to_string(&update.depends_on).map_err(ralph_map_err!(
-            codes::DB_WRITE,
-            "Failed to serialize depends_on"
-        ))?;
-        let ac_json =
-            serde_json::to_string(&update.acceptance_criteria.unwrap_or_default()).map_err(
-                ralph_map_err!(codes::DB_WRITE, "Failed to serialize acceptance_criteria"),
-            )?;
-        let cf_json = serde_json::to_string(&update.context_files).map_err(ralph_map_err!(
-            codes::DB_WRITE,
-            "Failed to serialize context_files"
-        ))?;
-        let oa_json = serde_json::to_string(&update.output_artifacts).map_err(ralph_map_err!(
-            codes::DB_WRITE,
-            "Failed to serialize output_artifacts"
-        ))?;
+            .ralph_err(codes::DB_WRITE, "Failed to serialize tags")?;
+        let depends_on_json = serde_json::to_string(&update.depends_on)
+            .ralph_err(codes::DB_WRITE, "Failed to serialize depends_on")?;
+        let ac_json = serde_json::to_string(&update.acceptance_criteria.unwrap_or_default())
+            .ralph_err(codes::DB_WRITE, "Failed to serialize acceptance_criteria")?;
+        let cf_json = serde_json::to_string(&update.context_files)
+            .ralph_err(codes::DB_WRITE, "Failed to serialize context_files")?;
+        let oa_json = serde_json::to_string(&update.output_artifacts)
+            .ralph_err(codes::DB_WRITE, "Failed to serialize output_artifacts")?;
 
         self.conn
             .execute(
@@ -269,7 +253,7 @@ impl SqliteDb {
                     id,
                 ],
             )
-            .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to update task"))?;
+            .ralph_err(codes::DB_WRITE, "Failed to update task")?;
 
         Ok(())
     }
@@ -282,7 +266,7 @@ impl SqliteDb {
                 [id],
                 |row| row.get(0),
             )
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to check task"))?;
+            .ralph_err(codes::DB_READ, "Failed to check task")?;
         if !exists {
             return ralph_err!(codes::TASK_OPS, "Task {id} does not exist");
         }
@@ -295,20 +279,14 @@ impl SqliteDb {
                     "UPDATE tasks SET status = ?1, completed = ?2, updated = ?3 WHERE id = ?4",
                     rusqlite::params![status.as_str(), now, now, id],
                 )
-                .map_err(ralph_map_err!(
-                    codes::DB_WRITE,
-                    "Failed to update task status"
-                ))?;
+                .ralph_err(codes::DB_WRITE, "Failed to update task status")?;
         } else {
             self.conn
                 .execute(
                     "UPDATE tasks SET status = ?1, updated = ?2 WHERE id = ?3",
                     rusqlite::params![status.as_str(), now, id],
                 )
-                .map_err(ralph_map_err!(
-                    codes::DB_WRITE,
-                    "Failed to update task status"
-                ))?;
+                .ralph_err(codes::DB_WRITE, "Failed to update task status")?;
         }
 
         Ok(())
@@ -318,7 +296,7 @@ impl SqliteDb {
         let mut stmt = self
             .conn
             .prepare("SELECT id, depends_on FROM tasks")
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to prepare query"))?;
+            .ralph_err(codes::DB_READ, "Failed to prepare query")?;
 
         let rows = stmt
             .query_map([], |row| {
@@ -326,15 +304,12 @@ impl SqliteDb {
                 let deps_json: String = row.get(1)?;
                 Ok((task_id, deps_json))
             })
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to query tasks"))?;
+            .ralph_err(codes::DB_READ, "Failed to query tasks")?;
 
         for row in rows {
-            let (task_id, deps_json) =
-                row.map_err(ralph_map_err!(codes::DB_READ, "Failed to read row"))?;
-            let deps: Vec<u32> = serde_json::from_str(&deps_json).map_err(ralph_map_err!(
-                codes::DB_READ,
-                "Failed to parse depends_on JSON"
-            ))?;
+            let (task_id, deps_json) = row.ralph_err(codes::DB_READ, "Failed to read row")?;
+            let deps: Vec<u32> = serde_json::from_str(&deps_json)
+                .ralph_err(codes::DB_READ, "Failed to parse depends_on JSON")?;
             if deps.contains(&id) {
                 return ralph_err!(
                     codes::TASK_OPS,
@@ -346,7 +321,7 @@ impl SqliteDb {
         let affected = self
             .conn
             .execute("DELETE FROM tasks WHERE id = ?1", [id])
-            .map_err(ralph_map_err!(codes::DB_WRITE, "Failed to delete task"))?;
+            .ralph_err(codes::DB_WRITE, "Failed to delete task")?;
 
         if affected == 0 {
             return ralph_err!(codes::TASK_OPS, "Task {id} does not exist");
@@ -521,7 +496,7 @@ impl SqliteDb {
         let mut stmt = self
             .conn
             .prepare("SELECT id, depends_on FROM tasks")
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to prepare query"))?;
+            .ralph_err(codes::DB_READ, "Failed to prepare query")?;
 
         let deps_map: std::collections::HashMap<u32, Vec<u32>> = stmt
             .query_map([], |row| {
@@ -536,7 +511,7 @@ impl SqliteDb {
                 })?;
                 Ok((id, deps))
             })
-            .map_err(ralph_map_err!(codes::DB_READ, "Failed to query"))?
+            .ralph_err(codes::DB_READ, "Failed to query")?
             .filter_map(std::result::Result::ok)
             .collect();
 

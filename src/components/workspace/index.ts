@@ -1,5 +1,6 @@
 export { BraindumpFormTabContent } from './BraindumpFormTabContent'
 export { DisciplineFormTabContent } from './DisciplineFormTabContent'
+export { FeatureDetailTabContent } from './FeatureDetailTabContent'
 export { FeatureFormTabContent } from './FeatureFormTabContent'
 export { TaskDetailTabContent } from './TaskDetailTabContent'
 export { TaskFormTabContent } from './TaskFormTabContent'

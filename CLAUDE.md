@@ -8,7 +8,7 @@
 
 ## CRITICAL: Centralized Error Handling
 
-**All Rust error types flow through `crates/ralph-errors`.** Never define `RalphError`, error code constants, or error macros in any other crate. Every crate that returns `Result<T, String>` must depend on `ralph-errors` and use `ralph_err!` / `ralph_map_err!` / `ToStringErr`. Domain-specific error enums (like `PromptError`) are allowed only when they don't use error codes and stay internal to their crate.
+**All Rust error types flow through `crates/ralph-errors`.** Never define `RalphError`, error code constants, or error macros in any other crate. Every crate that returns `Result<T, String>` must depend on `ralph-errors` and use the `.ralph()` extension method (preferred) or `ralph_err!` / `ralph_map_err!` macros. Domain-specific error enums are allowed only when they don't use error codes and stay internal to their crate.
 
 ## CRITICAL: Ralph is the Thinnest Wrapper
 

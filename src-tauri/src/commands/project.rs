@@ -1,5 +1,5 @@
 use super::state::AppState;
-use ralph_errors::{codes, ralph_err, ralph_map_err, ToStringErr};
+use ralph_errors::{codes, ralph_err, RalphResultExt, ToStringErr};
 use ralph_macros::ipc_type;
 use sqlite_db::SqliteDb;
 use std::path::PathBuf;
@@ -122,16 +122,12 @@ pub fn initialize_ralph_project(
         );
     }
 
-    std::fs::create_dir(&ralph_dir).map_err(ralph_map_err!(
-        codes::PROJECT_INIT,
-        "Failed to create .ralph/ directory"
-    ))?;
+    std::fs::create_dir(&ralph_dir)
+        .ralph_err(codes::PROJECT_INIT, "Failed to create .ralph/ directory")?;
 
     let db_dir = ralph_dir.join("db");
-    std::fs::create_dir(&db_dir).map_err(ralph_map_err!(
-        codes::PROJECT_INIT,
-        "Failed to create .ralph/db/ directory"
-    ))?;
+    std::fs::create_dir(&db_dir)
+        .ralph_err(codes::PROJECT_INIT, "Failed to create .ralph/db/ directory")?;
 
     let db_path = db_dir.join("ralph.db");
     let db = SqliteDb::open(&db_path)?;
@@ -166,19 +162,15 @@ Describe the architecture, tech stack, and key components.
 "
     );
 
-    std::fs::write(&claude_path, claude_template).map_err(ralph_map_err!(
-        codes::FILESYSTEM,
-        "Failed to create CLAUDE.RALPH.md"
-    ))?;
+    std::fs::write(&claude_path, claude_template)
+        .ralph_err(codes::FILESYSTEM, "Failed to create CLAUDE.RALPH.md")?;
 
     Ok(())
 }
 
 pub fn lock_project_validated(state: &AppState, path: String) -> Result<(), String> {
-    let canonical_path = std::fs::canonicalize(&path).map_err(ralph_map_err!(
-        codes::PROJECT_PATH,
-        "Failed to resolve path"
-    ))?;
+    let canonical_path =
+        std::fs::canonicalize(&path).ralph_err(codes::PROJECT_PATH, "Failed to resolve path")?;
 
     let mut locked = state.locked_project.lock().err_str(codes::INTERNAL)?;
     if locked.is_some() {

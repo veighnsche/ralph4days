@@ -1,3 +1,4 @@
+#[derive(serde::Serialize)]
 pub struct RalphError {
     pub code: u16,
     pub message: String,
@@ -85,6 +86,16 @@ impl<T, E: std::fmt::Display> ToStringErr<T> for Result<T, E> {
     }
 }
 
+pub trait RalphResultExt<T> {
+    fn ralph_err(self, code: u16, msg: &str) -> Result<T, String>;
+}
+
+impl<T, E: std::fmt::Display> RalphResultExt<T> for Result<T, E> {
+    fn ralph_err(self, code: u16, msg: &str) -> Result<T, String> {
+        self.map_err(|e| RalphError::new(code, format!("{msg}: {e}")).to_string())
+    }
+}
+
 #[macro_export]
 macro_rules! ralph_err {
     ($code:expr, $($arg:tt)*) => {{
@@ -105,10 +116,10 @@ pub fn err_string(code: u16, message: impl Into<String>) -> String {
 }
 
 pub fn parse_ralph_error(error_str: &str) -> Option<RalphError> {
-    let re = regex::Regex::new(r"^\[R-(\d{4})\] (.*)$").ok()?;
-    let caps = re.captures(error_str)?;
-    let code: u16 = caps.get(1)?.as_str().parse().ok()?;
-    let message = caps.get(2)?.as_str().to_owned();
+    let s = error_str.strip_prefix("[R-")?;
+    let (code_str, rest) = s.split_once(']')?;
+    let code: u16 = code_str.parse().ok()?;
+    let message = rest.strip_prefix(' ').unwrap_or(rest).to_owned();
     Some(RalphError { code, message })
 }
 
@@ -183,6 +194,18 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_ralph_error_empty_message() {
+        let err = parse_ralph_error("[R-1000]").unwrap();
+        assert_eq!(err.code, 1000);
+        assert_eq!(err.message, "");
+    }
+
+    #[test]
+    fn test_parse_ralph_error_invalid_code() {
+        assert!(parse_ralph_error("[R-abcd] bad").is_none());
+    }
+
+    #[test]
     fn test_github_issue_template() {
         let err = RalphError {
             code: codes::DB_OPEN,
@@ -207,6 +230,25 @@ mod tests {
     }
 
     #[test]
+    fn test_ralph_result_ext_ok() {
+        let ok: Result<i32, String> = Ok(42);
+        assert_eq!(
+            ok.ralph_err(codes::INTERNAL, "should not fire").unwrap(),
+            42
+        );
+    }
+
+    #[test]
+    fn test_ralph_result_ext_err() {
+        let err: Result<i32, String> = Err("disk full".to_owned());
+        let msg = err
+            .ralph_err(codes::DB_WRITE, "Failed to write")
+            .unwrap_err();
+        assert!(msg.contains("[R-2200]"));
+        assert!(msg.contains("Failed to write: disk full"));
+    }
+
+    #[test]
     fn test_ralph_err_macro() {
         let result: Result<(), String> = ralph_err!(codes::DB_OPEN, "test error {}", 42);
         let err = result.unwrap_err();
@@ -228,5 +270,16 @@ mod tests {
         let err = result.unwrap_err();
         assert!(err.contains("[R-2200]"));
         assert!(err.contains("wrapping: original"));
+    }
+
+    #[test]
+    fn test_serialize() {
+        let err = RalphError {
+            code: codes::DB_OPEN,
+            message: "test".to_owned(),
+        };
+        let json = serde_json::to_string(&err).unwrap();
+        assert!(json.contains("\"code\":2000"));
+        assert!(json.contains("\"message\":\"test\""));
     }
 }

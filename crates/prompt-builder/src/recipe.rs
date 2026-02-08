@@ -1,7 +1,6 @@
 use serde::Serialize;
 
 use crate::context::PromptContext;
-use crate::error::PromptError;
 use crate::mcp;
 use crate::mcp::tools::McpTool;
 use crate::output::PromptOutput;
@@ -59,7 +58,7 @@ pub fn build_sections(recipe: &Recipe, ctx: &PromptContext) -> Vec<PromptSection
 
 /// Execute a recipe: run each section, concatenate non-None results.
 #[tracing::instrument(skip(recipe, ctx), fields(recipe_name = recipe.name))]
-pub fn execute_recipe(recipe: &Recipe, ctx: &PromptContext) -> Result<PromptOutput, PromptError> {
+pub fn execute_recipe(recipe: &Recipe, ctx: &PromptContext) -> PromptOutput {
     tracing::debug!(
         section_count = recipe.sections.len(),
         mcp_tool_count = recipe.mcp_tools.len(),
@@ -104,11 +103,11 @@ pub fn execute_recipe(recipe: &Recipe, ctx: &PromptContext) -> Result<PromptOutp
         "Prompt recipe executed successfully"
     );
 
-    Ok(PromptOutput {
+    PromptOutput {
         prompt,
         mcp_scripts,
         mcp_config_json,
-    })
+    }
 }
 
 #[cfg(test)]
@@ -151,7 +150,7 @@ mod tests {
             mcp_tools: vec![],
         };
         let ctx = test_context();
-        let output = execute_recipe(&recipe, &ctx).unwrap();
+        let output = execute_recipe(&recipe, &ctx);
         assert!(output.prompt.contains("## Section A"));
         assert!(output.prompt.contains("## Section C"));
         assert!(!output.prompt.contains("Section B"));

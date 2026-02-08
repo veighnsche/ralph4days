@@ -8,8 +8,8 @@ import { resolveIcon } from '@/lib/iconRegistry'
 import { shouldShowInferredStatus } from '@/lib/taskStatus'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { Task } from '@/types/generated'
+import { PropertyRow } from '../PropertyRow'
 import { TerminalTabContent } from '../TerminalTabContent'
-import { PropertyRow } from './PropertyRow'
 
 const PROVENANCE_CONFIG = {
   agent: { label: 'Agent', icon: Bot },

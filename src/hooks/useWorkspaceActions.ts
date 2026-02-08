@@ -1,13 +1,14 @@
 import {
   BraindumpFormTabContent,
   DisciplineFormTabContent,
+  FeatureDetailTabContent,
   FeatureFormTabContent,
   TaskDetailTabContent,
   TaskFormTabContent,
   TerminalTabContent
 } from '@/components/workspace'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
-import type { Task } from '@/types/generated'
+import type { FeatureData, Task } from '@/types/generated'
 
 export function useWorkspaceActions() {
   const openTab = useWorkspaceStore(s => s.openTab)
@@ -41,6 +42,15 @@ export function useWorkspaceActions() {
         title: 'Create Discipline',
         closeable: true,
         data: { mode: 'create' }
+      }),
+
+    openFeatureDetailTab: (feature: FeatureData) =>
+      openTab({
+        type: 'feature-detail',
+        component: FeatureDetailTabContent,
+        title: feature.displayName,
+        closeable: true,
+        data: { entityId: feature.name }
       }),
 
     openTaskDetailTab: (task: Task) =>

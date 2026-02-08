@@ -22,7 +22,7 @@ pub use ralph_rag::{
     FeatureLearning, LearningSource,
 };
 
-use ralph_errors::{codes, ralph_map_err};
+use ralph_errors::{codes, RalphResultExt};
 use rusqlite::Connection;
 use rusqlite_migration::{Migrations, M};
 use std::path::Path;
@@ -52,15 +52,15 @@ pub struct SqliteDb {
 
 impl SqliteDb {
     pub fn open(path: &Path) -> Result<Self, String> {
-        let mut conn = Connection::open(path)
-            .map_err(ralph_map_err!(codes::DB_OPEN, "Failed to open database"))?;
+        let mut conn =
+            Connection::open(path).ralph_err(codes::DB_OPEN, "Failed to open database")?;
 
         conn.execute_batch(
             "PRAGMA journal_mode = WAL;
              PRAGMA synchronous = NORMAL;
              PRAGMA foreign_keys = ON;",
         )
-        .map_err(ralph_map_err!(codes::DB_OPEN, "Failed to set PRAGMAs"))?;
+        .ralph_err(codes::DB_OPEN, "Failed to set PRAGMAs")?;
 
         let migrations = Migrations::new(vec![
             M::up(include_str!("migrations/001_initial.sql")),
@@ -70,7 +70,7 @@ impl SqliteDb {
 
         migrations
             .to_latest(&mut conn)
-            .map_err(ralph_map_err!(codes::DB_OPEN, "Failed to run migrations"))?;
+            .ralph_err(codes::DB_OPEN, "Failed to run migrations")?;
 
         Ok(Self {
             conn,
@@ -79,15 +79,15 @@ impl SqliteDb {
     }
 
     pub fn open_with_clock(path: &Path, clock: Box<dyn Clock>) -> Result<Self, String> {
-        let mut conn = Connection::open(path)
-            .map_err(ralph_map_err!(codes::DB_OPEN, "Failed to open database"))?;
+        let mut conn =
+            Connection::open(path).ralph_err(codes::DB_OPEN, "Failed to open database")?;
 
         conn.execute_batch(
             "PRAGMA journal_mode = WAL;
              PRAGMA synchronous = NORMAL;
              PRAGMA foreign_keys = ON;",
         )
-        .map_err(ralph_map_err!(codes::DB_OPEN, "Failed to set PRAGMAs"))?;
+        .ralph_err(codes::DB_OPEN, "Failed to set PRAGMAs")?;
 
         let migrations = Migrations::new(vec![
             M::up(include_str!("migrations/001_initial.sql")),
@@ -97,7 +97,7 @@ impl SqliteDb {
 
         migrations
             .to_latest(&mut conn)
-            .map_err(ralph_map_err!(codes::DB_OPEN, "Failed to run migrations"))?;
+            .ralph_err(codes::DB_OPEN, "Failed to run migrations")?;
 
         Ok(Self { conn, clock })
     }
@@ -109,7 +109,7 @@ impl SqliteDb {
     pub fn execute_raw(&self, sql: &str) -> Result<(), String> {
         self.conn
             .execute_batch(sql)
-            .map_err(ralph_map_err!(codes::DB_WRITE, "Raw SQL failed"))
+            .ralph_err(codes::DB_WRITE, "Raw SQL failed")
     }
 
     pub fn open_in_memory() -> Result<Self, String> {
@@ -117,13 +117,11 @@ impl SqliteDb {
     }
 
     pub fn open_in_memory_with_clock(clock: Box<dyn Clock>) -> Result<Self, String> {
-        let mut conn = Connection::open_in_memory().map_err(ralph_map_err!(
-            codes::DB_OPEN,
-            "Failed to open in-memory database"
-        ))?;
+        let mut conn = Connection::open_in_memory()
+            .ralph_err(codes::DB_OPEN, "Failed to open in-memory database")?;
 
         conn.execute_batch("PRAGMA foreign_keys = ON;")
-            .map_err(ralph_map_err!(codes::DB_OPEN, "Failed to set PRAGMAs"))?;
+            .ralph_err(codes::DB_OPEN, "Failed to set PRAGMAs")?;
 
         let migrations = Migrations::new(vec![
             M::up(include_str!("migrations/001_initial.sql")),
@@ -133,7 +131,7 @@ impl SqliteDb {
 
         migrations
             .to_latest(&mut conn)
-            .map_err(ralph_map_err!(codes::DB_OPEN, "Failed to run migrations"))?;
+            .ralph_err(codes::DB_OPEN, "Failed to run migrations")?;
 
         Ok(Self { conn, clock })
     }

@@ -9,7 +9,7 @@ use tauri::{AppHandle, Emitter};
 use super::events::{PtyClosedEvent, PtyOutputEvent};
 use super::session::{build_settings_json, PTYSession, SessionConfig};
 
-use ralph_errors::{codes, ralph_map_err, ToStringErr};
+use ralph_errors::{codes, RalphResultExt, ToStringErr};
 
 pub struct PTYManager {
     sessions: Arc<Mutex<HashMap<String, PTYSession>>>,
@@ -65,10 +65,7 @@ impl PTYManager {
                 pixel_width: 0,
                 pixel_height: 0,
             })
-            .map_err(|e| {
-                tracing::error!(error = %e, "Failed to open PTY");
-                ralph_errors::err_string(codes::TERMINAL, format!("Failed to open PTY: {e}"))
-            })?;
+            .ralph_err(codes::TERMINAL, "Failed to open PTY")?;
 
         tracing::debug!("PTY opened successfully");
 
@@ -96,10 +93,10 @@ impl PTYManager {
             "Spawning Claude CLI subprocess"
         );
 
-        let child = pair.slave.spawn_command(cmd).map_err(|e| {
-            tracing::error!(error = %e, "Failed to spawn Claude CLI");
-            ralph_errors::err_string(codes::TERMINAL, format!("Failed to spawn claude: {e}"))
-        })?;
+        let child = pair
+            .slave
+            .spawn_command(cmd)
+            .ralph_err(codes::TERMINAL, "Failed to spawn claude")?;
 
         tracing::info!("Claude CLI subprocess spawned successfully");
 
@@ -108,13 +105,13 @@ impl PTYManager {
         let writer: Box<dyn Write + Send> = pair
             .master
             .take_writer()
-            .map_err(ralph_map_err!(codes::TERMINAL, "Failed to take PTY writer"))?;
+            .ralph_err(codes::TERMINAL, "Failed to take PTY writer")?;
         let writer = Arc::new(Mutex::new(writer));
 
-        let mut reader = pair.master.try_clone_reader().map_err(ralph_map_err!(
-            codes::TERMINAL,
-            "Failed to clone PTY reader"
-        ))?;
+        let mut reader = pair
+            .master
+            .try_clone_reader()
+            .ralph_err(codes::TERMINAL, "Failed to clone PTY reader")?;
 
         let sid = session_id.clone();
         let app_clone = app;
@@ -201,10 +198,9 @@ impl PTYManager {
             Arc::clone(&session.writer)
         };
         let mut guard = writer.lock().err_str(codes::INTERNAL)?;
-        guard.write_all(data).map_err(|e| {
-            tracing::error!(session_id, error = %e, "Failed to write to PTY");
-            ralph_errors::err_string(codes::TERMINAL, format!("Failed to write to PTY: {e}"))
-        })?;
+        guard
+            .write_all(data)
+            .ralph_err(codes::TERMINAL, "Failed to write to PTY")?;
 
         tracing::trace!(session_id, bytes = data.len(), "Sent input to PTY");
         Ok(())
@@ -224,10 +220,7 @@ impl PTYManager {
                 pixel_width: 0,
                 pixel_height: 0,
             })
-            .map_err(|e| {
-                tracing::error!(session_id, error = %e, cols, rows, "Failed to resize PTY");
-                ralph_errors::err_string(codes::TERMINAL, format!("Failed to resize PTY: {e}"))
-            })?;
+            .ralph_err(codes::TERMINAL, "Failed to resize PTY")?;
 
         tracing::debug!(session_id, cols, rows, "PTY resized");
         Ok(())

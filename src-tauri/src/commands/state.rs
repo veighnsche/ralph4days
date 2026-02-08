@@ -1,6 +1,6 @@
 use crate::terminal::PTYManager;
 use prompt_builder::{CodebaseSnapshot, PromptContext};
-use ralph_errors::{codes, ralph_err, ralph_map_err, ToStringErr};
+use ralph_errors::{codes, ralph_err, RalphResultExt, ToStringErr};
 use sqlite_db::SqliteDb;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -128,33 +128,24 @@ impl AppState {
         config_json: &str,
         config_filename: String,
     ) -> Result<PathBuf, String> {
-        std::fs::create_dir_all(&self.mcp_dir).map_err(ralph_map_err!(
-            codes::FILESYSTEM,
-            "Failed to create MCP dir"
-        ))?;
+        std::fs::create_dir_all(&self.mcp_dir)
+            .ralph_err(codes::FILESYSTEM, "Failed to create MCP dir")?;
 
         for script in scripts {
             let script_path = self.mcp_dir.join(&script.filename);
-            std::fs::write(&script_path, &script.content).map_err(ralph_map_err!(
-                codes::FILESYSTEM,
-                "Failed to write MCP script"
-            ))?;
+            std::fs::write(&script_path, &script.content)
+                .ralph_err(codes::FILESYSTEM, "Failed to write MCP script")?;
             #[cfg(unix)]
             {
                 use std::os::unix::fs::PermissionsExt;
                 std::fs::set_permissions(&script_path, std::fs::Permissions::from_mode(0o755))
-                    .map_err(ralph_map_err!(
-                        codes::FILESYSTEM,
-                        "Failed to chmod MCP script"
-                    ))?;
+                    .ralph_err(codes::FILESYSTEM, "Failed to chmod MCP script")?;
             }
         }
 
         let config_path = self.mcp_dir.join(config_filename);
-        std::fs::write(&config_path, config_json).map_err(ralph_map_err!(
-            codes::FILESYSTEM,
-            "Failed to write MCP config"
-        ))?;
+        std::fs::write(&config_path, config_json)
+            .ralph_err(codes::FILESYSTEM, "Failed to write MCP config")?;
 
         Ok(config_path)
     }
