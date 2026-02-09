@@ -1,4 +1,4 @@
-import { Bot, Cog, User } from 'lucide-react'
+import { Bot, Cog, MessageSquare, User } from 'lucide-react'
 import { memo } from 'react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -48,6 +48,20 @@ function PlaylistItemActions({
               </Tooltip>
             )
           })()}
+
+        {task.comments && task.comments.length > 0 && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5 cursor-help gap-0.5">
+                <MessageSquare className="h-3 w-3" />
+                {task.comments.length}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              {task.comments.length} {task.comments.length === 1 ? 'Comment' : 'Comments'}
+            </TooltipContent>
+          </Tooltip>
+        )}
 
         {task.acceptanceCriteria && task.acceptanceCriteria.length > 0 && (
           <Tooltip>

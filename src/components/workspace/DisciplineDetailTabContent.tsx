@@ -52,11 +52,8 @@ function DisciplineContent({ discipline, imageUrl }: { discipline: DisciplineCon
         </div>
       )}
       <div className="space-y-1.5">
+        <DisciplineLabel acronym={discipline.acronym} color={discipline.color} />
         <h1 className="text-xl font-semibold leading-tight">{discipline.displayName}</h1>
-        <div className="flex items-center gap-2">
-          <DisciplineLabel acronym={discipline.acronym} color={discipline.color} />
-          <span className="text-xs text-muted-foreground font-mono">{discipline.name}</span>
-        </div>
       </div>
     </div>
   )

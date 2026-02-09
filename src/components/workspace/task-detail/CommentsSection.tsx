@@ -51,13 +51,17 @@ export function CommentsSection({ task }: { task: Task }) {
             <div key={comment.id} className="group/comment flex gap-2.5">
               <Avatar size="sm" className="mt-0.5 flex-shrink-0">
                 <AvatarFallback className="text-muted-foreground">
-                  {comment.author === 'agent' ? <Bot className="h-3 w-3" /> : <User className="h-3 w-3" />}
+                  {comment.author === 'human' ? <User className="h-3 w-3" /> : <Bot className="h-3 w-3" />}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2">
                   <span className="text-sm font-medium">
-                    {comment.author === 'agent' ? `Agent #${comment.agent_task_id}` : 'You'}
+                    {comment.author === 'human'
+                      ? 'You'
+                      : comment.author === 'agent'
+                        ? `Agent #${comment.agent_task_id}`
+                        : comment.author.charAt(0).toUpperCase() + comment.author.slice(1)}
                   </span>
                   {comment.created && (
                     <span className="text-xs text-muted-foreground">{formatDate(comment.created)}</span>
