@@ -34,21 +34,6 @@ function PlaylistItemActions({
   return (
     <ItemActions className="flex-col items-end gap-2 relative z-10">
       <div className="flex items-center gap-2">
-        {task.provenance &&
-          (() => {
-            const Icon = task.provenance === 'agent' ? Bot : task.provenance === 'human' ? User : Cog
-            return (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center h-5 px-1 cursor-help">
-                    <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>Created by {task.provenance}</TooltipContent>
-              </Tooltip>
-            )
-          })()}
-
         {task.comments && task.comments.length > 0 && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -198,10 +183,22 @@ export const PlaylistItem = memo(function PlaylistItem({
 
       <ItemContent className="gap-0 relative z-10 min-w-0">
         <ItemTitle
-          className={`truncate ${isNowPlaying ? 'text-base' : 'text-sm'}`}
+          className={`flex items-center gap-1.5 truncate ${isNowPlaying ? 'text-base' : 'text-sm'}`}
           style={isNowPlaying ? { color: statusConfig.color } : undefined}>
-          {task.title}
-          {isNowPlaying && <span className="ml-2 text-xs opacity-70">[NOW PLAYING]</span>}
+          {task.provenance &&
+            (() => {
+              const Icon = task.provenance === 'agent' ? Bot : task.provenance === 'human' ? User : Cog
+              return (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Icon className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>Created by {task.provenance}</TooltipContent>
+                </Tooltip>
+              )
+            })()}
+          <span className="truncate">{task.title}</span>
+          {isNowPlaying && <span className="ml-2 text-xs opacity-70 flex-shrink-0">[NOW PLAYING]</span>}
         </ItemTitle>
 
         {task.description && <ItemDescription className="truncate">{task.description}</ItemDescription>}
