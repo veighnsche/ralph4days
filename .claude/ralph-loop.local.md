@@ -44,7 +44,18 @@ Composite generated: `01_generic_composite.png` (3035KB)
 
 ## Stack 02: Desktop (80s Watercolor)
 
-Not started
+**Status:** Starting...
+
+Stack 02 uses 18 steps for dev, 18 steps for prod (not 28 like Generic).
+Medium: Watercolor illustration with visible brushstrokes.
+Characters: 1980s blue-collar heroes - serious, determined, working class.
+
+### Dev Quality - Starting
+
+| Disc | Attempt | Status |
+|------|---------|--------|
+| 00   | 1       | Preparing prompts... |
+| 01-07| -       | Queued |
 
 ---
 
