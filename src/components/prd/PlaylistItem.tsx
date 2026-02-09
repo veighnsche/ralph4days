@@ -196,9 +196,9 @@ export const PlaylistItem = memo(function PlaylistItem({
         )}
       </div>
 
-      <ItemContent className="gap-0 relative z-10">
+      <ItemContent className="gap-0 relative z-10 min-w-0">
         <ItemTitle
-          className={isNowPlaying ? 'text-base' : 'text-sm'}
+          className={`truncate ${isNowPlaying ? 'text-base' : 'text-sm'}`}
           style={isNowPlaying ? { color: statusConfig.color } : undefined}>
           {task.title}
           {isNowPlaying && <span className="ml-2 text-xs opacity-70">[NOW PLAYING]</span>}
