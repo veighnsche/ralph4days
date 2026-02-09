@@ -24,6 +24,70 @@ interface PlaylistItemProps {
   onClick: () => void
 }
 
+function TitleBadges({ task }: { task: Task }) {
+  return (
+    <>
+      {task.comments && task.comments.length > 0 && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5 cursor-help gap-0.5 flex-shrink-0">
+              <MessageSquare className="h-3 w-3" />
+              {task.comments.length}
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>
+            {task.comments.length} {task.comments.length === 1 ? 'Comment' : 'Comments'}
+          </TooltipContent>
+        </Tooltip>
+      )}
+
+      {task.acceptanceCriteria && task.acceptanceCriteria.length > 0 && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5 cursor-help flex-shrink-0">
+              {task.acceptanceCriteria.length} AC
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>{task.acceptanceCriteria.length} Acceptance Criteria</TooltipContent>
+        </Tooltip>
+      )}
+
+      {task.dependsOn &&
+        task.dependsOn.length > 0 &&
+        (() => {
+          const isWaiting = task.inferredStatus === 'waiting_on_deps'
+          const inferredConfig = isWaiting ? INFERRED_STATUS_CONFIG.waiting_on_deps : null
+
+          return (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge
+                  variant="outline"
+                  className="text-xs px-1.5 py-0.5 h-5 cursor-help flex-shrink-0"
+                  style={
+                    inferredConfig
+                      ? {
+                          borderColor: inferredConfig.color,
+                          color: inferredConfig.color,
+                          backgroundColor: inferredConfig.bgColor
+                        }
+                      : undefined
+                  }>
+                  {task.dependsOn.length} dep{task.dependsOn.length !== 1 ? 's' : ''}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isWaiting
+                  ? getInferredStatusExplanation(task.status, task.inferredStatus, task.dependsOn.length)
+                  : `${task.dependsOn.length} ${task.dependsOn.length === 1 ? 'Dependency' : 'Dependencies'}`}
+              </TooltipContent>
+            </Tooltip>
+          )
+        })()}
+    </>
+  )
+}
+
 function PlaylistItemActions({
   task,
   priorityConfig
@@ -31,68 +95,11 @@ function PlaylistItemActions({
   task: Task
   priorityConfig: (typeof PRIORITY_CONFIG)[keyof typeof PRIORITY_CONFIG] | null
 }) {
+  const hasTags = task.tags && task.tags.length > 0
+  if (!(hasTags || priorityConfig)) return null
+
   return (
-    <ItemActions className="flex-col items-end justify-end self-stretch gap-2 relative z-10">
-      <div className="flex items-center gap-2">
-        {task.comments && task.comments.length > 0 && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5 cursor-help gap-0.5">
-                <MessageSquare className="h-3 w-3" />
-                {task.comments.length}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              {task.comments.length} {task.comments.length === 1 ? 'Comment' : 'Comments'}
-            </TooltipContent>
-          </Tooltip>
-        )}
-
-        {task.acceptanceCriteria && task.acceptanceCriteria.length > 0 && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5 cursor-help">
-                {task.acceptanceCriteria.length} AC
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>{task.acceptanceCriteria.length} Acceptance Criteria</TooltipContent>
-          </Tooltip>
-        )}
-
-        {task.dependsOn &&
-          task.dependsOn.length > 0 &&
-          (() => {
-            const isWaiting = task.inferredStatus === 'waiting_on_deps'
-            const inferredConfig = isWaiting ? INFERRED_STATUS_CONFIG.waiting_on_deps : null
-
-            return (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge
-                    variant="outline"
-                    className="text-xs px-1.5 py-0.5 h-5 cursor-help"
-                    style={
-                      inferredConfig
-                        ? {
-                            borderColor: inferredConfig.color,
-                            color: inferredConfig.color,
-                            backgroundColor: inferredConfig.bgColor
-                          }
-                        : undefined
-                    }>
-                    {task.dependsOn.length} dep{task.dependsOn.length !== 1 ? 's' : ''}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {isWaiting
-                    ? getInferredStatusExplanation(task.status, task.inferredStatus, task.dependsOn.length)
-                    : `${task.dependsOn.length} ${task.dependsOn.length === 1 ? 'Dependency' : 'Dependencies'}`}
-                </TooltipContent>
-              </Tooltip>
-            )
-          })()}
-      </div>
-
+    <ItemActions className="flex-col items-end justify-end self-stretch relative z-10">
       <div className="flex flex-wrap gap-1 justify-end">
         {task.tags?.map(tag => (
           <Badge key={tag} variant="outline" className="text-xs px-2.5 py-0.5 h-5 min-w-[3rem]">
@@ -195,7 +202,8 @@ export const PlaylistItem = memo(function PlaylistItem({
               )
             })()}
           <span className="truncate">{task.title}</span>
-          {isNowPlaying && <span className="ml-2 text-xs opacity-70 flex-shrink-0">[NOW PLAYING]</span>}
+          {isNowPlaying && <span className="ml-1 text-xs opacity-70 flex-shrink-0">[NOW PLAYING]</span>}
+          <TitleBadges task={task} />
         </ItemTitle>
 
         {task.description && <ItemDescription className="truncate">{task.description}</ItemDescription>}
