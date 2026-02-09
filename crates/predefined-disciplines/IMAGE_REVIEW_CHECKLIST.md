@@ -2,6 +2,8 @@
 
 Every generated discipline image must pass ALL applicable checks before being accepted.
 
+**See also:** `.docs/040_DISCIPLINE_PORTRAIT_PROMPT_METHODOLOGY.md` for deep dive on the three-layer prompt system, color dominance rules, and visual consistency principles.
+
 ---
 
 ## AGENT WORKFLOW: Generate and Iterate Until All Pass
@@ -11,6 +13,34 @@ This section describes how an agent should use this checklist to generate all im
 ### Overview
 
 Process one stack at a time. Within each stack, process one discipline at a time. For each discipline, generate the image, review it against the checklist, and if it fails any check, fix the prompt and regenerate. Only move to the next discipline once the current one passes all checks.
+
+### Quick Reference: File Locations
+
+All files are in `crates/predefined-disciplines/src/`:
+
+```
+src/
+├── image_prompts.yaml                           # Global layer (all stacks)
+├── defaults/disciplines/
+│   ├── 01_generic/
+│   │   ├── ABOUT.yaml                          # Stack 01 layer (shared by all 8)
+│   │   ├── 00_implementation.yaml              # Discipline 00 layer (unique to this one)
+│   │   ├── 01_refactoring.yaml                 # Discipline 01 layer
+│   │   └── ... (02-07)
+│   ├── 02_desktop/
+│   │   ├── ABOUT.yaml                          # Stack 02 layer
+│   │   ├── 00_frontend.yaml                    # Discipline 00 layer
+│   │   └── ... (01-07)
+│   ├── 03_saas/
+│   │   └── ... (ABOUT + 00-07)
+│   └── 04_mobile/
+│       └── ... (ABOUT + 00-07)
+└── comfyui_workflows/
+    └── generate_discipline.json                # ComfyUI workflow template
+```
+
+Generated images save to the discipline directory with format:
+`<NN>_<name>_<steps>_<WxH>_<base36_timestamp>.png`
 
 ### CRITICAL LESSONS LEARNED
 
@@ -42,11 +72,23 @@ Process one stack at a time. Within each stack, process one discipline at a time
 
 Process stacks in order: 01 Generic, 02 Desktop, 03 SaaS, 04 Mobile.
 
-### Step 2: Generate One Discipline Image
+### Step 2: Generate Discipline Images
 
-Run: `just gen-image <STACK> <DISCIPLINE> --dev`
+**Option A - One at a time (recommended for first discipline):**
+```bash
+just gen-image <STACK> <DISCIPLINE> --dev
+```
 
-**CRITICAL:** Always use `--dev` for iteration (14 steps for Generic). NEVER use `--test` (1 step produces unusable blurry abstract images). Only use `--prod` after ALL 8 disciplines pass at dev quality.
+**Option B - Batch all 8 (faster for iteration after first is validated):**
+```bash
+for i in 00 01 02 03 04 05 06 07; do
+    just gen-image <STACK> $i --dev
+done
+```
+
+**CRITICAL:** Always use `--dev` for iteration (14 steps for Generic, 9 steps for Desktop). NEVER use `--test` (1 step produces unusable blurry abstract images). Only use `--prod` after ALL 8 disciplines pass at dev quality.
+
+**Timing:** At default dev settings, each image takes ~10 seconds. Batch generating all 8 takes ~2 minutes.
 
 ### Step 3: Review the Image
 
@@ -64,20 +106,22 @@ Identify which prompt layer is responsible for the failure:
 
 | Failure Type | Fix Location |
 |---|---|
-| Framing wrong (too small, cropped, wrong angle) | `image_prompts.yaml` global positive/negative |
-| Medium wrong (3D instead of watercolor, photo instead of pencil) | Stack `ABOUT.yaml` image_prompt positive/negative |
-| Tone wrong (too happy, too creepy, wrong era) | Stack `ABOUT.yaml` image_prompt positive/negative |
-| Color not dominant enough | Discipline YAML image_prompt positive (add more color mentions) |
-| Wrong character (wrong gender, hair, body type) | Discipline YAML image_prompt positive |
-| Props missing or blocking body | Discipline YAML image_prompt positive |
-| Environment wrong | Discipline YAML image_prompt positive |
+| Framing wrong (too small, cropped, wrong angle) | Global: `src/image_prompts.yaml` positive/negative |
+| Medium wrong (3D instead of watercolor, photo instead of pencil) | Stack: `src/defaults/disciplines/<STACK>/ABOUT.yaml` image_prompt positive/negative |
+| Tone wrong (too happy, too creepy, wrong era) | Stack: `src/defaults/disciplines/<STACK>/ABOUT.yaml` image_prompt positive/negative |
+| Color not dominant enough | Discipline: `src/defaults/disciplines/<STACK>/<NN>_<name>.yaml` image_prompt positive (add 6-8 color mentions) |
+| Wrong character (wrong gender, hair, body type) | Discipline: `src/defaults/disciplines/<STACK>/<NN>_<name>.yaml` image_prompt positive |
+| Props missing or blocking body | Discipline: `src/defaults/disciplines/<STACK>/<NN>_<name>.yaml` image_prompt positive |
+| Environment wrong | Discipline: `src/defaults/disciplines/<STACK>/<NN>_<name>.yaml` image_prompt positive |
 | Unwanted element appearing | Add to the appropriate negative prompt (discipline, stack, or global) |
+| Style drift (wrong art medium appearing) | Stack: Add unwanted styles to `ABOUT.yaml` image_prompt negative (anime, manga, watercolor, oil painting, etc.) |
 
 **Prompt editing rules:**
 - Positive prompts describe ONLY what you WANT to see. Never use "no X" or "not Y" in positive prompts.
 - Negative prompts list ONLY what you DO NOT want. Put unwanted elements here.
 - If something keeps appearing despite being in negatives, strengthen the positive description of what should be there instead.
-- If the discipline color isn't dominant enough, add more `[COLOR]` mentions to objects in the positive prompt.
+- If the discipline color isn't dominant enough, add more `[COLOR]` mentions to objects in the positive prompt (target 6-8 mentions: clothing, clothing trim, accessory, feature, rim lighting, ambient glow, "bathed in [color] light", environment details).
+- Each discipline prompt must be equally dense — if one has less detail than others, it will come out vague/flat. Audit all 8 side by side before generating.
 
 ### Step 5: Regenerate and Re-review
 
@@ -91,15 +135,32 @@ Once a discipline passes all checks, record it as accepted and move to the next 
 
 ### Step 7: Composite Review After Full Stack
 
-After all 8 disciplines in a stack are accepted, review them together using the **Composite Consistency Checks (C01-C10)**.
+After all 8 disciplines in a stack are accepted at dev quality, review them together using the **Composite Consistency Checks (C01-C10)**.
 
-If any composite check fails (e.g., one character is much smaller than the others, or one has a different lighting direction), go back and regenerate just the failing discipline(s).
+**CRITICAL:** Composite check failures are almost always framing issues in the individual images, NOT compositor bugs. If one character appears smaller/taller/offset in the composite, that's how they were generated. The compositor just arranges them side by side.
+
+Common composite failure patterns:
+- **One character too small** → That discipline's framing had the character too far from camera. Regenerate with stronger framing constraints in positive prompt.
+- **One character offset up/down** → That discipline's eye line or foot placement is wrong. Check G02 (eye line ~15%) and G03 (ankle line ~90%).
+- **One character much wider** → That discipline has arms spread wide instead of compact silhouette. Check G08 (arms within shoulder width).
+- **Different lighting direction** → That discipline's lighting isn't from upper left. Check G07 (key light upper left).
+- **Style inconsistency** → That discipline drifted to a different medium. Add style-blocking negatives to stack ABOUT.yaml.
+
+If any composite check fails, regenerate ONLY the failing discipline(s) and re-review. Do not proceed to prod until the dev composite is perfect.
 
 ### Step 8: Final Prod Generation
 
 Once all 8 pass both individual and composite checks at dev quality, regenerate ALL 8 at prod quality:
 
+```bash
+# For batch generation, use a for loop
+for i in 00 01 02 03 04 05 06 07; do
+    just gen-image <STACK> $i --prod
+done
 ```
+
+Or individually:
+```bash
 just gen-image <STACK> 00 --prod
 just gen-image <STACK> 01 --prod
 just gen-image <STACK> 02 --prod
@@ -128,6 +189,30 @@ This creates a side-by-side composite showing all 8 disciplines in the stack. Re
 ### Step 10: Repeat for Next Stack
 
 Go back to Step 1 and pick the next stack.
+
+### Understanding the Three-Layer Prompt System
+
+Every image is generated from THREE concatenated prompts: `global + stack + discipline`
+
+**Layer 1 - Global** (`src/image_prompts.yaml`):
+- Applies to ALL stacks, ALL disciplines
+- Contains ONLY technical image quality terms
+- NO style, subject, or content descriptions
+- Example: "Professional polished illustration, shallow depth of field, studio lighting"
+
+**Layer 2 - Stack** (`src/defaults/disciplines/<STACK>/ABOUT.yaml` → `image_prompt`):
+- Shared visual identity for all 8 disciplines within a stack
+- Locks the art style, framing, composition, mood
+- The consistency layer that makes all 8 feel like a team
+- Example: "Watercolor portrait illustration, loose expressive brushstrokes, 1980s blue-collar aesthetic, serious determined expression"
+
+**Layer 3 - Discipline** (`src/defaults/disciplines/<STACK>/<NN>_<name>.yaml` → `image_prompt`):
+- What makes THIS character unique
+- Character demographics, color, clothing, props, specific action
+- Must be equally dense across all 8 disciplines
+- Example: "Lean young man with dirty blond hair, teal work shirt with rolled sleeves, teal tool belt with teal screwdrivers, hands resting on tool belt, teal dog tags, teal workshop with glowing teal CRT monitor"
+
+**Key principle:** If a fix applies to just one discipline, edit the discipline YAML. If it applies to all 8 in the stack, edit the stack ABOUT.yaml. If it applies to all stacks, edit the global image_prompts.yaml.
 
 ### Tracking Template
 
