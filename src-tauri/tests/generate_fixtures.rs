@@ -47,11 +47,28 @@ fn initialize_project_for_fixture(
     let db_dir = ralph_dir.join("db");
     fs::create_dir(&db_dir).map_err(|e| format!("Failed to create db/ directory: {e}"))?;
 
+    // Create images directory
+    let images_dir = ralph_dir.join("images").join("disciplines");
+    let _ = fs::create_dir_all(&images_dir);
+
     // Create and initialize the SQLite database
     let db_path = db_dir.join("ralph.db");
     let db = SqliteDb::open_with_clock(&db_path, fixed_clock())?;
     for d in predefined_disciplines::get_disciplines_for_stack(2) {
         let skills_json = serde_json::to_string(&d.skills).unwrap_or_else(|_| "[]".to_owned());
+
+        let image_path =
+            if let Some(bytes) = predefined_disciplines::get_discipline_image(2, &d.name) {
+                let rel = format!("images/disciplines/{}.png", d.name);
+                let abs = ralph_dir.join(&rel);
+                let _ = fs::write(&abs, bytes);
+                Some(rel)
+            } else {
+                None
+            };
+
+        let crops_json = d.crops.as_ref().and_then(|c| serde_json::to_string(c).ok());
+
         db.create_discipline(sqlite_db::DisciplineInput {
             name: d.name,
             display_name: d.display_name,
@@ -62,6 +79,8 @@ fn initialize_project_for_fixture(
             skills: skills_json,
             conventions: Some(d.conventions),
             mcp_servers: "[]".to_owned(),
+            image_path,
+            crops: crops_json,
         })
         .map_err(|e| format!("Failed to seed discipline: {e}"))?;
     }
@@ -152,7 +171,7 @@ It's used to test the `initialize_ralph_project` command.
 cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures -- --nocapture
 
 # This fixture is the BEFORE state - it cannot be used directly with dev-mock
-# Use initialized-project fixture instead
+# Use 01-desktop-blank fixture instead
 ```
 
 ## What Gets Created
@@ -161,7 +180,7 @@ When `initialize_ralph_project` is called on this directory:
 - `.undetect-ralph/db/ralph.db` (SQLite database with schema, defaults, metadata)
 - `.undetect-ralph/CLAUDE.RALPH.md` (template)
 
-See `initialized-project` fixture for the AFTER state.
+See `01-desktop-blank` fixture for the AFTER state.
 ";
 
     fs::write(fixture_path.join("README.md"), readme).unwrap();
@@ -172,10 +191,10 @@ See `initialized-project` fixture for the AFTER state.
     );
 }
 
-/// Generate 01-initialized-project fixture (after initialization)
+/// Generate 01-desktop-blank fixture (Desktop stack, no features/tasks)
 #[test]
-fn generate_fixture_01_initialized_project() {
-    println!("\n=== Generating fixture: 01-initialized-project ===");
+fn generate_fixture_01_desktop_blank() {
+    println!("\n=== Generating fixture: 01-desktop-blank ===");
 
     let fixtures_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .parent()
@@ -185,7 +204,7 @@ fn generate_fixture_01_initialized_project() {
     // Ensure fixtures/ directory exists
     fs::create_dir_all(&fixtures_dir).unwrap();
 
-    let fixture_path = fixtures_dir.join("01-initialized-project");
+    let fixture_path = fixtures_dir.join("01-desktop-blank");
 
     // Clean and recreate
     if fixture_path.exists() {
@@ -193,11 +212,11 @@ fn generate_fixture_01_initialized_project() {
     }
     fs::create_dir_all(&fixture_path).unwrap();
 
-    let readme = "# Initialized Project
+    let readme = "# Desktop Blank
 
-**Purpose**: Freshly initialized Ralph project (empty, ready for AI agents)
+**Purpose**: Freshly initialized Ralph project with Desktop stack (empty, ready for AI agents)
 
-This fixture shows the state immediately after running `initialize_ralph_project`.
+This fixture shows the state immediately after running `initialize_ralph_project` with stack 2 (Desktop).
 It has `.undetect-ralph/` structure with empty tasks/features (AI agents will populate).
 
 ## Usage
@@ -210,21 +229,22 @@ cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures -- --no
 just reset-mock
 
 # Use this fixture
-just dev-mock initialized-project
+just dev-mock 01-desktop-blank
 # OR
-ralph --project mock/initialized-project
+ralph --project mock/01-desktop-blank
 ```
 
 ## Contents
 
-- `.undetect-ralph/db/ralph.db` - SQLite database (empty tasks/features, 10 default disciplines)
+- `.undetect-ralph/db/ralph.db` - SQLite database (empty tasks/features, 8 Desktop disciplines)
+- `.undetect-ralph/images/disciplines/` - Discipline portrait images
 - `.undetect-ralph/CLAUDE.RALPH.md` - Template for context
 
 ## Expected Behavior
 
 - Loop starts with no tasks (clean slate)
 - AI agents will create tasks and features as needed
-- Disciplines provide defaults for common categories
+- Disciplines provide Desktop stack defaults (Frontend, Backend, Data, etc.)
 - Ready for AI-driven development workflow
 ";
 
@@ -233,21 +253,21 @@ ralph --project mock/initialized-project
     // Initialize with .undetect-ralph/
     initialize_project_for_fixture(
         fixture_path.clone(),
-        "Initialized Project".to_owned(),
+        "Desktop Blank".to_owned(),
         true, // use .undetect-ralph
     )
     .unwrap();
 
     println!(
-        "✓ Created 01-initialized-project fixture at: {}",
+        "✓ Created 01-desktop-blank fixture at: {}",
         fixture_path.display()
     );
 }
 
-/// Generate 02-with-feature-project fixture (has feature, no tasks yet)
+/// Generate 02-desktop-feature fixture (Desktop stack, has feature, no tasks yet)
 #[test]
-fn generate_fixture_02_with_feature() {
-    println!("\n=== Generating fixture: 02-with-feature-project ===");
+fn generate_fixture_02_desktop_feature() {
+    println!("\n=== Generating fixture: 02-desktop-feature ===");
 
     let fixtures_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .parent()
@@ -255,18 +275,18 @@ fn generate_fixture_02_with_feature() {
         .join("fixtures");
 
     fs::create_dir_all(&fixtures_dir).unwrap();
-    let fixture_path = fixtures_dir.join("02-with-feature-project");
+    let fixture_path = fixtures_dir.join("02-desktop-feature");
 
     if fixture_path.exists() {
         fs::remove_dir_all(&fixture_path).unwrap();
     }
     fs::create_dir_all(&fixture_path).unwrap();
 
-    let readme = "# With Feature Project
+    let readme = "# Desktop Feature
 
-**Purpose**: Project with a feature defined, but no tasks yet
+**Purpose**: Desktop stack project with a feature defined, but no tasks yet
 
-This fixture shows a project that has been initialized and has a feature
+This fixture shows a project initialized with Desktop stack that has a feature
 defined (e.g., \"authentication\"), but no tasks have been created yet.
 
 ## Usage
@@ -277,24 +297,25 @@ cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures -- --no
 
 # Reset mock and use
 just reset-mock
-just dev-mock 02-with-feature-project
+just dev-mock 02-desktop-feature
 ```
 
 ## Contents
 
-- `.undetect-ralph/db/ralph.db` - SQLite database (1 feature, no tasks)
+- `.undetect-ralph/db/ralph.db` - SQLite database (1 feature, no tasks, 8 Desktop disciplines)
+- `.undetect-ralph/images/disciplines/` - Discipline portrait images
 - `.undetect-ralph/CLAUDE.RALPH.md` - Template
 
 ## Progression
 
 Shows state after AI agent has created a feature but before any tasks.
-Next stage: 03-with-tasks-project
+Next stage: 03-desktop-tasks
 ";
 
     fs::write(fixture_path.join("README.md"), readme).unwrap();
 
     // Initialize
-    initialize_project_for_fixture(fixture_path.clone(), "Feature Project".to_owned(), true)
+    initialize_project_for_fixture(fixture_path.clone(), "Desktop Feature".to_owned(), true)
         .unwrap();
 
     // Add a feature
@@ -308,17 +329,17 @@ Next stage: 03-with-tasks-project
     .unwrap();
 
     println!(
-        "✓ Created 02-with-feature-project fixture at: {}",
+        "✓ Created 02-desktop-feature fixture at: {}",
         fixture_path.display()
     );
 }
 
-/// Generate 03-with-tasks-project fixture (has feature + tasks)
+/// Generate 03-desktop-tasks fixture (Desktop stack, has features + tasks)
 #[test]
-fn generate_fixture_03_with_tasks() {
+fn generate_fixture_03_desktop_tasks() {
     use sqlite_db::TaskInput;
 
-    println!("\n=== Generating fixture: 03-with-tasks-project ===");
+    println!("\n=== Generating fixture: 03-desktop-tasks ===");
 
     let fixtures_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .parent()
@@ -326,19 +347,19 @@ fn generate_fixture_03_with_tasks() {
         .join("fixtures");
 
     fs::create_dir_all(&fixtures_dir).unwrap();
-    let fixture_path = fixtures_dir.join("03-with-tasks-project");
+    let fixture_path = fixtures_dir.join("03-desktop-tasks");
 
     if fixture_path.exists() {
         fs::remove_dir_all(&fixture_path).unwrap();
     }
     fs::create_dir_all(&fixture_path).unwrap();
 
-    let readme = "# With Tasks Project
+    let readme = "# Desktop Tasks
 
-**Purpose**: Project with features and tasks (ready for loop)
+**Purpose**: Desktop stack project with features and tasks (ready for loop)
 
 This fixture shows a complete project ready for Ralph Loop to execute.
-It has features defined and tasks created.
+It has features defined and tasks created, all using Desktop stack disciplines.
 
 ## Usage
 
@@ -348,12 +369,13 @@ cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures -- --no
 
 # Reset mock and use
 just reset-mock
-just dev-mock 03-with-tasks-project
+just dev-mock 03-desktop-tasks
 ```
 
 ## Contents
 
-- `.undetect-ralph/db/ralph.db` - SQLite database (2 features, 3 tasks)
+- `.undetect-ralph/db/ralph.db` - SQLite database (2 features, 3 tasks, 8 Desktop disciplines)
+- `.undetect-ralph/images/disciplines/` - Discipline portrait images
 
 ## Tasks
 
@@ -372,7 +394,7 @@ just dev-mock 03-with-tasks-project
     fs::write(fixture_path.join("README.md"), readme).unwrap();
 
     // Initialize
-    initialize_project_for_fixture(fixture_path.clone(), "Tasks Project".to_owned(), true).unwrap();
+    initialize_project_for_fixture(fixture_path.clone(), "Desktop Tasks".to_owned(), true).unwrap();
 
     let db = open_fixture_db(&fixture_path);
 
@@ -459,17 +481,17 @@ just dev-mock 03-with-tasks-project
     .unwrap();
 
     println!(
-        "✓ Created 03-with-tasks-project fixture at: {}",
+        "✓ Created 03-desktop-tasks fixture at: {}",
         fixture_path.display()
     );
 }
 
-/// Generate 04-dev-project fixture (comprehensive mid-progress project for UI development)
+/// Generate 04-desktop-dev fixture (comprehensive mid-progress project for UI development)
 #[test]
-fn generate_fixture_04_dev_project() {
+fn generate_fixture_04_desktop_dev() {
     use sqlite_db::TaskInput;
 
-    println!("\n=== Generating fixture: 04-dev-project ===");
+    println!("\n=== Generating fixture: 04-desktop-dev ===");
 
     let fixtures_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .parent()
@@ -477,27 +499,27 @@ fn generate_fixture_04_dev_project() {
         .join("fixtures");
 
     fs::create_dir_all(&fixtures_dir).unwrap();
-    let fixture_path = fixtures_dir.join("04-dev-project");
+    let fixture_path = fixtures_dir.join("04-desktop-dev");
 
     if fixture_path.exists() {
         fs::remove_dir_all(&fixture_path).unwrap();
     }
     fs::create_dir_all(&fixture_path).unwrap();
 
-    let readme = "# Dev Project — Bookmarks Manager
+    let readme = "# Desktop Dev — Bookmarks Manager
 
 **Purpose**: Comprehensive mid-progress fixture exercising every frontend rendering path.
 
-20 tasks across 5 features and 7 disciplines. Covers all status/priority combos,
-dependency chains up to 3 deep, blocked_by reasons, 0–4 acceptance criteria,
-and varied timestamps.
+20 tasks across 5 features and 7 disciplines. Desktop stack (stack 2) with discipline images.
+Covers all status/priority combos, dependency chains up to 3 deep, blocked_by reasons,
+0–4 acceptance criteria, and varied timestamps.
 
 ## Usage
 
 ```bash
 cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures -- --nocapture --test-threads=1
 just reset-mock
-just dev-mock 04-dev-project
+just dev-mock 04-desktop-dev
 ```
 
 ## What this exercises
@@ -506,7 +528,7 @@ just dev-mock 04-dev-project
   depends_on badges, acceptance criteria list, tags, created/updated/completed timestamps
 - **PlaylistView**: blocked+skipped in \"Issues\", done section, in_progress NOW PLAYING, pending
 - **FeaturesPage**: 5 features with varied completion %
-- **DisciplinesPage**: 7 disciplines with tasks, 3 with 0 tasks
+- **DisciplinesPage**: 8 Desktop stack disciplines with images
 - **Filters**: 14 distinct tags, every status/priority combo, text search on titles+descriptions
 - **TaskIdDisplay**: multiple feature+discipline acronym combos
 ";
@@ -561,58 +583,6 @@ just dev-mock 04-dev-project
     })
     .unwrap();
 
-    // Create custom disciplines (not in defaults)
-    db.create_discipline(sqlite_db::DisciplineInput {
-        name: "design".to_owned(),
-        display_name: "Design".to_owned(),
-        acronym: "DSGN".to_owned(),
-        icon: "Palette".to_owned(),
-        color: "#ec4899".to_owned(),
-        system_prompt: Some("You are a design specialist focused on UI/UX.".to_owned()),
-        skills: "[]".to_owned(),
-        conventions: None,
-        mcp_servers: "[]".to_owned(),
-    })
-    .unwrap();
-    db.create_discipline(sqlite_db::DisciplineInput {
-        name: "testing".to_owned(),
-        display_name: "Testing".to_owned(),
-        acronym: "TEST".to_owned(),
-        icon: "TestTube".to_owned(),
-        color: "#22c55e".to_owned(),
-        system_prompt: Some(
-            "You are a testing specialist focused on quality assurance.".to_owned(),
-        ),
-        skills: "[]".to_owned(),
-        conventions: None,
-        mcp_servers: "[]".to_owned(),
-    })
-    .unwrap();
-    db.create_discipline(sqlite_db::DisciplineInput {
-        name: "docs".to_owned(),
-        display_name: "Docs".to_owned(),
-        acronym: "DOC2".to_owned(),
-        icon: "BookOpen".to_owned(),
-        color: "#3b82f6".to_owned(),
-        system_prompt: Some("You are a documentation specialist.".to_owned()),
-        skills: "[]".to_owned(),
-        conventions: None,
-        mcp_servers: "[]".to_owned(),
-    })
-    .unwrap();
-    db.create_discipline(sqlite_db::DisciplineInput {
-        name: "database".to_owned(),
-        display_name: "Database".to_owned(),
-        acronym: "DABA".to_owned(),
-        icon: "Database".to_owned(),
-        color: "#f97316".to_owned(),
-        system_prompt: Some("You are a database specialist.".to_owned()),
-        skills: "[]".to_owned(),
-        conventions: None,
-        mcp_servers: "[]".to_owned(),
-    })
-    .unwrap();
-
     // --- Tasks ---
     // All tasks created as pending via API, then we use execute_raw() to set varied statuses.
 
@@ -620,7 +590,7 @@ just dev-mock 04-dev-project
     let _id1 = db
         .create_task(TaskInput {
             feature: "bookmark-crud".to_owned(),
-            discipline: "design".to_owned(),
+            discipline: "frontend".to_owned(),
             title: "Bookmark card layout".to_owned(),
             description: Some(
                 "Design the bookmark card component with favicon, title, URL, and action buttons"
@@ -697,7 +667,7 @@ just dev-mock 04-dev-project
     let _id4 = db
         .create_task(TaskInput {
             feature: "bookmark-crud".to_owned(),
-            discipline: "testing".to_owned(),
+            discipline: "quality".to_owned(),
             title: "Unit tests for bookmark CRUD".to_owned(),
             description: Some(
                 "Write comprehensive unit tests for create, read, update, and delete operations"
@@ -857,7 +827,7 @@ just dev-mock 04-dev-project
     let _id11 = db
         .create_task(TaskInput {
             feature: "collections".to_owned(),
-            discipline: "design".to_owned(),
+            discipline: "frontend".to_owned(),
             title: "Collection icons and colors".to_owned(),
             description: Some(
                 "Design the icon picker and color palette for collection customization".to_owned(),
@@ -941,7 +911,7 @@ just dev-mock 04-dev-project
     let _id15 = db
         .create_task(TaskInput {
             feature: "search".to_owned(),
-            discipline: "testing".to_owned(),
+            discipline: "quality".to_owned(),
             title: "Search ranking tests".to_owned(),
             description: Some(
                 "Test search result ranking and relevance scoring with various query patterns"
@@ -1041,7 +1011,7 @@ just dev-mock 04-dev-project
     let _id19 = db
         .create_task(TaskInput {
             feature: "settings".to_owned(),
-            discipline: "docs".to_owned(),
+            discipline: "documentation".to_owned(),
             title: "Write settings documentation".to_owned(),
             description: Some(
                 "Document all available settings and their default values".to_owned(),
@@ -1062,7 +1032,7 @@ just dev-mock 04-dev-project
     let _id20 = db
         .create_task(TaskInput {
             feature: "settings".to_owned(),
-            discipline: "database".to_owned(),
+            discipline: "data".to_owned(),
             title: "Theme preference storage".to_owned(),
             description: Some(
                 "Store user theme preference (light/dark/system) in local database".to_owned(),
@@ -1102,7 +1072,7 @@ just dev-mock 04-dev-project
         .unwrap();
 
     println!(
-        "\n✓ Created 04-dev-project fixture at: {}",
+        "\n✓ Created 04-desktop-dev fixture at: {}",
         fixture_path.display()
     );
     println!("  5 features, 20 tasks (4 done, 2 in_progress, 11 pending, 2 blocked, 1 skipped)");
@@ -1127,23 +1097,23 @@ fn generate_all_fixtures() {
     fs::create_dir_all(&fixtures_dir).unwrap();
 
     generate_fixture_00_empty_project();
-    generate_fixture_01_initialized_project();
-    generate_fixture_02_with_feature();
-    generate_fixture_03_with_tasks();
-    generate_fixture_04_dev_project();
+    generate_fixture_01_desktop_blank();
+    generate_fixture_02_desktop_feature();
+    generate_fixture_03_desktop_tasks();
+    generate_fixture_04_desktop_dev();
 
     println!("\n========================================");
     println!("ALL 5 FIXTURES GENERATED");
     println!("========================================");
     println!("\nFixture progression:");
-    println!("  00-empty-project         → Just README, no .undetect-ralph/");
-    println!("  01-initialized-project   → Empty tasks/features, SQLite DB");
-    println!("  02-with-feature-project  → Has 1 feature, no tasks");
-    println!("  03-with-tasks-project    → Has 2 features, 3 tasks");
-    println!("  04-dev-project           → 5 features, 20 tasks (comprehensive dev fixture)");
+    println!("  00-empty-project     → Just README, no .undetect-ralph/");
+    println!("  01-desktop-blank     → Desktop stack, empty tasks/features, SQLite DB + images");
+    println!("  02-desktop-feature   → Desktop stack, 1 feature, no tasks");
+    println!("  03-desktop-tasks     → Desktop stack, 2 features, 3 tasks");
+    println!("  04-desktop-dev       → Desktop stack, 5 features, 20 tasks (comprehensive)");
     println!("\nNext steps:");
     println!("  1. Review generated fixtures in fixtures/");
     println!("  2. Run: just reset-mock");
-    println!("  3. Test with: just dev-mock 04-dev-project");
+    println!("  3. Test with: just dev-mock 04-desktop-dev");
     println!("  4. Commit fixtures to git");
 }

@@ -51,8 +51,8 @@ impl SqliteDb {
         self.conn
             .execute(
                 "INSERT INTO disciplines (name, display_name, acronym, icon, color, \
-                 system_prompt, skills, conventions, mcp_servers, stack_id) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, NULL)",
+                 system_prompt, skills, conventions, mcp_servers, stack_id, image_path, crops) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, NULL, ?10, ?11)",
                 rusqlite::params![
                     input.name,
                     input.display_name,
@@ -62,7 +62,9 @@ impl SqliteDb {
                     input.system_prompt,
                     input.skills,
                     input.conventions,
-                    input.mcp_servers
+                    input.mcp_servers,
+                    input.image_path,
+                    input.crops
                 ],
             )
             .ralph_err(codes::DB_WRITE, "Failed to insert discipline")?;
@@ -115,8 +117,8 @@ impl SqliteDb {
         self.conn
             .execute(
                 "UPDATE disciplines SET display_name = ?1, acronym = ?2, icon = ?3, color = ?4, \
-                 system_prompt = ?5, skills = ?6, conventions = ?7, mcp_servers = ?8 \
-                 WHERE name = ?9",
+                 system_prompt = ?5, skills = ?6, conventions = ?7, mcp_servers = ?8, \
+                 image_path = ?9, crops = ?10 WHERE name = ?11",
                 rusqlite::params![
                     input.display_name,
                     input.acronym,
@@ -126,6 +128,8 @@ impl SqliteDb {
                     input.skills,
                     input.conventions,
                     input.mcp_servers,
+                    input.image_path,
+                    input.crops,
                     input.name
                 ],
             )
@@ -168,8 +172,8 @@ impl SqliteDb {
     pub fn get_disciplines(&self) -> Vec<Discipline> {
         let Ok(mut stmt) = self.conn.prepare(
             "SELECT name, display_name, acronym, icon, color, system_prompt, skills, \
-             conventions, mcp_servers, stack_id \
-             FROM disciplines ORDER BY name",
+             conventions, mcp_servers, stack_id, image_path, crops \
+             FROM disciplines ORDER BY rowid",
         ) else {
             return vec![];
         };
@@ -188,6 +192,8 @@ impl SqliteDb {
                 conventions: row.get(7)?,
                 mcp_servers: serde_json::from_str(&mcp_json).unwrap_or_default(),
                 stack_id: row.get(9)?,
+                image_path: row.get(10)?,
+                crops: row.get(11)?,
             })
         })
         .map_or_else(

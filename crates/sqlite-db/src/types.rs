@@ -276,6 +276,8 @@ pub struct DisciplineInput {
     pub skills: String,
     pub conventions: Option<String>,
     pub mcp_servers: String,
+    pub image_path: Option<String>,
+    pub crops: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -296,6 +298,10 @@ pub struct Discipline {
     pub mcp_servers: Vec<McpServerConfig>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stack_id: Option<u8>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub image_path: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub crops: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

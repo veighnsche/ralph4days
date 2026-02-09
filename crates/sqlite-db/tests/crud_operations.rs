@@ -44,6 +44,8 @@ fn seed_test_disciplines(db: &SqliteDb) {
             skills: "[]".to_owned(),
             conventions: Some("Test conventions".to_owned()),
             mcp_servers: "[]".to_owned(),
+            image_path: None,
+            crops: None,
         })
         .unwrap();
     }
@@ -821,6 +823,8 @@ fn test_create_discipline() {
         skills: "[]".to_owned(),
         conventions: None,
         mcp_servers: "[]".to_owned(),
+        image_path: None,
+        crops: None,
     })
     .unwrap();
     let disciplines = db.get_disciplines();
@@ -841,6 +845,8 @@ fn test_create_duplicate_discipline_rejected() {
         skills: "[]".to_owned(),
         conventions: None,
         mcp_servers: "[]".to_owned(),
+        image_path: None,
+        crops: None,
     });
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("already exists"));
@@ -859,6 +865,8 @@ fn test_update_discipline() {
         skills: "[]".to_owned(),
         conventions: None,
         mcp_servers: "[]".to_owned(),
+        image_path: None,
+        crops: None,
     })
     .unwrap();
     db.update_discipline(sqlite_db::DisciplineInput {
@@ -871,6 +879,8 @@ fn test_update_discipline() {
         skills: "[]".to_owned(),
         conventions: None,
         mcp_servers: "[]".to_owned(),
+        image_path: None,
+        crops: None,
     })
     .unwrap();
 
@@ -894,6 +904,8 @@ fn test_delete_discipline() {
         skills: "[]".to_owned(),
         conventions: None,
         mcp_servers: "[]".to_owned(),
+        image_path: None,
+        crops: None,
     })
     .unwrap();
     let initial = db.get_disciplines().len();

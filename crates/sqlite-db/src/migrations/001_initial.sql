@@ -1,6 +1,3 @@
--- Core tables for Ralph project database
--- Matches yaml-db behavior exactly (see Doc 021 for reference)
-
 CREATE TABLE metadata (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   schema_version TEXT NOT NULL DEFAULT '1.0',
@@ -16,7 +13,11 @@ CREATE TABLE features (
   description TEXT,
   created TEXT,
   knowledge_paths TEXT DEFAULT '[]',
-  context_files TEXT DEFAULT '[]'
+  context_files TEXT DEFAULT '[]',
+  architecture TEXT,
+  boundaries TEXT,
+  learnings TEXT DEFAULT '[]',
+  dependencies TEXT DEFAULT '[]'
 ) STRICT;
 
 CREATE TABLE disciplines (
@@ -28,7 +29,10 @@ CREATE TABLE disciplines (
   system_prompt TEXT,
   skills TEXT DEFAULT '[]',
   conventions TEXT,
-  mcp_servers TEXT DEFAULT '[]'
+  mcp_servers TEXT DEFAULT '[]',
+  stack_id INTEGER DEFAULT NULL,
+  image_path TEXT DEFAULT NULL,
+  crops TEXT DEFAULT NULL
 ) STRICT;
 
 CREATE TABLE tasks (
@@ -60,6 +64,15 @@ CREATE TABLE task_comments (
   agent_task_id INTEGER,
   body TEXT NOT NULL,
   created TEXT
+) STRICT;
+
+CREATE TABLE recipe_configs (
+  name TEXT PRIMARY KEY,
+  base_recipe TEXT NOT NULL,
+  section_order TEXT NOT NULL DEFAULT '[]',
+  sections TEXT NOT NULL DEFAULT '{}',
+  created TEXT,
+  updated TEXT
 ) STRICT;
 
 CREATE INDEX idx_tasks_feature ON tasks(feature);

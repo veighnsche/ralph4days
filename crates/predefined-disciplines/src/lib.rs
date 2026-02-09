@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct VisualIdentity {
@@ -48,6 +48,20 @@ pub struct DisciplineImagePrompt {
     pub negative: String,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CropBox {
+    pub x: f32,
+    pub y: f32,
+    pub w: f32,
+    pub h: f32,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct DisciplineCrops {
+    pub face: CropBox,
+    pub card: CropBox,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct DisciplineDef {
     pub name: String,
@@ -63,6 +77,8 @@ pub struct DisciplineDef {
     pub system_prompt: String,
     #[serde(default)]
     pub image_prompt: Option<DisciplineImagePrompt>,
+    #[serde(default)]
+    pub crops: Option<DisciplineCrops>,
 }
 
 const STACK_ABOUTS: &[(u8, &str)] = &[
@@ -164,11 +180,19 @@ pub struct GlobalPromptPair {
 
 const GLOBAL_IMAGE_PROMPTS: &str = include_str!("image_prompts.yaml");
 
-pub const DISCIPLINE_WORKFLOW: &str =
-    include_str!("comfyui_workflows/generate_discipline.json");
+pub const DISCIPLINE_WORKFLOW: &str = include_str!("comfyui_workflows/generate_discipline.json");
 
 pub fn get_global_image_prompts() -> GlobalImagePrompts {
     serde_yaml::from_str(GLOBAL_IMAGE_PROMPTS).expect("embedded image_prompts.yaml is valid")
+}
+
+include!(concat!(env!("OUT_DIR"), "/discipline_images.rs"));
+
+pub fn get_discipline_image(stack_id: u8, name: &str) -> Option<&'static [u8]> {
+    DISCIPLINE_IMAGES
+        .iter()
+        .find(|(sid, n, _)| *sid == stack_id && *n == name)
+        .map(|(_, _, bytes)| *bytes)
 }
 
 pub fn get_disciplines_for_stack(stack_id: u8) -> Vec<DisciplineDef> {
