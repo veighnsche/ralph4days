@@ -11,7 +11,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Entirely cream monochromatic image, cream color wash over everything, warm ivory tinted lighting, tall thin older male, balding with ring of gray hair and a steady scholarly expression, wearing thick cream reading glasses and a cream wool cardigan with elbow patches, holding an open ivory hardcover book in one hand with other hand raised mid-explanation, facing the viewer head up eyes forward, cream background, cream-lit public library with ivory bookshelves and cream reading lamps on cream oak tables.
+    Entirely cream monochromatic image, everything is cream ivory, cream walls, cream floor, cream ceiling, cream fixtures, warm cream lighting casting cream shadows, cream color grading, the entire scene bathed in warm cream ivory light, monochromatic cream watercolor painting, tall thin older male, balding with ring of gray hair and a steady scholarly expression, wearing thick cream reading glasses and a cream wool cardigan with elbow patches, holding an open cream hardcover book in one hand with other hand raised mid-explanation, facing the viewer head up eyes forward, public library completely cream-tinted with cream bookshelves and cream reading lamps on cream tables, cream dominant color, uniform cream throughout.
 
   negative: |
-    young, modern, action pose, trendy, horror, creepy, sinister, menacing, looking down, face in shadow
+    young, modern, action pose, trendy, horror, creepy, sinister, menacing, looking down, face in shadow, tan, beige, white, brown, multi-colored, natural wood

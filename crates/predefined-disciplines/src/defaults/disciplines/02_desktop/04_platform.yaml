@@ -11,7 +11,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Entirely steel-blue monochromatic image, blue color wash over everything, blue tinted lighting, broad heavyset male with a dirty blond mullet and confident wide stance, wearing a steel-blue mechanic jumpsuit and steel-toed boots, gripping a massive blue wrench resting on his shoulder, facing the viewer head up eyes forward, blue background, blue-lit auto garage with steel-blue tool pegboards and a blue computer tower on the workbench.
+    Entirely steel-blue monochromatic image, everything is steel-blue, blue walls, blue floor, blue ceiling, blue fixtures, blue lighting casting blue shadows, blue color grading, the entire scene bathed in steel-blue light, monochromatic blue watercolor painting, broad heavyset male with a dirty blond mullet and confident wide stance, wearing a steel-blue mechanic jumpsuit and steel-toed boots, gripping a massive blue wrench resting on his shoulder, facing the viewer head up eyes forward, auto garage completely blue-tinted with steel-blue tool pegboards and a blue computer tower on the blue workbench, blue dominant color, uniform blue throughout.
 
   negative: |
-    woman, female, slim, clean, horror, creepy, sinister, menacing, looking down, face in shadow
+    woman, female, slim, clean, horror, creepy, sinister, menacing, looking down, face in shadow, tan, beige, cream, white, brown, multi-colored, natural wood

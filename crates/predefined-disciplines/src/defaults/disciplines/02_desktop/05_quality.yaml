@@ -11,7 +11,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Entirely gold monochromatic image, gold color wash over everything, gold tinted lighting, petite sharp female with short permed brown hair with gold barrettes and a confident raised eyebrow, wearing a gold blazer with padded shoulders, holding a gold clipboard in one hand and pointing a gold pencil at the viewer with the other, facing the viewer head up eyes forward, gold background, gold-lit quality control inspection room with gold-framed certificates on the walls and gold rubber stamps on the desk.
+    Entirely gold monochromatic image, everything is gold, gold walls, gold floor, gold ceiling, gold fixtures, gold lighting casting gold shadows, gold color grading, the entire scene bathed in gold light, monochromatic gold watercolor painting, petite sharp female with short permed brown hair with gold barrettes and a confident raised eyebrow, wearing a gold blazer with padded shoulders, holding a gold clipboard in one hand and pointing a gold pencil at the viewer with the other, facing the viewer head up eyes forward, quality control inspection room completely gold-tinted with gold-framed certificates on the gold walls and gold rubber stamps on the gold desk, gold dominant color, uniform gold throughout.
 
   negative: |
-    man, male, casual, meek, horror, creepy, sinister, menacing, looking down, face in shadow
+    man, male, casual, meek, horror, creepy, sinister, menacing, looking down, face in shadow, tan, beige, cream, white, brown, multi-colored, natural wood

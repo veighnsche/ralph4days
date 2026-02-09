@@ -11,7 +11,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Entirely emerald green monochromatic image, green color wash over everything, green tinted lighting, lean female with big curly brown hair with green scrunchie and confident stance, wearing an emerald green Members Only jacket, holding a green rotary phone receiver in one hand with the coiled cord tangling around her other arm, facing the viewer head up eyes forward, green background, green-lit telephone exchange office with walls of green patch cables and green switchboard panels.
+    Entirely emerald green monochromatic image, everything is emerald green, green walls, green floor, green ceiling, green fixtures, green lighting casting green shadows, green color grading, the entire scene bathed in emerald green light, monochromatic green watercolor painting, lean female with big curly brown hair with green scrunchie and confident stance, wearing an emerald green Members Only jacket, holding a green rotary phone receiver in one hand with the green coiled cord tangling around her other arm, facing the viewer head up eyes forward, telephone exchange office completely green-tinted with walls of green patch cables and green switchboard panels, green dominant color, uniform green throughout.
 
   negative: |
-    man, male, meek, horror, creepy, sinister, menacing, looking down, face in shadow
+    man, male, meek, horror, creepy, sinister, menacing, looking down, face in shadow, tan, beige, cream, white, brown, multi-colored, natural wood

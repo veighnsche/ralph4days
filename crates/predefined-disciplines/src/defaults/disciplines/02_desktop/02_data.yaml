@@ -11,7 +11,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Entirely violet monochromatic image, violet color wash over everything, violet tinted lighting, Japanese male with neat black hair with silver temples and professional demeanor, wearing thin wire-rimmed violet glasses, violet dress shirt with purple tie, one hand resting on a tall stack of purple file folders, purple pen behind ear, facing the viewer head up eyes forward, violet background, violet-lit university data lab with a purple CRT terminal and violet dot-matrix printer.
+    Entirely violet monochromatic image, everything is violet, violet walls, violet floor, violet ceiling, violet fixtures, violet lighting casting violet shadows, violet color grading, the entire scene bathed in violet light, monochromatic violet watercolor painting, Japanese male with neat black hair with silver temples and professional demeanor, wearing thin wire-rimmed violet glasses, violet dress shirt with violet tie, one hand resting on a tall stack of violet file folders, violet pen behind ear, facing the viewer head up eyes forward, university data lab completely violet-tinted with violet CRT terminal and violet dot-matrix printer, violet dominant color, uniform violet throughout.
 
   negative: |
-    casual, sloppy, horror, creepy, sinister, menacing, looking down, face in shadow
+    casual, sloppy, horror, creepy, sinister, menacing, looking down, face in shadow, tan, beige, cream, white, brown, multi-colored, natural wood

@@ -11,7 +11,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Entirely crimson red monochromatic image, red color wash over everything, red tinted lighting, sharp angular male with dark slicked-back hair and five o'clock shadow, wearing a crimson red leather jacket and red aviator sunglasses, one hand gripping a red padlock on a thick chain, facing the viewer head up eyes forward, red background, red-lit bank vault entrance with crimson steel doors and red combination dials and red security cameras.
+    Entirely crimson red monochromatic image, everything is crimson red, red walls, red floor, red ceiling, red fixtures, red lighting casting red shadows, red color grading, the entire scene bathed in crimson red light, monochromatic red watercolor painting, sharp angular male with dark slicked-back hair and five o'clock shadow, wearing a crimson red leather jacket and red aviator sunglasses, one hand gripping a red padlock on a thick red chain, facing the viewer head up eyes forward, bank vault entrance completely red-tinted with crimson steel doors and red combination dials and red security cameras, red dominant color, uniform red throughout.
 
   negative: |
-    woman, female, friendly, playful, meek, horror, creepy, sinister, menacing, looking down, face in shadow
+    woman, female, friendly, playful, meek, horror, creepy, sinister, menacing, looking down, face in shadow, tan, beige, cream, white, brown, multi-colored, natural wood
