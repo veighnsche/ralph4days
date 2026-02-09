@@ -9,7 +9,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Korean female, mid 20s, with long straight black hair with electric blue streaks, tall lean build, standing upright facing the viewer, wearing an absurdly sharp electric blue trenchcoat with luminous blue piping along every seam over a high-collar black shirt, blue-tinted visor across her eyes, one hand gripping the edge of a massive glowing blue archway door while the other holds a translucent blue holographic floor plan, dramatic electric blue rim lighting, intense blue ambient glow, inside a dark towering transit hub bathed in blue light with rows of massive blue-lit archway gates receding into the distance and glowing blue route diagrams etched into the obsidian floor behind her.
+    Entirely electric blue monochromatic image, blue color wash over everything, blue tinted lighting, Korean female, mid 20s, with long straight black hair with electric blue streaks, tall lean build, standing upright facing the viewer head up eyes forward, wearing an electric blue trenchcoat with luminous blue piping along every seam over a blue shirt, blue-tinted visor across her eyes, one hand gripping the edge of a massive glowing blue archway door while the other holds a translucent blue holographic floor plan, blue background, inside a blue-tinted towering transit hub with rows of massive blue-lit archway gates receding into the distance and glowing blue route diagrams etched into the blue floor.
 
   negative: |
     lost, confused, looking at a map, standing still with no doorways, closed doors, dead end, hesitant, uncertain expression

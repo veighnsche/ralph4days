@@ -11,7 +11,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Tall thin older male, balding with ring of gray hair and a gentle scholarly expression, wearing thick cream reading glasses and a cream wool cardigan with elbow patches, holding an open ivory hardcover book in one hand with other hand raised mid-explanation, dramatic warm cream rim lighting across his features, facing the viewer, inside a warm 90s public library with floor-to-ceiling wooden bookshelves and reading lamps on oak tables behind him.
+    Entirely cream monochromatic image, cream color wash over everything, warm ivory tinted lighting, tall thin older male, balding with ring of gray hair and a steady scholarly expression, wearing thick cream reading glasses and a cream wool cardigan with elbow patches, holding an open ivory hardcover book in one hand with other hand raised mid-explanation, facing the viewer head up eyes forward, cream background, cream-lit public library with ivory bookshelves and cream reading lamps on cream oak tables.
 
   negative: |
-    young, modern, action pose, trendy
+    young, modern, action pose, trendy, horror, creepy, sinister, menacing, looking down, face in shadow

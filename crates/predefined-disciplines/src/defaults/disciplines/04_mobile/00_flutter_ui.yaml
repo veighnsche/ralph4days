@@ -9,7 +9,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Elvish female, early 30s, with long silver-white hair with delicate moonsilver threads woven through, tall willowy build, standing upright facing the viewer with a direct engaging gaze, front-facing three-quarter pose, wearing a flowing moonsilver robe with luminous silver embroidery depicting interlocking patterns along every edge, silver circlet on her brow, holding a bundle of glowing silver threads in both hands in front of her chest, dramatic moonsilver rim lighting, soft silver ambient glow, inside a luminous open-air elvish weaving pavilion bathed in silver starlight with cascading silver silk tapestries and moonlit lattice archways of white flowering vines behind her.
+    Entirely silver monochromatic image, silver color wash over everything, moonsilver tinted lighting, Elvish female, early 30s, with long silver-white hair with delicate moonsilver threads woven through, tall willowy build, standing upright facing the viewer head up eyes forward, wearing a flowing moonsilver robe with luminous silver embroidery depicting interlocking patterns along every edge, silver circlet on her brow, holding a bundle of glowing silver threads in both hands in front of her chest, silver background, inside a silver-tinted elvish weaving pavilion with cascading silver silk tapestries and silver lattice archways of silver flowering vines.
 
   negative: |
     seated, sitting, chair, bench, stool, kneeling, crouching, tangled threads, broken loom, unfinished fraying fabric, clumsy hands, dropping materials

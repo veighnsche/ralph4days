@@ -35,6 +35,6 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    A broad heavyset woman with a large red brass padlock for a head with the shackle arching upward where her human head should be, padlock for a head as the dominant feature, wearing a coral red blazer and salmon pink pants, standing perfectly still dead center, the padlock head held upright as the focal point, warm soft red rim lighting on the brass padlock, inside a pastel coral flower shop with matching coral red flower buckets on each side perfectly symmetrical filled with salmon pink roses, a red tiled floor, coral wallpaper with floral pattern, red ribbon spools on the counter behind her, and warm soft lighting throughout.
+    Entirely red monochromatic image, red color wash over everything, red tinted lighting, a broad heavyset woman with a large red brass padlock for a head with the shackle arching upward where her human head should be, padlock for a head as the dominant feature, wearing a red blazer and red pants, standing perfectly still dead center, the padlock head held upright as the focal point, red background, inside a red-tinted flower shop with red flower buckets on each side filled with red roses, a red tiled floor, red wallpaper, red ribbon spools on the counter.
   negative: |
     human face, normal head, locking, unlocking, keys, dark, threatening

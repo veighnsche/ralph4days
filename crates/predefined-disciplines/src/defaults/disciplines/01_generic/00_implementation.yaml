@@ -34,6 +34,6 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    A stocky man with a head replaced by a blue steel hammer where a human head should be, the wooden handle extending down as his neck, wearing a blue coverall jumpsuit, standing perfectly still with blue accent details on the suit against his frame, the hammer head replacing his human head as the main feature, dramatic contrast between blue hammer head and pink surroundings, cool blue rim lighting on the hammer, warm lighting across his body, inside a pristine pastel pink bathroom with pink hexagonal floor tiles, mint green bathtub to his left, pink pedestal sink to his right, and a small framed picture perfectly centered on the wall behind him, he does not belong here but he is not leaving.
+    Entirely blue monochromatic image, blue color wash over everything, blue tinted lighting, a stocky man with a head replaced by a blue steel hammer where a human head should be, the wooden handle extending down as his neck, wearing a blue coverall jumpsuit, standing perfectly still with blue details on the suit, the hammer head replacing his human head as the main feature, blue background, inside a blue-tinted pristine pastel bathroom with blue hexagonal floor tiles, blue bathtub to his left, blue pedestal sink to his right, and a small framed picture on the blue wall behind him.
   negative: |
     human face, human head, normal head, workshop, construction site, toolbox, working, swinging, smiling

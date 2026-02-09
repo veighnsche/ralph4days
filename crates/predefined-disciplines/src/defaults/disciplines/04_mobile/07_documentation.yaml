@@ -9,7 +9,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Elvish male, late 60s, with very long white hair flowing past his waist, tall gaunt dignified build, standing upright, deeply lined wise features with a long white beard, wearing an ivory and pearl ceremonial robe with luminous pale gold illuminated-manuscript embroidery along every hem, pearl reading spectacles perched on his nose, standing at a tall ivory lectern, writing with a quill of pure white light into an enormous ancient living-wood tome bound in pale leather and pearl clasps propped open on the lectern, luminous ivory ink flowing from the quill, dramatic warm ivory rim lighting, soft pearl ambient glow, inside the innermost sanctum of an elvish great library bathed in warm ivory light with soaring living-wood bookshelves wrapped in pale flowering vines and ancient pearl-inlaid scrolls filling every surface behind him.
+    Entirely ivory monochromatic image, ivory color wash over everything, warm pearl tinted lighting, Elvish male, late 60s, with very long white hair flowing past his waist, tall gaunt dignified build, standing upright facing the viewer head up eyes forward, deeply lined wise features with a long white beard, wearing an ivory and pearl ceremonial robe with luminous ivory embroidery along every hem, pearl reading spectacles perched on his nose, writing with an ivory quill into an enormous ivory tome, ivory background, inside an ivory-tinted elvish great library with soaring ivory bookshelves wrapped in ivory flowering vines and ivory pearl-inlaid scrolls filling every surface.
 
   negative: |
     seated, sitting, chair, bench, stool, kneeling, crouching, blank empty pages, closed book, empty shelves, no quill, illiterate, confused by the text, young, impatient

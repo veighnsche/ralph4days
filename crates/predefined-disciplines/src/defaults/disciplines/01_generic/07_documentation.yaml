@@ -34,6 +34,6 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    An elderly thin man with a large open teal hardcover book with pages fanned out for a head where his human head should be, open book for a head as the dominant feature, wearing a seafoam teal cardigan over a teal button-down shirt and khaki pants, standing perfectly still dead center, the book head held upright with pages displayed as the focal point, warm soft teal rim lighting on the book pages, inside a pastel teal bowling alley with matching teal lanes stretching back on each side perfectly symmetrical, seafoam green molded seats in rows, teal bowling balls on the rack, a teal scoring screen overhead, and warm soft retro lighting.
+    Entirely teal monochromatic image, teal color wash over everything, teal tinted lighting, an elderly thin man with a large open teal hardcover book with pages fanned out for a head where his human head should be, open book for a head as the dominant feature, wearing a teal cardigan over a teal button-down shirt and teal pants, standing perfectly still dead center, the book head held upright with pages displayed as the focal point, teal background, inside a teal-tinted bowling alley with teal lanes stretching back on each side, teal molded seats in rows, teal bowling balls on the rack, a teal scoring screen overhead.
   negative: |
     human face, normal head, reading, bowling, throwing, dark, loud

@@ -9,7 +9,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Indian female, mid 30s, with long dark braid draped over one shoulder, petite but intense build, standing upright facing the viewer, wearing a sharp orange tactical jacket with glowing orange scanner lines running down both arms and orange-lit patch on the shoulder, black pants, orange-tinted augmented lens with rotating targeting rings mounted over one eye, arms crossed with one hand holding a glowing orange data tablet against her chest, dramatic orange rim lighting, warm orange ambient glow, inside a dark sprawling analysis laboratory bathed in orange light with wall-sized orange-highlighted structural cross-section diagrams and rows of glowing orange diagnostic monitors behind her.
+    Entirely orange monochromatic image, orange color wash over everything, orange tinted lighting, Indian female, mid 30s, with long dark braid draped over one shoulder, petite but intense build, standing upright facing the viewer head up eyes forward, wearing a sharp orange tactical jacket with glowing orange scanner lines running down both arms and orange-lit patch on the shoulder, orange pants, orange-tinted augmented lens mounted over one eye, arms crossed with one hand holding a glowing orange data tablet against her chest, orange background, inside an orange-tinted analysis laboratory with wall-sized orange structural cross-section diagrams and rows of glowing orange diagnostic monitors.
 
   negative: |
     eyes closed, looking away from the cracks, ignoring problems, thumbs up approval, rubber stamping, not paying attention, lens removed

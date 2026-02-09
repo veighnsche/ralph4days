@@ -5,7 +5,7 @@
 
 global:
   positive: |
-    Full body standing shot from head to feet, single person centered in frame, character fills the frame, body takes up 75 percent of the image height, eyes at 15 percent from top of frame, feet at 90 percent from top of frame, minimal headroom above head, tight framing on the body, zoomed in close to the character.
+    Full body standing shot from head to feet, single person centered in frame, character fills the frame, body takes up 75 percent of the image height, eyes at 15 percent from top of frame, feet at 90 percent from top of frame, minimal headroom above head, tight framing on the body, zoomed in close to the character, camera at eye level straight on, eye height perspective, key light from upper left at 45 degrees, shadow falling to the lower right, standing upright on visible flat ground plane, feet planted on floor, arms close to body within shoulder width, dark moody background, narrow compact pose.
 
   negative: |
-    multiple characters, multiple people, crowd, group, two people, cropped legs, cut off at waist, cut off at knees, zoomed out, tiny figure, distant, far away, wide shot, blurry, noise, jpeg artifacts, text, watermark, logo, multiple panels, collage, low resolution
+    multiple characters, multiple people, crowd, group, two people, cropped legs, cut off at waist, cut off at knees, zoomed out, tiny figure, distant, far away, wide shot, blurry, noise, jpeg artifacts, text, watermark, logo, multiple panels, collage, low resolution, bird eye view, worm eye view, top down, looking down, looking up, dutch angle, tilted camera, arms spread wide, T-pose, arms outstretched, leaning, tilted body, bright background, white background, floating, no ground, hovering

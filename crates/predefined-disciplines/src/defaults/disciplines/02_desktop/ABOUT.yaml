@@ -28,10 +28,10 @@ characteristics:
 
 image_prompt:
   positive: |
-    PlayStation 1 era 3D render, 1996 Tomb Raider character model, Gouraud shaded polygons, visible triangular facets on skin and clothing, angular blocky hands with three fingers, segmented cylindrical limbs, seven heads tall adult human proportions, low resolution texture maps, 16-bit color depth, single hard directional shadow, matte plastic surface, discipline accent color on clothing.
+    Watercolor portrait illustration, loose expressive brushstrokes, wet on wet technique, visible paper texture, bleeding watercolor edges, ink wash details, watercolor paint dripping downward, colors bleeding outside the lines, semi-realistic human proportions, strong character silhouette, serious determined expression, 1980s blue-collar aesthetic, the medium is delicate but the subject is powerful, the entire painting dominated by the discipline color, background washes in the discipline color, discipline color everywhere.
 
   negative: |
-    text, words, letters, typography, photograph, photorealistic, realistic lighting, ray tracing, cyberpunk, fantasy, elvish, anime, manga, cel-shaded, watercolor, oil painting, sketch, chibi, big head, exaggerated proportions, cartoon proportions, bobblehead, super deformed
+    text, words, letters, typography, photograph, photorealistic, 3D render, plastic, cel-shaded, flat colors, thick outlines, oil painting, pencil, ballpoint, sketch, cyberpunk, fantasy, elvish, anime eyes, manga, chibi, big head, exaggerated proportions, cartoon proportions, bobblehead, super deformed, happy, smiling, cheerful, playful, horror, creepy, sinister, menacing, zombie, looking down, face in shadow
 
 generation:
   dev:

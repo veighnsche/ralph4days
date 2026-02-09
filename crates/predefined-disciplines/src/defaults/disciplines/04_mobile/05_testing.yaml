@@ -9,7 +9,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Elvish female, early 40s, with short silver hair swept back, petite precise build, sharp perceptive features, wearing a fitted amethyst purple robe with luminous purple crystal-lattice embroidery along the bodice and sleeves, amethyst pendant hanging from a thin chain, one hand holding up a faceted amethyst crystalline prism to the light as rainbow refractions of purple light scatter through it revealing hidden truths, dramatic amethyst purple rim lighting, soft violet ambient glow, inside an elvish chamber of truth bathed in purple light with faceted amethyst crystal walls that refract purple light into prismatic patterns and polished stone truth-mirrors lining the curved walls behind her.
+    Entirely amethyst purple monochromatic image, purple color wash over everything, violet tinted lighting, Elvish female, early 40s, with short silver hair swept back, petite precise build, sharp perceptive features, wearing a fitted amethyst purple robe with luminous purple crystal-lattice embroidery along the bodice and sleeves, amethyst pendant hanging from a thin chain, one hand holding up a faceted amethyst crystalline prism to the light, facing the viewer head up eyes forward, purple background, inside a purple-tinted elvish chamber of truth with faceted amethyst crystal walls that refract purple light into prismatic patterns and polished purple stone truth-mirrors lining the curved walls.
 
   negative: |
     blind, eyes covered, looking away from the prism, cracked cloudy lens, ignoring flaws, missing the obvious

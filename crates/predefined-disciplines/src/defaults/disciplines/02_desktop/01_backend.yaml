@@ -11,7 +11,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Strong Black male with a short high-top fade and confident expression, wearing an orange flannel shirt with rolled sleeves, arms crossed confidently, orange pager clipped to belt, orange safety glasses pushed up on forehead, dramatic orange rim lighting across his face and shoulders, facing the viewer, inside a 90s server room with beige mainframe cabinets and blinking orange status lights behind him.
+    Entirely orange monochromatic image, orange color wash over everything, orange tinted lighting, strong Black male with a short high-top fade and confident expression, wearing an orange flannel shirt with rolled sleeves, arms crossed confidently, orange pager clipped to belt, orange safety glasses pushed up on forehead, facing the viewer head up eyes forward, orange background, orange-lit server room with orange mainframe cabinets and blinking orange status lights.
 
   negative: |
-    white skin, slim, meek
+    white skin, slim, meek, horror, creepy, sinister, menacing, looking down, face in shadow

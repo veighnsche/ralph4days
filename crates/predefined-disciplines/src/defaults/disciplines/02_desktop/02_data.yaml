@@ -11,7 +11,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Japanese male with neat black hair with silver temples and professional demeanor, wearing thin wire-rimmed violet glasses, violet dress shirt with purple tie, one hand resting on a tall stack of purple file folders, purple pen behind ear, dramatic violet rim lighting on his face and glasses, facing the viewer, inside a cramped 90s university data lab with a purple CRT terminal and dot-matrix printer behind him.
+    Entirely violet monochromatic image, violet color wash over everything, violet tinted lighting, Japanese male with neat black hair with silver temples and professional demeanor, wearing thin wire-rimmed violet glasses, violet dress shirt with purple tie, one hand resting on a tall stack of purple file folders, purple pen behind ear, facing the viewer head up eyes forward, violet background, violet-lit university data lab with a purple CRT terminal and violet dot-matrix printer.
 
   negative: |
-    casual, sloppy
+    casual, sloppy, horror, creepy, sinister, menacing, looking down, face in shadow

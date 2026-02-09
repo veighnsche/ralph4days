@@ -11,7 +11,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Petite sharp female with short permed brown hair with gold barrettes and a skeptical raised eyebrow, wearing a gold blazer with padded shoulders, holding a gold clipboard in one hand and pointing a gold pencil at the viewer with the other, dramatic gold rim lighting across her face and features, facing the viewer, inside a 90s quality control inspection room with gold-framed certificates on the walls and rubber stamps on the desk behind her.
+    Entirely gold monochromatic image, gold color wash over everything, gold tinted lighting, petite sharp female with short permed brown hair with gold barrettes and a confident raised eyebrow, wearing a gold blazer with padded shoulders, holding a gold clipboard in one hand and pointing a gold pencil at the viewer with the other, facing the viewer head up eyes forward, gold background, gold-lit quality control inspection room with gold-framed certificates on the walls and gold rubber stamps on the desk.
 
   negative: |
-    man, male, casual, meek
+    man, male, casual, meek, horror, creepy, sinister, menacing, looking down, face in shadow

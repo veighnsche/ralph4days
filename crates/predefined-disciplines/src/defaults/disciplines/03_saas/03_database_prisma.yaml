@@ -9,7 +9,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Russian male, mid 40s, with silver slicked-back hair, medium stocky build, full trimmed silver beard, wearing a long emerald green coat with luminous green geometric patterns woven into the heavy fabric and green-lit cufflinks, green-tinted rings on both hands, one hand resting on a glowing emerald crystal beside him, dramatic emerald rim lighting, deep green ambient glow, inside a dark cavernous crystalline data vault bathed in green light with towering emerald crystal columns arranged in perfect rows behind him, green light refracting through every faceted surface.
+    Entirely emerald green monochromatic image, green color wash over everything, green tinted lighting, Russian male, mid 40s, with silver slicked-back hair, medium stocky build, full trimmed silver beard, wearing a long emerald green coat with luminous green geometric patterns woven into the heavy fabric and green-lit cufflinks, green-tinted rings on both hands, one hand resting on a glowing emerald crystal beside him, facing the viewer head up eyes forward, green background, inside a green-tinted cavernous crystalline data vault with towering emerald crystal columns arranged in perfect rows, green light refracting through every faceted surface.
 
   negative: |
     messy scattered papers, disorganized chaos, crumbling broken structures, cracked columns, neglected dusty shelves, uncertain posture

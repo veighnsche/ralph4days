@@ -11,7 +11,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Lean female with big curly brown hair with green scrunchie and a smirk, wearing an emerald green Members Only jacket, holding a green rotary phone receiver in one hand with the coiled cord tangling around her other arm, dramatic emerald rim lighting on her face and the phone cord, facing the viewer, inside a 90s telephone exchange office with walls of green patch cables and switchboard panels behind her.
+    Entirely emerald green monochromatic image, green color wash over everything, green tinted lighting, lean female with big curly brown hair with green scrunchie and confident stance, wearing an emerald green Members Only jacket, holding a green rotary phone receiver in one hand with the coiled cord tangling around her other arm, facing the viewer head up eyes forward, green background, green-lit telephone exchange office with walls of green patch cables and green switchboard panels.
 
   negative: |
-    man, male, meek
+    man, male, meek, horror, creepy, sinister, menacing, looking down, face in shadow

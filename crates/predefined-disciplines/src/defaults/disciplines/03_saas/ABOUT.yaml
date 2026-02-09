@@ -14,10 +14,10 @@ visual_identity:
 
 image_prompt:
   positive: |
-    Watercolor portrait illustration, loose expressive brushstrokes, wet on wet technique, visible paper texture, bleeding watercolor edges, ink wash details, dark sleek corporate cyberpunk aesthetic, immaculate high-tech executive style, neon accent lighting bleeding into watercolor washes, dramatic cinematic composition, absurdly luxurious sci-fi fashion, dominant imposing stance, watercolor paint dripping downward, colors bleeding outside the lines, the medium is delicate but the subject is powerful, the entire painting dominated by the discipline accent color, background washes in the discipline accent color, discipline color everywhere.
+    Stylized 3D character render, cyberpunk aesthetic, Unity engine quality, smooth high-poly mesh, neon rim lighting, PBR materials with emissive glow accents, dark sleek corporate cyberpunk aesthetic, immaculate high-tech executive style, dramatic cinematic composition, absurdly luxurious sci-fi fashion, dominant imposing stance, the entire scene dominated by the discipline color, discipline color neon glow everywhere.
 
   negative: |
-    photograph, photorealistic, realistic skin texture, superhero, weapon, text, words, letters, typography, military, caption, title, worn clothing, patches, duct tape, dirty, grungy, street punk, smiling, friendly, gentle, relaxed, casual, peaceful, kind eyes, open smile, welcoming, empty background, solid color background, plain backdrop, photo studio, shooting energy, magic powers, combat, action pose, anime, manga, chibi, vector art, 3D render, plastic, cel-shaded flat colors, thick outlines
+    photograph, photorealistic, realistic skin texture, superhero, weapon, text, words, letters, typography, military, caption, title, worn clothing, patches, duct tape, dirty, grungy, street punk, smiling, friendly, gentle, relaxed, casual, peaceful, kind eyes, open smile, welcoming, watercolor, oil painting, pencil, ballpoint, sketch, ink, paper texture, anime, manga, chibi, vector art, cel-shaded flat colors, thick outlines, low poly, PlayStation 1, PS1, blocky, pixelated
 
 generation:
   dev:

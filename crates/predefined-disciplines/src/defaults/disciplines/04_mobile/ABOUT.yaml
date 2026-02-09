@@ -14,10 +14,10 @@ visual_identity:
 
 image_prompt:
   positive: |
-    Ballpoint pen illustration entirely in the discipline accent color, colored ballpoint pen on white paper, monochrome drawing using only shades of the discipline accent color, dense ballpoint hatching and scribble shading, visible ink strokes and crosshatching, ballpoint pen pressure variation from light to heavy, the entire drawing is in the discipline color from light to dark, slightly waxy ballpoint ink texture, white paper background.
+    Colored pencil illustration entirely in the discipline accent color, colored pencil on white paper, monochrome drawing using only shades of the discipline accent color, dense pencil hatching and layered shading, visible pencil strokes and crosshatching, pencil pressure variation from light to heavy, the entire drawing is in the discipline color from light to dark, soft waxy colored pencil texture, white paper background.
 
   negative: |
-    photograph, photorealistic, painting, watercolor, oil paint, 3D render, plastic, text, words, letters, typography, cyberpunk, neon, black and white, grayscale, graphite, grey, pencil, charcoal, anime, manga, cel-shaded, cartoon, flat colors, blurry, rough, unfinished, digital art
+    photograph, photorealistic, painting, watercolor, oil paint, 3D render, plastic, text, words, letters, typography, cyberpunk, neon, black and white, grayscale, graphite, grey, ballpoint, ink, charcoal, anime, manga, cel-shaded, cartoon, flat colors, blurry, rough, unfinished, digital art
 
 generation:
   dev:
