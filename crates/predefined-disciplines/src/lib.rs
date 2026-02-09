@@ -26,6 +26,20 @@ pub struct StackMetadata {
     pub characteristics: Vec<String>,
     #[serde(default)]
     pub image_prompt: Option<StackImagePrompt>,
+    #[serde(default)]
+    pub generation: Option<GenerationSettings>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct GenerationQuality {
+    pub steps: u32,
+    pub megapixels: f64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct GenerationSettings {
+    pub dev: GenerationQuality,
+    pub prod: GenerationQuality,
 }
 
 #[derive(Debug, Clone, Deserialize)]

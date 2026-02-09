@@ -9,7 +9,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Brazilian male, early 30s, wavy medium-length dark hair, medium build, light stubble, wearing a fitted magenta vest with glowing pink geometric accents over a black shirt, magenta-tinted earpiece, both hands raised like a conductor repositioning floating translucent magenta UI panels into new arrangements, dramatic magenta rim lighting, hot pink ambient glow, inside a dark vast component assembly hall bathed in magenta light with dozens of floating pink holographic UI panels in various stages of arrangement lining the space behind him.
+    Brazilian male, early 30s, with wavy medium-length dark hair, medium build, light stubble, wearing a fitted magenta vest with glowing pink geometric accents over a black shirt, black pants, magenta-tinted earpiece, one hand raised touching a floating translucent magenta UI panel beside him, dramatic magenta rim lighting, hot pink ambient glow, inside a dark component assembly hall bathed in magenta light with floating pink holographic UI panels behind him.
 
   negative: |
     empty hands, nothing floating, bare empty room, hands in pockets, bored expression, looking away, idle

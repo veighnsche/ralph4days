@@ -30,3 +30,11 @@ image_prompt:
 
   negative: |
     human face, human head, normal head, smiling, laughing, action pose, dynamic, asymmetric, tilted, Dutch angle, dark, moody, gritty, cyberpunk, fantasy, elvish, anime, manga, watercolor, sketch, vector, flat design, text, typography, cluttered, messy, chaotic, neon, glowing, movement, blur, multiple people, crowd
+
+generation:
+  dev:
+    steps: 14
+    megapixels: 1.0
+  prod:
+    steps: 28
+    megapixels: 2.0

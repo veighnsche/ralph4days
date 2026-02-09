@@ -9,7 +9,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Ethiopian female, late 20s, short natural afro, athletic build, wearing a sharp tailored black jacket with glowing golden circuit traces along the sleeves and amber-lit shoulder epaulettes, gold-tinted wrist guards with small amber status indicators, one hand holding up a small glowing amber data cube between two fingers inspecting it closely while the other hand rests on a golden validation console beside her, dramatic amber rim lighting, warm gold ambient glow, inside a dark imposing gateway checkpoint hall bathed in amber light with massive golden arch gates on either side and streams of gold data packets flowing through them behind her.
+    Ethiopian female, late 20s, with short natural afro, athletic build, wearing a sharp tailored black jacket with glowing golden circuit traces along the sleeves and amber-lit shoulder epaulettes, gold-tinted wrist guards with small amber status indicators, one hand holding up a small glowing amber data cube between two fingers inspecting it closely while the other hand rests on a golden validation console beside her, dramatic amber rim lighting, warm gold ambient glow, inside a dark imposing gateway checkpoint hall bathed in amber light with massive golden arch gates on either side and streams of gold data packets flowing through them behind her.
 
   negative: |
     waving things through unchecked, careless, distracted, looking away from the data, open unguarded gate, sloppy posture

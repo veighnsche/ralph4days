@@ -34,6 +34,6 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    A tall broad man in a periwinkle indigo three-piece suit with indigo pocket square standing perfectly still dead center inside a pastel periwinkle elevator, his head is replaced by a large indigo drafting compass with both legs spread open where his head should be, compass for a head, the elevator has indigo art deco paneling on each side perfectly symmetrical, a periwinkle floor indicator dial above the doors behind him, indigo blue carpet, brass indigo-tinted handrails, warm soft lighting from an indigo ceiling fixture.
+    A tall broad man with a large indigo drafting compass with both legs spread open where his head should be, compass for a head as the dominant feature, wearing a periwinkle indigo three-piece suit with indigo pocket square, standing perfectly still dead center, compass head held upright as the focal point, warm soft indigo rim lighting on the brass compass, inside a pastel periwinkle elevator with indigo art deco paneling on each side perfectly symmetrical, a periwinkle floor indicator dial above the doors, indigo blue carpet, brass indigo-tinted handrails, and warm soft lighting from an indigo ceiling fixture.
   negative: |
     human face, normal head, drawing, working, moving, dark, modern elevator

@@ -33,7 +33,7 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    White male, 19 years old, shaggy sandy blond hair falling over his eyes, skinny lanky build, wearing a faded teal concert tee tucked into acid wash jeans with a teal canvas belt, teal Walkman clipped to his pocket with cyan foam headphones around his neck, leaning against the doorframe with a cocky grin, inside his cluttered 80s bedroom with a teal CRT monitor glowing on a messy desk covered in teal floppy disks and cyan soda cans, teal neon clock on the wall, band posters peeling off the walls, teal watercolor wash flooding the background, cyan paint bleeding and dripping downward.
+    Young skinny male with spiky blond hair and a cocky grin, wearing a teal t-shirt and dark jeans, holding a teal floppy disk in one hand, teal foam headphones around neck, teal Walkman clipped to pocket, dramatic teal rim lighting across his features, facing the viewer, inside a 90s bedroom with a teal CRT monitor on a messy desk and band posters on the walls behind him.
 
   negative: |
-    woman, female, modern clothing, smartphone, corporate, executive, boring, meek, old, mature
+    woman, female, old, mature

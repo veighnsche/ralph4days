@@ -9,7 +9,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Elvish male, early 50s, long golden hair streaked with white tied back in a half-knot, tall regal build, noble weathered features with a trimmed golden beard, wearing an ornate warm gold ceremonial tunic with luminous golden sun-ray embroidery radiating from the chest and golden arm bands, gold signet ring on one hand, both hands cupped open releasing a cluster of luminous golden messenger moths that spiral upward into the air carrying light, dramatic warm gold rim lighting, rich golden ambient glow, inside a grand elvish herald tower bathed in golden light with enormous golden-framed dispatch windows open to a vast starlit sky and golden horn instruments mounted on the walls behind him.
+    Elvish male, early 50s, with long golden hair streaked with white tied back in a half-knot, tall regal build, noble weathered features with a trimmed golden beard, wearing an ornate warm gold ceremonial tunic with luminous golden sun-ray embroidery radiating from the chest and golden arm bands, gold signet ring on one hand, both hands cupped open releasing a cluster of luminous golden messenger moths that spiral upward into the air carrying light, dramatic warm gold rim lighting, rich golden ambient glow, inside a grand elvish herald tower bathed in golden light with enormous golden-framed dispatch windows open to a vast starlit sky and golden horn instruments mounted on the walls behind him.
 
   negative: |
     empty hands releasing nothing, moths dead on the ground, closed windows, sealed doors, messages undelivered, hoarding

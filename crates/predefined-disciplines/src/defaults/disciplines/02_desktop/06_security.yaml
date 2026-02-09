@@ -11,7 +11,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    White male, mid 30s, dark slicked-back hair and a crimson red leather biker jacket with silver studs, sharp angular face with a five o'clock shadow, red aviator sunglasses, red fingerless gloves, standing with feet planted and a sharp unwavering glare, one hand resting on a crimson red padlock chained to a red steel gate behind him, inside a gritty 80s bank vault entrance with crimson red steel doors and red combination dials, red security cameras mounted on the walls, red alarm bell above the door, crimson watercolor wash bleeding through the scene, red paint dripping downward.
+    Sharp angular male with dark slicked-back hair, five o'clock shadow, and an unwavering glare, wearing a crimson red leather jacket and red aviator sunglasses, one hand gripping a red padlock on a thick chain, dramatic crimson rim lighting on his face and the padlock chain, facing the viewer, inside a 90s bank vault entrance with crimson steel doors and combination dials and security cameras behind him.
 
   negative: |
-    woman, female, friendly, playful, modern security, digital, hologram, meek, timid
+    woman, female, friendly, playful, meek

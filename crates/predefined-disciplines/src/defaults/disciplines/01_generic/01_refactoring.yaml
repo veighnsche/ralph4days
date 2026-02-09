@@ -34,6 +34,6 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    A tall thin woman in a lavender violet pencil skirt suit with violet buttons standing perfectly still dead center in a pastel lavender laundromat, her head is replaced by a large violet vernier caliper with jaws slightly open where her head should be, caliper for a head, the laundromat has rows of lavender washing machines on each side perfectly symmetrical, violet detergent bottles lined up on a shelf, soft lavender linoleum floor, pastel violet walls, warm soft lighting.
+    A tall thin woman with a large violet vernier caliper with jaws slightly open replacing her head where it should be, caliper for a head, wearing a lavender violet pencil skirt suit with violet buttons, standing perfectly still dead center with her caliper head held upright as the focal point, sharp violet accents against her silhouette, warm soft violet rim lighting across the caliper jaws, soft lavender linoleum floor beneath her, inside a pastel lavender laundromat with rows of lavender washing machines on each side perfectly symmetrical, violet detergent bottles lined up on a shelf, and pastel violet walls surrounding her.
   negative: |
     human face, normal head, messy, dirty laundry, working, moving, dark

@@ -17,31 +17,33 @@ fn radix_fmt(mut n: u64, base: u64) -> String {
     String::from_utf8(buf).unwrap()
 }
 
+enum Quality {
+    Test,
+    Dev,
+    Prod,
+}
+
 struct Args {
     stack: u8,
     discipline: usize,
-    steps: u32,
+    quality: Quality,
     ratio_w: f64,
     ratio_h: f64,
-    megapixels: f64,
 }
 
 fn parse_args() -> Args {
     let raw: Vec<String> = std::env::args().skip(1).collect();
-    let mut steps = 14u32;
-    let mut ratio_w = 9.0f64;
-    let mut ratio_h = 16.0f64;
-    let mut megapixels = 1.0f64;
+    let mut quality = Quality::Dev;
+    let mut ratio_w = 1.0f64;
+    let mut ratio_h = 2.0f64;
     let mut positional = Vec::new();
     let mut i = 0;
 
     while i < raw.len() {
         match raw[i].as_str() {
-            "--test" => steps = 1,
-            "--prod" => {
-                steps = 28;
-                megapixels = 2.0;
-            }
+            "--test" => quality = Quality::Test,
+            "--dev" => quality = Quality::Dev,
+            "--prod" => quality = Quality::Prod,
             "--ratio-square" => {
                 ratio_w = 1.0;
                 ratio_h = 1.0;
@@ -61,13 +63,6 @@ fn parse_args() -> Args {
                 });
                 i += 2;
             }
-            "--mp" => {
-                megapixels = raw.get(i + 1).and_then(|s| s.parse().ok()).unwrap_or_else(|| {
-                    eprintln!("--mp requires a number: --mp 1.5");
-                    std::process::exit(1);
-                });
-                i += 1;
-            }
             other => positional.push(other.to_owned()),
         }
         i += 1;
@@ -78,19 +73,18 @@ fn parse_args() -> Args {
         eprintln!();
         eprintln!("Flags:");
         eprintln!("  --test             1 step (pipeline test)");
-        eprintln!("  --prod             28 steps, 2MP (production quality)");
-        eprintln!("  --ratio W H        aspect ratio (default: 9 16)");
+        eprintln!("  --dev              stack dev settings (default)");
+        eprintln!("  --prod             stack prod settings");
+        eprintln!("  --ratio W H        aspect ratio (default: 1 2)");
         eprintln!("  --ratio-square     shorthand for --ratio 1 1");
         eprintln!("  --ratio-landscape  shorthand for --ratio 16 9");
-        eprintln!("  --mp N             megapixels (default: 1)");
         eprintln!();
-        eprintln!("Default: 14 steps, 1MP, 9:16 ratio");
+        eprintln!("Steps/MP come from stack ABOUT.yaml generation settings.");
         eprintln!();
         eprintln!("Examples:");
         eprintln!("  generate-discipline-image 03 00");
         eprintln!("  generate-discipline-image 03 00 --prod");
-        eprintln!("  generate-discipline-image 03 00 --test --ratio-portrait");
-        eprintln!("  generate-discipline-image 03 00 --ratio 2 1 --mp 2.0");
+        eprintln!("  generate-discipline-image 03 00 --test");
         std::process::exit(1);
     }
 
@@ -104,34 +98,46 @@ fn parse_args() -> Args {
     Args {
         stack,
         discipline,
-        steps,
+        quality,
         ratio_w,
         ratio_h,
-        megapixels,
     }
 }
 
 #[tokio::main]
 async fn main() {
     let args = parse_args();
-    let (width, height) =
-        ralph_external::compute_dimensions(args.ratio_w, args.ratio_h, args.megapixels);
-
-    eprintln!(
-        "Settings: {} steps, {}x{} ({:.1}MP, ratio {}:{})",
-        args.steps, width, height, args.megapixels, args.ratio_w, args.ratio_h
-    );
-
-    let mut workflow: std::collections::HashMap<String, ralph_external::WorkflowNode> =
-        serde_json::from_str(DISCIPLINE_WORKFLOW).expect("embedded workflow is valid JSON");
-    ralph_external::set_steps(&mut workflow, args.steps);
-    ralph_external::set_dimensions(&mut workflow, width, height);
-    let global = get_global_image_prompts();
 
     let stack = get_stack_metadata(args.stack).unwrap_or_else(|| {
         eprintln!("Unknown stack: {:02}", args.stack);
         std::process::exit(1);
     });
+
+    let (steps, megapixels) = match args.quality {
+        Quality::Test => (1u32, 1.0f64),
+        Quality::Dev => match &stack.generation {
+            Some(g) => (g.dev.steps, g.dev.megapixels),
+            None => (14, 1.0),
+        },
+        Quality::Prod => match &stack.generation {
+            Some(g) => (g.prod.steps, g.prod.megapixels),
+            None => (28, 2.0),
+        },
+    };
+
+    let (width, height) =
+        ralph_external::compute_dimensions(args.ratio_w, args.ratio_h, megapixels);
+
+    eprintln!(
+        "Settings: {} steps, {}x{} ({:.1}MP, ratio {}:{})",
+        steps, width, height, megapixels, args.ratio_w, args.ratio_h
+    );
+
+    let mut workflow: std::collections::HashMap<String, ralph_external::WorkflowNode> =
+        serde_json::from_str(DISCIPLINE_WORKFLOW).expect("embedded workflow is valid JSON");
+    ralph_external::set_steps(&mut workflow, steps);
+    ralph_external::set_dimensions(&mut workflow, width, height);
+    let global = get_global_image_prompts();
 
     let stack_prompt = stack.image_prompt.unwrap_or_else(|| {
         eprintln!(
@@ -246,7 +252,7 @@ async fn main() {
 
             let output_path = format!(
                 "{stack_dir}/{:02}_{}_{}_{}x{}_{ts_b36}.png",
-                args.discipline, discipline.name, args.steps, width, height
+                args.discipline, discipline.name, steps, width, height
             );
             std::fs::write(&output_path, &image_bytes).expect("Failed to write output file");
 

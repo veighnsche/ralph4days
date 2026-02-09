@@ -1,11 +1,11 @@
 # Global image generation prompts for discipline character portraits
-# Format: 9:16 vertical (832x1216)
+# Format: 1:2 vertical portrait
 # Target: Z-Image Base (supports negative prompts)
 # Usage: Concatenate global + stack (from stack YAML) + discipline (from discipline YAML)
 
 global:
   positive: |
-    Three-quarter portrait from waist up, single person centered in frame, subject occupies lower two-thirds, professional polished illustration, shallow depth of field, studio lighting, clean composition.
+    Full body standing shot from head to feet, single person centered in frame, character fills the frame, body takes up 75 percent of the image height, eyes at 15 percent from top of frame, feet at 90 percent from top of frame, minimal headroom above head, tight framing on the body, zoomed in close to the character.
 
   negative: |
-    multiple characters, multiple people, crowd, group, two people, full body, legs visible, blurry, noise, jpeg artifacts, text, watermark, logo, multiple panels, collage, low resolution
+    multiple characters, multiple people, crowd, group, two people, cropped legs, cut off at waist, cut off at knees, zoomed out, tiny figure, distant, far away, wide shot, blurry, noise, jpeg artifacts, text, watermark, logo, multiple panels, collage, low resolution

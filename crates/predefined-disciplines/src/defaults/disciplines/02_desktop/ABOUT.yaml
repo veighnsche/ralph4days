@@ -28,7 +28,15 @@ characteristics:
 
 image_prompt:
   positive: |
-    Watercolor portrait illustration, loose expressive brushstrokes, wet on wet technique, visible paper texture, bleeding watercolor edges, ink wash details, 1980s retro aesthetic, heroic TV show promotional portrait, confident powerful stance, attractive capable person, bold iconic 80s hero energy, 1980s fashion and style, denim jackets Members Only jackets band tees aviator sunglasses Ray-Bans big hair perms mullets rolled sleeves acid wash jeans Walkman headphones sweatbands high-top sneakers, warm sunset golden hour palette with discipline color accents, but the watercolor bleeds and runs at the edges revealing sadness underneath, paint dripping downward, colors bleeding outside the lines, imperfect beautiful medium betraying the weight they carry, warm nostalgic lighting, atmospheric watercolor background wash with VHS warm tones.
+    Low poly 3D render, PS1 era aesthetic, flat shaded polygons, discipline accent color on clothing.
 
   negative: |
-    text, words, letters, typography, 3D render, photograph, photorealistic, ugly, haggard, exhausted, modern clothing, smartphone, laptop, hoodie, tailored suit, executive fashion, corporate, futuristic, cyberpunk, glass surfaces, obsidian, fantasy, elvish, pointed ears, medieval, robes, anime, manga, cel-shaded, flat colors, sharp clean edges, vector art, cartoon, logo, empty background, solid color background, actual superhero costume, cape, spandex, mask, armor
+    text, words, letters, typography, photograph, photorealistic, realistic lighting, ray tracing, cyberpunk, fantasy, elvish, anime, manga, cel-shaded, watercolor, oil painting, sketch
+
+generation:
+  dev:
+    steps: 9
+    megapixels: 1.0
+  prod:
+    steps: 18
+    megapixels: 1.5
