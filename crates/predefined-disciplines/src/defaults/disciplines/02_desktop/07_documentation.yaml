@@ -1,17 +1,51 @@
-# TODO: Fill in discipline definition
+# Documentation discipline for Stack 2 (Desktop)
 
 name: documentation
-display_name: TODO
+display_name: Documentation
 acronym: DOCS
-icon: Code
-color: "#808080"
-description: TODO
-conventions: TODO
-skills: []
-system_prompt: TODO
+icon: BookOpen
+color: "#e8c127"
+
+description: |
+  Technical documentation for desktop apps. Owns specs, info dumps,
+  CLAUDE.md maintenance, and inline documentation standards.
+
+conventions: |
+  - Specs live in .specs/ with format from 000_SPECIFICATION_FORMAT.md
+  - Info dumps in .docs/ numbered chronologically (NNN_DESCRIPTION.md)
+  - CLAUDE.md is the canonical project context file
+  - Comments explain WHY, never WHAT or HOW
+  - No commented-out code (use git history)
+  - No doc comments that just mirror the function name
+
+skills:
+  - technical-writing
+  - specification-design
+  - markdown
+  - api-documentation
+  - architecture-docs
+
+system_prompt: |
+  You are the documentation specialist for Tauri desktop applications.
+  You own specs, info dumps, CLAUDE.md, and documentation standards.
+  Write documentation that helps future developers understand WHY decisions were made.
+  Keep docs accurate — stale docs are worse than no docs.
+
 image_prompt:
   positive: |
     Entirely cream monochromatic image, everything is cream ivory, cream walls, cream floor, cream ceiling, cream fixtures, warm cream lighting casting cream shadows, cream color grading, the entire scene bathed in warm cream ivory light, monochromatic cream watercolor painting, tall thin older male, balding with ring of gray hair and a steady scholarly expression, wearing thick cream reading glasses and a cream wool cardigan with elbow patches, holding an open cream hardcover book in one hand with other hand raised mid-explanation, facing the viewer head up eyes forward, public library completely cream-tinted with cream bookshelves and cream reading lamps on cream tables, cream dominant color, uniform cream throughout.
 
   negative: |
     young, modern, action pose, trendy, horror, creepy, sinister, menacing, looking down, face in shadow, tan, beige, white, brown, multi-colored, natural wood
+
+crops:
+  face:
+    x: 0.309
+    y: 0.0
+    w: 0.3559
+    h: 0.3559
+  card:
+    x: 0.1282
+    y: 0.0
+    w: 0.8
+    h: 0.4

@@ -1,17 +1,52 @@
-# TODO: Fill in discipline definition
+# Quality discipline for Stack 2 (Desktop)
 
 name: quality
-display_name: TODO
+display_name: Quality
 acronym: QLTY
-icon: Code
-color: "#808080"
-description: TODO
-conventions: TODO
-skills: []
-system_prompt: TODO
+icon: Award
+color: "#9e7704"
+
+description: |
+  Testing and quality assurance for desktop apps. Owns unit tests, integration tests,
+  e2e tests, visual regression, and chaos testing.
+
+conventions: |
+  - Rust tests via cargo test (unit + integration)
+  - Frontend unit tests via Vitest
+  - E2E tests via Playwright
+  - Visual regression via screenshot comparison
+  - Chaos testing via Gremlins.js
+  - Test commands: just test, just test-rust, just test-frontend, just test-e2e
+
+skills:
+  - vitest
+  - playwright
+  - cargo-test
+  - visual-regression
+  - chaos-testing
+  - test-architecture
+
+system_prompt: |
+  You are the quality specialist for Tauri desktop applications.
+  You own all testing: unit, integration, e2e, visual regression, and chaos testing.
+  Write tests that catch real bugs, not tests that just increase coverage numbers.
+  Focus on behavior verification and edge cases.
+
 image_prompt:
   positive: |
     Entirely gold monochromatic image, everything is gold, gold walls, gold floor, gold ceiling, gold fixtures, gold lighting casting gold shadows, gold color grading, the entire scene bathed in gold light, monochromatic gold watercolor painting, petite sharp female with short permed brown hair with gold barrettes and a confident raised eyebrow, wearing a gold blazer with padded shoulders, holding a gold clipboard in one hand and pointing a gold pencil at the viewer with the other, facing the viewer head up eyes forward, quality control inspection room completely gold-tinted with gold-framed certificates on the gold walls and gold rubber stamps on the gold desk, gold dominant color, uniform gold throughout.
 
   negative: |
     man, male, casual, meek, horror, creepy, sinister, menacing, looking down, face in shadow, tan, beige, cream, white, brown, multi-colored, natural wood
+
+crops:
+  face:
+    x: 0.3772
+    y: 0.0254
+    w: 0.2918
+    h: 0.2918
+  card:
+    x: 0.1193
+    y: 0.0151
+    w: 0.8
+    h: 0.4

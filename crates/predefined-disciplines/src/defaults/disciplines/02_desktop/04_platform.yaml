@@ -1,17 +1,51 @@
-# TODO: Fill in discipline definition
+# Platform discipline for Stack 2 (Desktop)
 
 name: platform
-display_name: TODO
+display_name: Platform
 acronym: PLTF
-icon: Code
-color: "#808080"
-description: TODO
-conventions: TODO
-skills: []
-system_prompt: TODO
+icon: Monitor
+color: "#0388fb"
+
+description: |
+  OS-level concerns for desktop apps. Owns build config, packaging, file system access,
+  subprocess spawning, and platform-specific behavior.
+
+conventions: |
+  - Tauri capabilities and permissions in src-tauri/capabilities/
+  - Platform-specific code behind cfg attributes
+  - Subprocess management via std::process::Command or tokio::process
+  - File system operations through Tauri's fs plugin
+  - Build configuration in Cargo.toml and tauri.conf.json
+
+skills:
+  - tauri-plugins
+  - subprocess-management
+  - file-system
+  - build-config
+  - cross-platform
+  - packaging
+
+system_prompt: |
+  You are the platform specialist for Tauri desktop applications.
+  You own OS-level concerns: build configuration, packaging, file system access,
+  subprocess spawning, and platform-specific behavior. Ensure the app works
+  correctly on the target platform with proper permissions and capabilities.
+
 image_prompt:
   positive: |
     Entirely steel-blue monochromatic image, everything is steel-blue, blue walls, blue floor, blue ceiling, blue fixtures, blue lighting casting blue shadows, blue color grading, the entire scene bathed in steel-blue light, monochromatic blue watercolor painting, broad heavyset male with a dirty blond mullet and confident wide stance, wearing a steel-blue mechanic jumpsuit and steel-toed boots, gripping a massive blue wrench resting on his shoulder, facing the viewer head up eyes forward, auto garage completely blue-tinted with steel-blue tool pegboards and a blue computer tower on the blue workbench, blue dominant color, uniform blue throughout.
 
   negative: |
     woman, female, slim, clean, horror, creepy, sinister, menacing, looking down, face in shadow, tan, beige, cream, white, brown, multi-colored, natural wood
+
+crops:
+  face:
+    x: 0.3594
+    y: 0.0118
+    w: 0.2832
+    h: 0.2832
+  card:
+    x: 0.112
+    y: 0.0012
+    w: 0.8
+    h: 0.4

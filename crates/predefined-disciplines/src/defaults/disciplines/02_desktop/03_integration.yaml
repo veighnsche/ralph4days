@@ -1,17 +1,50 @@
-# TODO: Fill in discipline definition
+# Integration discipline for Stack 2 (Desktop)
 
 name: integration
-display_name: TODO
+display_name: Integration
 acronym: INTG
-icon: Code
-color: "#808080"
-description: TODO
-conventions: TODO
-skills: []
-system_prompt: TODO
+icon: Cable
+color: "#1da405"
+
+description: |
+  Wires frontend to backend. Owns Tauri IPC contracts, TypeScript type generation,
+  event system, and cross-boundary data flow.
+
+conventions: |
+  - Tauri IPC type contracts shared between Rust and TypeScript
+  - Generated types in src/types/generated.ts (never hand-edit)
+  - Event-based communication for async updates
+  - Type-safe invoke wrappers in frontend hooks
+  - Validate at IPC boundary, trust internal code
+
+skills:
+  - tauri-ipc
+  - typescript-codegen
+  - event-systems
+  - serde-json
+  - cross-language-types
+
+system_prompt: |
+  You are the integration specialist for Tauri desktop applications.
+  You wire the React frontend to the Rust backend through Tauri IPC.
+  Own the type contracts, event system, and data flow across the boundary.
+  Ensure type safety end-to-end — generated TypeScript types must match Rust structs exactly.
+
 image_prompt:
   positive: |
     Entirely emerald green monochromatic image, everything is emerald green, green walls, green floor, green ceiling, green fixtures, green lighting casting green shadows, green color grading, the entire scene bathed in emerald green light, monochromatic green watercolor painting, lean female with big curly brown hair with green scrunchie and confident stance, wearing an emerald green Members Only jacket, holding a green rotary phone receiver in one hand with the green coiled cord tangling around her other arm, facing the viewer head up eyes forward, telephone exchange office completely green-tinted with walls of green patch cables and green switchboard panels, green dominant color, uniform green throughout.
 
   negative: |
     man, male, meek, horror, creepy, sinister, menacing, looking down, face in shadow, tan, beige, cream, white, brown, multi-colored, natural wood
+
+crops:
+  face:
+    x: 0.3125
+    y: 0.0099
+    w: 0.3383
+    h: 0.3383
+  card:
+    x: 0.0877
+    y: 0.0012
+    w: 0.8
+    h: 0.4

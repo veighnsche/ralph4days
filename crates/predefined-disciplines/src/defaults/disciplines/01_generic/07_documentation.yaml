@@ -2,7 +2,7 @@ name: documentation
 display_name: Documentation
 acronym: DOCS
 icon: BookOpen
-color: "#14b8a6"
+color: "#0c8c81"
 
 conventions: |
   - README: overview, setup, usage, license
@@ -34,6 +34,18 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    Entirely teal monochromatic image, monochrome teal, single color teal, everything is teal green-blue, teal walls, teal floor, teal ceiling, teal lanes, teal seats, teal fixtures, deep teal lighting casting teal shadows, heavy teal color grading, the entire scene drenched in teal light, everything tinted teal, an elderly thin man with a large open teal hardcover book with teal pages fanned out for a head, the book is the head, open book as the head as the dominant feature, wearing a teal cardigan over teal button-down shirt and teal pants, standing perfectly still dead center, the book head held upright with pages displayed as the focal point, inside a bowling alley interior completely teal with teal lanes stretching back on each side, teal molded seats in rows, teal bowling balls on rack, teal scoring screen overhead, uniform teal color throughout.
+    Entirely teal monochromatic image, monochrome teal, single color teal, everything is teal green-blue, teal walls, teal floor, teal ceiling, teal shelves, teal fixtures, deep teal lighting casting teal shadows, heavy teal color grading, the entire scene drenched in teal light, everything tinted teal, an elderly thin man with a large open teal hardcover book with teal pages fanned out for a head, the book is the head, open book replacing the head as the dominant feature, wearing a teal cardigan over teal button-down shirt and teal pants with teal shoes, standing perfectly still dead center, the book head held upright with pages displayed as the focal point, inside a tiny cramped library alcove completely teal with floor-to-ceiling teal bookshelves on the left wall and right wall, teal books packed tight on every shelf, teal reading lamp on a small teal side table, teal carpet, teal ceiling with teal light fixture, uniform teal color throughout, tight framing, character fills the frame.
   negative: |
-    human face, normal head, reading, bowling, throwing, loud, tan, beige, cream, ivory, white, brown, orange, yellow, multi-colored, natural wood, neutral colors
+    human face, normal head, reading, bowling, throwing, loud, wide room, open space, tan, beige, cream, ivory, white, brown, orange, yellow, multi-colored, natural wood, neutral colors
+
+crops:
+  face:
+    x: 0.2
+    y: 0.0
+    w: 0.6
+    h: 0.6
+  card:
+    x: 0.1181
+    y: 0.0
+    w: 0.8
+    h: 0.4

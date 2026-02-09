@@ -2,7 +2,7 @@ name: firebase_backend
 display_name: Firebase Backend
 acronym: FIRE
 icon: Code
-color: "#f97316"
+color: "#f46908"
 description: TODO
 conventions: TODO
 skills: []
@@ -13,3 +13,15 @@ image_prompt:
 
   negative: |
     pointed ears, elvish ears, cold dead ashes, extinguished fire, dark hearth, shivering, no flame, neglected fireplace, unwelcome, outsider rejected
+
+crops:
+  face:
+    x: 0.3284
+    y: 0.0
+    w: 0.332
+    h: 0.332
+  card:
+    x: 0.0898
+    y: 0.0
+    w: 0.8
+    h: 0.4

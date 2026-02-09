@@ -2,7 +2,7 @@ name: devops
 display_name: DevOps
 acronym: DVOP
 icon: Rocket
-color: "#06b6d4"
+color: "#08b2bc"
 
 conventions: |
   - All infrastructure versioned in git
@@ -38,3 +38,15 @@ image_prompt:
     Entirely cyan monochromatic image, monochrome cyan, single color cyan, everything is cyan blue, cyan blue walls, cyan blue floor, cyan blue tiles, cyan blue ceiling, cyan blue counters, cyan blue fixtures, bright cyan lighting casting cyan shadows, heavy cyan color grading, the entire scene drenched in cyan blue light, everything tinted cyan, a young skinny man with a cyan toy rocket replacing his head, rocket for a head, wearing cyan overalls and cyan t-shirt, standing perfectly still dead center with his rocket head as the focal point, inside a bakery interior completely cyan with cyan display cases on each side filled with cyan-frosted pastries, cyan tiled floor, cyan pendant lamps hanging from cyan ceiling, cyan cash register on cyan counter, uniform cyan color throughout.
   negative: |
     human face, human head, normal head, face visible, eyes visible, nose visible, mouth visible, head underneath, head below, rocket on head, rocket hat, flying, launching, fire, smoke, tan, beige, cream, ivory, white, brown, orange, yellow, green, multi-colored, natural wood, neutral colors
+
+crops:
+  face:
+    x: 0.4234
+    y: 0.1632
+    w: 0.2284
+    h: 0.2284
+  card:
+    x: 0.1352
+    y: 0.1508
+    w: 0.8
+    h: 0.4

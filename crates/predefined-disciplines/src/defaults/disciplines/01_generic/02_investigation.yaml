@@ -2,7 +2,7 @@ name: investigation
 display_name: Investigation
 acronym: INVS
 icon: Search
-color: "#10b981"
+color: "#729807"
 
 conventions: |
   - Add logging/prints to trace execution
@@ -34,6 +34,18 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    Entirely green monochromatic image, everything is green, green walls, green floor, green ceiling, green fixtures, green lighting casting green shadows, green color grading, the entire scene bathed in green light, a short stocky man with a giant green magnifying glass for a head, the round glass lens where his face should be, green handle extending down as his neck, wearing a green tweed vest and green corduroy pants, standing perfectly still dead center, the magnifying glass head as the dominant focal point, inside a hotel lobby completely green-tinted with green velvet armchairs on each side, green reception desk with green desk lamp, green wallpaper, green potted ferns in green ceramic pots, green patterned carpet, green chandelier overhead, monochromatic green scene.
+    Entirely green monochromatic image, everything is green, green walls, green floor, green ceiling, green fixtures, green lighting casting green shadows, green color grading, the entire scene bathed in green light, close-up full body portrait, character dominates the frame filling 75 percent of the image height, a short stocky man with a giant green magnifying glass for a head, the round glass lens where his face should be, green handle extending down as his neck, wearing a green tweed vest and green corduroy pants, standing perfectly still dead center, the magnifying glass head as the dominant focal point, inside a narrow hotel lobby corridor completely green-tinted with green velvet armchairs on each side, green reception desk with green desk lamp, green wallpaper, green potted ferns in green ceramic pots, green patterned carpet, green chandelier overhead, monochromatic green scene.
   negative: |
     human face, normal head, human head, searching, bending, looking down, dark, gritty, tan walls, beige walls, white walls, brown, orange, blue, purple, multi-colored
+
+crops:
+  face:
+    x: 0.2
+    y: 0.0
+    w: 0.6
+    h: 0.6
+  card:
+    x: 0.1188
+    y: 0.0
+    w: 0.8
+    h: 0.4

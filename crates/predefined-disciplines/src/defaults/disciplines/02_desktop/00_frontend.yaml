@@ -5,7 +5,7 @@ name: frontend
 display_name: Frontend
 acronym: FRNT
 icon: Code
-color: "#00d9ff"
+color: "#068d87"
 
 description: |
   React 19 frontend development with TypeScript, Tailwind v4, and modern patterns.
@@ -37,3 +37,15 @@ image_prompt:
 
   negative: |
     woman, female, old, mature, smiling, happy, playful, cute, cheerful, horror, creepy, sinister, menacing, skull, zombie, dark shadows on face, harsh lighting, tan, beige, cream, white, brown, orange, yellow, multi-colored, natural wood
+
+crops:
+  face:
+    x: 0.3778
+    y: 0.0136
+    w: 0.2754
+    h: 0.2754
+  card:
+    x: 0.119
+    y: 0.0028
+    w: 0.8
+    h: 0.4

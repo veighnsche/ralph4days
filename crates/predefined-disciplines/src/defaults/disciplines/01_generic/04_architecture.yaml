@@ -2,7 +2,7 @@ name: architecture
 display_name: Architecture
 acronym: ARCH
 icon: Compass
-color: "#6366f1"
+color: "#af15ff"
 
 conventions: |
   - Document architectural decisions (ADRs)
@@ -37,3 +37,15 @@ image_prompt:
     Entirely indigo purple monochromatic image, monochrome indigo purple, single color indigo purple, everything is deep purple indigo, indigo purple walls, indigo purple floor, indigo purple ceiling, indigo purple doors, indigo purple panels, indigo purple fixtures, deep purple indigo lighting casting purple indigo shadows, heavy purple indigo color grading, the entire scene drenched in deep purple indigo light, everything tinted purple indigo, a tall broad man with a large purple indigo drafting compass with both legs spread open where his head should be, compass for a head as the dominant feature, wearing a purple indigo three-piece suit with purple indigo pocket square, standing perfectly still dead center, compass head held upright as the focal point, inside an elevator interior completely purple indigo with purple indigo art deco paneling on each side, purple indigo floor indicator dial above the doors, purple indigo carpet, purple indigo handrails, purple indigo ceiling fixture, uniform purple indigo color throughout, deep violet blue.
   negative: |
     human face, normal head, drawing, working, moving, tan, beige, cream, ivory, white, brown, orange, yellow, green, cyan, turquoise, aqua, light blue, multi-colored, natural wood, neutral colors
+
+crops:
+  face:
+    x: 0.4359
+    y: 0.2667
+    w: 0.12
+    h: 0.12
+  card:
+    x: 0.1131
+    y: 0.2507
+    w: 0.8
+    h: 0.4

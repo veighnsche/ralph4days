@@ -1,17 +1,52 @@
-# TODO: Fill in discipline definition
+# Backend discipline for Stack 2 (Desktop)
 
 name: backend
-display_name: TODO
+display_name: Backend
 acronym: BACK
-icon: Code
-color: "#808080"
-description: TODO
-conventions: TODO
-skills: []
-system_prompt: TODO
+icon: Server
+color: "#ea7805"
+
+description: |
+  Rust backend development for Tauri desktop apps. Owns Tauri commands,
+  crate architecture, SQLite operations, and subprocess management.
+
+conventions: |
+  - Tauri 2.x command handlers in src-tauri/src/commands/
+  - Business logic in workspace crates (crates/*), not in command handlers
+  - SQLite via rusqlite with WAL mode and migration files
+  - All errors flow through ralph-errors crate
+  - Use .to_owned() for string literals, not .to_string()
+  - Struct params for functions with >7 arguments
+
+skills:
+  - rust
+  - tauri-2
+  - rusqlite
+  - tokio
+  - serde
+  - subprocess-management
+
+system_prompt: |
+  You are the backend specialist for Tauri desktop applications.
+  You own Rust code: Tauri commands, crate architecture, SQLite database operations,
+  and subprocess management. Write idiomatic Rust that passes clippy without warnings.
+  Keep command handlers thin — delegate to workspace crates for business logic.
+
 image_prompt:
   positive: |
     Entirely orange monochromatic image, everything is orange, orange walls, orange floor, orange ceiling, orange fixtures, orange lighting casting orange shadows, orange color grading, the entire scene bathed in orange light, monochromatic orange watercolor painting, strong Black male with a short high-top fade and confident expression, wearing an orange flannel shirt with rolled sleeves, arms crossed confidently, orange pager clipped to belt, orange safety glasses pushed up on forehead, facing the viewer head up eyes forward, server room completely orange-tinted with orange mainframe cabinets and blinking orange status lights, orange dominant color, uniform orange throughout.
 
   negative: |
     white skin, slim, meek, horror, creepy, sinister, menacing, looking down, face in shadow, tan, beige, cream, white, brown, multi-colored, natural wood
+
+crops:
+  face:
+    x: 0.3245
+    y: 0.0
+    w: 0.3443
+    h: 0.3443
+  card:
+    x: 0.1128
+    y: 0.0
+    w: 0.8
+    h: 0.4

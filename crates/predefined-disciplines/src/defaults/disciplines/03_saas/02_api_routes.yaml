@@ -2,7 +2,7 @@ name: api_routes
 display_name: API Routes
 acronym: APIR
 icon: Code
-color: "#f59e0b"
+color: "#a05a03"
 description: TODO
 conventions: TODO
 skills: []
@@ -13,3 +13,15 @@ image_prompt:
 
   negative: |
     waving things through unchecked, careless, distracted, looking away from the data, open unguarded gate, sloppy posture
+
+crops:
+  face:
+    x: 0.3986
+    y: 0.1214
+    w: 0.2527
+    h: 0.2527
+  card:
+    x: 0.1123
+    y: 0.1098
+    w: 0.8
+    h: 0.4

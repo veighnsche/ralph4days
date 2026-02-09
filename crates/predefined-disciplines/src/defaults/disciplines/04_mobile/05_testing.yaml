@@ -2,7 +2,7 @@ name: testing
 display_name: Testing
 acronym: TEST
 icon: Code
-color: "#9333ea"
+color: "#9a1fff"
 description: TODO
 conventions: TODO
 skills: []
@@ -13,3 +13,15 @@ image_prompt:
 
   negative: |
     blind, eyes covered, looking away from the prism, cracked cloudy lens, ignoring flaws, missing the obvious
+
+crops:
+  face:
+    x: 0.3552
+    y: 0.0047
+    w: 0.2976
+    h: 0.2976
+  card:
+    x: 0.1114
+    y: 0.0
+    w: 0.8
+    h: 0.4

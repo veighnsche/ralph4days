@@ -2,7 +2,7 @@ name: platform_integration
 display_name: Platform Integration
 acronym: PLAT
 icon: Code
-color: "#16a34a"
+color: "#59d01e"
 description: TODO
 conventions: TODO
 skills: []
@@ -13,3 +13,15 @@ image_prompt:
 
   negative: |
     pointed ears, elvish ears, broken bridge, collapsed archway, disconnected paths, walls between the gates, unable to reach, unwelcome, outsider rejected
+
+crops:
+  face:
+    x: 0.3495
+    y: 0.0
+    w: 0.3097
+    h: 0.3097
+  card:
+    x: 0.1144
+    y: 0.0
+    w: 0.8
+    h: 0.4

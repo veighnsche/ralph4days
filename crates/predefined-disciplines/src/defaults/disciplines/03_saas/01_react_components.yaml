@@ -2,7 +2,7 @@ name: react_components
 display_name: React Components
 acronym: RCMP
 icon: Code
-color: "#ec4899"
+color: "#e20dda"
 description: TODO
 conventions: TODO
 skills: []
@@ -13,3 +13,15 @@ image_prompt:
 
   negative: |
     empty hands, nothing floating, bare empty room, hands in pockets, bored expression, looking away, idle
+
+crops:
+  face:
+    x: 0.3819
+    y: 0.2344
+    w: 0.2287
+    h: 0.2287
+  card:
+    x: 0.0928
+    y: 0.222
+    w: 0.8
+    h: 0.4
