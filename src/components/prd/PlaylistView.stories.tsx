@@ -7,7 +7,8 @@ const meta = {
   component: PlaylistView,
   tags: ['autodocs'],
   args: {
-    onTaskClick: () => {}
+    onTaskClick: () => {},
+    imageStore: new Map()
   }
 } satisfies Meta<typeof PlaylistView>
 

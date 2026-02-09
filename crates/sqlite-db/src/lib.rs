@@ -62,7 +62,12 @@ impl SqliteDb {
         )
         .ralph_err(codes::DB_OPEN, "Failed to set PRAGMAs")?;
 
-        let migrations = Migrations::new(vec![M::up(include_str!("migrations/001_initial.sql"))]);
+        let migrations = Migrations::new(vec![
+            M::up(include_str!("migrations/001_initial.sql")),
+            M::up(include_str!(
+                "migrations/002_discipline_description_image_prompt.sql"
+            )),
+        ]);
 
         migrations
             .to_latest(&mut conn)
@@ -85,7 +90,12 @@ impl SqliteDb {
         )
         .ralph_err(codes::DB_OPEN, "Failed to set PRAGMAs")?;
 
-        let migrations = Migrations::new(vec![M::up(include_str!("migrations/001_initial.sql"))]);
+        let migrations = Migrations::new(vec![
+            M::up(include_str!("migrations/001_initial.sql")),
+            M::up(include_str!(
+                "migrations/002_discipline_description_image_prompt.sql"
+            )),
+        ]);
 
         migrations
             .to_latest(&mut conn)
@@ -115,7 +125,12 @@ impl SqliteDb {
         conn.execute_batch("PRAGMA foreign_keys = ON;")
             .ralph_err(codes::DB_OPEN, "Failed to set PRAGMAs")?;
 
-        let migrations = Migrations::new(vec![M::up(include_str!("migrations/001_initial.sql"))]);
+        let migrations = Migrations::new(vec![
+            M::up(include_str!("migrations/001_initial.sql")),
+            M::up(include_str!(
+                "migrations/002_discipline_description_image_prompt.sql"
+            )),
+        ]);
 
         migrations
             .to_latest(&mut conn)

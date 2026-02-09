@@ -122,7 +122,7 @@ def analyze_image(img_path: Path) -> dict:
     result["pose"] = pose
 
     # Compute bounding boxes
-    boxes = _compute_boxes(keypoints, pose)
+    boxes = _compute_boxes(keypoints, pose, w, h)
     result["boxes"] = boxes
 
     # Compute crop regions
@@ -167,7 +167,7 @@ def _compute_pose(kpts: dict) -> dict:
     }
 
 
-def _compute_boxes(kpts: dict, pose: dict) -> dict:
+def _compute_boxes(kpts: dict, pose: dict, img_w: int = 728, img_h: int = 1448) -> dict:
     """Compute face and body bounding boxes."""
     # Face box from ears/eyes
     face_pts_x = [kpts[k]["x"] for k in ("left_ear", "right_ear", "left_eye", "right_eye", "nose") if k in kpts]
@@ -178,13 +178,17 @@ def _compute_boxes(kpts: dict, pose: dict) -> dict:
         face_cy = sum(face_pts_y) / len(face_pts_y)
         face_spread_x = max(face_pts_x) - min(face_pts_x)
         face_spread_y = max(face_pts_y) - min(face_pts_y)
-        face_size = max(face_spread_x, face_spread_y) * 1.8
-        face_size = max(face_size, 0.10)
+        # Account for aspect ratio: normalize Y spread to X-equivalent
+        aspect = img_h / img_w if img_w > 0 else 1.0
+        face_spread_y_px = face_spread_y * aspect
+        face_w = max(face_spread_x, face_spread_y_px) * 1.6
+        face_w = max(face_w, 0.10)
+        face_h = face_w / aspect
         face = {
-            "x": round(max(0, face_cx - face_size / 2), 4),
-            "y": round(max(0, face_cy - face_size * 0.6), 4),
-            "w": round(min(face_size, 1.0), 4),
-            "h": round(min(face_size, 1.0), 4),
+            "x": round(max(0, face_cx - face_w / 2), 4),
+            "y": round(max(0, face_cy - face_h * 0.55), 4),
+            "w": round(min(face_w, 1.0), 4),
+            "h": round(min(face_h, 1.0), 4),
         }
     else:
         face = {"x": 0.25, "y": 0.0, "w": 0.50, "h": 0.25}
@@ -216,15 +220,21 @@ def _compute_crops(pose: dict, boxes: dict, img_w: int, img_h: int) -> dict:
     face = boxes["face"]
     cx = pose["center_x"]
 
-    # face (1:1 square centered on face)
+    # face (1:1 square in pixels, centered on face)
+    aspect = img_h / img_w if img_w > 0 else 1.0
     face_center_x = face["x"] + face["w"] / 2
     face_center_y = face["y"] + face["h"] / 2
-    face_size = max(face["w"], face["h"]) * 1.2
+    # Convert face box to pixel-equivalent size, pick larger, add padding
+    face_px_w = face["w"] * img_w
+    face_px_h = face["h"] * img_h
+    square_px = max(face_px_w, face_px_h) * 1.2
+    face_crop_w = square_px / img_w
+    face_crop_h = square_px / img_h
     face_crop = _clamp_box(
-        face_center_x - face_size / 2,
-        face_center_y - face_size * 0.45,
-        face_size,
-        face_size,
+        face_center_x - face_crop_w / 2,
+        face_center_y - face_crop_h * 0.45,
+        face_crop_w,
+        face_crop_h,
     )
 
     # card (~5:4, head+shoulders)
@@ -241,12 +251,20 @@ def _compute_crops(pose: dict, boxes: dict, img_w: int, img_h: int) -> dict:
     landscape_h = 0.35
     landscape_crop = _clamp_box(0.0, max(0, pose["eyeline_y"] - 0.10), 1.0, landscape_h)
 
+    # upperbody (~3:4, head to waist, centered on figure)
+    ub_w = 0.50
+    ub_h_px = ub_w * img_w * (4.0 / 3.0)
+    ub_h = ub_h_px / img_h
+    ub_top = max(0, face["y"] - 0.02)
+    upperbody_crop = _clamp_box(cx - ub_w / 2, ub_top, ub_w, ub_h)
+
     # strip (1:4, center third)
     strip_crop = _clamp_box(0.25, 0.0, 0.50, 1.0)
 
     return {
         "face": face_crop,
         "card": card_crop,
+        "upperbody": upperbody_crop,
         "portrait": portrait_crop,
         "landscape": landscape_crop,
         "strip": strip_crop,
@@ -266,6 +284,7 @@ BOX_COLORS = {
     "body box":   ( 50,  50, 255),   # blue
     "crop:face":  (255, 120, 120),   # light red
     "crop:card":  (255, 200,   0),   # yellow
+    "crop:upperbody": (  0,   0,   0), # black
     "crop:portrait": ( 50, 220,  50), # green
     "crop:landscape": (  0, 200, 255), # cyan
     "crop:strip": (200,  50, 255),   # purple
@@ -301,6 +320,7 @@ def write_debug_image(img_path: Path, data: dict, dry_run: bool):
         "crop:landscape": data["crops"].get("landscape"),
         "crop:portrait": data["crops"].get("portrait"),
         "crop:card": data["crops"].get("card"),
+        "crop:upperbody": data["crops"].get("upperbody"),
         "crop:face": data["crops"].get("face"),
     }
     for label, box in crop_map.items():
@@ -378,24 +398,15 @@ def update_discipline_yaml_crops(yaml_path: Path, crops: dict, dry_run: bool) ->
     """Update or insert crops field in discipline YAML. Returns 'inserted', 'updated', or 'unchanged'."""
     text = yaml_path.read_text()
 
-    face = crops["face"]
-    card = crops["card"]
-    crops_yaml = (
-        f"crops:\n"
-        f"  face:\n"
-        f"    x: {face['x']}\n"
-        f"    y: {face['y']}\n"
-        f"    w: {face['w']}\n"
-        f"    h: {face['h']}\n"
-        f"  card:\n"
-        f"    x: {card['x']}\n"
-        f"    y: {card['y']}\n"
-        f"    w: {card['w']}\n"
-        f"    h: {card['h']}\n"
-    )
+    lines = ["crops:\n"]
+    for name, box in crops.items():
+        lines.append(f"  {name}:\n")
+        for key in ("x", "y", "w", "h"):
+            lines.append(f"    {key}: {box[key]}\n")
+    crops_yaml = "".join(lines)
 
-    # Check if crops already exists
-    pattern = re.compile(r'^crops:\n(?:  \w+:\n(?:    [a-z]: [\d.]+\n){1,4}){1,2}', re.MULTILINE)
+    crop_count = len(crops)
+    pattern = re.compile(r'^crops:\n(?:  \w+:\n(?:    [a-z]: [\d.]+\n){1,4}){1,' + str(max(crop_count, 6)) + '}', re.MULTILINE)
     m = pattern.search(text)
 
     if m:
@@ -481,18 +492,11 @@ def main():
             write_sidecar(img_path, data, dry_run)
             write_debug_image(img_path, data, dry_run)
 
-            # Update discipline YAML with face + card crops only
-            crops_for_yaml = {"face": data["crops"]["face"], "card": data["crops"]["card"]}
-            result = update_discipline_yaml_crops(yaml_path, crops_for_yaml, dry_run)
+            result = update_discipline_yaml_crops(yaml_path, data["crops"], dry_run)
 
-            face = data["crops"]["face"]
-            card = data["crops"]["card"]
             method = data["detection"]["method"]
-            print(
-                f"       face=({face['x']:.2f},{face['y']:.2f},{face['w']:.2f},{face['h']:.2f}) "
-                f"card=({card['x']:.2f},{card['y']:.2f},{card['w']:.2f},{card['h']:.2f}) "
-                f"[{method}] yaml:{result}"
-            )
+            crop_names = ", ".join(data["crops"].keys())
+            print(f"       crops: [{crop_names}] [{method}] yaml:{result}")
 
             if result != "unchanged":
                 changes += 1

@@ -30,6 +30,18 @@ pub struct CropBoxData {
 pub struct DisciplineCropsData {
     pub face: CropBoxData,
     pub card: CropBoxData,
+    pub upperbody: Option<CropBoxData>,
+    pub portrait: Option<CropBoxData>,
+    pub landscape: Option<CropBoxData>,
+    pub strip: Option<CropBoxData>,
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DisciplineImagePromptData {
+    pub positive: String,
+    pub negative: String,
 }
 
 #[ipc_type]
@@ -41,6 +53,7 @@ pub struct DisciplineConfig {
     pub icon: String,
     pub color: String,
     pub acronym: String,
+    pub description: Option<String>,
     pub system_prompt: Option<String>,
     pub skills: Vec<String>,
     pub conventions: Option<String>,
@@ -48,6 +61,7 @@ pub struct DisciplineConfig {
     pub stack_id: Option<u8>,
     pub image_path: Option<String>,
     pub crops: Option<DisciplineCropsData>,
+    pub image_prompt: Option<DisciplineImagePromptData>,
 }
 
 #[tauri::command]
@@ -62,6 +76,7 @@ pub fn get_disciplines_config(state: State<'_, AppState>) -> Result<Vec<Discipli
             icon: d.icon.clone(),
             color: d.color.clone(),
             acronym: d.acronym.clone(),
+            description: d.description.clone(),
             system_prompt: d.system_prompt.clone(),
             skills: d.skills.clone(),
             conventions: d.conventions.clone(),
@@ -81,6 +96,10 @@ pub fn get_disciplines_config(state: State<'_, AppState>) -> Result<Vec<Discipli
                 .crops
                 .as_deref()
                 .and_then(|s| serde_json::from_str::<DisciplineCropsData>(s).ok()),
+            image_prompt: d
+                .image_prompt
+                .as_deref()
+                .and_then(|s| serde_json::from_str::<DisciplineImagePromptData>(s).ok()),
         })
         .collect())
 }
@@ -280,12 +299,14 @@ pub fn create_discipline(
         acronym: params.acronym,
         icon: params.icon,
         color: params.color,
+        description: None,
         system_prompt: params.system_prompt,
         skills: skills_json,
         conventions: params.conventions,
         mcp_servers: mcp_json,
         image_path: None,
         crops: None,
+        image_prompt: None,
     })
 }
 
@@ -333,12 +354,14 @@ pub fn update_discipline(
         acronym: params.acronym,
         icon: params.icon,
         color: params.color,
+        description: None,
         system_prompt: params.system_prompt,
         skills: skills_json,
         conventions: params.conventions,
         mcp_servers: mcp_json,
         image_path: None,
         crops: None,
+        image_prompt: None,
     })
 }
 

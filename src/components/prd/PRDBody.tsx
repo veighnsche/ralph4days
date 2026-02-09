@@ -1,19 +1,33 @@
 import { Brain, FileX, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
-import type { Task } from '@/types/generated'
+import type { DisciplineCropsData, Task } from '@/types/generated'
 import { PlaylistView } from './PlaylistView'
+
+interface DisciplineImageEntry {
+  imageUrl: string
+  crops?: DisciplineCropsData
+}
 
 interface PRDBodyProps {
   filteredTasks: Task[]
   totalTasks: number
+  imageStore: Map<string, DisciplineImageEntry>
   onTaskClick: (task: Task) => void
   onClearFilters: () => void
   onBraindump: () => void
   onYap: () => void
 }
 
-export function PRDBody({ filteredTasks, totalTasks, onTaskClick, onClearFilters, onBraindump, onYap }: PRDBodyProps) {
+export function PRDBody({
+  filteredTasks,
+  totalTasks,
+  imageStore,
+  onTaskClick,
+  onClearFilters,
+  onBraindump,
+  onYap
+}: PRDBodyProps) {
   if (filteredTasks.length === 0) {
     if (totalTasks === 0) {
       return (
@@ -63,5 +77,5 @@ export function PRDBody({ filteredTasks, totalTasks, onTaskClick, onClearFilters
     )
   }
 
-  return <PlaylistView tasks={filteredTasks} onTaskClick={onTaskClick} />
+  return <PlaylistView tasks={filteredTasks} imageStore={imageStore} onTaskClick={onTaskClick} />
 }

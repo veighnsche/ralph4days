@@ -3,15 +3,21 @@ import { Fragment, useState } from 'react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { ItemGroup, ItemSeparator } from '@/components/ui/item'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import type { Task } from '@/types/generated'
+import type { DisciplineCropsData, Task } from '@/types/generated'
 import { PlaylistItem } from './PlaylistItem'
+
+interface DisciplineImageEntry {
+  imageUrl: string
+  crops?: DisciplineCropsData
+}
 
 interface PlaylistViewProps {
   tasks: Task[]
+  imageStore: Map<string, DisciplineImageEntry>
   onTaskClick: (task: Task) => void
 }
 
-export function PlaylistView({ tasks, onTaskClick }: PlaylistViewProps) {
+export function PlaylistView({ tasks, imageStore, onTaskClick }: PlaylistViewProps) {
   const [issuesOpen, setIssuesOpen] = useState(true)
 
   const { blockedSkipped, done, inProgress, pending } = (() => {
@@ -61,7 +67,12 @@ export function PlaylistView({ tasks, onTaskClick }: PlaylistViewProps) {
               <ItemGroup className="rounded-md">
                 {blockedSkipped.map((task, index) => (
                   <Fragment key={task.id}>
-                    <PlaylistItem task={task} isIssue onClick={() => onTaskClick(task)} />
+                    <PlaylistItem
+                      task={task}
+                      image={imageStore.get(task.discipline)}
+                      isIssue
+                      onClick={() => onTaskClick(task)}
+                    />
                     {index < blockedSkipped.length - 1 && <ItemSeparator />}
                   </Fragment>
                 ))}
@@ -73,21 +84,26 @@ export function PlaylistView({ tasks, onTaskClick }: PlaylistViewProps) {
         <ItemGroup className="rounded-md">
           {done.map(task => (
             <Fragment key={task.id}>
-              <PlaylistItem task={task} onClick={() => onTaskClick(task)} />
+              <PlaylistItem task={task} image={imageStore.get(task.discipline)} onClick={() => onTaskClick(task)} />
               <ItemSeparator />
             </Fragment>
           ))}
 
           {inProgress.map(task => (
             <Fragment key={task.id}>
-              <PlaylistItem task={task} isNowPlaying onClick={() => onTaskClick(task)} />
+              <PlaylistItem
+                task={task}
+                image={imageStore.get(task.discipline)}
+                isNowPlaying
+                onClick={() => onTaskClick(task)}
+              />
               <ItemSeparator />
             </Fragment>
           ))}
 
           {pending.map((task, index) => (
             <Fragment key={task.id}>
-              <PlaylistItem task={task} onClick={() => onTaskClick(task)} />
+              <PlaylistItem task={task} image={imageStore.get(task.discipline)} onClick={() => onTaskClick(task)} />
               {index < pending.length - 1 && <ItemSeparator />}
             </Fragment>
           ))}

@@ -42,7 +42,7 @@ pub struct GenerationSettings {
     pub prod: GenerationQuality,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DisciplineImagePrompt {
     pub positive: String,
     pub negative: String,
@@ -60,6 +60,10 @@ pub struct CropBox {
 pub struct DisciplineCrops {
     pub face: CropBox,
     pub card: CropBox,
+    pub upperbody: Option<CropBox>,
+    pub portrait: Option<CropBox>,
+    pub landscape: Option<CropBox>,
+    pub strip: Option<CropBox>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

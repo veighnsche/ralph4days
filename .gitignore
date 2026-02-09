@@ -66,3 +66,6 @@ mock/
 # Generated discipline character images
 .ralph/generated/
 **/.ralph/generated/
+
+# YOLO model weights
+*.pt

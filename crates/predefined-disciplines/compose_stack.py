@@ -15,6 +15,7 @@ from pathlib import Path
 from ultralytics import YOLO
 import numpy as np
 import sys
+import yaml
 
 STACKS = {
     1: "generic",
@@ -40,6 +41,27 @@ def get_model():
     if MODEL is None:
         MODEL = YOLO("yolov8n-pose.pt")
     return MODEL
+
+
+def read_sidecar(img_path):
+    """Read pose data from sidecar YAML if it exists.
+
+    Returns (eye_y_pct, feet_y_pct, center_x_pct) or None.
+    """
+    sidecar = img_path.with_suffix(".yaml")
+    if not sidecar.exists():
+        return None
+    try:
+        data = yaml.safe_load(sidecar.read_text())
+        pose = data.get("pose", {})
+        eyeline = pose.get("eyeline_y")
+        ankle = pose.get("ankle_y")
+        cx = pose.get("center_x")
+        if eyeline is not None and ankle is not None and cx is not None:
+            return float(eyeline), float(ankle), float(cx)
+    except Exception:
+        pass
+    return None
 
 
 def detect_pose(img_path):
@@ -120,7 +142,7 @@ def compose_stack(stack_num, stack_slug):
     pngs = sorted(stack_dir.glob("*.png"))
     by_discipline = {}
     for p in pngs:
-        if "_composite" in p.name or "_debug" in p.name:
+        if "_composite" in p.name or "_debug" in p.name or "_dev" in p.name:
             continue
         by_discipline[p.name[:2]] = p
 
@@ -139,13 +161,18 @@ def compose_stack(stack_num, stack_slug):
         img = Image.open(img_path)
         orig_w, orig_h = img.size
 
-        pose = detect_pose(img_path)
+        pose = read_sidecar(img_path)
         if pose:
             eye_pct, feet_pct, cx_pct = pose
-            method = "pose"
+            method = "sidecar"
         else:
-            eye_pct, feet_pct, cx_pct = fallback_detect(img_path)
-            method = "fallback"
+            pose = detect_pose(img_path)
+            if pose:
+                eye_pct, feet_pct, cx_pct = pose
+                method = "pose"
+            else:
+                eye_pct, feet_pct, cx_pct = fallback_detect(img_path)
+                method = "fallback"
 
         body_pct = feet_pct - eye_pct
         if body_pct < 0.1:

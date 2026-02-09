@@ -127,6 +127,12 @@ export function BrowserTabs({ tabs, activeTabId, actions, newTabButton, classNam
               aria-controls={`tabpanel-${tab.id}`}
               tabIndex={isActive ? 0 : -1}
               onClick={() => actions.switchTab(tab.id)}
+              onAuxClick={e => {
+                if (e.button === 1 && tab.closeable !== false) {
+                  e.preventDefault()
+                  actions.closeTab(tab.id)
+                }
+              }}
               onKeyDown={e => handleKeyDown(e, tab.id)}
               className={cn(
                 'group/tab flex items-center gap-1.5 h-8 min-w-0 max-w-[220px]',

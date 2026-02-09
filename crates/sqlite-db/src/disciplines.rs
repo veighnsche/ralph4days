@@ -51,20 +51,23 @@ impl SqliteDb {
         self.conn
             .execute(
                 "INSERT INTO disciplines (name, display_name, acronym, icon, color, \
-                 system_prompt, skills, conventions, mcp_servers, stack_id, image_path, crops) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, NULL, ?10, ?11)",
+                 description, system_prompt, skills, conventions, mcp_servers, stack_id, \
+                 image_path, crops, image_prompt) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, NULL, ?11, ?12, ?13)",
                 rusqlite::params![
                     input.name,
                     input.display_name,
                     input.acronym,
                     input.icon,
                     input.color,
+                    input.description,
                     input.system_prompt,
                     input.skills,
                     input.conventions,
                     input.mcp_servers,
                     input.image_path,
-                    input.crops
+                    input.crops,
+                    input.image_prompt
                 ],
             )
             .ralph_err(codes::DB_WRITE, "Failed to insert discipline")?;
@@ -117,19 +120,22 @@ impl SqliteDb {
         self.conn
             .execute(
                 "UPDATE disciplines SET display_name = ?1, acronym = ?2, icon = ?3, color = ?4, \
-                 system_prompt = ?5, skills = ?6, conventions = ?7, mcp_servers = ?8, \
-                 image_path = ?9, crops = ?10 WHERE name = ?11",
+                 description = ?5, system_prompt = ?6, skills = ?7, conventions = ?8, \
+                 mcp_servers = ?9, image_path = ?10, crops = ?11, image_prompt = ?12 \
+                 WHERE name = ?13",
                 rusqlite::params![
                     input.display_name,
                     input.acronym,
                     input.icon,
                     input.color,
+                    input.description,
                     input.system_prompt,
                     input.skills,
                     input.conventions,
                     input.mcp_servers,
                     input.image_path,
                     input.crops,
+                    input.image_prompt,
                     input.name
                 ],
             )
@@ -171,29 +177,31 @@ impl SqliteDb {
 
     pub fn get_disciplines(&self) -> Vec<Discipline> {
         let Ok(mut stmt) = self.conn.prepare(
-            "SELECT name, display_name, acronym, icon, color, system_prompt, skills, \
-             conventions, mcp_servers, stack_id, image_path, crops \
+            "SELECT name, display_name, acronym, icon, color, description, system_prompt, skills, \
+             conventions, mcp_servers, stack_id, image_path, crops, image_prompt \
              FROM disciplines ORDER BY rowid",
         ) else {
             return vec![];
         };
 
         stmt.query_map([], |row| {
-            let skills_json: String = row.get(6)?;
-            let mcp_json: String = row.get(8)?;
+            let skills_json: String = row.get(7)?;
+            let mcp_json: String = row.get(9)?;
             Ok(Discipline {
                 name: row.get(0)?,
                 display_name: row.get(1)?,
                 acronym: row.get(2)?,
                 icon: row.get(3)?,
                 color: row.get(4)?,
-                system_prompt: row.get(5)?,
+                description: row.get(5)?,
+                system_prompt: row.get(6)?,
                 skills: serde_json::from_str(&skills_json).unwrap_or_default(),
-                conventions: row.get(7)?,
+                conventions: row.get(8)?,
                 mcp_servers: serde_json::from_str(&mcp_json).unwrap_or_default(),
-                stack_id: row.get(9)?,
-                image_path: row.get(10)?,
-                crops: row.get(11)?,
+                stack_id: row.get(10)?,
+                image_path: row.get(11)?,
+                crops: row.get(12)?,
+                image_prompt: row.get(13)?,
             })
         })
         .map_or_else(

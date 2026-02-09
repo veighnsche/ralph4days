@@ -81,6 +81,8 @@ fn initialize_project_for_fixture(
             mcp_servers: "[]".to_owned(),
             image_path,
             crops: crops_json,
+            description: None,
+            image_prompt: None,
         })
         .map_err(|e| format!("Failed to seed discipline: {e}"))?;
     }

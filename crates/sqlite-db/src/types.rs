@@ -272,12 +272,14 @@ pub struct DisciplineInput {
     pub acronym: String,
     pub icon: String,
     pub color: String,
+    pub description: Option<String>,
     pub system_prompt: Option<String>,
     pub skills: String,
     pub conventions: Option<String>,
     pub mcp_servers: String,
     pub image_path: Option<String>,
     pub crops: Option<String>,
+    pub image_prompt: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -288,6 +290,8 @@ pub struct Discipline {
     pub color: String,
     #[serde(default)]
     pub acronym: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub system_prompt: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -302,6 +306,8 @@ pub struct Discipline {
     pub image_path: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub crops: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub image_prompt: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

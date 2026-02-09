@@ -1,7 +1,9 @@
 import { Layers } from 'lucide-react'
 import { PageContent, PageHeader, PageLayout } from '@/components/layout/PageLayout'
+import { DisciplineLabel } from '@/components/prd/DisciplineLabel'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card'
+import { CroppedImage } from '@/components/ui/cropped-image'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -132,9 +134,7 @@ export function DisciplinesPage() {
                     className="h-full rounded-lg border-2 bg-card overflow-hidden cursor-pointer transition-shadow duration-200 hover:shadow-[0_0_12px_var(--disc-color)]"
                     style={{ borderColor: discipline.color }}>
                     <div className="flex items-center justify-between px-2.5 py-1.5">
-                      <span className="text-xs font-mono font-bold" style={{ color: discipline.color }}>
-                        {discipline.acronym}
-                      </span>
+                      <DisciplineLabel acronym={discipline.acronym} color={discipline.color} className="font-bold" />
                       {stackName && (
                         <Badge variant="outline" className="text-[10px] h-4 px-1">
                           {stackName}
@@ -143,19 +143,12 @@ export function DisciplinesPage() {
                     </div>
 
                     <div className="px-2.5 pb-1">
-                      {imageUrl ? (
-                        <div className="rounded overflow-hidden">
-                          <img
-                            src={imageUrl}
-                            alt=""
-                            className="w-full h-[180px] object-cover"
-                            style={{
-                              objectPosition: discipline.crops?.card
-                                ? `${(discipline.crops.card.x + discipline.crops.card.w / 2) * 100}% ${(discipline.crops.card.y + discipline.crops.card.h / 2) * 100}%`
-                                : '50% 15%'
-                            }}
-                          />
-                        </div>
+                      {imageUrl && discipline.crops?.card ? (
+                        <CroppedImage
+                          src={imageUrl}
+                          crop={discipline.crops.card}
+                          className="rounded w-full h-[180px]"
+                        />
                       ) : (
                         <div
                           className="w-full h-[180px] rounded flex items-center justify-center"

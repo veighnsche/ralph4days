@@ -186,8 +186,6 @@ async fn main() {
         disc_prompt.negative.trim(),
     );
 
-    let prompt_txt = format!("positive:\n{positive}\n\nnegative:\n{negative}");
-
     let prompts = DisciplinePrompts { positive, negative };
 
     eprintln!(
@@ -266,9 +264,6 @@ async fn main() {
                 args.discipline, discipline.name, steps, width, height
             );
             std::fs::write(&output_path, &image_bytes).expect("Failed to write output file");
-
-            let txt_path = output_path.replace(".png", ".txt");
-            std::fs::write(&txt_path, &prompt_txt).expect("Failed to write prompt file");
 
             eprintln!("Saved: {output_path} ({} bytes)", image_bytes.len());
         }

@@ -122,6 +122,10 @@ fn seed_disciplines_for_stack(
         });
 
         let crops_json = d.crops.as_ref().and_then(|c| serde_json::to_string(c).ok());
+        let image_prompt_json = d
+            .image_prompt
+            .as_ref()
+            .and_then(|p| serde_json::to_string(p).ok());
 
         db.create_discipline(sqlite_db::DisciplineInput {
             name: d.name.clone(),
@@ -129,12 +133,14 @@ fn seed_disciplines_for_stack(
             acronym: d.acronym.clone(),
             icon: d.icon.clone(),
             color: d.color.clone(),
+            description: d.description.clone(),
             system_prompt: Some(d.system_prompt.clone()),
             skills: skills_json,
             conventions: Some(d.conventions.clone()),
             mcp_servers: "[]".to_owned(),
             image_path,
             crops: crops_json,
+            image_prompt: image_prompt_json,
         })?;
     }
     Ok(())

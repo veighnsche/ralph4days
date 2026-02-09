@@ -1,3 +1,4 @@
+import { DisciplineLabel } from '@/components/prd/DisciplineLabel'
 import { Badge } from '@/components/ui/badge'
 import { resolveIcon } from '@/lib/iconRegistry'
 import type { CropBoxData, Task } from '@/types/generated'
@@ -90,16 +91,7 @@ export function TaskIdDisplay({ task, variant = 'default', className = '', image
           <Badge variant="outline" className="font-mono text-xs mb-0.5">
             {task.featureAcronym}
           </Badge>
-          <Badge
-            variant="outline"
-            className="font-mono text-xs mb-0.5"
-            style={{
-              borderColor: task.disciplineColor,
-              backgroundColor: bgColor,
-              color: task.disciplineColor
-            }}>
-            {task.disciplineAcronym}
-          </Badge>
+          <DisciplineLabel acronym={task.disciplineAcronym} color={task.disciplineColor} className="mb-0.5" />
           <Badge variant="outline" className="font-mono text-xs mb-0.5">
             {formattedId}
           </Badge>
@@ -120,9 +112,7 @@ export function TaskIdDisplay({ task, variant = 'default', className = '', image
 
       <div className="flex flex-col items-start leading-tight font-mono">
         <span className="text-xs text-muted-foreground">{task.featureAcronym}</span>
-        <span className="text-xs font-medium" style={{ color: task.disciplineColor }}>
-          {task.disciplineAcronym}
-        </span>
+        <DisciplineLabel acronym={task.disciplineAcronym} color={task.disciplineColor} />
         <span className="text-xs text-muted-foreground">{formattedId}</span>
       </div>
     </div>
