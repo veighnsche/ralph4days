@@ -32,7 +32,7 @@ function PlaylistItemActions({
   priorityConfig: (typeof PRIORITY_CONFIG)[keyof typeof PRIORITY_CONFIG] | null
 }) {
   return (
-    <ItemActions className="flex-col items-end gap-2 relative z-10">
+    <ItemActions className="flex-col items-end justify-end gap-2 relative z-10">
       <div className="flex items-center gap-2">
         {task.comments && task.comments.length > 0 && (
           <Tooltip>
@@ -91,6 +91,14 @@ function PlaylistItemActions({
               </Tooltip>
             )
           })()}
+      </div>
+
+      <div className="flex flex-wrap gap-1 justify-end">
+        {task.tags?.map(tag => (
+          <Badge key={tag} variant="outline" className="text-xs px-2.5 py-0.5 h-5 min-w-[3rem]">
+            {tag}
+          </Badge>
+        ))}
 
         {priorityConfig && (
           <Tooltip>
@@ -110,16 +118,6 @@ function PlaylistItemActions({
           </Tooltip>
         )}
       </div>
-
-      {task.tags && task.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 justify-end">
-          {task.tags.map(tag => (
-            <Badge key={tag} variant="outline" className="text-xs px-2.5 py-0.5 h-5 min-w-[3rem]">
-              {tag}
-            </Badge>
-          ))}
-        </div>
-      )}
     </ItemActions>
   )
 }
@@ -151,10 +149,9 @@ export const PlaylistItem = memo(function PlaylistItem({
       onClick={onClick}>
       {priorityConfig && (
         <div
-          className="absolute top-0 right-0 w-32 h-32 pointer-events-none"
+          className="absolute bottom-0 right-0 w-32 h-32 pointer-events-none"
           style={{
-            background: `radial-gradient(circle at top right, ${priorityConfig.bgColor} 0%, transparent 70%)`,
-            opacity: 1.0
+            background: `radial-gradient(circle at bottom right, ${priorityConfig.bgColor} 0%, transparent 70%)`
           }}
         />
       )}
