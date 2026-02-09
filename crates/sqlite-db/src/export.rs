@@ -194,7 +194,7 @@ impl SqliteDb {
                 if !t.comments.is_empty() {
                     output.push_str("  comments:\n");
                     for c in &t.comments {
-                        output.push_str(&format!("  - author: \"{}\"\n", c.author.as_str()));
+                        output.push_str(&format!("  - author: \"{}\"\n", yaml_escape(&c.author)));
                         if let Some(atid) = c.agent_task_id {
                             output.push_str(&format!("    agent_task_id: {atid}\n"));
                         }

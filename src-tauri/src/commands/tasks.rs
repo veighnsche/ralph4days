@@ -1,5 +1,5 @@
 use super::state::{get_db, AppState};
-use ralph_errors::{codes, ralph_err};
+use ralph_errors::codes;
 use serde::Deserialize;
 use tauri::State;
 
@@ -109,12 +109,7 @@ pub fn add_task_comment(
     body: String,
 ) -> Result<(), String> {
     let db = get_db(&state)?;
-    let comment_author = match author.as_str() {
-        "human" => sqlite_db::CommentAuthor::Human,
-        "agent" => sqlite_db::CommentAuthor::Agent,
-        _ => return ralph_err!(codes::COMMENT_OPS, "Invalid author: {author}"),
-    };
-    db.add_comment(task_id, comment_author, agent_task_id, body)
+    db.add_comment(task_id, author, agent_task_id, body)
 }
 
 #[tauri::command]

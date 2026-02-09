@@ -312,6 +312,10 @@ mod tests {
                 env,
             }],
             stack_id: None,
+            image_path: None,
+            crops: None,
+            description: None,
+            image_prompt: None,
         }];
 
         let (_scripts, config) = generate(&ctx, &[McpTool::SetTaskStatus]);

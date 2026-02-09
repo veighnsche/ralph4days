@@ -1,6 +1,5 @@
 use sqlite_db::{
-    CommentAuthor, FeatureInput, FeatureLearning, FixedClock, Priority, SqliteDb, TaskInput,
-    TaskStatus,
+    FeatureInput, FeatureLearning, FixedClock, Priority, SqliteDb, TaskInput, TaskStatus,
 };
 
 fn create_test_db() -> SqliteDb {
@@ -965,12 +964,12 @@ fn test_add_human_comment() {
         })
         .unwrap();
 
-    db.add_comment(task_id, CommentAuthor::Human, None, "Use bcrypt".into())
+    db.add_comment(task_id, "human".to_owned(), None, "Use bcrypt".into())
         .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
     assert_eq!(task.comments.len(), 1);
-    assert_eq!(task.comments[0].author, CommentAuthor::Human);
+    assert_eq!(task.comments[0].author, "human".to_owned());
     assert_eq!(task.comments[0].body, "Use bcrypt");
     assert!(task.comments[0].agent_task_id.is_none());
     assert_eq!(
@@ -994,14 +993,14 @@ fn test_add_agent_comment() {
 
     db.add_comment(
         task_id,
-        CommentAuthor::Agent,
+        "agent".to_owned(),
         Some(5),
         "Failed: missing .env".into(),
     )
     .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
-    assert_eq!(task.comments[0].author, CommentAuthor::Agent);
+    assert_eq!(task.comments[0].author, "agent".to_owned());
     assert_eq!(task.comments[0].agent_task_id, Some(5));
 }
 
@@ -1018,13 +1017,13 @@ fn test_add_comment_empty_body_rejected() {
         })
         .unwrap();
 
-    let result = db.add_comment(task_id, CommentAuthor::Human, None, "   ".into());
+    let result = db.add_comment(task_id, "human".to_owned(), None, "   ".into());
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("cannot be empty"));
 }
 
 #[test]
-fn test_add_comment_agent_missing_task_id_rejected() {
+fn test_add_comment_empty_author_rejected() {
     let db = create_test_db();
     db.create_feature(feature("test", "Test", "TEST")).unwrap();
     let task_id = db
@@ -1036,13 +1035,13 @@ fn test_add_comment_agent_missing_task_id_rejected() {
         })
         .unwrap();
 
-    let result = db.add_comment(task_id, CommentAuthor::Agent, None, "Note".into());
+    let result = db.add_comment(task_id, "   ".to_owned(), None, "Note".into());
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("agent_task_id is required"));
+    assert!(result.unwrap_err().contains("author cannot be empty"));
 }
 
 #[test]
-fn test_add_comment_human_with_task_id_rejected() {
+fn test_add_comment_discipline_author() {
     let db = create_test_db();
     db.create_feature(feature("test", "Test", "TEST")).unwrap();
     let task_id = db
@@ -1054,15 +1053,22 @@ fn test_add_comment_human_with_task_id_rejected() {
         })
         .unwrap();
 
-    let result = db.add_comment(task_id, CommentAuthor::Human, Some(1), "Note".into());
-    assert!(result.is_err());
-    assert!(result.unwrap_err().contains("must not be set"));
+    db.add_comment(
+        task_id,
+        "backend".to_owned(),
+        Some(1),
+        "Note from backend".into(),
+    )
+    .unwrap();
+
+    let task = db.get_task_by_id(task_id).unwrap();
+    assert_eq!(task.comments[0].author, "backend");
 }
 
 #[test]
 fn test_add_comment_nonexistent_task() {
     let db = create_test_db();
-    let result = db.add_comment(999, CommentAuthor::Human, None, "Hello".into());
+    let result = db.add_comment(999, "human".to_owned(), None, "Hello".into());
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("does not exist"));
 }
@@ -1080,7 +1086,7 @@ fn test_update_comment_by_id() {
         })
         .unwrap();
 
-    db.add_comment(task_id, CommentAuthor::Human, None, "Original".into())
+    db.add_comment(task_id, "human".to_owned(), None, "Original".into())
         .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
@@ -1091,7 +1097,7 @@ fn test_update_comment_by_id() {
 
     let task = db.get_task_by_id(task_id).unwrap();
     assert_eq!(task.comments[0].body, "Edited");
-    assert_eq!(task.comments[0].author, CommentAuthor::Human); // Preserved
+    assert_eq!(task.comments[0].author, "human".to_owned()); // Preserved
 }
 
 #[test]
@@ -1107,11 +1113,11 @@ fn test_delete_comment_by_id() {
         })
         .unwrap();
 
-    db.add_comment(task_id, CommentAuthor::Human, None, "First".into())
+    db.add_comment(task_id, "human".to_owned(), None, "First".into())
         .unwrap();
-    db.add_comment(task_id, CommentAuthor::Human, None, "Second".into())
+    db.add_comment(task_id, "human".to_owned(), None, "Second".into())
         .unwrap();
-    db.add_comment(task_id, CommentAuthor::Human, None, "Third".into())
+    db.add_comment(task_id, "human".to_owned(), None, "Third".into())
         .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
@@ -1139,7 +1145,7 @@ fn test_update_task_preserves_comments() {
         })
         .unwrap();
 
-    db.add_comment(task_id, CommentAuthor::Human, None, "Keep me".into())
+    db.add_comment(task_id, "human".to_owned(), None, "Keep me".into())
         .unwrap();
 
     db.update_task(
@@ -1199,7 +1205,7 @@ fn test_enriched_tasks_comments_visible() {
         ..Default::default()
     })
     .unwrap();
-    db.add_comment(1, CommentAuthor::Human, None, "Visible in enriched".into())
+    db.add_comment(1, "human".to_owned(), None, "Visible in enriched".into())
         .unwrap();
 
     let enriched = db.get_tasks();
@@ -1412,7 +1418,7 @@ fn test_export_yaml_escapes_special_chars() {
         .unwrap();
     db.add_comment(
         task_id,
-        CommentAuthor::Human,
+        "human".to_owned(),
         None,
         "Comment with \"quotes\" and\nnewlines".into(),
     )

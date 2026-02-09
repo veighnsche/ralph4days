@@ -1,4 +1,4 @@
-use crate::types::*;
+use crate::types::TaskComment;
 use crate::SqliteDb;
 use ralph_errors::{codes, ralph_err, RalphResultExt};
 use std::collections::HashMap;
@@ -7,24 +7,15 @@ impl SqliteDb {
     pub fn add_comment(
         &self,
         task_id: u32,
-        author: CommentAuthor,
+        author: String,
         agent_task_id: Option<u32>,
         body: String,
     ) -> Result<(), String> {
+        if author.trim().is_empty() {
+            return ralph_err!(codes::COMMENT_OPS, "Comment author cannot be empty");
+        }
         if body.trim().is_empty() {
             return ralph_err!(codes::COMMENT_OPS, "Comment body cannot be empty");
-        }
-        if author == CommentAuthor::Agent && agent_task_id.is_none() {
-            return ralph_err!(
-                codes::COMMENT_OPS,
-                "agent_task_id is required for agent comments"
-            );
-        }
-        if author == CommentAuthor::Human && agent_task_id.is_some() {
-            return ralph_err!(
-                codes::COMMENT_OPS,
-                "agent_task_id must not be set for human comments"
-            );
         }
 
         let exists: bool = self
@@ -45,7 +36,7 @@ impl SqliteDb {
             .execute(
                 "INSERT INTO task_comments (task_id, author, agent_task_id, body, created) \
                  VALUES (?1, ?2, ?3, ?4, ?5)",
-                rusqlite::params![task_id, author.as_str(), agent_task_id, body, now],
+                rusqlite::params![task_id, author, agent_task_id, body, now],
             )
             .ralph_err(codes::DB_WRITE, "Failed to insert comment")?;
 
@@ -132,10 +123,9 @@ impl SqliteDb {
         };
 
         stmt.query_map([task_id], |row| {
-            let author_str: String = row.get(1)?;
             Ok(TaskComment {
                 id: row.get(0)?,
-                author: CommentAuthor::parse(&author_str).unwrap_or(CommentAuthor::Human),
+                author: row.get(1)?,
                 agent_task_id: row.get(2)?,
                 body: row.get(3)?,
                 created: row.get(4)?,
@@ -158,12 +148,11 @@ impl SqliteDb {
         let mut map: HashMap<u32, Vec<TaskComment>> = HashMap::new();
 
         let Ok(rows) = stmt.query_map([], |row| {
-            let author_str: String = row.get(2)?;
             Ok((
                 row.get::<_, u32>(1)?,
                 TaskComment {
                     id: row.get(0)?,
-                    author: CommentAuthor::parse(&author_str).unwrap_or(CommentAuthor::Human),
+                    author: row.get(2)?,
                     agent_task_id: row.get(3)?,
                     body: row.get(4)?,
                     created: row.get(5)?,

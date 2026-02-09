@@ -109,35 +109,10 @@ impl TaskProvenance {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-pub enum CommentAuthor {
-    Human,
-    Agent,
-}
-
-impl CommentAuthor {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Human => "human",
-            Self::Agent => "agent",
-        }
-    }
-
-    pub fn parse(s: &str) -> Option<Self> {
-        match s {
-            "human" => Some(Self::Human),
-            "agent" => Some(Self::Agent),
-            _ => None,
-        }
-    }
-}
-
-#[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TaskComment {
     pub id: u32,
-    pub author: CommentAuthor,
+    pub author: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub agent_task_id: Option<u32>,
     pub body: String,
