@@ -34,20 +34,6 @@ function PlaylistItemActions({
   return (
     <ItemActions className="flex-col items-end justify-end self-stretch gap-2 relative z-10">
       <div className="flex items-center gap-2">
-        {task.comments && task.comments.length > 0 && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5 cursor-help gap-0.5">
-                <MessageSquare className="h-3 w-3" />
-                {task.comments.length}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              {task.comments.length} {task.comments.length === 1 ? 'Comment' : 'Comments'}
-            </TooltipContent>
-          </Tooltip>
-        )}
-
         {task.acceptanceCriteria && task.acceptanceCriteria.length > 0 && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -154,6 +140,13 @@ export const PlaylistItem = memo(function PlaylistItem({
             background: `radial-gradient(circle at bottom right, ${priorityConfig.bgColor} 0%, transparent 70%)`
           }}
         />
+      )}
+
+      {task.comments && task.comments.length > 0 && (
+        <div className="absolute top-2 right-3 flex items-center gap-1 text-muted-foreground z-10">
+          <MessageSquare className="h-3 w-3" />
+          <span className="text-xs">{task.comments.length}</span>
+        </div>
       )}
 
       {hasHeadshot && (
