@@ -34,6 +34,6 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    Entirely violet monochromatic image, violet color wash over everything, violet tinted lighting, a tall thin woman with a large violet vernier caliper with jaws slightly open replacing her head where it should be, caliper for a head, wearing a lavender violet pencil skirt suit with violet buttons, standing perfectly still dead center with her caliper head held upright as the focal point, violet background, inside a violet-tinted lavender laundromat with rows of violet washing machines on each side, violet detergent bottles lined up on a shelf, and violet walls surrounding her.
+    Entirely violet monochromatic image, everything is violet, violet walls, violet floor, violet ceiling, violet fixtures, violet lighting casting violet shadows, violet color grading, the entire scene bathed in violet light, a tall thin woman with a large violet vernier caliper with jaws slightly open replacing her head where it should be, caliper for a head, wearing a violet pencil skirt suit with violet buttons, standing perfectly still dead center with her caliper head held upright as the focal point, inside a laundromat completely violet-tinted with rows of violet washing machines on each side, violet detergent bottles lined up on a violet shelf, violet walls, violet floor tiles, monochromatic violet scene.
   negative: |
-    human face, normal head, messy, dirty laundry, working, moving, dark
+    human face, normal head, messy, dirty laundry, working, moving, dark, tan walls, beige walls, white walls, brown, orange, warm colors, multi-colored, blue, green

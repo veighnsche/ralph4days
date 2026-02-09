@@ -35,6 +35,6 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    Entirely cyan monochromatic image, cyan color wash over everything, cyan tinted lighting, a young skinny man with a small cyan toy rocket pointing upward replacing his head, rocket for a head as the main feature, wearing cyan overalls and a cyan t-shirt, standing perfectly still dead center, the rocket head held upright as the focal point, cyan background, inside a cyan-tinted bakery with cyan display cases on each side filled with cyan-frosted pastries, a cyan tiled floor, cyan pendant lamps hanging from the ceiling, a cyan cash register on the counter.
+    Entirely cyan monochromatic image, monochrome cyan, single color cyan, everything is cyan blue, cyan blue walls, cyan blue floor, cyan blue tiles, cyan blue ceiling, cyan blue counters, cyan blue fixtures, bright cyan lighting casting cyan shadows, heavy cyan color grading, the entire scene drenched in cyan blue light, everything tinted cyan, a young skinny man with a small cyan toy rocket pointing upward replacing his head, rocket for a head as the main feature, wearing cyan overalls and cyan t-shirt, standing perfectly still dead center, the rocket head held upright as the focal point, inside a bakery interior completely cyan with cyan display cases on each side filled with cyan-frosted pastries, cyan tiled floor, cyan pendant lamps hanging from cyan ceiling, cyan cash register on cyan counter, uniform cyan color throughout.
   negative: |
-    human face, normal head, flying, launching, fire, smoke, dark
+    human face, normal head, flying, launching, fire, smoke, tan, beige, cream, ivory, white, brown, orange, yellow, green, multi-colored, natural wood, neutral colors

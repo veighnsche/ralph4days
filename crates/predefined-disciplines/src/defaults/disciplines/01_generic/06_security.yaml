@@ -35,6 +35,6 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    Entirely red monochromatic image, red color wash over everything, red tinted lighting, a broad heavyset woman with a large red brass padlock for a head with the shackle arching upward where her human head should be, padlock for a head as the dominant feature, wearing a red blazer and red pants, standing perfectly still dead center, the padlock head held upright as the focal point, red background, inside a red-tinted flower shop with red flower buckets on each side filled with red roses, a red tiled floor, red wallpaper, red ribbon spools on the counter.
+    Entirely red monochromatic image, everything is red, red walls, red floor, red ceiling, red fixtures, red lighting casting red shadows, red color grading, the entire scene bathed in red light, a broad heavyset woman with a large red brass padlock for a head with the shackle arching upward where her human head should be, padlock for a head as the dominant feature, wearing a red blazer and red pants, standing perfectly still dead center, the padlock head held upright as the focal point, inside a flower shop completely red-tinted with red flower buckets on each side filled with red roses, red tiled floor, red wallpaper, red ribbon spools on red counter, monochromatic red scene.
   negative: |
-    human face, normal head, locking, unlocking, keys, dark, threatening
+    human face, normal head, locking, unlocking, keys, threatening, tan walls, beige walls, white walls, brown, orange, blue, green, multi-colored

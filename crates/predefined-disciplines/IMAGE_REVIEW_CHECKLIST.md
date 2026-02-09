@@ -12,6 +12,30 @@ This section describes how an agent should use this checklist to generate all im
 
 Process one stack at a time. Within each stack, process one discipline at a time. For each discipline, generate the image, review it against the checklist, and if it fails any check, fix the prompt and regenerate. Only move to the next discipline once the current one passes all checks.
 
+### CRITICAL LESSONS LEARNED
+
+1. **NEVER use `--test` for review** - It only does 1 step and produces blurry abstract results. Always use `--dev` (14 steps for Generic stack) for iteration.
+
+2. **Commands are in justfile** - Use `just gen-image <STACK> <DISCIPLINE> [--dev|--prod]`
+   - Stack numbers: 01 (Generic), 02 (Desktop), 03 (SaaS), 04 (Mobile)
+   - Discipline numbers: 00-07
+   - Example: `just gen-image 01 00 --dev`
+
+3. **Compositor script location** - `crates/predefined-disciplines/compose_stack.py <STACK>`
+   - Run AFTER all 8 prod images are accepted
+   - Creates composite image showing all 8 disciplines side-by-side
+
+4. **G12/G13 are the hardest checks** - "Color DOMINATES" and "Monochromatic read" require the discipline color to completely drench the image. If you see ANY other colors (tan, beige, white walls), it FAILS. Add color mentions to EVERY element: "blue walls, blue floor, blue ceiling, blue fixtures, blue lighting, blue shadows"
+
+5. **Negative prompts matter** - Add unwanted colors to negatives: "tan walls, beige walls, white walls, brown, orange, warm colors, multi-colored"
+
+6. **Workflow is: dev → iterate → prod → iterate → composite**
+   - First pass: Generate all 8 at --dev quality, iterate until each passes
+   - Second pass: Regenerate all 8 at --prod quality (28 steps, higher res)
+   - Prod images may differ from dev, so review prod images too
+   - If prod fails, iterate at prod quality
+   - Final: Run compositor on the 8 accepted prod images
+
 ### Step 1: Pick a Stack
 
 Process stacks in order: 01 Generic, 02 Desktop, 03 SaaS, 04 Mobile.
@@ -20,7 +44,7 @@ Process stacks in order: 01 Generic, 02 Desktop, 03 SaaS, 04 Mobile.
 
 Run: `just gen-image <STACK> <DISCIPLINE> --dev`
 
-Use `--dev` for iteration. Only use `--prod` for the final accepted version.
+**CRITICAL:** Always use `--dev` for iteration (14 steps for Generic). NEVER use `--test` (1 step produces unusable blurry abstract images). Only use `--prod` after ALL 8 disciplines pass at dev quality.
 
 ### Step 3: Review the Image
 
@@ -90,11 +114,14 @@ Do a final review of the prod images. Prod uses more steps and higher resolution
 
 After all 8 prod images are accepted, run the compositor:
 
-```
-python crates/predefined-disciplines/compose_stack.py <STACK>
+```bash
+python crates/predefined-disciplines/compose_stack.py 01  # For Stack 01 Generic
+python crates/predefined-disciplines/compose_stack.py 02  # For Stack 02 Desktop
+python crates/predefined-disciplines/compose_stack.py 03  # For Stack 03 SaaS
+python crates/predefined-disciplines/compose_stack.py 04  # For Stack 04 Mobile
 ```
 
-Review the composite image and debug overlay. If alignment is off, the issue is in the individual images (framing), not the compositor.
+This creates a side-by-side composite showing all 8 disciplines in the stack. Review the composite image and debug overlay. If alignment is off, the issue is in the individual images (framing), not the compositor.
 
 ### Step 10: Repeat for Next Stack
 
