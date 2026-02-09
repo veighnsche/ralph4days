@@ -32,7 +32,7 @@ function PlaylistItemActions({
   priorityConfig: (typeof PRIORITY_CONFIG)[keyof typeof PRIORITY_CONFIG] | null
 }) {
   return (
-    <ItemActions className="flex-col items-end justify-end gap-2 relative z-10">
+    <ItemActions className="flex-col items-end justify-end self-stretch gap-2 relative z-10">
       <div className="flex items-center gap-2">
         {task.comments && task.comments.length > 0 && (
           <Tooltip>
