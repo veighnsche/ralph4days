@@ -36,6 +36,8 @@ Process one stack at a time. Within each stack, process one discipline at a time
    - If prod fails, iterate at prod quality
    - Final: Run compositor on the 8 accepted prod images
 
+7. **CRITICAL: Sandbox blocks ComfyUI access** - The Claude Code sandbox uses `--unshare-net` which blocks network access to ComfyUI. The sandbox MUST be disabled for image generation to work. The preflight check in `generate_discipline_image.rs` now detects sandbox mode (via `SANDBOX_RUNTIME` env var) and skips the check when sandboxed. When running outside the sandbox, it will properly validate ComfyUI availability before attempting generation. If generation fails with "Connection refused" and you see the sandbox skip message, disable the sandbox in Claude Code settings.
+
 ### Step 1: Pick a Stack
 
 Process stacks in order: 01 Generic, 02 Desktop, 03 SaaS, 04 Mobile.

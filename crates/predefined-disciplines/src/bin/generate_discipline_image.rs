@@ -200,13 +200,21 @@ async fn main() {
         })
         .comfy;
 
-    let status = ralph_external::check_comfy_available(&config).await;
-    if !status.available {
-        eprintln!(
-            "ComfyUI not available: {}",
-            status.error.unwrap_or_default()
-        );
-        std::process::exit(1);
+    let is_sandboxed = std::env::var("SANDBOX_RUNTIME").is_ok();
+
+    if !is_sandboxed {
+        let status = ralph_external::check_comfy_available(&config).await;
+        if !status.available {
+            eprintln!(
+                "ComfyUI not available: {}",
+                status.error.unwrap_or_default()
+            );
+            eprintln!("Make sure ComfyUI is running at {}", config.api_url);
+            std::process::exit(1);
+        }
+    } else {
+        eprintln!("NOTE: Running in sandbox - skipping ComfyUI preflight check");
+        eprintln!("      If generation fails, sandbox network isolation may be the cause");
     }
 
     let result = ralph_external::generate_discipline_portrait_with_progress(

@@ -35,27 +35,62 @@ pub struct GenerationProgress {
 
 pub async fn check_available(config: &ComfyConfig) -> ComfyStatus {
     let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(2))
+        .connect_timeout(Duration::from_secs(5))
+        .timeout(Duration::from_secs(10))
         .build()
         .expect("Failed to build HTTP client");
 
-    match client
-        .get(format!("{}/system_stats", config.api_url))
-        .send()
-        .await
-    {
-        Ok(resp) if resp.status().is_success() => ComfyStatus {
-            available: true,
-            error: None,
-        },
-        Ok(resp) => ComfyStatus {
-            available: false,
-            error: Some(format!("HTTP error: {}", resp.status())),
-        },
-        Err(e) => ComfyStatus {
-            available: false,
-            error: Some(format!("Cannot reach ComfyUI: {e}")),
-        },
+    let url = format!("{}/system_stats", config.api_url);
+
+    let mut last_error = None;
+
+    for attempt in 1..=2 {
+        match client.get(&url).send().await {
+            Ok(resp) => {
+                let status = resp.status();
+                if status.is_success() {
+                    return ComfyStatus {
+                        available: true,
+                        error: None,
+                    };
+                } else {
+                    return ComfyStatus {
+                        available: false,
+                        error: Some(format!(
+                            "ComfyUI responded with HTTP {}: {}",
+                            status.as_u16(),
+                            status.canonical_reason().unwrap_or("Unknown error")
+                        )),
+                    };
+                }
+            }
+            Err(e) => {
+                let error_detail = if e.is_timeout() {
+                    format!("Timeout after {}s (attempt {}/2)", if attempt == 1 { 10 } else { 10 }, attempt)
+                } else if e.is_connect() {
+                    format!("Connection failed: {} (attempt {}/2)", e, attempt)
+                } else if e.is_request() {
+                    format!("Request failed: {} (attempt {}/2)", e, attempt)
+                } else {
+                    format!("Error: {} (attempt {}/2)", e, attempt)
+                };
+
+                last_error = Some(error_detail);
+
+                if attempt < 2 {
+                    tokio::time::sleep(Duration::from_millis(500)).await;
+                }
+            }
+        }
+    }
+
+    ComfyStatus {
+        available: false,
+        error: Some(format!(
+            "Cannot reach ComfyUI at {}: {}",
+            url,
+            last_error.unwrap_or_else(|| "Unknown error".to_owned())
+        )),
     }
 }
 
@@ -413,6 +448,11 @@ mod tests {
         let status = check_available(&config).await;
         assert!(!status.available);
         assert!(status.error.is_some());
+        let error_msg = status.error.unwrap();
+        assert!(
+            error_msg.contains("Cannot reach ComfyUI"),
+            "Expected 'Cannot reach ComfyUI' in error, got: {error_msg}"
+        );
     }
 
     #[test]
