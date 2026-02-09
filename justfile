@@ -35,7 +35,7 @@ dev-mock FIXTURE:
     if [ -d "mock/{{FIXTURE}}" ]; then
         PROJECT_DIR="mock/{{FIXTURE}}"
     else
-        # Try prefix match (e.g., "01" matches "01-initialized-project")
+        # Try prefix match (e.g., "01" matches "01-desktop-blank")
         MATCHES=(mock/{{FIXTURE}}*/)
         if [ ${#MATCHES[@]} -eq 1 ] && [ -d "${MATCHES[0]}" ]; then
             PROJECT_DIR="${MATCHES[0]}"

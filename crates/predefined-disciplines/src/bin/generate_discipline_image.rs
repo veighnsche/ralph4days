@@ -53,14 +53,20 @@ fn parse_args() -> Args {
                 ratio_h = 9.0;
             }
             "--ratio" => {
-                ratio_w = raw.get(i + 1).and_then(|s| s.parse().ok()).unwrap_or_else(|| {
-                    eprintln!("--ratio requires two numbers: --ratio W H");
-                    std::process::exit(1);
-                });
-                ratio_h = raw.get(i + 2).and_then(|s| s.parse().ok()).unwrap_or_else(|| {
-                    eprintln!("--ratio requires two numbers: --ratio W H");
-                    std::process::exit(1);
-                });
+                ratio_w = raw
+                    .get(i + 1)
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or_else(|| {
+                        eprintln!("--ratio requires two numbers: --ratio W H");
+                        std::process::exit(1);
+                    });
+                ratio_h = raw
+                    .get(i + 2)
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or_else(|| {
+                        eprintln!("--ratio requires two numbers: --ratio W H");
+                        std::process::exit(1);
+                    });
                 i += 2;
             }
             other => positional.push(other.to_owned()),
@@ -182,10 +188,7 @@ async fn main() {
 
     let prompt_txt = format!("positive:\n{positive}\n\nnegative:\n{negative}");
 
-    let prompts = DisciplinePrompts {
-        positive,
-        negative,
-    };
+    let prompts = DisciplinePrompts { positive, negative };
 
     eprintln!(
         "Generating portrait for: {:02}_{} (stack {:02})",

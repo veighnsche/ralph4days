@@ -19,7 +19,9 @@ interface ProjectSelectorProps {
 const STACK_OPTIONS = [
   { value: 0, label: 'Empty', description: 'No disciplines (complete freedom)' },
   { value: 1, label: 'Generic', description: '8 mode-based disciplines (language-agnostic)' },
-  { value: 2, label: 'Tauri + React', description: '8 tech-specific disciplines (desktop apps)' }
+  { value: 2, label: 'Tauri + React', description: '8 tech-specific disciplines (desktop apps)' },
+  { value: 3, label: 'Next.js SaaS', description: '8 full-stack SaaS disciplines (Next.js + Prisma)' },
+  { value: 4, label: 'Flutter Mobile', description: '8 mobile disciplines (Flutter + Firebase)' }
 ] as const
 
 export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {

@@ -92,7 +92,11 @@ pub fn validate_project_path(path: String) -> Result<(), String> {
     Ok(())
 }
 
-fn seed_disciplines_for_stack(db: &SqliteDb, stack: u8) -> Result<(), String> {
+fn seed_disciplines_for_stack(
+    db: &SqliteDb,
+    stack: u8,
+    ralph_dir: Option<&std::path::Path>,
+) -> Result<(), String> {
     let defs = predefined_disciplines::get_disciplines_for_stack(stack);
     if defs.is_empty() && stack != 0 {
         return ralph_err!(
@@ -100,18 +104,37 @@ fn seed_disciplines_for_stack(db: &SqliteDb, stack: u8) -> Result<(), String> {
             "No disciplines defined for stack {stack}"
         );
     }
-    for d in defs {
+
+    if let Some(ralph_dir) = ralph_dir {
+        let images_dir = ralph_dir.join("images").join("disciplines");
+        let _ = std::fs::create_dir_all(&images_dir);
+    }
+
+    for d in &defs {
         let skills_json = serde_json::to_string(&d.skills).unwrap_or_else(|_| "[]".to_owned());
+
+        let image_path = ralph_dir.and_then(|ralph_dir| {
+            predefined_disciplines::get_discipline_image(stack, &d.name).and_then(|bytes| {
+                let rel = format!("images/disciplines/{}.png", d.name);
+                let abs = ralph_dir.join(&rel);
+                std::fs::write(&abs, bytes).is_ok().then_some(rel)
+            })
+        });
+
+        let crops_json = d.crops.as_ref().and_then(|c| serde_json::to_string(c).ok());
+
         db.create_discipline(sqlite_db::DisciplineInput {
-            name: d.name,
-            display_name: d.display_name,
-            acronym: d.acronym,
-            icon: d.icon,
-            color: d.color,
-            system_prompt: Some(d.system_prompt),
+            name: d.name.clone(),
+            display_name: d.display_name.clone(),
+            acronym: d.acronym.clone(),
+            icon: d.icon.clone(),
+            color: d.color.clone(),
+            system_prompt: Some(d.system_prompt.clone()),
             skills: skills_json,
-            conventions: Some(d.conventions),
+            conventions: Some(d.conventions.clone()),
             mcp_servers: "[]".to_owned(),
+            image_path,
+            crops: crops_json,
         })?;
     }
     Ok(())
@@ -156,7 +179,7 @@ pub fn initialize_ralph_project(
 
     let db_path = db_dir.join("ralph.db");
     let db = SqliteDb::open(&db_path)?;
-    seed_disciplines_for_stack(&db, stack)?;
+    seed_disciplines_for_stack(&db, stack, Some(&ralph_dir))?;
     db.initialize_metadata(
         project_title.clone(),
         Some("Add project description here".to_owned()),

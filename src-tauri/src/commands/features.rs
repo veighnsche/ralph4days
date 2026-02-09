@@ -1,4 +1,4 @@
-use super::state::{get_db, AppState};
+use super::state::{get_db, get_locked_project_path, AppState};
 use ralph_errors::{codes, ralph_err, RalphResultExt};
 use ralph_macros::ipc_type;
 use serde::Deserialize;
@@ -15,6 +15,24 @@ pub struct McpServerConfigData {
 }
 
 #[ipc_type]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CropBoxData {
+    pub x: f32,
+    pub y: f32,
+    pub w: f32,
+    pub h: f32,
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DisciplineCropsData {
+    pub face: CropBoxData,
+    pub card: CropBoxData,
+}
+
+#[ipc_type]
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DisciplineConfig {
@@ -28,6 +46,8 @@ pub struct DisciplineConfig {
     pub conventions: Option<String>,
     pub mcp_servers: Vec<McpServerConfigData>,
     pub stack_id: Option<u8>,
+    pub image_path: Option<String>,
+    pub crops: Option<DisciplineCropsData>,
 }
 
 #[tauri::command]
@@ -56,6 +76,11 @@ pub fn get_disciplines_config(state: State<'_, AppState>) -> Result<Vec<Discipli
                 })
                 .collect(),
             stack_id: d.stack_id,
+            image_path: d.image_path.clone(),
+            crops: d
+                .crops
+                .as_deref()
+                .and_then(|s| serde_json::from_str::<DisciplineCropsData>(s).ok()),
         })
         .collect())
 }
@@ -259,6 +284,8 @@ pub fn create_discipline(
         skills: skills_json,
         conventions: params.conventions,
         mcp_servers: mcp_json,
+        image_path: None,
+        crops: None,
     })
 }
 
@@ -310,6 +337,8 @@ pub fn update_discipline(
         skills: skills_json,
         conventions: params.conventions,
         mcp_servers: mcp_json,
+        image_path: None,
+        crops: None,
     })
 }
 
@@ -413,4 +442,31 @@ pub fn get_stack_metadata() -> Vec<StackMetadataData> {
             characteristics: m.characteristics.clone(),
         })
         .collect()
+}
+
+#[tauri::command]
+pub fn get_discipline_image_data(
+    state: State<'_, AppState>,
+    name: String,
+) -> Result<Option<String>, String> {
+    use base64::Engine;
+
+    let db = get_db(&state)?;
+    let disciplines = db.get_disciplines();
+    let disc = disciplines.iter().find(|d| d.name == name);
+
+    let Some(disc) = disc else {
+        return Ok(None);
+    };
+    let Some(ref image_path) = disc.image_path else {
+        return Ok(None);
+    };
+
+    let project_path = get_locked_project_path(&state)?;
+    let abs_path = project_path.join(".ralph").join(image_path);
+
+    std::fs::read(&abs_path).map_or(Ok(None), |bytes| {
+        let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+        Ok(Some(b64))
+    })
 }

@@ -288,10 +288,10 @@ The `fixtures/` directory contains read-only reference projects at various stage
 | Fixture | Description |
 |---------|-------------|
 | `00-empty-project` | Directory with no `.ralph/` folder |
-| `01-initialized-project` | Fresh `.ralph/db/` with defaults |
-| `02-with-feature-project` | Has features defined |
-| `03-with-tasks-project` | Has tasks with dependencies |
-| `04-dev-project` | Development-ready project |
+| `01-desktop-blank` | Fresh `.ralph/db/` with Desktop stack disciplines |
+| `02-desktop-feature` | Has features defined |
+| `03-desktop-tasks` | Has tasks with dependencies |
+| `04-desktop-dev` | Development-ready project with full task graph |
 
 Use `just reset-mock` to copy fixtures into a disposable `mock/` directory for testing. The mock copy renames `.undetect-ralph/` to `.ralph/` (fixtures use the alternate name to avoid being detected by the project scanner).
 

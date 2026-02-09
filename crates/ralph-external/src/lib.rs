@@ -1,3 +1,4 @@
+#![allow(clippy::implicit_hasher)]
 pub mod comfy;
 pub mod comfy_discipline;
 pub mod config;

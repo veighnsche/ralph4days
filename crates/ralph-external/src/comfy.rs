@@ -53,26 +53,25 @@ pub async fn check_available(config: &ComfyConfig) -> ComfyStatus {
                         available: true,
                         error: None,
                     };
-                } else {
-                    return ComfyStatus {
-                        available: false,
-                        error: Some(format!(
-                            "ComfyUI responded with HTTP {}: {}",
-                            status.as_u16(),
-                            status.canonical_reason().unwrap_or("Unknown error")
-                        )),
-                    };
                 }
+                return ComfyStatus {
+                    available: false,
+                    error: Some(format!(
+                        "ComfyUI responded with HTTP {}: {}",
+                        status.as_u16(),
+                        status.canonical_reason().unwrap_or("Unknown error")
+                    )),
+                };
             }
             Err(e) => {
                 let error_detail = if e.is_timeout() {
-                    format!("Timeout after {}s (attempt {}/2)", if attempt == 1 { 10 } else { 10 }, attempt)
+                    format!("Timeout after 10s (attempt {attempt}/2)")
                 } else if e.is_connect() {
-                    format!("Connection failed: {} (attempt {}/2)", e, attempt)
+                    format!("Connection failed: {e} (attempt {attempt}/2)")
                 } else if e.is_request() {
-                    format!("Request failed: {} (attempt {}/2)", e, attempt)
+                    format!("Request failed: {e} (attempt {attempt}/2)")
                 } else {
-                    format!("Error: {} (attempt {}/2)", e, attempt)
+                    format!("Error: {e} (attempt {attempt}/2)")
                 };
 
                 last_error = Some(error_detail);
@@ -223,7 +222,7 @@ pub(crate) async fn run_workflow(
                     "executing" => {
                         if let Some(d) = msg_data {
                             let node = d.get("node");
-                            if node.is_none() || node.map_or(false, |n| n.is_null()) {
+                            if node.is_none() || node.is_some_and(serde_json::Value::is_null) {
                                 break;
                             }
                         }
@@ -276,7 +275,8 @@ pub fn set_dimensions(workflow: &mut HashMap<String, WorkflowNode>, width: u32, 
                 node.inputs.insert("width".into(), serde_json::json!(width));
             }
             if node.inputs.contains_key("height") {
-                node.inputs.insert("height".into(), serde_json::json!(height));
+                node.inputs
+                    .insert("height".into(), serde_json::json!(height));
             }
         }
     }
