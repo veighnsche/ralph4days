@@ -32,19 +32,19 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    Entirely emerald green monochromatic image, everything is emerald green, green walls, green floor, green ceiling, green fixtures, green lighting casting green shadows, green color grading, the entire scene bathed in emerald green light, monochromatic green watercolor painting, lean female with big curly brown hair with green scrunchie and confident stance, wearing an emerald green Members Only jacket, holding a green rotary phone receiver in one hand with the green coiled cord tangling around her other arm, facing the viewer head up eyes forward, telephone exchange office completely green-tinted with walls of green patch cables and green switchboard panels, green dominant color, uniform green throughout.
+    Lean female big curly brown hair green scrunchie, emerald green Members Only jacket, plugging a green patch cable into a green switchboard panel with one hand green rotary phone tucked under chin, green telephone exchange green coiled cords green patch cables green junction boxes green light green everywhere.
 
   negative: |
-    man, male, meek, horror, creepy, sinister, menacing, looking down, face in shadow, tan, beige, cream, white, brown, multi-colored, natural wood
+    man, male, meek, tan, beige, cream, white, brown, multi-colored, natural wood
 
 crops:
   face:
-    x: 0.3125
-    y: 0.0099
-    w: 0.3383
-    h: 0.3383
+    x: 0.3948
+    y: 0.1571
+    w: 0.2411
+    h: 0.1212
   card:
-    x: 0.0877
-    y: 0.0012
+    x: 0.1114
+    y: 0.1411
     w: 0.8
     h: 0.4

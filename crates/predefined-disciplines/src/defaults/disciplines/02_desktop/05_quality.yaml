@@ -34,19 +34,19 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    Entirely gold monochromatic image, everything is gold, gold walls, gold floor, gold ceiling, gold fixtures, gold lighting casting gold shadows, gold color grading, the entire scene bathed in gold light, monochromatic gold watercolor painting, petite sharp female with short permed brown hair with gold barrettes and a confident raised eyebrow, wearing a gold blazer with padded shoulders, holding a gold clipboard in one hand and pointing a gold pencil at the viewer with the other, facing the viewer head up eyes forward, quality control inspection room completely gold-tinted with gold-framed certificates on the gold walls and gold rubber stamps on the gold desk, gold dominant color, uniform gold throughout.
+    Petite sharp female short permed brown hair gold barrettes, gold blazer padded shoulders, slamming a gold rubber stamp down hard on a gold document on gold desk, gold inspection room gold-framed certificates on gold walls gold clipboard gold pencil gold filing cabinets gold light gold everywhere.
 
   negative: |
-    man, male, casual, meek, horror, creepy, sinister, menacing, looking down, face in shadow, tan, beige, cream, white, brown, multi-colored, natural wood
+    man, male, casual, meek, tan, beige, cream, white, brown, multi-colored, natural wood
 
 crops:
   face:
-    x: 0.3772
-    y: 0.0254
-    w: 0.2918
-    h: 0.2918
+    x: 0.3952
+    y: 0.2228
+    w: 0.2266
+    h: 0.1139
   card:
-    x: 0.1193
-    y: 0.0151
+    x: 0.108
+    y: 0.2066
     w: 0.8
     h: 0.4

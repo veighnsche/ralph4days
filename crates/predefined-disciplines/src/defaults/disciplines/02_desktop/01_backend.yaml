@@ -34,19 +34,19 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    Entirely orange monochromatic image, everything is orange, orange walls, orange floor, orange ceiling, orange fixtures, orange lighting casting orange shadows, orange color grading, the entire scene bathed in orange light, monochromatic orange watercolor painting, strong Black male with a short high-top fade and confident expression, wearing an orange flannel shirt with rolled sleeves, arms crossed confidently, orange pager clipped to belt, orange safety glasses pushed up on forehead, facing the viewer head up eyes forward, server room completely orange-tinted with orange mainframe cabinets and blinking orange status lights, orange dominant color, uniform orange throughout.
+    Strong Black male short high-top fade, orange flannel shirt rolled sleeves orange pager orange safety glasses on forehead, sliding a heavy orange server blade into an orange rack with both hands, orange server room orange mainframe cabinets blinking orange status lights orange cables orange light orange everywhere.
 
   negative: |
-    white skin, slim, meek, horror, creepy, sinister, menacing, looking down, face in shadow, tan, beige, cream, white, brown, multi-colored, natural wood
+    white skin, slim, meek, tan, beige, cream, white, brown, multi-colored, natural wood
 
 crops:
   face:
-    x: 0.3245
-    y: 0.0
-    w: 0.3443
-    h: 0.3443
+    x: 0.333
+    y: 0.283
+    w: 0.2125
+    h: 0.1068
   card:
-    x: 0.1128
-    y: 0.0
+    x: 0.0781
+    y: 0.2666
     w: 0.8
     h: 0.4

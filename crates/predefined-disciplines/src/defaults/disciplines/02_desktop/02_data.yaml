@@ -34,19 +34,19 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    Entirely violet monochromatic image, everything is violet, violet walls, violet floor, violet ceiling, violet fixtures, violet lighting casting violet shadows, violet color grading, the entire scene bathed in violet light, monochromatic violet watercolor painting, Japanese male with neat black hair with silver temples and professional demeanor, wearing thin wire-rimmed violet glasses, violet dress shirt with violet tie, one hand resting on a tall stack of violet file folders, violet pen behind ear, facing the viewer head up eyes forward, university data lab completely violet-tinted with violet CRT terminal and violet dot-matrix printer, violet dominant color, uniform violet throughout.
+    Japanese male neat black hair silver temples, violet glasses violet dress shirt violet tie, standing upright holding a tall stack of violet file folders against his chest with both arms, violet data lab violet filing cabinets violet shelves of violet binders violet dot-matrix printer violet light violet everywhere.
 
   negative: |
-    casual, sloppy, horror, creepy, sinister, menacing, looking down, face in shadow, tan, beige, cream, white, brown, multi-colored, natural wood
+    casual, sloppy, tan, beige, cream, white, brown, multi-colored, natural wood
 
 crops:
   face:
-    x: 0.3942
-    y: 0.0435
-    w: 0.2551
-    h: 0.2551
+    x: 0.3668
+    y: 0.0952
+    w: 0.2845
+    h: 0.143
   card:
-    x: 0.1153
-    y: 0.032
+    x: 0.1156
+    y: 0.08
     w: 0.8
     h: 0.4

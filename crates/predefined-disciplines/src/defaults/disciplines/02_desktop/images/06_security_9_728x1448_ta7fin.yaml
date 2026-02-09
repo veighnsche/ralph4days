@@ -1,0 +1,124 @@
+source: 06_security_9_728x1448_ta7fin.png
+dimensions:
+  w: 728
+  h: 1448
+detection:
+  model: yolov8x-pose
+  confidence: 0.924
+  method: pose
+  keypoints:
+    nose:
+      x: 0.5505
+      y: 0.2288
+      conf: 0.993
+    left_eye:
+      x: 0.5765
+      y: 0.2136
+      conf: 0.952
+    right_eye:
+      x: 0.5225
+      y: 0.2122
+      conf: 0.982
+    left_ear:
+      x: 0.604
+      y: 0.2174
+      conf: 0.577
+    right_ear:
+      x: 0.4707
+      y: 0.214
+      conf: 0.927
+    left_shoulder:
+      x: 0.6714
+      y: 0.3091
+      conf: 0.996
+    right_shoulder:
+      x: 0.3724
+      y: 0.3059
+      conf: 0.998
+    left_elbow:
+      x: 0.7397
+      y: 0.4288
+      conf: 0.986
+    right_elbow:
+      x: 0.3092
+      y: 0.424
+      conf: 0.991
+    left_wrist:
+      x: 0.6464
+      y: 0.4315
+      conf: 0.985
+    right_wrist:
+      x: 0.4205
+      y: 0.4236
+      conf: 0.99
+    left_hip:
+      x: 0.6319
+      y: 0.5226
+      conf: 0.999
+    right_hip:
+      x: 0.4332
+      y: 0.5243
+      conf: 0.999
+    left_knee:
+      x: 0.6456
+      y: 0.6764
+      conf: 0.996
+    right_knee:
+      x: 0.4308
+      y: 0.6862
+      conf: 0.995
+    left_ankle:
+      x: 0.6756
+      y: 0.8369
+      conf: 0.936
+    right_ankle:
+      x: 0.4262
+      y: 0.8383
+      conf: 0.934
+pose:
+  eyeline_y: 0.2129
+  ankle_y: 0.8383
+  center_x: 0.5272
+  body_height: 0.6254
+boxes:
+  face:
+    x: 0.4382
+    y: 0.1582
+    w: 0.2133
+    h: 0.1072
+  body:
+    x: 0.2592
+    y: 0.1722
+    w: 0.5305
+    h: 0.7061
+crops:
+  face:
+    x: 0.4169
+    y: 0.1539
+    w: 0.256
+    h: 0.1287
+  card:
+    x: 0.1272
+    y: 0.1382
+    w: 0.8
+    h: 0.4
+  upperbody:
+    x: 0.2772
+    y: 0.1382
+    w: 0.5
+    h: 0.3352
+  portrait:
+    x: 0.1272
+    y: 0.0
+    w: 0.8
+    h: 0.53
+  landscape:
+    x: 0.0
+    y: 0.1129
+    w: 1.0
+    h: 0.35
+  strip:
+    x: 0.25
+    y: 0.0
+    w: 0.5
+    h: 1.0

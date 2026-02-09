@@ -33,19 +33,19 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    Entirely teal monochromatic image, everything is teal, teal walls, teal floor, teal ceiling, teal fixtures, teal lighting casting teal shadows, teal color grading, the entire scene bathed in teal light, monochromatic teal watercolor painting, lean young man with confident posture and focused determined eyes, short dirty blond hair, teal work shirt with rolled sleeves, teal tool belt with teal screwdrivers and teal wire strippers, hands resting on teal tool belt ready to work, teal dog tags around neck, facing the viewer head up eyes forward, workshop completely teal-tinted with teal wiring and a glowing teal CRT monitor on a teal workbench, teal dominant color, uniform teal throughout.
+    Lean young man short dirty blond hair, teal work shirt rolled sleeves teal tool belt teal dog tags, soldering a teal circuit board with a teal soldering iron sparks flying, teal workshop with teal wiring teal CRT monitor on teal workbench teal pegboard teal screwdrivers, teal light teal shadows teal everywhere.
 
   negative: |
-    woman, female, old, mature, smiling, happy, playful, cute, cheerful, horror, creepy, sinister, menacing, skull, zombie, dark shadows on face, harsh lighting, tan, beige, cream, white, brown, orange, yellow, multi-colored, natural wood
+    woman, female, old, mature, tan, beige, cream, white, brown, orange, yellow, multi-colored, natural wood
 
 crops:
   face:
-    x: 0.3778
-    y: 0.0136
-    w: 0.2754
-    h: 0.2754
+    x: 0.3793
+    y: 0.1053
+    w: 0.259
+    h: 0.1302
   card:
-    x: 0.119
-    y: 0.0028
+    x: 0.1036
+    y: 0.0896
     w: 0.8
     h: 0.4

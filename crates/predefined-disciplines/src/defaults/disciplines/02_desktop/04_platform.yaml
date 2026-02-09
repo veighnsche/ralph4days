@@ -33,19 +33,19 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    Entirely steel-blue monochromatic image, everything is steel-blue, blue walls, blue floor, blue ceiling, blue fixtures, blue lighting casting blue shadows, blue color grading, the entire scene bathed in steel-blue light, monochromatic blue watercolor painting, broad heavyset male with a dirty blond mullet and confident wide stance, wearing a steel-blue mechanic jumpsuit and steel-toed boots, gripping a massive blue wrench resting on his shoulder, facing the viewer head up eyes forward, auto garage completely blue-tinted with steel-blue tool pegboards and a blue computer tower on the blue workbench, blue dominant color, uniform blue throughout.
+    Broad heavyset male dirty blond mullet, steel-blue mechanic jumpsuit steel-toed boots, cranking a massive blue wrench on a blue engine block grease on hands, blue auto garage steel-blue tool pegboards blue computer tower on blue workbench blue oil cans blue light blue everywhere.
 
   negative: |
-    woman, female, slim, clean, horror, creepy, sinister, menacing, looking down, face in shadow, tan, beige, cream, white, brown, multi-colored, natural wood
+    woman, female, slim, clean, tan, beige, cream, white, brown, multi-colored, natural wood
 
 crops:
   face:
-    x: 0.3594
-    y: 0.0118
-    w: 0.2832
-    h: 0.2832
+    x: 0.3659
+    y: 0.0815
+    w: 0.2752
+    h: 0.1384
   card:
-    x: 0.112
-    y: 0.0012
+    x: 0.1053
+    y: 0.0661
     w: 0.8
     h: 0.4

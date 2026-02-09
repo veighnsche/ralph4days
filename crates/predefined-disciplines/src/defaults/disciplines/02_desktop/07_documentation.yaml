@@ -33,19 +33,19 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    Entirely cream monochromatic image, everything is cream ivory, cream walls, cream floor, cream ceiling, cream fixtures, warm cream lighting casting cream shadows, cream color grading, the entire scene bathed in warm cream ivory light, monochromatic cream watercolor painting, tall thin older male, balding with ring of gray hair and a steady scholarly expression, wearing thick cream reading glasses and a cream wool cardigan with elbow patches, holding an open cream hardcover book in one hand with other hand raised mid-explanation, facing the viewer head up eyes forward, public library completely cream-tinted with cream bookshelves and cream reading lamps on cream tables, cream dominant color, uniform cream throughout.
+    Tall thin older male balding gray hair ring, thick cream reading glasses cream cardigan elbow patches, writing with a cream fountain pen in a large open cream hardcover book on a cream lectern, cream library cream bookshelves cream reading lamps cream tables cream card catalog cream light cream everywhere.
 
   negative: |
-    young, modern, action pose, trendy, horror, creepy, sinister, menacing, looking down, face in shadow, tan, beige, white, brown, multi-colored, natural wood
+    young, modern, trendy, tan, beige, white, brown, multi-colored, natural wood
 
 crops:
   face:
-    x: 0.309
-    y: 0.0
-    w: 0.3559
-    h: 0.3559
+    x: 0.3596
+    y: 0.1217
+    w: 0.3134
+    h: 0.1576
   card:
-    x: 0.1282
-    y: 0.0
+    x: 0.1217
+    y: 0.107
     w: 0.8
     h: 0.4

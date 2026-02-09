@@ -33,19 +33,19 @@ system_prompt: |
 
 image_prompt:
   positive: |
-    Entirely crimson red monochromatic image, everything is crimson red, red walls, red floor, red ceiling, red fixtures, red lighting casting red shadows, red color grading, the entire scene bathed in crimson red light, monochromatic red watercolor painting, sharp angular male with dark slicked-back hair and five o'clock shadow, wearing a crimson red leather jacket and red aviator sunglasses, one hand gripping a red padlock on a thick red chain, facing the viewer head up eyes forward, bank vault entrance completely red-tinted with crimson steel doors and red combination dials and red security cameras, red dominant color, uniform red throughout.
+    Sharp angular male dark slicked-back hair five o'clock shadow, crimson leather jacket red aviator sunglasses, turning a large red combination dial on a red vault door with both hands, red bank vault crimson steel doors red security cameras red padlock on red chain red light red everywhere.
 
   negative: |
-    woman, female, friendly, playful, meek, horror, creepy, sinister, menacing, looking down, face in shadow, tan, beige, cream, white, brown, multi-colored, natural wood
+    woman, female, friendly, playful, meek, tan, beige, cream, white, brown, multi-colored, natural wood
 
 crops:
   face:
-    x: 0.3586
-    y: 0.0
-    w: 0.3029
-    h: 0.3029
+    x: 0.4169
+    y: 0.1539
+    w: 0.256
+    h: 0.1287
   card:
-    x: 0.1183
-    y: 0.0
+    x: 0.1272
+    y: 0.1382
     w: 0.8
     h: 0.4
