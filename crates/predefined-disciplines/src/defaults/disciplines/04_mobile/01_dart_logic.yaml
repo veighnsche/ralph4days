@@ -9,7 +9,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Elvish male, mid 40s, with close-cropped dark hair with deep sapphire blue streaks, lean angular build, sharp features, wearing a structured deep sapphire blue tunic with luminous blue runic patterns etched along the collar and cuffs over dark leather bracers, sapphire pendant at his throat, one hand pressing a glowing sapphire-tipped stylus into a polished crystal tablet carving precise luminous blue runes that pulse with inner light, dramatic deep sapphire rim lighting, cool blue ambient glow, inside a quiet elvish study carved from living sapphire-veined stone bathed in blue light with shelves of crystal tablets and glowing blue runic diagrams etched into the curved stone walls behind him.
+    Elvish male, mid 40s, with close-cropped dark hair with deep sapphire blue streaks, lean angular build, sharp features, standing upright facing the viewer, wearing a structured deep sapphire blue tunic with luminous blue runic patterns etched along the collar and cuffs over dark leather bracers, sapphire pendant at his throat, holding a glowing sapphire-tipped stylus in one hand and a polished crystal tablet in the other at his side, dramatic deep sapphire rim lighting, cool blue ambient glow, inside a quiet elvish study carved from living sapphire-veined stone bathed in blue light with shelves of crystal tablets and glowing blue runic diagrams etched into the curved stone walls behind him.
 
   negative: |
     sloppy handwriting, smudged runes, cracked tablet, uncertain strokes, messy desk, scattered tools

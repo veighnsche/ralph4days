@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Compose 8 discipline portraits into a single 1920x1080 image per stack.
 
-Source images SHOULD have consistent framing (eyes ~15%, feet ~90%) but
-we verify this by detecting actual character bounds via edge/content analysis.
-Falls back to center-crop if detection fails.
+Uses YOLO pose detection to find actual eye and ankle positions in each
+source image, then scales and crops each character so eyelines and feet
+align across the composite.
 
 Usage:
     python compose_stack.py              # all stacks
@@ -12,6 +12,7 @@ Usage:
 """
 from PIL import Image, ImageDraw
 from pathlib import Path
+from ultralytics import YOLO
 import numpy as np
 import sys
 
@@ -32,59 +33,82 @@ SLICE_W = WIDTH // SLICES
 TARGET_EYE_Y = 0.15
 TARGET_FEET_Y = 0.90
 
+MODEL = None
 
-def find_character_bounds(img_path):
-    """Find where the character starts (top) and ends (bottom) in the image.
+def get_model():
+    global MODEL
+    if MODEL is None:
+        MODEL = YOLO("yolov8n-pose.pt")
+    return MODEL
 
-    Uses edge detection on the center column strip to find the topmost and
-    bottommost content that isn't background. Returns (top_pct, bottom_pct)
-    as fractions of image height, or None if detection fails.
+
+def detect_pose(img_path):
+    """Use YOLO pose to find eye and ankle positions.
+
+    Returns (eye_y_pct, feet_y_pct, center_x_pct) or None if detection fails.
+    Keypoint indices: 0=nose, 1=left_eye, 2=right_eye, 15=left_ankle, 16=right_ankle
     """
-    img = Image.open(img_path).convert("RGB")
-    arr = np.array(img)
-    h, w, _ = arr.shape
+    model = get_model()
+    results = model(str(img_path), verbose=False)
 
-    center_strip = arr[:, w // 4 : 3 * w // 4, :]
-    row_variance = np.var(center_strip.astype(float), axis=(1, 2))
-
-    threshold = np.median(row_variance) * 0.3
-    active_rows = np.where(row_variance > threshold)[0]
-
-    if len(active_rows) < h * 0.2:
+    if not results or len(results[0].keypoints) == 0:
         return None
 
-    top_row = active_rows[0]
-    bottom_row = active_rows[-1]
+    kpts = results[0].keypoints.xy[0].cpu().numpy()
+    confs = results[0].keypoints.conf[0].cpu().numpy() if results[0].keypoints.conf is not None else None
 
-    top_pct = top_row / h
-    bottom_pct = bottom_row / h
+    img = Image.open(img_path)
+    w, h = img.size
 
-    if bottom_pct - top_pct < 0.3:
-        return None
+    left_eye = kpts[1] if confs is None or confs[1] > 0.3 else None
+    right_eye = kpts[2] if confs is None or confs[2] > 0.3 else None
+    nose = kpts[0] if confs is None or confs[0] > 0.3 else None
+    left_ankle = kpts[15] if confs is None or confs[15] > 0.3 else None
+    right_ankle = kpts[16] if confs is None or confs[16] > 0.3 else None
 
-    head_offset = (bottom_pct - top_pct) * 0.08
-    eye_pct = top_pct + head_offset
-    feet_pct = bottom_pct
+    eye_points = [p for p in [left_eye, right_eye] if p is not None and p[1] > 0]
+    if not eye_points:
+        if nose is not None and nose[1] > 0:
+            eye_y = nose[1] - (h * 0.02)
+            eye_x = nose[0]
+        else:
+            return None
+    else:
+        eye_y = np.mean([p[1] for p in eye_points])
+        eye_x = np.mean([p[0] for p in eye_points])
 
-    return eye_pct, feet_pct
+    ankle_points = [p for p in [left_ankle, right_ankle] if p is not None and p[1] > 0]
+    if ankle_points:
+        feet_y = np.max([p[1] for p in ankle_points])
+    else:
+        bbox = results[0].boxes.xyxy[0].cpu().numpy() if len(results[0].boxes) > 0 else None
+        if bbox is not None:
+            feet_y = bbox[3]
+        else:
+            return None
+
+    all_x = [p[0] for p in [left_eye, right_eye, nose] if p is not None and p[0] > 0]
+    if len(all_x) > 0:
+        center_x = np.mean(all_x)
+    else:
+        center_x = w / 2
+
+    return eye_y / h, feet_y / h, center_x / w
 
 
-def find_character_center_x(img_path):
-    """Find horizontal center of the character using column variance."""
+def fallback_detect(img_path):
+    """Variance-based fallback when YOLO can't find a person."""
     img = Image.open(img_path).convert("RGB")
     arr = np.array(img)
     h, w, _ = arr.shape
 
     mid_strip = arr[h // 4 : 3 * h // 4, :, :]
     col_variance = np.var(mid_strip.astype(float), axis=(0, 2))
-
-    threshold = np.median(col_variance) * 0.3
+    threshold = np.median(col_variance) * 0.5
     active_cols = np.where(col_variance > threshold)[0]
+    cx = (active_cols[0] + active_cols[-1]) / 2 / w if len(active_cols) > w * 0.1 else 0.5
 
-    if len(active_cols) < w * 0.1:
-        return 0.5
-
-    return (active_cols[0] + active_cols[-1]) / 2 / w
+    return 0.15, 0.90, cx
 
 
 def compose_stack(stack_num, stack_slug):
@@ -96,6 +120,8 @@ def compose_stack(stack_num, stack_slug):
     pngs = sorted(stack_dir.glob("*.png"))
     by_discipline = {}
     for p in pngs:
+        if "_composite" in p.name or "_debug" in p.name:
+            continue
         by_discipline[p.name[:2]] = p
 
     if len(by_discipline) < SLICES:
@@ -113,25 +139,27 @@ def compose_stack(stack_num, stack_slug):
         img = Image.open(img_path)
         orig_w, orig_h = img.size
 
-        bounds = find_character_bounds(img_path)
-        cx_pct = find_character_center_x(img_path)
-
-        if bounds:
-            eye_pct, feet_pct = bounds
-            body_pct = feet_pct - eye_pct
-            body_px_in_orig = body_pct * orig_h
-            scale = target_body_px / body_px_in_orig
-            method = "detect"
+        pose = detect_pose(img_path)
+        if pose:
+            eye_pct, feet_pct, cx_pct = pose
+            method = "pose"
         else:
-            eye_pct = TARGET_EYE_Y
-            scale = HEIGHT / orig_h
+            eye_pct, feet_pct, cx_pct = fallback_detect(img_path)
             method = "fallback"
+
+        body_pct = feet_pct - eye_pct
+        if body_pct < 0.1:
+            body_pct = 0.75
+            eye_pct = 0.15
+
+        body_px_orig = body_pct * orig_h
+        scale = target_body_px / body_px_orig
 
         new_w = int(orig_w * scale)
         new_h = int(orig_h * scale)
 
         if new_w < SLICE_W:
-            scale = (SLICE_W * 1.2) / orig_w
+            scale = (SLICE_W * 1.1) / orig_w
             new_w = int(orig_w * scale)
             new_h = int(orig_h * scale)
 
@@ -139,21 +167,29 @@ def compose_stack(stack_num, stack_slug):
 
         scaled_eye_y = int(eye_pct * new_h)
         top = scaled_eye_y - target_eye_px
-        top = max(0, min(top, new_h - HEIGHT))
 
         scaled_cx = int(cx_pct * new_w)
         left = scaled_cx - SLICE_W // 2
-        left = max(0, min(left, new_w - SLICE_W))
+        left = max(0, min(left, max(0, new_w - SLICE_W)))
 
-        crop = img.crop((left, top, left + SLICE_W, top + HEIGHT))
+        if top < 0:
+            top = 0
+        if top + HEIGHT > new_h:
+            top = max(0, new_h - HEIGHT)
 
-        if crop.size != (SLICE_W, HEIGHT):
+        crop_bottom = min(top + HEIGHT, new_h)
+        crop = img.crop((left, top, left + SLICE_W, crop_bottom))
+
+        if crop.size[1] < HEIGHT:
             padded = Image.new("RGB", (SLICE_W, HEIGHT))
             padded.paste(crop, (0, 0))
             crop = padded
 
         composite.paste(crop, (i * SLICE_W, 0))
-        print(f"    [{method}] {img_path.stem}: eye={eye_pct:.0%} cx={cx_pct:.0%} scale={scale:.2f}")
+
+        actual_eye_in_composite = scaled_eye_y - top
+        actual_eye_pct = actual_eye_in_composite / HEIGHT
+        print(f"    [{method}] {img_path.stem}: eye={eye_pct:.0%} feet={feet_pct:.0%} cx={cx_pct:.0%} scale={scale:.2f} eyeline@{actual_eye_pct:.0%}")
 
     out_path = OUT / f"{stack_num:02d}_{stack_slug}_composite.png"
     composite.save(out_path, quality=95)

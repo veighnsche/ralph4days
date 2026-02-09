@@ -9,7 +9,7 @@ skills: []
 system_prompt: TODO
 image_prompt:
   positive: |
-    Elvish non-binary person, mid 30s, with shoulder-length dark hair with aquamarine streaks flowing like water, medium serene build, calm knowing features, wearing a layered aquamarine robe with luminous wave-pattern embroidery that seems to ripple and flow, aquamarine crystal bracelet on one wrist, one hand touching the still surface of a luminous aquamarine reflecting pool as concentric ripples of turquoise light spread outward in perfect patterns from their fingernails, dramatic aquamarine rim lighting, cool turquoise ambient glow, inside a tranquil elvish meditation grotto bathed in aquamarine light with a still luminous pool at center and crystalline aquamarine stalactites and flowing water channels carved into the stone walls behind them.
+    Elvish non-binary person, mid 30s, with shoulder-length dark hair with aquamarine streaks flowing like water, medium serene build, calm knowing features, standing upright facing the viewer, wearing a layered aquamarine robe with luminous wave-pattern embroidery that seems to ripple and flow, aquamarine crystal bracelet on one wrist, both hands held open at waist level with concentric ripples of turquoise light radiating outward from their palms, dramatic aquamarine rim lighting, cool turquoise ambient glow, inside a tranquil elvish meditation grotto bathed in aquamarine light with crystalline aquamarine stalactites and flowing water channels carved into the stone walls behind them.
 
   negative: |
     turbulent chaotic water, splashing, flooding, out of control waves, panicked expression, ripples colliding

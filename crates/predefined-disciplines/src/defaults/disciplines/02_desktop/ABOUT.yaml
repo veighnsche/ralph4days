@@ -28,10 +28,10 @@ characteristics:
 
 image_prompt:
   positive: |
-    Low poly 3D render, PS1 era aesthetic, flat shaded polygons, discipline accent color on clothing.
+    PlayStation 1 era 3D render, 1996 Tomb Raider character model, Gouraud shaded polygons, visible triangular facets on skin and clothing, angular blocky hands with three fingers, segmented cylindrical limbs, seven heads tall adult human proportions, low resolution texture maps, 16-bit color depth, single hard directional shadow, matte plastic surface, discipline accent color on clothing.
 
   negative: |
-    text, words, letters, typography, photograph, photorealistic, realistic lighting, ray tracing, cyberpunk, fantasy, elvish, anime, manga, cel-shaded, watercolor, oil painting, sketch
+    text, words, letters, typography, photograph, photorealistic, realistic lighting, ray tracing, cyberpunk, fantasy, elvish, anime, manga, cel-shaded, watercolor, oil painting, sketch, chibi, big head, exaggerated proportions, cartoon proportions, bobblehead, super deformed
 
 generation:
   dev:
