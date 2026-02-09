@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import { useInvoke } from '@/hooks/api'
 import { resolveIcon } from '@/lib/iconRegistry'
-import type { DisciplineConfig as DisciplineConfigWire } from '@/types/generated'
+import type { DisciplineConfig as DisciplineConfigWire, DisciplineCropsData } from '@/types/generated'
 
 export interface DisciplineConfig {
   name: string
@@ -11,6 +11,8 @@ export interface DisciplineConfig {
   color: string
   bgColor: string
   stackId?: number
+  imagePath?: string
+  crops?: DisciplineCropsData
 }
 
 function resolveDisciplines(raw: DisciplineConfigWire[]): DisciplineConfig[] {
@@ -21,7 +23,9 @@ function resolveDisciplines(raw: DisciplineConfigWire[]): DisciplineConfig[] {
     icon: resolveIcon(d.icon),
     color: d.color,
     bgColor: `color-mix(in oklch, ${d.color} 15%, transparent)`,
-    stackId: d.stackId
+    stackId: d.stackId,
+    imagePath: d.imagePath,
+    crops: d.crops
   }))
 }
 

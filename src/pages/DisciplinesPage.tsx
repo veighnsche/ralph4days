@@ -6,13 +6,14 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DisciplineDetailTabContent } from '@/components/workspace/DisciplineDetailTabContent'
-import { useDisciplineStats, useStackMetadata } from '@/hooks/disciplines'
+import { useDisciplineImageStore, useDisciplineStats, useStackMetadata } from '@/hooks/disciplines'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
 export function DisciplinesPage() {
   const { disciplines, statsMap, progress, isLoading: disciplinesLoading } = useDisciplineStats()
   const { stacks, isLoading: stacksLoading } = useStackMetadata()
   const openTab = useWorkspaceStore(state => state.openTab)
+  const disciplineImageStore = useDisciplineImageStore(disciplines)
 
   const handleDisciplineClick = (disciplineName: string, displayName: string) => {
     openTab({
@@ -45,15 +46,10 @@ export function DisciplinesPage() {
     )
   }
 
-  const disciplinesByStack = new Map<number, typeof disciplines>()
-  disciplines.forEach(disc => {
-    if (disc.stackId != null) {
-      const existing = disciplinesByStack.get(disc.stackId) || []
-      disciplinesByStack.set(disc.stackId, [...existing, disc])
-    }
-  })
-
-  const uncategorized = disciplines.filter(d => d.stackId == null)
+  const stackNameMap = new Map<number, string>()
+  for (const stack of stacks) {
+    stackNameMap.set(stack.stackId, stack.name)
+  }
 
   return (
     <PageLayout>
@@ -106,154 +102,79 @@ export function DisciplinesPage() {
             <EmptyContent />
           </Empty>
         ) : (
-          <div className="space-y-8">
-            {stacks
-              .filter(stack => disciplinesByStack.has(stack.stackId))
-              .map(stack => {
-                const stackDisciplines = disciplinesByStack.get(stack.stackId) || []
-                return (
-                  <div key={stack.stackId} className="space-y-3">
-                    <div className="space-y-1">
-                      <div className="flex items-baseline gap-2">
-                        <h3 className="text-sm font-semibold">{stack.name}</h3>
-                        <Badge variant="outline" className="text-xs">
-                          {stackDisciplines.length} specialists
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {disciplines.map(discipline => {
+              const Icon = discipline.icon
+              const stats = statsMap.get(discipline.name) || {
+                total: 0,
+                done: 0,
+                pending: 0,
+                inProgress: 0,
+                blocked: 0,
+                skipped: 0
+              }
+              const imageEntry = disciplineImageStore.get(discipline.name)
+              const imageUrl = imageEntry?.imageUrl
+              const stackName = discipline.stackId != null ? stackNameMap.get(discipline.stackId) : undefined
+
+              return (
+                <button
+                  key={discipline.name}
+                  type="button"
+                  className="text-left transition-all duration-200 hover:scale-[1.03] rounded-lg"
+                  style={
+                    {
+                      '--disc-color': discipline.color
+                    } as React.CSSProperties
+                  }
+                  onClick={() => handleDisciplineClick(discipline.name, discipline.displayName)}>
+                  <div
+                    className="h-full rounded-lg border-2 bg-card overflow-hidden cursor-pointer transition-shadow duration-200 hover:shadow-[0_0_12px_var(--disc-color)]"
+                    style={{ borderColor: discipline.color }}>
+                    <div className="flex items-center justify-between px-2.5 py-1.5">
+                      <span className="text-xs font-mono font-bold" style={{ color: discipline.color }}>
+                        {discipline.acronym}
+                      </span>
+                      {stackName && (
+                        <Badge variant="outline" className="text-[10px] h-4 px-1">
+                          {stackName}
                         </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{stack.description}</p>
-                      <p className="text-xs text-muted-foreground italic">{stack.visualIdentity.tone}</p>
+                      )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                      {stackDisciplines.map(discipline => {
-                        const Icon = discipline.icon
-                        const stats = statsMap.get(discipline.name) || {
-                          total: 0,
-                          done: 0,
-                          pending: 0,
-                          inProgress: 0,
-                          blocked: 0,
-                          skipped: 0
-                        }
-                        const discProgress = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0
+                    <div className="px-2.5 pb-1">
+                      {imageUrl ? (
+                        <div className="rounded overflow-hidden">
+                          <img
+                            src={imageUrl}
+                            alt=""
+                            className="w-full h-[180px] object-cover"
+                            style={{
+                              objectPosition: discipline.crops?.card
+                                ? `${(discipline.crops.card.x + discipline.crops.card.w / 2) * 100}% ${(discipline.crops.card.y + discipline.crops.card.h / 2) * 100}%`
+                                : '50% 15%'
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          className="w-full h-[180px] rounded flex items-center justify-center"
+                          style={{ backgroundColor: discipline.bgColor }}>
+                          <Icon className="h-16 w-16" style={{ color: discipline.color }} />
+                        </div>
+                      )}
+                    </div>
 
-                        return (
-                          <button
-                            key={discipline.name}
-                            type="button"
-                            className="text-left"
-                            onClick={() => handleDisciplineClick(discipline.name, discipline.displayName)}>
-                            <Card className="h-full hover:bg-muted/30 transition-colors cursor-pointer">
-                              <CardContent className="p-4 space-y-3">
-                                <div className="flex items-start justify-between gap-2">
-                                  <div
-                                    className="p-2 rounded-md shrink-0"
-                                    style={{
-                                      backgroundColor: discipline.bgColor,
-                                      color: discipline.color
-                                    }}>
-                                    <Icon className="h-5 w-5" />
-                                  </div>
-                                  <Badge variant="secondary" className="text-xs font-mono">
-                                    {discipline.acronym}
-                                  </Badge>
-                                </div>
-
-                                <div className="space-y-1">
-                                  <h4 className="font-medium text-sm">{discipline.displayName}</h4>
-                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                    <span>{stats.total} tasks</span>
-                                    {stats.inProgress > 0 && <span>• {stats.inProgress} active</span>}
-                                  </div>
-                                </div>
-
-                                <div className="space-y-1">
-                                  <div className="flex items-center justify-between text-xs">
-                                    <span className="text-muted-foreground">Progress</span>
-                                    <span className="font-semibold">{discProgress}%</span>
-                                  </div>
-                                  <Progress value={discProgress} className="h-1" />
-                                </div>
-                              </CardContent>
-                            </Card>
-                          </button>
-                        )
-                      })}
+                    <div className="px-2.5 py-2 space-y-0.5">
+                      <h4 className="font-bold text-sm leading-tight">{discipline.displayName}</h4>
+                      <p className="text-[11px] text-muted-foreground">
+                        {stats.total} tasks{stats.inProgress > 0 && ` \u2022 ${stats.inProgress} active`}
+                      </p>
                     </div>
                   </div>
-                )
-              })}
-
-            {uncategorized.length > 0 && (
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <div className="flex items-baseline gap-2">
-                    <h3 className="text-sm font-semibold">Custom Disciplines</h3>
-                    <Badge variant="outline" className="text-xs">
-                      {uncategorized.length} specialists
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground">User-defined disciplines</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {uncategorized.map(discipline => {
-                    const Icon = discipline.icon
-                    const stats = statsMap.get(discipline.name) || {
-                      total: 0,
-                      done: 0,
-                      pending: 0,
-                      inProgress: 0,
-                      blocked: 0,
-                      skipped: 0
-                    }
-                    const discProgress = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0
-
-                    return (
-                      <button
-                        key={discipline.name}
-                        type="button"
-                        className="text-left"
-                        onClick={() => handleDisciplineClick(discipline.name, discipline.displayName)}>
-                        <Card className="h-full hover:bg-muted/30 transition-colors cursor-pointer">
-                          <CardContent className="p-4 space-y-3">
-                            <div className="flex items-start justify-between gap-2">
-                              <div
-                                className="p-2 rounded-md shrink-0"
-                                style={{
-                                  backgroundColor: discipline.bgColor,
-                                  color: discipline.color
-                                }}>
-                                <Icon className="h-5 w-5" />
-                              </div>
-                              <Badge variant="secondary" className="text-xs font-mono">
-                                {discipline.acronym}
-                              </Badge>
-                            </div>
-
-                            <div className="space-y-1">
-                              <h4 className="font-medium text-sm">{discipline.displayName}</h4>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <span>{stats.total} tasks</span>
-                                {stats.inProgress > 0 && <span>• {stats.inProgress} active</span>}
-                              </div>
-                            </div>
-
-                            <div className="space-y-1">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="text-muted-foreground">Progress</span>
-                                <span className="font-semibold">{discProgress}%</span>
-                              </div>
-                              <Progress value={discProgress} className="h-1" />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
+                </button>
+              )
+            })}
           </div>
         )}
       </PageContent>
