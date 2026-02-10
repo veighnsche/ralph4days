@@ -6,6 +6,7 @@ use std::collections::HashMap;
 pub struct ScoredFeatureComment {
     pub category: String,
     pub body: String,
+    pub summary: Option<String>,
     pub reason: Option<String>,
     pub score: f32,
 }

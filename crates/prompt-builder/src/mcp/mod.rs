@@ -272,7 +272,6 @@ mod tests {
             title: "Build login".to_owned(),
             description: None,
             status: sqlite_db::TaskStatus::Pending,
-            inferred_status: sqlite_db::InferredTaskStatus::Ready,
             priority: Some(sqlite_db::Priority::Medium),
             tags: vec![],
             depends_on: vec![],
