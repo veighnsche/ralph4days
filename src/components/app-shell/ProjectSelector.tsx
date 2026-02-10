@@ -7,12 +7,18 @@ import { Button } from '@/components/ui/button'
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
 import { useInvoke } from '@/hooks/api'
-import type { RalphProject, RecentProject } from '@/types/generated'
+import { cn } from '@/lib/utils'
+import type { RalphProject } from '@/types/generated'
+
+interface RecentProject {
+  path: string
+  name: string
+  last_opened: string
+}
 
 interface ProjectSelectorProps {
   onProjectSelected: (path: string) => void
@@ -201,22 +207,21 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
         <FieldGroup>
           <Field>
             <FieldLabel>Tech Stack</FieldLabel>
-            <Select value={String(stack)} onValueChange={value => setStack(Number(value))}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STACK_OPTIONS.map(opt => (
-                  <SelectItem key={opt.value} value={String(opt.value)}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{opt.label}</span>
-                      <span className="text-xs text-muted-foreground">{opt.description}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FieldDescription>Disciplines to seed for this project</FieldDescription>
+            <div className="flex flex-col gap-1">
+              {STACK_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setStack(opt.value)}
+                  className={cn(
+                    'flex flex-col items-start rounded-md border px-3 py-2 text-left transition-colors duration-100 cursor-pointer',
+                    stack === opt.value ? 'border-primary bg-primary/5' : 'hover:bg-accent'
+                  )}>
+                  <span className="text-sm font-medium">{opt.label}</span>
+                  <span className="text-xs text-muted-foreground">{opt.description}</span>
+                </button>
+              ))}
+            </div>
           </Field>
 
           <Field>

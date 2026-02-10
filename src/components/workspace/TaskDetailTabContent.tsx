@@ -1,11 +1,12 @@
 import { CheckCircle2 } from 'lucide-react'
-import { Card } from '@/components/ui/card'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { CroppedImage } from '@/components/ui/cropped-image'
 import { STATUS_CONFIG } from '@/constants/prd'
+import { useDisciplines } from '@/hooks/disciplines'
 import { usePRDData } from '@/hooks/tasks'
 import { useTabMeta } from '@/hooks/workspace'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { Task } from '@/types/generated'
+import { DetailPageLayout } from './DetailPageLayout'
 import { CommentsSection } from './task-detail/CommentsSection'
 import { TaskCardContent } from './task-detail/TaskCardContent'
 import { TaskSidebar } from './task-detail/TaskSidebar'
@@ -16,6 +17,7 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
 
   const { tasks } = usePRDData()
   const task = (entityId != null ? tasks?.find(t => t.id === entityId) : undefined) ?? snapshotTask
+  const { disciplines } = useDisciplines()
 
   useTabMeta(tab.id, task?.title ?? 'Task Detail', CheckCircle2)
 
@@ -28,34 +30,28 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
   }
 
   const statusConfig = STATUS_CONFIG[task.status]
+  const disc = disciplines.find(d => d.name === task.discipline)
+  const stripCrop = disc?.imagePath ? disc?.crops?.strip : undefined
+  const faceCrop = disc?.crops?.face
+  const eyelinePercent = faceCrop ? Math.round((faceCrop.y + faceCrop.h / 2) * 100) : 30
 
   return (
-    <div
-      className="h-full px-3 relative"
-      style={{
-        background: `repeating-linear-gradient(
-        45deg,
-        transparent,
-        transparent 10px,
-        ${statusConfig.color}15 10px,
-        ${statusConfig.color}15 20px
-      )`
-      }}>
-      <ScrollArea className="h-full">
-        <div className="py-3 space-y-3">
-          <Card className="shadow-sm flex flex-row gap-0 py-0">
-            <div className="flex-1 min-w-0 py-4">
-              <TaskCardContent task={task} />
-            </div>
-
-            <div className="w-56 flex-shrink-0 border-l">
-              <TaskSidebar task={task} />
-            </div>
-          </Card>
-
-          <CommentsSection task={task} />
-        </div>
-      </ScrollArea>
-    </div>
+    <DetailPageLayout
+      accentColor={statusConfig.color}
+      sidebarImage={
+        stripCrop && (
+          <CroppedImage
+            disciplineName={task.discipline}
+            label="strip"
+            crop={stripCrop}
+            className="absolute inset-0 w-full h-full object-cover opacity-15"
+            style={{ objectPosition: `center ${eyelinePercent}%` }}
+          />
+        )
+      }
+      mainContent={<TaskCardContent task={task} />}
+      sidebar={<TaskSidebar task={task} />}>
+      <CommentsSection task={task} />
+    </DetailPageLayout>
   )
 }

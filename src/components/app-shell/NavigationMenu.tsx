@@ -12,6 +12,7 @@ import {
   Wrench
 } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { PromptBuilderModal } from '@/components/prompt-builder'
 import { Button } from '@/components/ui/button'
 import {
@@ -48,7 +49,7 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-48">
-          <DropdownMenuItem onClick={() => invoke('open_new_window')}>
+          <DropdownMenuItem onClick={() => invoke('open_new_window').catch((e: string) => toast.error(e))}>
             <AppWindow className="mr-2 h-4 w-4" />
             New Window
           </DropdownMenuItem>

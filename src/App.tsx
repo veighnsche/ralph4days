@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { invoke } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
+import { AlertCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { BottomBar, ProjectSelector } from '@/components/app-shell'
 import { ErrorBoundary } from '@/components/shared'
@@ -10,6 +11,23 @@ import { WorkspacePanel } from '@/components/workspace'
 import { useInvoke } from '@/hooks/api'
 import { type Page, pageRegistry } from '@/pages/pageRegistry'
 import './index.css'
+
+const isTauri = typeof window !== 'undefined' && '__TAURI__' in window
+
+function NoBackendError() {
+  return (
+    <div className="flex h-screen items-center justify-center bg-background">
+      <div className="max-w-md text-center space-y-4 px-8">
+        <AlertCircle className="h-16 w-16 text-destructive mx-auto" />
+        <h1 className="text-2xl font-bold">No Backend Connection</h1>
+        <p className="text-muted-foreground">
+          Ralph4days requires the Tauri desktop runtime. It cannot run in a browser.
+        </p>
+        <p className="text-xs text-muted-foreground/60 font-mono">Launch with: ralph or ralph --project /path</p>
+      </div>
+    </div>
+  )
+}
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('tasks')
@@ -23,9 +41,8 @@ function App() {
     }
   }, [isLoadingProject])
 
-  // WHY: Tauri window title must be set via API, not document.title
   useEffect(() => {
-    if (lockedProject && typeof window !== 'undefined' && '__TAURI__' in window) {
+    if (lockedProject && isTauri) {
       const projectName = lockedProject.split('/').pop() || 'Unknown'
       getCurrentWindow()
         .setTitle(`Ralph4days - ${projectName}`)
@@ -34,6 +51,8 @@ function App() {
         })
     }
   }, [lockedProject])
+
+  if (!isTauri) return <NoBackendError />
 
   const handleProjectSelected = async (project: string) => {
     queryClient.setQueryData(['get_locked_project'], project)

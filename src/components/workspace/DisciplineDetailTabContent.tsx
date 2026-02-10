@@ -1,9 +1,7 @@
 import { Layers } from 'lucide-react'
 import { DisciplineLabel } from '@/components/prd/DisciplineLabel'
 import { Badge } from '@/components/ui/badge'
-import { Card } from '@/components/ui/card'
 import { CroppedImage } from '@/components/ui/cropped-image'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useInvoke } from '@/hooks/api'
@@ -12,6 +10,7 @@ import { useTabMeta } from '@/hooks/workspace'
 import { resolveIcon } from '@/lib/iconRegistry'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { DisciplineConfig } from '@/types/generated'
+import { DetailPageLayout } from './DetailPageLayout'
 import { PropertyRow } from './PropertyRow'
 
 function DisciplineContent({ discipline }: { discipline: DisciplineConfig }) {
@@ -192,43 +191,28 @@ export function DisciplineDetailTabContent({ tab }: { tab: WorkspaceTab }) {
     )
   }
 
-  return (
-    <div
-      className="h-full px-3 relative"
-      style={{
-        background: `repeating-linear-gradient(
-        45deg,
-        transparent,
-        transparent 10px,
-        ${discipline.color}15 10px,
-        ${discipline.color}15 20px
-      )`
-      }}>
-      <ScrollArea className="h-full">
-        <div className="py-3 space-y-3">
-          <Card className="shadow-sm flex flex-row gap-0 py-0" style={{ borderColor: `${discipline.color}40` }}>
-            <div className="flex-1 min-w-0 py-4">
-              <DisciplineContent discipline={discipline} />
-            </div>
+  const borderColor = `${discipline.color}40`
+  const faceCrop = discipline.crops?.face
+  const eyelinePercent = faceCrop ? Math.round((faceCrop.y + faceCrop.h / 2) * 100) : 30
 
-            <div
-              className="w-56 flex-shrink-0 border-l relative overflow-hidden"
-              style={{ borderColor: `${discipline.color}40` }}>
-              {discipline.imagePath && discipline.crops?.strip && (
-                <CroppedImage
-                  disciplineName={discipline.name}
-                  label="strip"
-                  crop={discipline.crops.strip}
-                  className="absolute inset-0 w-full h-full object-cover opacity-15"
-                />
-              )}
-              <div className="relative">
-                <DisciplineSidebar discipline={discipline} stackName={stackName} />
-              </div>
-            </div>
-          </Card>
-        </div>
-      </ScrollArea>
-    </div>
+  return (
+    <DetailPageLayout
+      accentColor={discipline.color}
+      cardBorderColor={borderColor}
+      sidebarImage={
+        discipline.imagePath &&
+        discipline.crops?.strip && (
+          <CroppedImage
+            disciplineName={discipline.name}
+            label="strip"
+            crop={discipline.crops.strip}
+            className="absolute inset-0 w-full h-full object-cover opacity-15"
+            style={{ objectPosition: `center ${eyelinePercent}%` }}
+          />
+        )
+      }
+      mainContent={<DisciplineContent discipline={discipline} />}
+      sidebar={<DisciplineSidebar discipline={discipline} stackName={stackName} />}
+    />
   )
 }

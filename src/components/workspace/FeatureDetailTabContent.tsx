@@ -1,8 +1,6 @@
 import { FileCode, Puzzle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useInvoke } from '@/hooks/api'
@@ -12,15 +10,39 @@ import { formatDate } from '@/lib/formatDate'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { FeatureData } from '@/types/generated'
+import { DetailPageLayout } from './DetailPageLayout'
 import { FeatureFormTabContent } from './FeatureFormTabContent'
 import { PropertyRow } from './PropertyRow'
 
-function buildSections(feature: FeatureData) {
+function FeatureContent({ feature, onEdit }: { feature: FeatureData; onEdit: () => void }) {
   const sections: React.ReactNode[] = []
+
+  sections.push(
+    <div key="header" className="px-6 flex items-start justify-between gap-4">
+      <div className="flex items-start gap-3">
+        <div className="p-3 rounded-md bg-muted">
+          <Puzzle className="h-6 w-6" />
+        </div>
+        <div>
+          <h1 className="text-xl font-semibold">{feature.displayName}</h1>
+          <div className="flex items-center gap-2 mt-1">
+            <Badge variant="outline" className="font-mono">
+              {feature.acronym}
+            </Badge>
+            <span className="text-xs text-muted-foreground">·</span>
+            <span className="text-xs text-muted-foreground font-mono">{feature.name}</span>
+          </div>
+        </div>
+      </div>
+      <Button onClick={onEdit} size="sm">
+        Edit
+      </Button>
+    </div>
+  )
 
   if (feature.description) {
     sections.push(
-      <div key="description" className="space-y-2">
+      <div key="description" className="px-6 space-y-2">
         <h2 className="text-sm font-medium text-muted-foreground">Description</h2>
         <p className="text-sm leading-relaxed whitespace-pre-wrap">{feature.description}</p>
       </div>
@@ -29,7 +51,7 @@ function buildSections(feature: FeatureData) {
 
   if (feature.architecture) {
     sections.push(
-      <div key="architecture" className="space-y-2">
+      <div key="architecture" className="px-6 space-y-2">
         <h2 className="text-sm font-medium text-muted-foreground">Architecture</h2>
         <pre className="text-xs whitespace-pre-wrap font-mono bg-muted p-3 rounded-md">{feature.architecture}</pre>
       </div>
@@ -38,7 +60,7 @@ function buildSections(feature: FeatureData) {
 
   if (feature.boundaries) {
     sections.push(
-      <div key="boundaries" className="space-y-2">
+      <div key="boundaries" className="px-6 space-y-2">
         <h2 className="text-sm font-medium text-muted-foreground">Boundaries</h2>
         <pre className="text-xs whitespace-pre-wrap font-mono bg-muted p-3 rounded-md">{feature.boundaries}</pre>
       </div>
@@ -47,7 +69,7 @@ function buildSections(feature: FeatureData) {
 
   if (feature.learnings.length > 0) {
     sections.push(
-      <div key="learnings" className="space-y-2">
+      <div key="learnings" className="px-6 space-y-2">
         <h2 className="text-sm font-medium text-muted-foreground">Learnings</h2>
         <ul className="space-y-2">
           {feature.learnings.map(learning => (
@@ -72,7 +94,7 @@ function buildSections(feature: FeatureData) {
 
   if (feature.contextFiles.length > 0 || feature.knowledgePaths.length > 0) {
     sections.push(
-      <div key="files" className="space-y-2">
+      <div key="files" className="px-6 space-y-2">
         <h2 className="text-sm font-medium text-muted-foreground">Files</h2>
         <div className="space-y-1.5">
           {feature.contextFiles.length > 0 && (
@@ -102,17 +124,90 @@ function buildSections(feature: FeatureData) {
     )
   }
 
-  return sections
-}
-
-function SectionList({ sections }: { sections: React.ReactNode[] }) {
-  if (sections.length === 0) {
-    return <p className="text-sm text-muted-foreground">No details available for this feature.</p>
+  if (sections.length <= 1) {
+    return (
+      <div className="space-y-6">
+        {sections}
+        {sections.length <= 1 && (
+          <p className="px-6 text-sm text-muted-foreground">No details available for this feature.</p>
+        )}
+      </div>
+    )
   }
+
   return (
     <div className="space-y-6">
       {sections.flatMap((section, i) =>
         i === 0 ? [section] : [<Separator key={`sep-${(section as React.ReactElement).key}`} />, section]
+      )}
+    </div>
+  )
+}
+
+function FeatureSidebar({
+  feature,
+  stats,
+  featureProgress
+}: {
+  feature: FeatureData
+  stats: { total: number; done: number; pending: number; inProgress: number; blocked: number; skipped: number }
+  featureProgress: number
+}) {
+  return (
+    <div className="px-4 py-4 space-y-0.5 overflow-y-auto h-full">
+      <PropertyRow label="Acronym">
+        <span className="font-mono text-sm">{feature.acronym}</span>
+      </PropertyRow>
+      <Separator bleed="md" />
+      <PropertyRow label="Internal Name">
+        <span className="font-mono text-xs">{feature.name}</span>
+      </PropertyRow>
+      {feature.created && (
+        <>
+          <Separator bleed="md" />
+          <PropertyRow label="Created">
+            <span className="text-xs text-muted-foreground">{formatDate(feature.created)}</span>
+          </PropertyRow>
+        </>
+      )}
+      <Separator bleed="md" />
+      <PropertyRow label="Tasks">
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm">
+            {stats.done}/{stats.total}
+          </span>
+          <span className="text-xs text-muted-foreground">({featureProgress}%)</span>
+        </div>
+      </PropertyRow>
+      {feature.dependencies.length > 0 && (
+        <>
+          <Separator bleed="md" />
+          <PropertyRow label="Dependencies">
+            <div className="flex flex-wrap gap-1">
+              {feature.dependencies.map(dep => (
+                <Badge key={dep} variant="secondary" className="text-xs px-1.5 py-0 h-5">
+                  {dep}
+                </Badge>
+              ))}
+            </div>
+          </PropertyRow>
+        </>
+      )}
+      {feature.contextFiles.length > 0 && (
+        <>
+          <Separator bleed="md" />
+          <PropertyRow label="Context Files">
+            <span className="text-sm">{feature.contextFiles.length}</span>
+          </PropertyRow>
+        </>
+      )}
+      {feature.knowledgePaths.length > 0 && (
+        <>
+          <Separator bleed="md" />
+          <PropertyRow label="Knowledge Paths">
+            <span className="text-sm">{feature.knowledgePaths.length}</span>
+          </PropertyRow>
+        </>
       )}
     </div>
   )
@@ -175,108 +270,11 @@ export function FeatureDetailTabContent({ tab }: { tab: WorkspaceTab }) {
     })
   }
 
-  const sections = buildSections(feature)
-
   return (
-    <div className="h-full flex flex-col">
-      <div className="border-b p-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="p-3 rounded-md bg-muted">
-              <Puzzle className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold">{feature.displayName}</h1>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="outline" className="font-mono">
-                  {feature.acronym}
-                </Badge>
-                <span className="text-xs text-muted-foreground">·</span>
-                <span className="text-xs text-muted-foreground font-mono">{feature.name}</span>
-              </div>
-            </div>
-          </div>
-          <Button onClick={handleEdit} size="sm">
-            Edit
-          </Button>
-        </div>
-      </div>
-
-      <ScrollArea className="flex-1">
-        <div className="flex gap-6 p-6">
-          <div className="flex-1 min-w-0">
-            <Card>
-              <CardContent className="py-6">
-                <SectionList sections={sections} />
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="w-56 shrink-0">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Properties</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-0">
-                <PropertyRow label="Acronym">
-                  <span className="font-mono text-sm">{feature.acronym}</span>
-                </PropertyRow>
-                <Separator />
-                <PropertyRow label="Internal Name">
-                  <span className="font-mono text-xs">{feature.name}</span>
-                </PropertyRow>
-                {feature.created && (
-                  <>
-                    <Separator />
-                    <PropertyRow label="Created">
-                      <span className="text-xs text-muted-foreground">{formatDate(feature.created)}</span>
-                    </PropertyRow>
-                  </>
-                )}
-                <Separator />
-                <PropertyRow label="Tasks">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm">
-                      {stats.done}/{stats.total}
-                    </span>
-                    <span className="text-xs text-muted-foreground">({featureProgress}%)</span>
-                  </div>
-                </PropertyRow>
-                {feature.dependencies.length > 0 && (
-                  <>
-                    <Separator />
-                    <PropertyRow label="Dependencies">
-                      <div className="flex flex-wrap gap-1">
-                        {feature.dependencies.map(dep => (
-                          <Badge key={dep} variant="secondary" className="text-xs px-1.5 py-0 h-5">
-                            {dep}
-                          </Badge>
-                        ))}
-                      </div>
-                    </PropertyRow>
-                  </>
-                )}
-                {feature.contextFiles.length > 0 && (
-                  <>
-                    <Separator />
-                    <PropertyRow label="Context Files">
-                      <span className="text-sm">{feature.contextFiles.length}</span>
-                    </PropertyRow>
-                  </>
-                )}
-                {feature.knowledgePaths.length > 0 && (
-                  <>
-                    <Separator />
-                    <PropertyRow label="Knowledge Paths">
-                      <span className="text-sm">{feature.knowledgePaths.length}</span>
-                    </PropertyRow>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </ScrollArea>
-    </div>
+    <DetailPageLayout
+      accentColor="hsl(var(--muted-foreground))"
+      mainContent={<FeatureContent feature={feature} onEdit={handleEdit} />}
+      sidebar={<FeatureSidebar feature={feature} stats={stats} featureProgress={featureProgress} />}
+    />
   )
 }
