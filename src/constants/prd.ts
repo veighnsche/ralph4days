@@ -1,5 +1,6 @@
 import { AlertCircle, Ban, CheckCircle2, Circle, Clock, FileEdit, type LucideIcon, Play, Slash } from 'lucide-react'
-import type { InferredTaskStatus, Task } from '@/types/generated'
+import type { InferredTaskStatus } from '@/lib/taskStatus'
+import type { Task } from '@/types/generated'
 
 export const STATUS_CONFIG = {
   draft: {

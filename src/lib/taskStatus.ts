@@ -1,4 +1,32 @@
-import type { InferredTaskStatus, TaskStatus } from '@/types/generated'
+import type { Task, TaskStatus } from '@/types/generated'
+
+export type InferredTaskStatus =
+  | 'draft'
+  | 'ready'
+  | 'waiting_on_deps'
+  | 'externally_blocked'
+  | 'in_progress'
+  | 'done'
+  | 'skipped'
+
+export function computeInferredStatus(task: Task, allTasks: Task[]): InferredTaskStatus {
+  switch (task.status) {
+    case 'draft':
+      return 'draft'
+    case 'in_progress':
+      return 'in_progress'
+    case 'done':
+      return 'done'
+    case 'skipped':
+      return 'skipped'
+    case 'blocked':
+      return 'externally_blocked'
+    case 'pending': {
+      const allDepsMet = task.dependsOn.every(depId => allTasks.find(t => t.id === depId)?.status === 'done')
+      return allDepsMet ? 'ready' : 'waiting_on_deps'
+    }
+  }
+}
 
 export function shouldShowInferredStatus(actualStatus: TaskStatus, inferredStatus: InferredTaskStatus): boolean {
   // WHY: Non-pending statuses map 1:1 to inferred (in_progress → in_progress), so don't duplicate

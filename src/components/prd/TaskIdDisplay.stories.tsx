@@ -52,7 +52,6 @@ const createTask = (id: number, feature: string, discipline: string): Task => {
     discipline,
     title: 'Example task',
     status: 'pending',
-    inferredStatus: 'ready',
     tags: [],
     dependsOn: [],
     acceptanceCriteria: [],

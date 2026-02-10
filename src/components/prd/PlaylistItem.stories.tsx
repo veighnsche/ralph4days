@@ -70,7 +70,6 @@ const baseTask: Task = {
   title: 'Design main dashboard layout',
   description: 'Create responsive dashboard with sidebar and main content area',
   status: 'pending',
-  inferredStatus: 'ready',
   priority: 'high',
   tags: ['design', 'layout'],
   dependsOn: [],
@@ -99,7 +98,6 @@ export const InProgress: Story = {
       discipline: 'backend',
       title: 'Implement task list component',
       status: 'in_progress',
-      inferredStatus: 'in_progress',
       ...enrichFields('api', 'backend')
     },
     isNowPlaying: true,
@@ -116,7 +114,6 @@ export const Done: Story = {
       discipline: 'database',
       title: 'Setup REST API endpoints',
       status: 'done',
-      inferredStatus: 'done',
       completed: '2026-02-03',
       ...enrichFields('data', 'database')
     },
@@ -133,7 +130,6 @@ export const Blocked: Story = {
       discipline: 'testing',
       title: 'Add authentication middleware',
       status: 'blocked',
-      inferredStatus: 'externally_blocked',
       blockedBy: 'Waiting for security review',
       ...enrichFields('tests', 'testing')
     },
@@ -150,7 +146,6 @@ export const Skipped: Story = {
       discipline: 'infra',
       title: 'Deploy to staging environment',
       status: 'skipped',
-      inferredStatus: 'skipped',
       ...enrichFields('deploy', 'infra')
     },
     onClick: () => console.log('Task clicked')
@@ -178,7 +173,6 @@ export const CriticalPriority: Story = {
       title: 'Fix critical security vulnerability',
       priority: 'critical',
       status: 'in_progress',
-      inferredStatus: 'in_progress',
       ...enrichFields('sec', 'security')
     },
     isNowPlaying: true,
@@ -192,7 +186,6 @@ export const WithDependencies: Story = {
       ...baseTask,
       title: 'Add task detail sidebar',
       dependsOn: [2, 3],
-      inferredStatus: 'waiting_on_deps',
       tags: ['component', 'ui', 'depends-on-others']
     },
     onClick: () => console.log('Task clicked')
@@ -207,7 +200,6 @@ export const NoDescription: Story = {
       discipline: 'docs',
       title: 'Write API documentation',
       status: 'pending' as const,
-      inferredStatus: 'ready' as const,
       priority: 'medium' as const,
       tags: [],
       dependsOn: [],
