@@ -3,6 +3,7 @@ import type { Task } from '@/types/generated'
 
 export type StatusFilter =
   | 'all'
+  | 'draft'
   | 'pending'
   | 'in_progress'
   | 'blocked'

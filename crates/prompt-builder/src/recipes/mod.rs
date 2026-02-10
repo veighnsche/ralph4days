@@ -1,5 +1,6 @@
 mod braindump;
 mod discuss;
+mod enrichment;
 mod opus_review;
 mod ramble;
 mod task_exec;
@@ -17,5 +18,6 @@ pub fn get(prompt_type: PromptType) -> Recipe {
         PromptType::Discuss => discuss::recipe(),
         PromptType::TaskExecution => task_exec::recipe(),
         PromptType::OpusReview => opus_review::recipe(),
+        PromptType::Enrichment => enrichment::recipe(),
     }
 }

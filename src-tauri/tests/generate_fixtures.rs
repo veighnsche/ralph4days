@@ -422,6 +422,7 @@ just dev-mock 03-desktop-tasks
         discipline: "backend".to_owned(),
         title: "Implement login API".to_owned(),
         description: Some("Create REST API endpoints for user authentication".to_owned()),
+        status: None,
         priority: Some(sqlite_db::Priority::High),
         tags: vec!["api".to_owned(), "security".to_owned()],
         depends_on: vec![],
@@ -453,6 +454,7 @@ just dev-mock 03-desktop-tasks
         discipline: "frontend".to_owned(),
         title: "Build login form".to_owned(),
         description: Some("Create UI for user login".to_owned()),
+        status: None,
         priority: Some(sqlite_db::Priority::Medium),
         tags: vec!["ui".to_owned()],
         depends_on: vec![1],
@@ -470,6 +472,7 @@ just dev-mock 03-desktop-tasks
         discipline: "frontend".to_owned(),
         title: "Create profile page".to_owned(),
         description: Some("User profile display and editing".to_owned()),
+        status: None,
         priority: Some(sqlite_db::Priority::Low),
         tags: vec!["ui".to_owned()],
         depends_on: vec![],
@@ -598,6 +601,7 @@ just dev-mock 04-desktop-dev
                 "Design the bookmark card component with favicon, title, URL, and action buttons"
                     .to_owned(),
             ),
+            status: None,
             priority: Some(sqlite_db::Priority::Low),
             tags: vec!["ui".to_owned(), "design".to_owned()],
             depends_on: vec![],
@@ -623,6 +627,7 @@ just dev-mock 04-desktop-dev
                 "Implement the form to add new bookmarks with URL validation and auto-title fetch"
                     .to_owned(),
             ),
+            status: None,
             priority: Some(sqlite_db::Priority::High),
             tags: vec!["ui".to_owned(), "forms".to_owned()],
             depends_on: vec![],
@@ -649,6 +654,7 @@ just dev-mock 04-desktop-dev
                 "Implement localStorage-based persistence layer for bookmarks with CRUD operations"
                     .to_owned(),
             ),
+            status: None,
             priority: Some(sqlite_db::Priority::High),
             tags: vec!["storage".to_owned()],
             depends_on: vec![2],
@@ -675,6 +681,7 @@ just dev-mock 04-desktop-dev
                 "Write comprehensive unit tests for create, read, update, and delete operations"
                     .to_owned(),
             ),
+            status: None,
             priority: Some(sqlite_db::Priority::Medium),
             tags: vec!["testing".to_owned()],
             depends_on: vec![3],
@@ -699,6 +706,7 @@ just dev-mock 04-desktop-dev
             description: Some(
                 "Modal dialog for editing existing bookmark title, URL, and notes".to_owned(),
             ),
+            status: None,
             priority: Some(sqlite_db::Priority::Medium),
             tags: vec!["ui".to_owned(), "forms".to_owned()],
             depends_on: vec![2],
@@ -723,6 +731,7 @@ just dev-mock 04-desktop-dev
                 "Multi-select bookmarks and delete them in batch with confirmation dialog"
                     .to_owned(),
             ),
+            status: None,
             priority: Some(sqlite_db::Priority::Medium),
             tags: vec!["ui".to_owned()],
             depends_on: vec![3],
@@ -747,6 +756,7 @@ just dev-mock 04-desktop-dev
                 "Sanitize and validate all URL inputs to prevent XSS and injection attacks"
                     .to_owned(),
             ),
+            status: None,
             priority: Some(sqlite_db::Priority::High),
             tags: vec!["security".to_owned(), "validation".to_owned()],
             depends_on: vec![],
@@ -773,6 +783,7 @@ just dev-mock 04-desktop-dev
                 "Define collection schema with name, color, icon, and bookmark references"
                     .to_owned(),
             ),
+            status: None,
             priority: Some(sqlite_db::Priority::High),
             tags: vec!["storage".to_owned(), "data-model".to_owned()],
             depends_on: vec![],
@@ -794,6 +805,7 @@ just dev-mock 04-desktop-dev
         discipline: "frontend".to_owned(),
         title: "Collection sidebar".to_owned(),
         description: Some("Sidebar component showing all collections with bookmark counts and quick navigation".to_owned()),
+        status: None,
         priority: Some(sqlite_db::Priority::High),
         tags: vec!["ui".to_owned(), "navigation".to_owned()],
         depends_on: vec![8],
@@ -810,6 +822,7 @@ just dev-mock 04-desktop-dev
             description: Some(
                 "Allow reordering bookmarks within a collection via drag-and-drop".to_owned(),
             ),
+            status: None,
             priority: Some(sqlite_db::Priority::Medium),
             tags: vec!["ui".to_owned(), "interaction".to_owned()],
             depends_on: vec![9],
@@ -834,6 +847,7 @@ just dev-mock 04-desktop-dev
             description: Some(
                 "Design the icon picker and color palette for collection customization".to_owned(),
             ),
+            status: None,
             priority: None,
             tags: vec!["design".to_owned()],
             depends_on: vec![],
@@ -855,6 +869,7 @@ just dev-mock 04-desktop-dev
             description: Some(
                 "Support hierarchical collection nesting with tree view navigation".to_owned(),
             ),
+            status: None,
             priority: Some(sqlite_db::Priority::Low),
             tags: vec!["ui".to_owned(), "navigation".to_owned()],
             depends_on: vec![9, 8],
@@ -876,6 +891,7 @@ just dev-mock 04-desktop-dev
         discipline: "backend".to_owned(),
         title: "Full-text search index".to_owned(),
         description: Some("Build an inverted index for full-text search across bookmark titles, URLs, and notes".to_owned()),
+        status: None,
         priority: Some(sqlite_db::Priority::Critical),
         tags: vec!["search".to_owned(), "performance".to_owned()],
         depends_on: vec![3],
@@ -893,6 +909,7 @@ just dev-mock 04-desktop-dev
                 "Search input with debounced autocomplete dropdown showing matching bookmarks"
                     .to_owned(),
             ),
+            status: None,
             priority: Some(sqlite_db::Priority::High),
             tags: vec!["ui".to_owned(), "search".to_owned()],
             depends_on: vec![13],
@@ -919,6 +936,7 @@ just dev-mock 04-desktop-dev
                 "Test search result ranking and relevance scoring with various query patterns"
                     .to_owned(),
             ),
+            status: None,
             priority: None,
             tags: vec!["testing".to_owned(), "search".to_owned()],
             depends_on: vec![13],
@@ -944,6 +962,7 @@ just dev-mock 04-desktop-dev
                 "Parse Netscape bookmark HTML format exported by Chrome, Firefox, and Safari"
                     .to_owned(),
             ),
+            status: None,
             priority: Some(sqlite_db::Priority::High),
             tags: vec!["parser".to_owned(), "import".to_owned()],
             depends_on: vec![],
@@ -970,6 +989,7 @@ just dev-mock 04-desktop-dev
                 "File upload dialog for importing bookmarks with preview and conflict resolution"
                     .to_owned(),
             ),
+            status: None,
             priority: Some(sqlite_db::Priority::Medium),
             tags: vec!["ui".to_owned(), "import".to_owned()],
             depends_on: vec![16],
@@ -994,6 +1014,7 @@ just dev-mock 04-desktop-dev
             description: Some(
                 "Export all bookmarks and collections to a JSON file for backup".to_owned(),
             ),
+            status: None,
             priority: Some(sqlite_db::Priority::Low),
             tags: vec!["export".to_owned()],
             depends_on: vec![3],
@@ -1018,6 +1039,7 @@ just dev-mock 04-desktop-dev
             description: Some(
                 "Document all available settings and their default values".to_owned(),
             ),
+            status: None,
             priority: Some(sqlite_db::Priority::Low),
             tags: vec!["docs".to_owned()],
             depends_on: vec![],
@@ -1039,6 +1061,7 @@ just dev-mock 04-desktop-dev
             description: Some(
                 "Store user theme preference (light/dark/system) in local database".to_owned(),
             ),
+            status: None,
             priority: None,
             tags: vec!["storage".to_owned()],
             depends_on: vec![],

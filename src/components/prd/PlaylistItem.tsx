@@ -98,7 +98,7 @@ export const PlaylistItem = memo(function PlaylistItem({
       style={{
         borderLeftColor: statusConfig.color,
         backgroundColor: statusConfig.bgColor,
-        opacity: task.status === 'done' || task.status === 'skipped' ? 0.5 : 1
+        opacity: task.status === 'done' || task.status === 'skipped' || task.status === 'draft' ? 0.5 : 1
       }}
       onClick={onClick}>
       {priorityConfig && (

@@ -1,7 +1,13 @@
-import { AlertCircle, Ban, CheckCircle2, Circle, Clock, type LucideIcon, Play, Slash } from 'lucide-react'
+import { AlertCircle, Ban, CheckCircle2, Circle, Clock, FileEdit, type LucideIcon, Play, Slash } from 'lucide-react'
 import type { InferredTaskStatus, Task } from '@/types/generated'
 
 export const STATUS_CONFIG = {
+  draft: {
+    label: 'Draft',
+    icon: FileEdit,
+    color: 'var(--status-skipped)',
+    bgColor: 'color-mix(in oklch, var(--status-skipped) 10%, transparent)'
+  },
   pending: {
     label: 'Pending',
     icon: Circle,
@@ -35,6 +41,13 @@ export const STATUS_CONFIG = {
 } as const
 
 export const INFERRED_STATUS_CONFIG = {
+  draft: {
+    label: 'Draft',
+    icon: FileEdit,
+    color: 'var(--status-skipped)',
+    bgColor: 'color-mix(in oklch, var(--status-skipped) 15%, transparent)',
+    description: 'Needs enrichment before execution'
+  },
   ready: {
     label: 'Ready',
     icon: CheckCircle2,
@@ -106,6 +119,10 @@ export const PRIORITY_CONFIG = {
 } as const
 
 export const COLUMN_DEFINITIONS = [
+  {
+    status: 'draft' as Task['status'],
+    ...STATUS_CONFIG.draft
+  },
   {
     status: 'pending' as Task['status'],
     ...STATUS_CONFIG.pending

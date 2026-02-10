@@ -7,6 +7,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum TaskStatus {
+    Draft,
     Pending,
     InProgress,
     Done,
@@ -17,6 +18,7 @@ pub enum TaskStatus {
 impl TaskStatus {
     pub fn as_str(&self) -> &'static str {
         match self {
+            Self::Draft => "draft",
             Self::Pending => "pending",
             Self::InProgress => "in_progress",
             Self::Done => "done",
@@ -27,6 +29,7 @@ impl TaskStatus {
 
     pub fn parse(s: &str) -> Option<Self> {
         match s {
+            "draft" => Some(Self::Draft),
             "pending" => Some(Self::Pending),
             "in_progress" => Some(Self::InProgress),
             "done" => Some(Self::Done),
@@ -41,6 +44,7 @@ impl TaskStatus {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum InferredTaskStatus {
+    Draft,
     Ready,
     WaitingOnDeps,
     ExternallyBlocked,
@@ -169,6 +173,10 @@ pub struct Task {
     pub estimated_turns: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub provenance: Option<TaskProvenance>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pseudocode: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enriched_at: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub comments: Vec<TaskComment>,
     pub feature_display_name: String,
@@ -186,6 +194,7 @@ pub struct GroupStats {
     pub name: String,
     pub display_name: String,
     pub total: u32,
+    pub draft: u32,
     pub done: u32,
     pub pending: u32,
     pub in_progress: u32,
@@ -300,6 +309,7 @@ pub struct TaskInput {
     pub discipline: String,
     pub title: String,
     pub description: Option<String>,
+    pub status: Option<TaskStatus>,
     pub priority: Option<Priority>,
     pub tags: Vec<String>,
     pub depends_on: Vec<u32>,

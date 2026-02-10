@@ -24,6 +24,7 @@ pub enum PromptType {
     Discuss,
     TaskExecution,
     OpusReview,
+    Enrichment,
 }
 
 impl PromptType {
@@ -36,6 +37,7 @@ impl PromptType {
             "discuss" => Some(Self::Discuss),
             "task_execution" => Some(Self::TaskExecution),
             "opus_review" => Some(Self::OpusReview),
+            "enrichment" => Some(Self::Enrichment),
             _ => None,
         }
     }
@@ -73,5 +75,6 @@ pub fn default_instructions(prompt_type: PromptType) -> String {
         PromptType::Discuss => sections::instructions::discuss::default_text(),
         PromptType::TaskExecution => sections::instructions::task_exec::default_text(),
         PromptType::OpusReview => sections::instructions::opus_review::default_text(),
+        PromptType::Enrichment => sections::instructions::enrichment::default_text(),
     }
 }

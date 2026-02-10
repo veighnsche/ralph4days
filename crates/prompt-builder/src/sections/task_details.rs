@@ -17,6 +17,10 @@ fn build(ctx: &PromptContext) -> Option<String> {
         }
     }
 
+    if let Some(pseudocode) = &task.pseudocode {
+        out.push_str(&format!("\n### Pseudocode\n\n{pseudocode}"));
+    }
+
     if let Some(hints) = &task.hints {
         out.push_str(&format!("\n### Hints\n\n{hints}"));
     }

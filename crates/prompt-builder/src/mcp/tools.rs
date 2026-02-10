@@ -13,6 +13,7 @@ pub enum McpTool {
     UpdateDiscipline,
     AppendLearning,
     AddContextFile,
+    EnrichTask,
 }
 
 impl McpTool {
@@ -31,6 +32,7 @@ impl McpTool {
             Self::UpdateDiscipline => "update_discipline",
             Self::AppendLearning => "append_learning",
             Self::AddContextFile => "add_context_file",
+            Self::EnrichTask => "enrich_task",
         }
     }
 
@@ -42,7 +44,7 @@ impl McpTool {
             Self::CreateTask => "Create a new task in the project database",
             Self::UpdateTask => "Update an existing task's title, description, or priority",
             Self::SetTaskStatus => {
-                "Set the status of a task (pending, in_progress, done, blocked, skipped)"
+                "Set the status of a task (draft, pending, in_progress, done, blocked, skipped)"
             }
             Self::ListFeatures => "List all features in the project",
             Self::ListDisciplines => "List all disciplines in the project",
@@ -53,6 +55,7 @@ impl McpTool {
             }
             Self::AppendLearning => "Append a learning entry to the project's learnings.txt",
             Self::AddContextFile => "Add a context file path to a task",
+            Self::EnrichTask => "Enrich a draft task with pseudocode and promote it to pending",
         }
     }
 
@@ -68,7 +71,7 @@ impl McpTool {
             }
 
             Self::CreateTask => {
-                r#"{"type":"object","properties":{"feature":{"type":"string","description":"Feature name this task belongs to"},"discipline":{"type":"string","description":"Discipline name for this task"},"title":{"type":"string","description":"Task title"},"description":{"type":"string","description":"Detailed task description"},"priority":{"type":"string","description":"Priority: critical, high, medium, low"},"acceptance_criteria":{"type":"string","description":"Semicolon-separated acceptance criteria"}},"required":["feature","discipline","title"]}"#
+                r#"{"type":"object","properties":{"feature":{"type":"string","description":"Feature name this task belongs to"},"discipline":{"type":"string","description":"Discipline name for this task"},"title":{"type":"string","description":"Task title"},"description":{"type":"string","description":"Detailed task description"},"priority":{"type":"string","description":"Priority: critical, high, medium, low"},"acceptance_criteria":{"type":"string","description":"Semicolon-separated acceptance criteria"},"status":{"type":"string","enum":["draft","pending"],"description":"Initial status (default: draft)"}},"required":["feature","discipline","title"]}"#
             }
 
             Self::UpdateTask => {
@@ -76,7 +79,7 @@ impl McpTool {
             }
 
             Self::SetTaskStatus => {
-                r#"{"type":"object","properties":{"id":{"type":"number","description":"Task ID"},"status":{"type":"string","enum":["pending","in_progress","done","blocked","skipped"],"description":"New task status"}},"required":["id","status"]}"#
+                r#"{"type":"object","properties":{"id":{"type":"number","description":"Task ID"},"status":{"type":"string","enum":["draft","pending","in_progress","done","blocked","skipped"],"description":"New task status"}},"required":["id","status"]}"#
             }
 
             Self::ListFeatures | Self::ListDisciplines | Self::ListTasks => {
@@ -97,6 +100,10 @@ impl McpTool {
 
             Self::AddContextFile => {
                 r#"{"type":"object","properties":{"task_id":{"type":"number","description":"Task ID to add context file to"},"file_path":{"type":"string","description":"Relative file path to add as context"}},"required":["task_id","file_path"]}"#
+            }
+
+            Self::EnrichTask => {
+                r#"{"type":"object","properties":{"id":{"type":"number","description":"Task ID to enrich (must be in draft status)"},"pseudocode":{"type":"string","description":"Concrete pseudocode referencing actual files and functions"},"acceptance_criteria":{"type":"string","description":"Semicolon-separated acceptance criteria"},"context_files":{"type":"string","description":"Semicolon-separated file paths relevant to the task"}},"required":["id","pseudocode"]}"#
             }
         }
     }
@@ -147,15 +154,21 @@ impl McpTool {
         description=$(echo "$line" | sed -n 's/.*"description"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
         priority=$(echo "$line" | sed -n 's/.*"priority"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
         acceptance_criteria=$(echo "$line" | sed -n 's/.*"acceptance_criteria"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+        status=$(echo "$line" | sed -n 's/.*"status"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
         e_feature=$(json_escape "$feature")
         e_discipline=$(json_escape "$discipline")
         e_title=$(json_escape "$title")
         e_desc=$(json_escape "$description")
         e_priority=$(json_escape "${priority:-medium}")
-        e_ac=$(json_escape "$acceptance_criteria")
+        e_status=$(json_escape "${status:-draft}")
+        ac_json="[]"
+        if [ -n "$acceptance_criteria" ]; then
+            ac_json=$(echo "$acceptance_criteria" | awk -F';' '{printf "["; for(i=1;i<=NF;i++){gsub(/^ +| +$/,"",$i); printf "\"%s\"", $i; if(i<NF) printf ","} printf "]"}')
+        fi
+        e_ac=$(json_escape "$ac_json")
         new_id=$(sqlite3 "$RALPH_DB" "SELECT COALESCE(MAX(id),0)+1 FROM tasks;")
-        sqlite3 "$RALPH_DB" "INSERT INTO tasks (id, feature, discipline, title, description, status, priority, acceptance_criteria, created) VALUES (${new_id}, '${e_feature}', '${e_discipline}', '${e_title}', '${e_desc}', 'pending', '${e_priority}', '${e_ac}', datetime('now'));"
-        result="Created task #${new_id}: $title"
+        sqlite3 "$RALPH_DB" "INSERT INTO tasks (id, feature, discipline, title, description, status, priority, acceptance_criteria, created) VALUES (${new_id}, '${e_feature}', '${e_discipline}', '${e_title}', '${e_desc}', '${e_status}', '${e_priority}', '${e_ac}', datetime('now'));"
+        result="Created task #${new_id}: $title (status: ${status:-draft})"
         e_result=$(json_escape "$result")
         printf '{"jsonrpc":"2.0","id":%s,"result":{"content":[{"type":"text","text":"%s"}]}}\n' "$id" "$e_result"
 "#
@@ -299,10 +312,47 @@ impl McpTool {
         task_id=$(echo "$line" | sed -n 's/.*"task_id"[[:space:]]*:[[:space:]]*\([0-9]*\).*/\1/p')
         file_path=$(echo "$line" | sed -n 's/.*"file_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
         e_path=$(json_escape "$file_path")
-        sqlite3 "$RALPH_DB" "UPDATE tasks SET context_files = CASE WHEN context_files IS NULL OR context_files = '' THEN '${e_path}' ELSE context_files || ';' || '${e_path}' END WHERE id=${task_id};"
+        current_cf=$(sqlite3 "$RALPH_DB" "SELECT context_files FROM tasks WHERE id=${task_id};")
+        if [ -z "$current_cf" ] || [ "$current_cf" = "[]" ]; then
+            new_cf="[\"${e_path}\"]"
+        else
+            new_cf=$(echo "$current_cf" | sed "s/\]$/,\"${e_path}\"]/" )
+        fi
+        e_cf=$(json_escape "$new_cf")
+        sqlite3 "$RALPH_DB" "UPDATE tasks SET context_files='${e_cf}' WHERE id=${task_id};"
         result="Added context file '$file_path' to task #${task_id}"
         e_result=$(json_escape "$result")
         printf '{"jsonrpc":"2.0","id":%s,"result":{"content":[{"type":"text","text":"%s"}]}}\n' "$id" "$e_result"
+"#
+            }
+
+            Self::EnrichTask => {
+                r#"
+        task_id=$(echo "$line" | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*\([0-9]*\).*/\1/p')
+        pseudocode=$(echo "$line" | sed -n 's/.*"pseudocode"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+        acceptance_criteria=$(echo "$line" | sed -n 's/.*"acceptance_criteria"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+        context_files=$(echo "$line" | sed -n 's/.*"context_files"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+        current_status=$(sqlite3 "$RALPH_DB" "SELECT status FROM tasks WHERE id=${task_id};")
+        if [ "$current_status" != "draft" ]; then
+            e_err=$(json_escape "Task #${task_id} is not in draft status (current: ${current_status})")
+            printf '{"jsonrpc":"2.0","id":%s,"error":{"code":-32602,"message":"%s"}}\n' "$id" "$e_err"
+        else
+            e_pseudo=$(json_escape "$pseudocode")
+            ac_json="[]"
+            if [ -n "$acceptance_criteria" ]; then
+                ac_json=$(echo "$acceptance_criteria" | awk -F';' '{printf "["; for(i=1;i<=NF;i++){gsub(/^ +| +$/,"",$i); printf "\"%s\"", $i; if(i<NF) printf ","} printf "]"}')
+            fi
+            cf_json="[]"
+            if [ -n "$context_files" ]; then
+                cf_json=$(echo "$context_files" | awk -F';' '{printf "["; for(i=1;i<=NF;i++){gsub(/^ +| +$/,"",$i); printf "\"%s\"", $i; if(i<NF) printf ","} printf "]"}')
+            fi
+            e_ac=$(json_escape "$ac_json")
+            e_cf=$(json_escape "$cf_json")
+            sqlite3 "$RALPH_DB" "UPDATE tasks SET pseudocode='${e_pseudo}', acceptance_criteria='${e_ac}', context_files='${e_cf}', status='pending', enriched_at=datetime('now'), updated=datetime('now') WHERE id=${task_id};"
+            result="Enriched task #${task_id} → status promoted to pending"
+            e_result=$(json_escape "$result")
+            printf '{"jsonrpc":"2.0","id":%s,"result":{"content":[{"type":"text","text":"%s"}]}}\n' "$id" "$e_result"
+        fi
 "#
             }
         }

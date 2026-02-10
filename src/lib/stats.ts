@@ -13,6 +13,7 @@ export function computeFeatureStats(tasks: Task[], features: FeatureData[]): Map
       name: feature.name,
       displayName: feature.displayName,
       total: 0,
+      draft: 0,
       done: 0,
       pending: 0,
       inProgress: 0,
@@ -26,6 +27,9 @@ export function computeFeatureStats(tasks: Task[], features: FeatureData[]): Map
     if (!stats) continue
     stats.total++
     switch (task.status) {
+      case 'draft':
+        stats.draft++
+        break
       case 'done':
         stats.done++
         break
@@ -55,6 +59,7 @@ export function computeDisciplineStats(tasks: Task[], disciplines: GroupItem[]):
       name: discipline.name,
       displayName: discipline.displayName,
       total: 0,
+      draft: 0,
       done: 0,
       pending: 0,
       inProgress: 0,
@@ -68,6 +73,9 @@ export function computeDisciplineStats(tasks: Task[], disciplines: GroupItem[]):
     if (!stats) continue
     stats.total++
     switch (task.status) {
+      case 'draft':
+        stats.draft++
+        break
       case 'done':
         stats.done++
         break
@@ -90,9 +98,10 @@ export function computeDisciplineStats(tasks: Task[], disciplines: GroupItem[]):
 }
 
 export function computeProjectProgress(tasks: Task[]): ProjectProgress {
-  const totalTasks = tasks.length
+  const actionableTasks = tasks.filter(t => t.status !== 'draft' && t.status !== 'skipped')
+  const totalTasks = actionableTasks.length
   let doneTasks = 0
-  for (const task of tasks) {
+  for (const task of actionableTasks) {
     if (task.status === 'done') doneTasks++
   }
   const progressPercent = totalTasks > 0 ? Math.floor((doneTasks * 100) / totalTasks) : 0

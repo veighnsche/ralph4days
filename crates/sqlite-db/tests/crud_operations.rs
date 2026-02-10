@@ -1405,6 +1405,7 @@ fn test_export_yaml_escapes_special_chars() {
             discipline: "backend".into(),
             title: "Fix the \"bug\" in code".into(),
             description: Some("Line 1\nLine 2\tTabbed".into()),
+            status: None,
             priority: None,
             tags: vec!["tag with \"quotes\"".into()],
             depends_on: vec![],

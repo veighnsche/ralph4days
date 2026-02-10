@@ -105,7 +105,7 @@ impl SqliteDb {
                     input.discipline,
                     input.title,
                     input.description,
-                    "pending",
+                    input.status.unwrap_or(TaskStatus::Pending).as_str(),
                     input.priority.map(|p| p.as_str().to_owned()),
                     tags_json,
                     depends_on_json,
@@ -292,6 +292,45 @@ impl SqliteDb {
         Ok(())
     }
 
+    pub fn enrich_task(
+        &self,
+        id: u32,
+        pseudocode: &str,
+        acceptance_criteria: Option<Vec<String>>,
+        context_files: Option<Vec<String>>,
+    ) -> Result<(), String> {
+        let current_status: String = self
+            .conn
+            .query_row("SELECT status FROM tasks WHERE id = ?1", [id], |row| {
+                row.get(0)
+            })
+            .ralph_err(codes::DB_READ, "Failed to read task")?;
+
+        if current_status != "draft" {
+            return ralph_err!(
+                codes::TASK_OPS,
+                "Task {id} is not in draft status (current: {current_status})"
+            );
+        }
+
+        let now = self.now().format("%Y-%m-%d").to_string();
+        let ac_json = serde_json::to_string(&acceptance_criteria.unwrap_or_default())
+            .ralph_err(codes::DB_WRITE, "Failed to serialize acceptance_criteria")?;
+        let cf_json = serde_json::to_string(&context_files.unwrap_or_default())
+            .ralph_err(codes::DB_WRITE, "Failed to serialize context_files")?;
+
+        self.conn
+            .execute(
+                "UPDATE tasks SET pseudocode = ?1, acceptance_criteria = ?2, \
+                 context_files = ?3, status = 'pending', enriched_at = ?4, updated = ?5 \
+                 WHERE id = ?6",
+                rusqlite::params![pseudocode, ac_json, cf_json, now, now, id],
+            )
+            .ralph_err(codes::DB_WRITE, "Failed to enrich task")?;
+
+        Ok(())
+    }
+
     pub fn delete_task(&self, id: u32) -> Result<(), String> {
         let mut stmt = self
             .conn
@@ -337,7 +376,7 @@ impl SqliteDb {
                 "SELECT t.id, t.feature, t.discipline, t.title, t.description, t.status, \
                  t.priority, t.tags, t.depends_on, t.blocked_by, t.created, t.updated, \
                  t.completed, t.acceptance_criteria, t.context_files, t.output_artifacts, \
-                 t.hints, t.estimated_turns, t.provenance, \
+                 t.hints, t.estimated_turns, t.provenance, t.pseudocode, t.enriched_at, \
                  COALESCE(f.display_name, t.feature), \
                  COALESCE(f.acronym, t.feature), \
                  COALESCE(d.display_name, t.discipline), \
@@ -367,7 +406,7 @@ impl SqliteDb {
             "SELECT t.id, t.feature, t.discipline, t.title, t.description, t.status, \
              t.priority, t.tags, t.depends_on, t.blocked_by, t.created, t.updated, \
              t.completed, t.acceptance_criteria, t.context_files, t.output_artifacts, \
-             t.hints, t.estimated_turns, t.provenance, \
+             t.hints, t.estimated_turns, t.provenance, t.pseudocode, t.enriched_at, \
              COALESCE(f.display_name, t.feature), \
              COALESCE(f.acronym, t.feature), \
              COALESCE(d.display_name, t.discipline), \
@@ -437,13 +476,15 @@ impl SqliteDb {
             hints: row.get(16).ok(),
             estimated_turns: row.get(17).ok(),
             provenance: provenance_str.and_then(|s| TaskProvenance::parse(&s)),
+            pseudocode: row.get(19).ok(),
+            enriched_at: row.get(20).ok(),
             comments: vec![],
-            feature_display_name: row.get(19).unwrap_or_default(),
-            feature_acronym: row.get(20).unwrap_or_default(),
-            discipline_display_name: row.get(21).unwrap_or_default(),
-            discipline_acronym: row.get(22).unwrap_or_default(),
-            discipline_icon: row.get(23).unwrap_or_else(|_| "Circle".to_owned()),
-            discipline_color: row.get(24).unwrap_or_else(|_| "#94a3b8".to_owned()),
+            feature_display_name: row.get(21).unwrap_or_default(),
+            feature_acronym: row.get(22).unwrap_or_default(),
+            discipline_display_name: row.get(23).unwrap_or_default(),
+            discipline_acronym: row.get(24).unwrap_or_default(),
+            discipline_icon: row.get(25).unwrap_or_else(|_| "Circle".to_owned()),
+            discipline_color: row.get(26).unwrap_or_else(|_| "#94a3b8".to_owned()),
         }
     }
 
@@ -472,6 +513,7 @@ impl SqliteDb {
         status_map: &std::collections::HashMap<u32, TaskStatus>,
     ) -> InferredTaskStatus {
         match status {
+            TaskStatus::Draft => InferredTaskStatus::Draft,
             TaskStatus::InProgress => InferredTaskStatus::InProgress,
             TaskStatus::Done => InferredTaskStatus::Done,
             TaskStatus::Skipped => InferredTaskStatus::Skipped,

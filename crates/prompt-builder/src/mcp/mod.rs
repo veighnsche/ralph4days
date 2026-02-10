@@ -286,6 +286,8 @@ mod tests {
             hints: None,
             estimated_turns: None,
             provenance: None,
+            pseudocode: None,
+            enriched_at: None,
             comments: vec![],
             feature_display_name: "Auth".to_owned(),
             feature_acronym: "AU".to_owned(),

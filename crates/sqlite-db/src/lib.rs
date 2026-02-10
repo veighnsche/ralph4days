@@ -66,6 +66,7 @@ impl SqliteDb {
             M::up(include_str!(
                 "migrations/002_discipline_description_image_prompt.sql"
             )),
+            M::up(include_str!("migrations/003_draft_status_pseudocode.sql")),
         ]);
 
         migrations
@@ -94,6 +95,7 @@ impl SqliteDb {
             M::up(include_str!(
                 "migrations/002_discipline_description_image_prompt.sql"
             )),
+            M::up(include_str!("migrations/003_draft_status_pseudocode.sql")),
         ]);
 
         migrations
@@ -129,6 +131,7 @@ impl SqliteDb {
             M::up(include_str!(
                 "migrations/002_discipline_description_image_prompt.sql"
             )),
+            M::up(include_str!("migrations/003_draft_status_pseudocode.sql")),
         ]);
 
         migrations

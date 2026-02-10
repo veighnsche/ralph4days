@@ -167,6 +167,13 @@ pub fn all_sections() -> Vec<SectionInfo> {
             category: "instructions",
             is_instruction: true,
         },
+        SectionInfo {
+            name: "enrichment_instructions",
+            display_name: "Enrichment Instructions",
+            description: "Instructions for enriching draft tasks with pseudocode",
+            category: "instructions",
+            is_instruction: true,
+        },
     ]
 }
 

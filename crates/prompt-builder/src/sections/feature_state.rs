@@ -21,7 +21,7 @@ fn build(ctx: &PromptContext) -> Option<String> {
         return None;
     }
 
-    let total = tasks.len();
+    let mut draft = 0u32;
     let mut pending = 0u32;
     let mut in_progress = 0u32;
     let mut done = 0u32;
@@ -29,16 +29,20 @@ fn build(ctx: &PromptContext) -> Option<String> {
 
     for t in &tasks {
         match t.status {
+            TaskStatus::Draft => draft += 1,
             TaskStatus::Pending => pending += 1,
             TaskStatus::InProgress => in_progress += 1,
             TaskStatus::Done => done += 1,
             TaskStatus::Blocked => blocked += 1,
-            TaskStatus::Skipped => {} // not counted separately
+            TaskStatus::Skipped => {}
         }
     }
 
+    let actionable = pending + in_progress + done + blocked;
+
     Some(format!(
-        "## Feature State\n\n{done}/{total} tasks complete\n\n\
+        "## Feature State\n\n{done}/{actionable} tasks complete\n\n\
+         - Draft: {draft}\n\
          - Pending: {pending}\n\
          - In Progress: {in_progress}\n\
          - Done: {done}\n\

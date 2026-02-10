@@ -28,6 +28,7 @@ pub use feature_listing::feature_listing;
 pub use feature_state::feature_state;
 pub use instructions::braindump::braindump_instructions;
 pub use instructions::discuss::discuss_instructions;
+pub use instructions::enrichment::enrichment_instructions;
 pub use instructions::opus_review::opus_review_instructions;
 pub use instructions::ramble::ramble_instructions;
 pub use instructions::task_exec::task_exec_instructions;
@@ -68,6 +69,7 @@ pub fn get_section(name: &str) -> Option<Section> {
         "discuss_instructions" => Some(instructions::discuss::discuss_instructions()),
         "task_exec_instructions" => Some(instructions::task_exec::task_exec_instructions()),
         "opus_review_instructions" => Some(instructions::opus_review::opus_review_instructions()),
+        "enrichment_instructions" => Some(instructions::enrichment::enrichment_instructions()),
         _ => None,
     }
 }

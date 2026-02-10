@@ -73,6 +73,7 @@ export function FiltersModal({ filters, setters, allTags, onClearFilters }: Filt
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
                 <SelectItem value="blocked">Blocked</SelectItem>
                 <SelectItem value="in_progress">In Progress</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
