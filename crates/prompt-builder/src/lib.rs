@@ -8,7 +8,7 @@ pub mod snapshot;
 pub mod stagnation;
 
 // Re-exports for convenience
-pub use context::PromptContext;
+pub use context::{PromptContext, ScoredFeatureComment};
 pub use output::{McpScript, PromptOutput};
 pub use recipe::PromptSection;
 pub use sections::metadata::SectionInfo;

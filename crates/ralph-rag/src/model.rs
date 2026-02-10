@@ -8,7 +8,7 @@
 //! and produces an `IterationRecord`. Agents never write these directly.
 //!
 //! ## Who reads these?
-//! 1. Qdrant — embedded as vectors for semantic search
+//! 1. SQLite — embedded as vectors for semantic search
 //! 2. MCP sidecar — returns as search results to the next iteration's agent
 //! 3. Prompt builder — injects recent failures/learnings into prompts
 //! 4. Frontend — displays iteration timeline (secondary)
@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 /// The complete record of what happened in one loop iteration, scoped to one feature.
 ///
 /// One iteration = one Claude CLI invocation = one task attempted.
-/// This is the source-of-truth record that gets written to JSONL and embedded in Qdrant.
+/// This is the source-of-truth record that gets written to JSONL and embedded for search.
 ///
 /// ## Sizing
 /// A typical record is 500-2000 bytes in JSONL. A feature with 100 iterations
@@ -92,7 +92,7 @@ pub struct IterationRecord {
 }
 
 impl IterationRecord {
-    /// Build the combined text that gets embedded in Qdrant.
+    /// Build the combined text that gets embedded for semantic search.
     ///
     /// This text determines search quality. It concatenates the most semantically
     /// meaningful fields. Order matters — models embed earlier text with more weight.
@@ -172,7 +172,7 @@ impl IterationRecord {
         text
     }
 
-    /// Generate a deterministic point ID for Qdrant.
+    /// Generate a deterministic point ID for vector storage.
     /// Same iteration+task always produces the same ID → idempotent upserts.
     ///
     /// # Examples

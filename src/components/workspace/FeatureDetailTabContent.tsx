@@ -12,6 +12,7 @@ import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { FeatureData } from '@/types/generated'
 import { DetailPageLayout } from './DetailPageLayout'
 import { FeatureFormTabContent } from './FeatureFormTabContent'
+import { FeatureCommentsSection } from './feature-detail/FeatureCommentsSection'
 import { PropertyRow } from './PropertyRow'
 
 function FeatureContent({ feature, onEdit }: { feature: FeatureData; onEdit: () => void }) {
@@ -49,48 +50,7 @@ function FeatureContent({ feature, onEdit }: { feature: FeatureData; onEdit: () 
     )
   }
 
-  if (feature.architecture) {
-    sections.push(
-      <div key="architecture" className="px-6 space-y-2">
-        <h2 className="text-sm font-medium text-muted-foreground">Architecture</h2>
-        <pre className="text-xs whitespace-pre-wrap font-mono bg-muted p-3 rounded-md">{feature.architecture}</pre>
-      </div>
-    )
-  }
-
-  if (feature.boundaries) {
-    sections.push(
-      <div key="boundaries" className="px-6 space-y-2">
-        <h2 className="text-sm font-medium text-muted-foreground">Boundaries</h2>
-        <pre className="text-xs whitespace-pre-wrap font-mono bg-muted p-3 rounded-md">{feature.boundaries}</pre>
-      </div>
-    )
-  }
-
-  if (feature.learnings.length > 0) {
-    sections.push(
-      <div key="learnings" className="px-6 space-y-2">
-        <h2 className="text-sm font-medium text-muted-foreground">Learnings</h2>
-        <ul className="space-y-2">
-          {feature.learnings.map(learning => (
-            <li key={learning.text} className="text-sm border rounded-md p-3 space-y-1.5">
-              <p className="leading-relaxed">{learning.text}</p>
-              <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                <Badge variant="secondary" className="text-xs px-1.5 py-0 h-5">
-                  {learning.source}
-                </Badge>
-                {learning.hitCount > 0 && <span>{learning.hitCount} hits</span>}
-                {learning.taskId != null && (
-                  <span className="font-mono">#{learning.taskId.toString().padStart(3, '0')}</span>
-                )}
-                <span>{formatDate(learning.created)}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-    )
-  }
+  sections.push(<FeatureCommentsSection key="comments" feature={feature} />)
 
   if (feature.contextFiles.length > 0 || feature.knowledgePaths.length > 0) {
     sections.push(
@@ -155,6 +115,12 @@ function FeatureSidebar({
 }) {
   return (
     <div className="px-4 py-4 space-y-0.5 overflow-y-auto h-full">
+      <PropertyRow label="Status">
+        <Badge variant={feature.status === 'active' ? 'default' : 'secondary'} className="text-xs px-1.5 py-0 h-5">
+          {feature.status}
+        </Badge>
+      </PropertyRow>
+      <Separator bleed="md" />
       <PropertyRow label="Acronym">
         <span className="font-mono text-sm">{feature.acronym}</span>
       </PropertyRow>
@@ -179,6 +145,14 @@ function FeatureSidebar({
           <span className="text-xs text-muted-foreground">({featureProgress}%)</span>
         </div>
       </PropertyRow>
+      {feature.comments.length > 0 && (
+        <>
+          <Separator bleed="md" />
+          <PropertyRow label="Comments">
+            <span className="text-sm">{feature.comments.length}</span>
+          </PropertyRow>
+        </>
+      )}
       {feature.dependencies.length > 0 && (
         <>
           <Separator bleed="md" />

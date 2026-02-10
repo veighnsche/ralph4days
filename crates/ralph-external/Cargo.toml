@@ -4,7 +4,7 @@ version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-description = "External service integrations (Ollama LLM, ComfyUI, Qdrant)"
+description = "External service integrations (Ollama LLM, ComfyUI)"
 license = "MIT OR Apache-2.0"
 
 [lints]
@@ -17,6 +17,8 @@ reqwest = { version = "0.12", features = ["json"] }
 tokio = { version = "1", features = ["time", "macros"] }
 thiserror = "2"
 ralph-errors = { workspace = true }
+ralph-rag = { path = "../ralph-rag" }
+sqlite-db = { path = "../sqlite-db" }
 dirs = "5"
 tokio-tungstenite = { version = "0.26", features = ["native-tls"] }
 futures-util = "0.3"

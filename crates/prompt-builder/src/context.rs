@@ -2,6 +2,14 @@ use crate::snapshot::CodebaseSnapshot;
 use sqlite_db::{Discipline, Feature, ProjectMetadata, Task};
 use std::collections::HashMap;
 
+/// A feature comment scored by RAG relevance to the current task.
+pub struct ScoredFeatureComment {
+    pub category: String,
+    pub body: String,
+    pub reason: Option<String>,
+    pub score: f32,
+}
+
 /// Everything the caller knows. Pure data — no I/O.
 /// The caller pre-reads files and pre-queries the database.
 pub struct PromptContext {
@@ -35,6 +43,10 @@ pub struct PromptContext {
 
     // Per-section instruction overrides keyed by section name (e.g. "braindump_instructions")
     pub instruction_overrides: HashMap<String, String>,
+
+    // RAG: pre-computed relevant comments for the target feature (caller does search)
+    // If Some, feature_context uses these instead of all comments
+    pub relevant_comments: Option<Vec<ScoredFeatureComment>>,
 }
 
 impl PromptContext {
@@ -85,5 +97,6 @@ pub fn test_context() -> PromptContext {
         target_feature: None,
         codebase_snapshot: None,
         instruction_overrides: HashMap::new(),
+        relevant_comments: None,
     }
 }

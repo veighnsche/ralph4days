@@ -1,6 +1,19 @@
 use sqlite_db::{
-    FeatureInput, FeatureLearning, FixedClock, Priority, SqliteDb, TaskInput, TaskStatus,
+    AddFeatureCommentInput, FeatureInput, FixedClock, Priority, SqliteDb, TaskInput, TaskStatus,
 };
+
+fn comment(feature: &str, category: &str, author: &str, body: &str) -> AddFeatureCommentInput {
+    AddFeatureCommentInput {
+        feature_name: feature.to_owned(),
+        category: category.to_owned(),
+        author: author.to_owned(),
+        discipline: None,
+        agent_task_id: None,
+        body: body.to_owned(),
+        reason: None,
+        source_iteration: None,
+    }
+}
 
 fn create_test_db() -> SqliteDb {
     let clock = Box::new(FixedClock(
@@ -570,18 +583,16 @@ fn test_delete_feature_with_tasks_rejected() {
     assert!(result.unwrap_err().contains("Cannot delete feature"));
 }
 
-// === FEATURE RAG FIELDS tests ===
+// === FEATURE fields tests ===
 
 #[test]
-fn test_create_feature_with_rag_fields() {
+fn test_create_feature_with_dependencies() {
     let db = create_test_db();
     db.create_feature(FeatureInput {
         name: "auth".into(),
         display_name: "Auth".into(),
         acronym: "AUTH".into(),
         description: Some("Authentication feature".into()),
-        architecture: Some("OAuth2 + JWT".into()),
-        boundaries: Some("No direct DB access".into()),
         dependencies: vec!["user-profile".into()],
         ..Default::default()
     })
@@ -589,14 +600,13 @@ fn test_create_feature_with_rag_fields() {
 
     let features = db.get_features();
     let f = features.iter().find(|f| f.name == "auth").unwrap();
-    assert_eq!(f.architecture, Some("OAuth2 + JWT".into()));
-    assert_eq!(f.boundaries, Some("No direct DB access".into()));
     assert_eq!(f.dependencies, vec!["user-profile"]);
-    assert!(f.learnings.is_empty()); // Always empty on create
+    assert!(f.comments.is_empty());
+    assert_eq!(f.status, sqlite_db::FeatureStatus::Active);
 }
 
 #[test]
-fn test_update_feature_rag_fields() {
+fn test_update_feature_dependencies() {
     let db = create_test_db();
     db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
 
@@ -604,8 +614,6 @@ fn test_update_feature_rag_fields() {
         name: "auth".into(),
         display_name: "Auth".into(),
         acronym: "AUTH".into(),
-        architecture: Some("Session-based".into()),
-        boundaries: Some("Frontend only".into()),
         dependencies: vec!["settings".into()],
         ..Default::default()
     })
@@ -613,26 +621,26 @@ fn test_update_feature_rag_fields() {
 
     let features = db.get_features();
     let f = features.iter().find(|f| f.name == "auth").unwrap();
-    assert_eq!(f.architecture, Some("Session-based".into()));
-    assert_eq!(f.boundaries, Some("Frontend only".into()));
     assert_eq!(f.dependencies, vec!["settings"]);
 }
 
 #[test]
-fn test_update_feature_preserves_learnings() {
+fn test_update_feature_preserves_comments() {
     let db = create_test_db();
     db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
 
-    // Add a learning
-    let learning = FeatureLearning::from_human("Use bcrypt not SHA256".into(), None);
-    db.append_feature_learning("auth", learning, 50).unwrap();
+    db.add_feature_comment(comment(
+        "auth",
+        "architecture",
+        "human",
+        "Use bcrypt not SHA256",
+    ))
+    .unwrap();
 
-    // Update feature (should NOT touch learnings)
     db.update_feature(FeatureInput {
         name: "auth".into(),
         display_name: "Authentication".into(),
         acronym: "AUTH".into(),
-        architecture: Some("New arch".into()),
         ..Default::default()
     })
     .unwrap();
@@ -640,105 +648,114 @@ fn test_update_feature_preserves_learnings() {
     let features = db.get_features();
     let f = features.iter().find(|f| f.name == "auth").unwrap();
     assert_eq!(f.display_name, "Authentication");
-    assert_eq!(f.architecture, Some("New arch".into()));
-    assert_eq!(f.learnings.len(), 1);
-    assert_eq!(f.learnings[0].text, "Use bcrypt not SHA256");
+    assert_eq!(f.comments.len(), 1);
+    assert_eq!(f.comments[0].body, "Use bcrypt not SHA256");
 }
 
-// === FEATURE LEARNING tests ===
+// === FEATURE COMMENT tests ===
 
 #[test]
-fn test_append_feature_learning_basic() {
+fn test_add_feature_comment_basic() {
     let db = create_test_db();
     db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
 
-    let learning = FeatureLearning::auto_extracted("Auth expects User object".into(), 7, Some(42));
-    assert!(learning.created.is_empty());
-
-    let added = db.append_feature_learning("auth", learning, 50).unwrap();
-    assert!(added);
-
-    let features = db.get_features();
-    let f = features.iter().find(|f| f.name == "auth").unwrap();
-    assert_eq!(f.learnings.len(), 1);
-    assert_eq!(f.learnings[0].text, "Auth expects User object");
-    assert_eq!(f.learnings[0].iteration, Some(7));
-    assert_eq!(f.learnings[0].task_id, Some(42));
-    assert_eq!(f.learnings[0].created, "2026-01-01T00:00:00+00:00");
-}
-
-#[test]
-fn test_append_feature_learning_dedup() {
-    let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
-
-    let learning1 = FeatureLearning::auto_extracted(
-        "Auth middleware expects User object not userId string".into(),
-        5,
-        None,
-    );
-    db.append_feature_learning("auth", learning1, 50).unwrap();
-
-    // Near-duplicate → should dedup (return false, increment hit_count)
-    let learning2 = FeatureLearning::auto_extracted(
-        "Auth middleware expects User object instead of userId string".into(),
-        8,
-        None,
-    );
-    let added = db.append_feature_learning("auth", learning2, 50).unwrap();
-    assert!(!added); // Deduped
-
-    let features = db.get_features();
-    let f = features.iter().find(|f| f.name == "auth").unwrap();
-    assert_eq!(f.learnings.len(), 1); // Still 1
-    assert_eq!(f.learnings[0].hit_count, 2); // Incremented
-}
-
-#[test]
-fn test_append_feature_learning_nonexistent_feature() {
-    let db = create_test_db();
-    let learning = FeatureLearning::from_human("test".into(), None);
-    let result = db.append_feature_learning("nope", learning, 50);
-    assert!(result.is_err());
-    assert!(result.unwrap_err().contains("not found"));
-}
-
-// === REMOVE LEARNING tests ===
-
-#[test]
-fn test_remove_feature_learning_basic() {
-    let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
-
-    db.append_feature_learning(
-        "auth",
-        FeatureLearning::from_human("First".into(), None),
-        50,
-    )
-    .unwrap();
-    db.append_feature_learning(
-        "auth",
-        FeatureLearning::from_human("Second".into(), None),
-        50,
-    )
+    db.add_feature_comment(AddFeatureCommentInput {
+        reason: Some("Industry standard".into()),
+        ..comment("auth", "architecture", "human", "OAuth2 + JWT flow")
+    })
     .unwrap();
 
-    db.remove_feature_learning("auth", 0).unwrap();
-
     let features = db.get_features();
     let f = features.iter().find(|f| f.name == "auth").unwrap();
-    assert_eq!(f.learnings.len(), 1);
-    assert_eq!(f.learnings[0].text, "Second");
+    assert_eq!(f.comments.len(), 1);
+    assert_eq!(f.comments[0].category, "architecture");
+    assert_eq!(f.comments[0].author, "human");
+    assert_eq!(f.comments[0].body, "OAuth2 + JWT flow");
+    assert_eq!(f.comments[0].reason, Some("Industry standard".into()));
+    assert!(f.comments[0].created.is_some());
 }
 
 #[test]
-fn test_remove_feature_learning_out_of_range() {
+fn test_add_feature_comment_empty_body_rejected() {
     let db = create_test_db();
     db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
 
-    let result = db.remove_feature_learning("auth", 0);
+    let result = db.add_feature_comment(comment("auth", "architecture", "human", "   "));
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("out of range"));
+    assert!(result.unwrap_err().contains("cannot be empty"));
+}
+
+#[test]
+fn test_add_feature_comment_empty_category_rejected() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+
+    let result = db.add_feature_comment(comment("auth", "  ", "human", "body"));
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("category cannot be empty"));
+}
+
+#[test]
+fn test_add_feature_comment_nonexistent_feature() {
+    let db = create_test_db();
+    let result = db.add_feature_comment(comment("nope", "architecture", "human", "body"));
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("does not exist"));
+}
+
+#[test]
+fn test_update_feature_comment() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+
+    db.add_feature_comment(comment("auth", "gotcha", "human", "Original"))
+        .unwrap();
+
+    let features = db.get_features();
+    let comment_id = features.iter().find(|f| f.name == "auth").unwrap().comments[0].id;
+
+    db.update_feature_comment("auth", comment_id, "Edited", Some("new reason".into()))
+        .unwrap();
+
+    let features = db.get_features();
+    let f = features.iter().find(|f| f.name == "auth").unwrap();
+    assert_eq!(f.comments[0].body, "Edited");
+    assert_eq!(f.comments[0].reason, Some("new reason".into()));
+    assert!(f.comments[0].updated.is_some());
+}
+
+#[test]
+fn test_delete_feature_comment() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+
+    db.add_feature_comment(comment("auth", "gotcha", "human", "First"))
+        .unwrap();
+    db.add_feature_comment(comment("auth", "convention", "agent", "Second"))
+        .unwrap();
+
+    let features = db.get_features();
+    let first_id = features.iter().find(|f| f.name == "auth").unwrap().comments[0].id;
+
+    db.delete_feature_comment("auth", first_id).unwrap();
+
+    let features = db.get_features();
+    let f = features.iter().find(|f| f.name == "auth").unwrap();
+    assert_eq!(f.comments.len(), 1);
+    assert_eq!(f.comments[0].body, "Second");
+}
+
+#[test]
+fn test_delete_feature_cascades_comments() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    db.add_feature_comment(comment("auth", "gotcha", "human", "Note"))
+        .unwrap();
+
+    db.delete_feature("auth".into()).unwrap();
+
+    // Feature and its comments are gone
+    assert!(db.get_features().iter().all(|f| f.name != "auth"));
 }
 
 // === CONTEXT FILE tests ===

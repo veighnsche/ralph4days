@@ -1,5 +1,4 @@
 use ralph_macros::ipc_type;
-use ralph_rag::FeatureLearning;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -215,6 +214,52 @@ pub struct ProjectProgress {
     pub progress_percent: u32,
 }
 
+#[ipc_type]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum FeatureStatus {
+    Active,
+    Archived,
+}
+
+impl FeatureStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Active => "active",
+            Self::Archived => "archived",
+        }
+    }
+
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "active" => Some(Self::Active),
+            "archived" => Some(Self::Archived),
+            _ => None,
+        }
+    }
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FeatureComment {
+    pub id: u32,
+    pub category: String,
+    pub author: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub discipline: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub agent_task_id: Option<u32>,
+    pub body: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_iteration: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Feature {
     pub name: String,
@@ -229,25 +274,19 @@ pub struct Feature {
     pub knowledge_paths: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub context_files: Vec<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub architecture: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub boundaries: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub learnings: Vec<FeatureLearning>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dependencies: Vec<String>,
+    pub status: FeatureStatus,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub comments: Vec<FeatureComment>,
 }
 
-/// Learnings excluded — append-only via dedicated API.
 #[derive(Default)]
 pub struct FeatureInput {
     pub name: String,
     pub display_name: String,
     pub acronym: String,
     pub description: Option<String>,
-    pub architecture: Option<String>,
-    pub boundaries: Option<String>,
     pub knowledge_paths: Vec<String>,
     pub context_files: Vec<String>,
     pub dependencies: Vec<String>,

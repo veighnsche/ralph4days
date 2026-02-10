@@ -1,7 +1,6 @@
 use crate::types::*;
 use crate::SqliteDb;
 use ralph_errors::{codes, ralph_err, RalphResultExt};
-use ralph_rag::{check_deduplication, select_for_pruning, DeduplicationResult, FeatureLearning};
 
 impl SqliteDb {
     pub fn create_feature(&self, input: FeatureInput) -> Result<(), String> {
@@ -54,8 +53,8 @@ impl SqliteDb {
         self.conn
             .execute(
                 "INSERT INTO features (name, display_name, acronym, description, created, \
-                 knowledge_paths, context_files, architecture, boundaries, learnings, dependencies) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, '[]', ?10)",
+                 knowledge_paths, context_files, dependencies, status) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'active')",
                 rusqlite::params![
                     input.name,
                     input.display_name,
@@ -64,8 +63,6 @@ impl SqliteDb {
                     now,
                     kp_json,
                     cf_json,
-                    input.architecture,
-                    input.boundaries,
                     deps_json,
                 ],
             )
@@ -120,14 +117,11 @@ impl SqliteDb {
         self.conn
             .execute(
                 "UPDATE features SET display_name = ?1, acronym = ?2, description = ?3, \
-                 architecture = ?4, boundaries = ?5, knowledge_paths = ?6, context_files = ?7, \
-                 dependencies = ?8 WHERE name = ?9",
+                 knowledge_paths = ?4, context_files = ?5, dependencies = ?6 WHERE name = ?7",
                 rusqlite::params![
                     input.display_name,
                     input.acronym,
                     input.description,
-                    input.architecture,
-                    input.boundaries,
                     kp_json,
                     cf_json,
                     deps_json,
@@ -173,154 +167,44 @@ impl SqliteDb {
     pub fn get_features(&self) -> Vec<Feature> {
         let Ok(mut stmt) = self.conn.prepare(
             "SELECT name, display_name, acronym, description, created, \
-             knowledge_paths, context_files, architecture, boundaries, learnings, dependencies \
+             knowledge_paths, context_files, dependencies, status \
              FROM features ORDER BY name",
         ) else {
             return vec![];
         };
 
+        let mut comments_map = self.get_all_comments_by_feature();
+
         stmt.query_map([], |row| {
             let kp_json: String = row.get(5)?;
             let cf_json: String = row.get(6)?;
-            let arch: Option<String> = row.get(7)?;
-            let bounds: Option<String> = row.get(8)?;
-            let learnings_json: String = row.get(9)?;
-            let deps_json: String = row.get(10)?;
+            let deps_json: String = row.get(7)?;
+            let status_str: String = row.get(8)?;
+            let name: String = row.get(0)?;
             Ok(Feature {
-                name: row.get(0)?,
+                name,
                 display_name: row.get(1)?,
                 acronym: row.get(2)?,
                 description: row.get(3)?,
                 created: row.get(4)?,
                 knowledge_paths: serde_json::from_str(&kp_json).unwrap_or_default(),
                 context_files: serde_json::from_str(&cf_json).unwrap_or_default(),
-                architecture: arch,
-                boundaries: bounds,
-                learnings: serde_json::from_str(&learnings_json).unwrap_or_default(),
                 dependencies: serde_json::from_str(&deps_json).unwrap_or_default(),
+                status: FeatureStatus::parse(&status_str).unwrap_or(FeatureStatus::Active),
+                comments: vec![],
             })
         })
         .map_or_else(
             |_| vec![],
-            |rows| rows.filter_map(std::result::Result::ok).collect(),
+            |rows| {
+                rows.filter_map(std::result::Result::ok)
+                    .map(|mut f| {
+                        f.comments = comments_map.remove(&f.name).unwrap_or_default();
+                        f
+                    })
+                    .collect()
+            },
         )
-    }
-
-    pub fn append_feature_learning(
-        &self,
-        feature_name: &str,
-        mut learning: FeatureLearning,
-        max_learnings: usize,
-    ) -> Result<bool, String> {
-        learning.created = self.now().to_rfc3339();
-
-        let learnings_json: String = self
-            .conn
-            .query_row(
-                "SELECT learnings FROM features WHERE name = ?1",
-                [feature_name],
-                |row| row.get(0),
-            )
-            .ralph_err(codes::DB_READ, "Feature not found")?;
-
-        let mut learnings: Vec<FeatureLearning> =
-            serde_json::from_str(&learnings_json).unwrap_or_default();
-
-        match check_deduplication(&learning.text, &learnings) {
-            DeduplicationResult::Duplicate { existing_index } => {
-                learnings[existing_index].record_re_observation();
-                let updated =
-                    serde_json::to_string(&learnings).ralph_err(codes::DB_WRITE, "JSON error")?;
-                self.conn
-                    .execute(
-                        "UPDATE features SET learnings = ?1 WHERE name = ?2",
-                        rusqlite::params![updated, feature_name],
-                    )
-                    .ralph_err(codes::DB_WRITE, "Failed to update learnings")?;
-                Ok(false)
-            }
-            DeduplicationResult::Conflict {
-                existing_index,
-                new_text,
-            } => {
-                learnings[existing_index] = learning;
-                learnings[existing_index].reason =
-                    Some(format!("Replaced conflicting learning: {new_text}"));
-                let updated =
-                    serde_json::to_string(&learnings).ralph_err(codes::DB_WRITE, "JSON error")?;
-                self.conn
-                    .execute(
-                        "UPDATE features SET learnings = ?1 WHERE name = ?2",
-                        rusqlite::params![updated, feature_name],
-                    )
-                    .ralph_err(codes::DB_WRITE, "Failed to update learnings")?;
-                Ok(true)
-            }
-            DeduplicationResult::Unique => {
-                learnings.push(learning);
-
-                let to_prune = select_for_pruning(&learnings, max_learnings);
-                if !to_prune.is_empty() {
-                    let mut sorted_prune = to_prune;
-                    sorted_prune.sort_unstable_by(|a, b| b.cmp(a));
-                    for idx in sorted_prune {
-                        learnings.remove(idx);
-                    }
-                }
-
-                if learnings.len() > max_learnings {
-                    return ralph_err!(
-                        codes::FEATURE_OPS,
-                        "Learnings full — all are protected. Review and remove some manually."
-                    );
-                }
-
-                let updated =
-                    serde_json::to_string(&learnings).ralph_err(codes::DB_WRITE, "JSON error")?;
-                self.conn
-                    .execute(
-                        "UPDATE features SET learnings = ?1 WHERE name = ?2",
-                        rusqlite::params![updated, feature_name],
-                    )
-                    .ralph_err(codes::DB_WRITE, "Failed to update learnings")?;
-                Ok(true)
-            }
-        }
-    }
-
-    pub fn remove_feature_learning(&self, feature_name: &str, index: usize) -> Result<(), String> {
-        let learnings_json: String = self
-            .conn
-            .query_row(
-                "SELECT learnings FROM features WHERE name = ?1",
-                [feature_name],
-                |row| row.get(0),
-            )
-            .ralph_err(codes::DB_READ, "Feature not found")?;
-
-        let mut learnings: Vec<FeatureLearning> =
-            serde_json::from_str(&learnings_json).unwrap_or_default();
-
-        if index >= learnings.len() {
-            return ralph_err!(
-                codes::FEATURE_OPS,
-                "Learning index {} out of range (feature has {} learnings)",
-                index,
-                learnings.len()
-            );
-        }
-
-        learnings.remove(index);
-
-        let updated = serde_json::to_string(&learnings).ralph_err(codes::DB_WRITE, "JSON error")?;
-        self.conn
-            .execute(
-                "UPDATE features SET learnings = ?1 WHERE name = ?2",
-                rusqlite::params![updated, feature_name],
-            )
-            .ralph_err(codes::DB_WRITE, "Failed to update learnings")?;
-
-        Ok(())
     }
 
     pub fn add_feature_context_file(

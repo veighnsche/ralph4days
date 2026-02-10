@@ -9,7 +9,7 @@
 //! ```text
 //! stream-json lines → RawIterationOutput → ExtractionResult → IterationRecord
 //!                     (collected during)   (parsed after)      (stored in JSONL
-//!                                                               + embedded in Qdrant)
+//!                                                               + embedded for search)
 //! ```
 //!
 //! ## IMPORTANT: Extraction happens AFTER stagnation check (F28)
@@ -18,7 +18,7 @@
 //! 1. Pre-iteration hash
 //! 2. Run Claude iteration
 //! 3. Post-iteration hash → stagnation check
-//! 4. THEN: memory extraction → write to JSONL/Qdrant
+//! 4. THEN: memory extraction → write to JSONL + embed
 //!
 //! If extraction writes to features.yaml (auto-accumulating context_files),
 //! it changes the file hash, and stagnation detection sees false "progress."

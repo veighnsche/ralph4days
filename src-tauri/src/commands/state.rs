@@ -76,6 +76,7 @@ impl AppState {
             target_feature: None,
             codebase_snapshot: snapshot,
             instruction_overrides,
+            relevant_comments: None,
         })
     }
 

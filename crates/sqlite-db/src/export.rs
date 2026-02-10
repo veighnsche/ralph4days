@@ -60,35 +60,18 @@ impl SqliteDb {
                         output.push_str(&format!("  - \"{}\"\n", yaml_escape(cf)));
                     }
                 }
-                if let Some(arch) = &f.architecture {
-                    output.push_str(&format!("  architecture: \"{}\"\n", yaml_escape(arch)));
-                }
-                if let Some(bounds) = &f.boundaries {
-                    output.push_str(&format!("  boundaries: \"{}\"\n", yaml_escape(bounds)));
-                }
-                if !f.learnings.is_empty() {
-                    output.push_str("  learnings:\n");
-                    for l in &f.learnings {
-                        output.push_str(&format!("  - text: \"{}\"\n", yaml_escape(&l.text)));
-                        let source_str = match l.source {
-                            ralph_rag::LearningSource::Auto => "auto",
-                            ralph_rag::LearningSource::Agent => "agent",
-                            ralph_rag::LearningSource::Human => "human",
-                            ralph_rag::LearningSource::OpusReviewed => "opus_reviewed",
-                        };
-                        output.push_str(&format!("    source: \"{source_str}\"\n"));
-                        if let Some(reason) = &l.reason {
+                if !f.comments.is_empty() {
+                    output.push_str("  comments:\n");
+                    for c in &f.comments {
+                        output
+                            .push_str(&format!("  - category: \"{}\"\n", yaml_escape(&c.category)));
+                        output.push_str(&format!("    author: \"{}\"\n", yaml_escape(&c.author)));
+                        output.push_str(&format!("    body: \"{}\"\n", yaml_escape(&c.body)));
+                        if let Some(reason) = &c.reason {
                             output.push_str(&format!("    reason: \"{}\"\n", yaml_escape(reason)));
                         }
-                        if let Some(task_id) = l.task_id {
-                            output.push_str(&format!("    task_id: {task_id}\n"));
-                        }
-                        if let Some(iteration) = l.iteration {
-                            output.push_str(&format!("    iteration: {iteration}\n"));
-                        }
-                        output.push_str(&format!("    hit_count: {}\n", l.hit_count));
-                        if l.reviewed {
-                            output.push_str("    reviewed: true\n");
+                        if let Some(created) = &c.created {
+                            output.push_str(&format!("    created: \"{created}\"\n"));
                         }
                     }
                 }

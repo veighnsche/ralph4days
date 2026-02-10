@@ -6,9 +6,8 @@ edition.workspace = true
 rust-version.workspace = true
 description = "Feature-scoped RAG data model for cross-iteration agent memory"
 license = "MIT OR Apache-2.0"
-readme = "README.md"
 repository = "https://github.com/ralph4days/ralph4days"
-keywords = ["rag", "agent-memory", "feature-scoped", "jsonl", "qdrant"]
+keywords = ["rag", "agent-memory", "feature-scoped", "jsonl", "embeddings"]
 categories = ["data-structures", "database"]
 
 [lints]

@@ -1,8 +1,25 @@
 use super::state::{get_db, get_locked_project_path, AppState};
-use ralph_errors::{codes, ralph_err, RalphResultExt};
+use ralph_errors::{codes, RalphResultExt};
 use ralph_macros::ipc_type;
 use serde::Deserialize;
 use tauri::State;
+
+fn build_embedding_config(
+    ext_config: &ralph_external::ExternalServicesConfig,
+) -> ralph_external::comment_embeddings::CommentEmbeddingConfig<'_> {
+    ralph_external::comment_embeddings::CommentEmbeddingConfig {
+        ollama: &ext_config.ollama,
+        document_prefix: "search_document: ",
+        query_prefix: "search_query: ",
+        min_search_score: 0.4,
+        max_search_results: 10,
+    }
+}
+
+fn db_path(state: &State<'_, AppState>) -> Result<std::path::PathBuf, String> {
+    let project_path = get_locked_project_path(state)?;
+    Ok(project_path.join(".ralph").join("db").join("ralph.db"))
+}
 
 #[ipc_type]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -107,19 +124,23 @@ pub fn get_disciplines_config(state: State<'_, AppState>) -> Result<Vec<Discipli
 #[ipc_type]
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct FeatureLearningData {
-    pub text: String,
+pub struct FeatureCommentData {
+    pub id: u32,
+    pub category: String,
+    pub author: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub discipline: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub agent_task_id: Option<u32>,
+    pub body: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
-    pub source: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub task_id: Option<u32>,
+    pub source_iteration: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub iteration: Option<u32>,
-    pub created: String,
-    pub hit_count: u32,
-    pub reviewed: bool,
-    pub review_count: u32,
+    pub created: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated: Option<String>,
 }
 
 #[ipc_type]
@@ -133,32 +154,23 @@ pub struct FeatureData {
     pub created: Option<String>,
     pub knowledge_paths: Vec<String>,
     pub context_files: Vec<String>,
-    pub architecture: Option<String>,
-    pub boundaries: Option<String>,
-    pub learnings: Vec<FeatureLearningData>,
     pub dependencies: Vec<String>,
+    pub status: String,
+    pub comments: Vec<FeatureCommentData>,
 }
 
-fn learning_source_str(source: sqlite_db::LearningSource) -> String {
-    match source {
-        sqlite_db::LearningSource::Auto => "auto".into(),
-        sqlite_db::LearningSource::Agent => "agent".into(),
-        sqlite_db::LearningSource::Human => "human".into(),
-        sqlite_db::LearningSource::OpusReviewed => "opus_reviewed".into(),
-    }
-}
-
-fn to_learning_data(l: &sqlite_db::FeatureLearning) -> FeatureLearningData {
-    FeatureLearningData {
-        text: l.text.clone(),
-        reason: l.reason.clone(),
-        source: learning_source_str(l.source),
-        task_id: l.task_id,
-        iteration: l.iteration,
-        created: l.created.clone(),
-        hit_count: l.hit_count,
-        reviewed: l.reviewed,
-        review_count: l.review_count,
+fn to_comment_data(c: &sqlite_db::FeatureComment) -> FeatureCommentData {
+    FeatureCommentData {
+        id: c.id,
+        category: c.category.clone(),
+        author: c.author.clone(),
+        discipline: c.discipline.clone(),
+        agent_task_id: c.agent_task_id,
+        body: c.body.clone(),
+        reason: c.reason.clone(),
+        source_iteration: c.source_iteration,
+        created: c.created.clone(),
+        updated: c.updated.clone(),
     }
 }
 
@@ -176,10 +188,9 @@ pub fn get_features(state: State<'_, AppState>) -> Result<Vec<FeatureData>, Stri
             created: f.created.clone(),
             knowledge_paths: f.knowledge_paths.clone(),
             context_files: f.context_files.clone(),
-            architecture: f.architecture.clone(),
-            boundaries: f.boundaries.clone(),
-            learnings: f.learnings.iter().map(to_learning_data).collect(),
             dependencies: f.dependencies.clone(),
+            status: f.status.as_str().to_owned(),
+            comments: f.comments.iter().map(to_comment_data).collect(),
         })
         .collect())
 }
@@ -190,8 +201,6 @@ pub struct CreateFeatureParams {
     pub display_name: String,
     pub acronym: String,
     pub description: Option<String>,
-    pub architecture: Option<String>,
-    pub boundaries: Option<String>,
     pub knowledge_paths: Option<Vec<String>>,
     pub context_files: Option<Vec<String>>,
     pub dependencies: Option<Vec<String>>,
@@ -209,8 +218,6 @@ pub fn create_feature(
         display_name: params.display_name,
         acronym: params.acronym,
         description: params.description,
-        architecture: params.architecture,
-        boundaries: params.boundaries,
         knowledge_paths: params.knowledge_paths.unwrap_or_default(),
         context_files: params.context_files.unwrap_or_default(),
         dependencies: params.dependencies.unwrap_or_default(),
@@ -223,8 +230,6 @@ pub struct UpdateFeatureParams {
     pub display_name: String,
     pub acronym: String,
     pub description: Option<String>,
-    pub architecture: Option<String>,
-    pub boundaries: Option<String>,
     pub knowledge_paths: Option<Vec<String>>,
     pub context_files: Option<Vec<String>>,
     pub dependencies: Option<Vec<String>>,
@@ -241,12 +246,149 @@ pub fn update_feature(
         display_name: params.display_name,
         acronym: params.acronym,
         description: params.description,
-        architecture: params.architecture,
-        boundaries: params.boundaries,
         knowledge_paths: params.knowledge_paths.unwrap_or_default(),
         context_files: params.context_files.unwrap_or_default(),
         dependencies: params.dependencies.unwrap_or_default(),
     })
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AddFeatureCommentParams {
+    pub feature_name: String,
+    pub category: String,
+    pub author: String,
+    pub discipline: Option<String>,
+    pub agent_task_id: Option<u32>,
+    pub body: String,
+    pub reason: Option<String>,
+    pub source_iteration: Option<u32>,
+}
+
+#[tauri::command]
+pub async fn add_feature_comment(
+    state: State<'_, AppState>,
+    params: AddFeatureCommentParams,
+) -> Result<(), String> {
+    let path = db_path(&state)?;
+    let (comment_id, embedding_text) = {
+        let db = get_db(&state)?;
+        db.add_feature_comment(sqlite_db::AddFeatureCommentInput {
+            feature_name: params.feature_name.clone(),
+            category: params.category.clone(),
+            author: params.author.clone(),
+            discipline: params.discipline,
+            agent_task_id: params.agent_task_id,
+            body: params.body.clone(),
+            reason: params.reason.clone(),
+            source_iteration: params.source_iteration,
+        })?;
+
+        let features = db.get_features();
+        let cid = features
+            .iter()
+            .find(|f| f.name == params.feature_name)
+            .and_then(|f| f.comments.last())
+            .map(|c| c.id)
+            .ok_or("Failed to get new comment ID")?;
+
+        let text = ralph_external::comment_embeddings::build_embedding_text(
+            &params.category,
+            &params.body,
+            params.reason.as_deref(),
+        );
+        (cid, text)
+    };
+
+    let ext_config = ralph_external::ExternalServicesConfig::load()?;
+    let embed_config = build_embedding_config(&ext_config);
+    let result =
+        ralph_external::comment_embeddings::embed_text(&embed_config, &embedding_text).await?;
+
+    let db = sqlite_db::SqliteDb::open(&path)?;
+    db.upsert_comment_embedding(comment_id, &result.vector, &result.model, &result.hash)
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateFeatureCommentParams {
+    pub feature_name: String,
+    pub comment_id: u32,
+    pub body: String,
+    pub reason: Option<String>,
+}
+
+#[tauri::command]
+pub async fn update_feature_comment(
+    state: State<'_, AppState>,
+    params: UpdateFeatureCommentParams,
+) -> Result<(), String> {
+    let path = db_path(&state)?;
+    let (embedding_text, needs_embed) = {
+        let db = get_db(&state)?;
+        db.update_feature_comment(
+            &params.feature_name,
+            params.comment_id,
+            &params.body,
+            params.reason.clone(),
+        )?;
+
+        let features = db.get_features();
+        let category = features
+            .iter()
+            .find(|f| f.name == params.feature_name)
+            .and_then(|f| f.comments.iter().find(|c| c.id == params.comment_id))
+            .map(|c| c.category.clone())
+            .ok_or("Comment not found after update")?;
+
+        let text = ralph_external::comment_embeddings::build_embedding_text(
+            &category,
+            &params.body,
+            params.reason.as_deref(),
+        );
+        let needs = ralph_external::comment_embeddings::should_embed(
+            &db,
+            params.comment_id,
+            &category,
+            &params.body,
+            params.reason.as_deref(),
+        )
+        .is_some();
+        (text, needs)
+    };
+
+    if !needs_embed {
+        return Ok(());
+    }
+
+    let ext_config = ralph_external::ExternalServicesConfig::load()?;
+    let embed_config = build_embedding_config(&ext_config);
+    let result =
+        ralph_external::comment_embeddings::embed_text(&embed_config, &embedding_text).await?;
+
+    let db = sqlite_db::SqliteDb::open(&path)?;
+    db.upsert_comment_embedding(
+        params.comment_id,
+        &result.vector,
+        &result.model,
+        &result.hash,
+    )
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeleteFeatureCommentParams {
+    pub feature_name: String,
+    pub comment_id: u32,
+}
+
+#[tauri::command]
+pub fn delete_feature_comment(
+    state: State<'_, AppState>,
+    params: DeleteFeatureCommentParams,
+) -> Result<(), String> {
+    let db = get_db(&state)?;
+    db.delete_feature_comment(&params.feature_name, params.comment_id)
 }
 
 #[derive(Deserialize)]
@@ -363,40 +505,6 @@ pub fn update_discipline(
         crops: None,
         image_prompt: None,
     })
-}
-
-#[tauri::command]
-pub fn append_feature_learning(
-    state: State<'_, AppState>,
-    feature_name: String,
-    text: String,
-    reason: Option<String>,
-    source: Option<String>,
-    task_id: Option<u32>,
-    iteration: Option<u32>,
-) -> Result<bool, String> {
-    let db = get_db(&state)?;
-
-    let learning = match source.as_deref() {
-        Some("human") => sqlite_db::FeatureLearning::from_human(text, reason),
-        Some("agent") => sqlite_db::FeatureLearning::from_agent(text, reason, task_id),
-        Some("auto") | None => {
-            sqlite_db::FeatureLearning::auto_extracted(text, iteration.unwrap_or(0), task_id)
-        }
-        Some(other) => return ralph_err!(codes::FEATURE_OPS, "Invalid learning source: {other}"),
-    };
-
-    db.append_feature_learning(&feature_name, learning, 50)
-}
-
-#[tauri::command]
-pub fn remove_feature_learning(
-    state: State<'_, AppState>,
-    feature_name: String,
-    index: usize,
-) -> Result<(), String> {
-    let db = get_db(&state)?;
-    db.remove_feature_learning(&feature_name, index)
 }
 
 #[tauri::command]

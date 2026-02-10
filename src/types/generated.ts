@@ -25,6 +25,30 @@ export type DisciplineCropsData = {
   strip?: CropBoxData
 }
 export type DisciplineImagePromptData = { positive: string; negative: string }
+export type FeatureCommentData = {
+  id: number
+  category: string
+  author: string
+  discipline?: string
+  agentTaskId?: number
+  body: string
+  reason?: string
+  sourceIteration?: number
+  created?: string
+  updated?: string
+}
+export type FeatureComment = {
+  id: number
+  category: string
+  author: string
+  discipline?: string
+  agent_task_id?: number
+  body: string
+  reason?: string
+  source_iteration?: number
+  created?: string
+  updated?: string
+}
 export type FeatureData = {
   name: string
   displayName: string
@@ -33,21 +57,9 @@ export type FeatureData = {
   created?: string
   knowledgePaths: string[]
   contextFiles: string[]
-  architecture?: string
-  boundaries?: string
-  learnings: FeatureLearningData[]
   dependencies: string[]
-}
-export type FeatureLearningData = {
-  text: string
-  reason?: string
-  source: string
-  taskId?: number
-  iteration?: number
-  created: string
-  hitCount: number
-  reviewed: boolean
-  reviewCount: number
+  status: string
+  comments: FeatureCommentData[]
 }
 export type FeatureLearning = {
   text: string
@@ -60,6 +72,7 @@ export type FeatureLearning = {
   reviewed: boolean
   review_count: number
 }
+export type FeatureStatus = 'active' | 'archived'
 export type GroupStats = {
   name: string
   displayName: string

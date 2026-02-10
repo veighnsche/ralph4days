@@ -1,8 +1,7 @@
 //! JSONL journal — the source of truth for iteration history.
 //!
-//! Qdrant is a DISPOSABLE search index. If the embedding model changes,
-//! if Qdrant data corrupts, if collections need rebuilding — the journal
-//! survives and Qdrant is rebuilt from it.
+//! The embedding index is DISPOSABLE. If the embedding model changes
+//! or data corrupts — the journal survives and embeddings are rebuilt from it.
 //!
 //! ## File Layout (F19, F22)
 //!

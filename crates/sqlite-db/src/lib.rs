@@ -1,7 +1,9 @@
 pub mod acronym;
+mod comment_embeddings;
 mod comments;
 mod disciplines;
 mod export;
+mod feature_comments;
 mod features;
 mod metadata;
 mod recipe_configs;
@@ -9,16 +11,13 @@ mod tasks;
 pub mod types;
 
 // Re-export public types
+pub use comment_embeddings::ScoredCommentRow;
+pub use feature_comments::AddFeatureCommentInput;
 pub use recipe_configs::{RecipeConfigData, RecipeConfigInput, SectionSettingsData};
 pub use types::{
-    Discipline, DisciplineInput, Feature, FeatureInput, InferredTaskStatus, McpServerConfig,
-    Priority, ProjectMetadata, Task, TaskComment, TaskInput, TaskProvenance, TaskStatus,
-};
-
-// Re-export ralph-rag learning types used by consumers
-pub use ralph_rag::{
-    check_deduplication, sanitize_learning_text, select_for_pruning, DeduplicationResult,
-    FeatureLearning, LearningSource,
+    Discipline, DisciplineInput, Feature, FeatureComment, FeatureInput, FeatureStatus,
+    InferredTaskStatus, McpServerConfig, Priority, ProjectMetadata, Task, TaskComment, TaskInput,
+    TaskProvenance, TaskStatus,
 };
 
 use ralph_errors::{codes, RalphResultExt};
@@ -61,7 +60,11 @@ impl SqliteDb {
         )
         .ralph_err(codes::DB_OPEN, "Failed to set PRAGMAs")?;
 
-        let migrations = Migrations::new(vec![M::up(include_str!("migrations/001_initial.sql"))]);
+        let migrations = Migrations::new(vec![
+            M::up(include_str!("migrations/001_initial.sql")),
+            M::up(include_str!("migrations/002_feature_comments.sql")),
+            M::up(include_str!("migrations/003_comment_embeddings.sql")),
+        ]);
 
         migrations
             .to_latest(&mut conn)
@@ -84,7 +87,11 @@ impl SqliteDb {
         )
         .ralph_err(codes::DB_OPEN, "Failed to set PRAGMAs")?;
 
-        let migrations = Migrations::new(vec![M::up(include_str!("migrations/001_initial.sql"))]);
+        let migrations = Migrations::new(vec![
+            M::up(include_str!("migrations/001_initial.sql")),
+            M::up(include_str!("migrations/002_feature_comments.sql")),
+            M::up(include_str!("migrations/003_comment_embeddings.sql")),
+        ]);
 
         migrations
             .to_latest(&mut conn)
@@ -114,7 +121,11 @@ impl SqliteDb {
         conn.execute_batch("PRAGMA foreign_keys = ON;")
             .ralph_err(codes::DB_OPEN, "Failed to set PRAGMAs")?;
 
-        let migrations = Migrations::new(vec![M::up(include_str!("migrations/001_initial.sql"))]);
+        let migrations = Migrations::new(vec![
+            M::up(include_str!("migrations/001_initial.sql")),
+            M::up(include_str!("migrations/002_feature_comments.sql")),
+            M::up(include_str!("migrations/003_comment_embeddings.sql")),
+        ]);
 
         migrations
             .to_latest(&mut conn)

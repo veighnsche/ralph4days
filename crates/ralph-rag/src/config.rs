@@ -1,7 +1,4 @@
 //! RAG system configuration.
-//!
-//! All configurable values in one place. No magic numbers scattered
-//! across the codebase.
 
 use serde::{Deserialize, Serialize};
 
@@ -26,12 +23,6 @@ use serde::{Deserialize, Serialize};
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RagConfig {
-    /// Qdrant REST API endpoint.
-    pub qdrant_url: String,
-
-    /// Qdrant gRPC endpoint (used by Rust client for performance).
-    pub qdrant_grpc_url: String,
-
     /// Ollama API endpoint.
     pub ollama_url: String,
 
@@ -90,8 +81,6 @@ pub struct RagConfig {
 impl Default for RagConfig {
     fn default() -> Self {
         Self {
-            qdrant_url: "http://localhost:6333".into(),
-            qdrant_grpc_url: "http://localhost:6334".into(),
             ollama_url: "http://localhost:11434".into(),
             embedding_model: "nomic-embed-text".into(),
             embedding_dims: 768,
@@ -116,11 +105,8 @@ impl Default for RagConfig {
 /// Status of the RAG system (checked once at loop start).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RagStatus {
-    /// Whether RAG is fully operational (both Qdrant + Ollama available).
+    /// Whether RAG is operational (Ollama available with embedding model).
     pub available: bool,
-
-    /// Whether Qdrant is reachable.
-    pub qdrant_ok: bool,
 
     /// Whether Ollama is reachable and has the embedding model.
     pub ollama_ok: bool,
@@ -140,7 +126,6 @@ impl RagStatus {
     pub fn available(model: String, dims: u32) -> Self {
         Self {
             available: true,
-            qdrant_ok: true,
             ollama_ok: true,
             embedding_model: Some(model),
             embedding_dims: Some(dims),
@@ -149,10 +134,9 @@ impl RagStatus {
     }
 
     /// RAG is unavailable with a reason.
-    pub fn unavailable(qdrant_ok: bool, ollama_ok: bool, error: String) -> Self {
+    pub fn unavailable(ollama_ok: bool, error: String) -> Self {
         Self {
             available: false,
-            qdrant_ok,
             ollama_ok,
             embedding_model: None,
             embedding_dims: None,
@@ -164,7 +148,6 @@ impl RagStatus {
     pub fn disabled() -> Self {
         Self {
             available: false,
-            qdrant_ok: false,
             ollama_ok: false,
             embedding_model: None,
             embedding_dims: None,

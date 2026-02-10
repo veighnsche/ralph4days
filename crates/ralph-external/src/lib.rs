@@ -1,6 +1,7 @@
 #![allow(clippy::implicit_hasher)]
 pub mod comfy;
 pub mod comfy_discipline;
+pub mod comment_embeddings;
 pub mod config;
 pub mod ollama;
 

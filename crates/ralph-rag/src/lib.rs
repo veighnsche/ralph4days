@@ -2,7 +2,7 @@
 //!
 //! This crate defines every type that flows through Ralph's memory pipeline:
 //! what gets extracted from Claude iterations, how it's stored in JSONL journals,
-//! how it's indexed in Qdrant for semantic search, and how learnings accumulate
+//! how it's embedded for semantic search, and how learnings accumulate
 //! across iterations to prevent compounding mistakes.
 //!
 //! ## Architecture
@@ -22,8 +22,8 @@
 //!         +---------> JournalEntry ---> .ralph/db/memory/{feature}.jsonl
 //!         |                              (source of truth, append-only)
 //!         |
-//!         +---------> MemoryPayload --> Qdrant collection {proj_hash}-{feat_hash}
-//!                                        (disposable search index)
+//!         +---------> Embedding ------> SQLite comment_embeddings table
+//!                                        (vector search index)
 //!
 //!   FeatureLearning          distilled knowledge from iteration history
 //!         |                  (deduplicated, sanitized, prioritized)
@@ -45,21 +45,20 @@
 //!   `.ralph/db/memory/{feature}.jsonl`. Append-only, versioned, git-trackable.
 //!   [`JournalEntry`] wraps records with a schema version for forward compat.
 //!
-//! - **[`qdrant_schema`]** — Qdrant collection naming (collision-safe via SHA256 hashing),
-//!   [`MemoryPayload`] with all searchable fields, and [`CollectionConfig`] for HNSW tuning.
+//! - **[`embedding`]** — Embedding text construction and hashing for feature comments.
 //!
 //! - **[`learning`]** — Accumulated knowledge with Jaccard deduplication,
 //!   negation-aware conflict detection, prompt injection sanitization, and
 //!   staleness-paradox-aware pruning. [`FeatureLearning`] is the highest-value RAG content.
 //!
 //! - **[`config`]** — All configurable values: endpoints, thresholds, limits, prefixes.
-//!   [`RagConfig`] defaults to local Qdrant + Ollama with nomic-embed-text.
+//!   [`RagConfig`] defaults to local Ollama with nomic-embed-text.
 //!
 //! ## Design Principles
 //!
 //! - **Agents write, agents consume.** Humans rarely touch this data.
 //! - **Feature-scoped isolation.** Memory for "authentication" never bleeds into "payments".
-//! - **Qdrant is disposable.** JSONL is the source of truth. Qdrant can be rebuilt anytime.
+//! - **SQLite is the source of truth.** Embeddings are stored alongside comments.
 //! - **Prevent compounding mistakes.** If iteration 3 hit an error, iteration 4 must know.
 //! - **Observations, not rules.** Learnings are framed as "verify before relying" to prevent
 //!   feedback loop amplification (failure class F10).
@@ -95,14 +94,15 @@
 //! ```
 
 pub mod config;
+pub mod embedding;
 pub mod extraction;
 pub mod journal;
 pub mod learning;
 pub mod model;
-pub mod qdrant_schema;
 
 // Re-export the primary types that consumers need
 pub use config::RagConfig;
+pub use embedding::{build_embedding_text, hash_text};
 pub use extraction::ExtractionResult;
 pub use journal::JournalEntry;
 pub use learning::{
@@ -113,4 +113,3 @@ pub use model::{
     DecisionEntry, ErrorEntry, ErrorType, FileAction, FileTouched, IterationOutcome,
     IterationRecord,
 };
-pub use qdrant_schema::{CollectionConfig, MemoryPayload, RecordType};
