@@ -106,14 +106,13 @@ pub fn delete_task(state: State<'_, AppState>, id: u32) -> Result<(), String> {
 pub fn add_task_comment(
     state: State<'_, AppState>,
     task_id: u32,
-    author: String,
     discipline: Option<String>,
     agent_task_id: Option<u32>,
     priority: Option<String>,
     body: String,
 ) -> Result<(), String> {
     let db = get_db(&state)?;
-    db.add_comment(task_id, author, discipline, agent_task_id, priority, body)
+    db.add_comment(task_id, discipline, agent_task_id, priority, body)
 }
 
 #[tauri::command]

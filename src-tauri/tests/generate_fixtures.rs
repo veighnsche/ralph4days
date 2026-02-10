@@ -6,7 +6,7 @@
 //! Fixtures use .undetect-ralph/ (not .ralph/) so they're not detected as Ralph projects.
 //! The mock workflow (just dev-mock) renames .undetect-ralph/ to .ralph/ when copying.
 
-use sqlite_db::{FeatureInput, FixedClock, SqliteDb};
+use sqlite_db::{AddFeatureCommentInput, FeatureInput, FixedClock, SqliteDb};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -443,7 +443,6 @@ just dev-mock 03-desktop-tasks
 
     db.add_comment(
         1,
-        "agent".to_owned(),
         None,
         Some(1),
         None,
@@ -587,6 +586,200 @@ just dev-mock 04-desktop-dev
         acronym: "STNG".to_owned(),
         description: Some("User preferences and theme configuration".to_owned()),
         ..Default::default()
+    })
+    .unwrap();
+
+    // --- Feature Comments ---
+    db.add_feature_comment(AddFeatureCommentInput {
+        feature_name: "bookmark-crud".to_owned(),
+        category: "design-decision".to_owned(),
+        discipline: None,
+        agent_task_id: None,
+        body: "Use optimistic updates for bookmark creation to avoid UI lag".to_owned(),
+        summary: Some("Use optimistic updates for creates".to_owned()),
+        reason: Some("Network latency makes synchronous saves feel sluggish".to_owned()),
+        source_iteration: None,
+    })
+    .unwrap();
+    db.add_feature_comment(AddFeatureCommentInput {
+        feature_name: "bookmark-crud".to_owned(),
+        category: "gotcha".to_owned(),
+        discipline: Some("frontend".to_owned()),
+        agent_task_id: Some(2),
+        body: "Favicon URLs often 404 — always provide a fallback icon".to_owned(),
+        summary: None,
+        reason: None,
+        source_iteration: Some(1),
+    })
+    .unwrap();
+    db.add_feature_comment(AddFeatureCommentInput {
+        feature_name: "bookmark-crud".to_owned(),
+        category: "convention".to_owned(),
+        discipline: Some("backend".to_owned()),
+        agent_task_id: Some(3),
+        body: "All bookmark IDs are ULIDs, not auto-increment integers. This keeps them sortable by creation time without a separate timestamp index.".to_owned(),
+        summary: Some("ULIDs for bookmark IDs".to_owned()),
+        reason: Some("Sortable by creation time without extra index".to_owned()),
+        source_iteration: Some(1),
+    })
+    .unwrap();
+    db.add_feature_comment(AddFeatureCommentInput {
+        feature_name: "bookmark-crud".to_owned(),
+        category: "architecture".to_owned(),
+        discipline: Some("backend".to_owned()),
+        agent_task_id: None,
+        body: "Bookmark storage uses a write-ahead log pattern: mutations go to a WAL table first, then get compacted into the main bookmarks table on read. This avoids locking during writes.".to_owned(),
+        summary: Some("WAL pattern for bookmark writes".to_owned()),
+        reason: Some("Avoids write locks on the main table".to_owned()),
+        source_iteration: None,
+    })
+    .unwrap();
+    db.add_feature_comment(AddFeatureCommentInput {
+        feature_name: "bookmark-crud".to_owned(),
+        category: "gotcha".to_owned(),
+        discipline: Some("quality".to_owned()),
+        agent_task_id: Some(4),
+        body: "URL normalization strips trailing slashes and lowercases the hostname, but preserves path case. Two URLs that look different may be the same bookmark after normalization.".to_owned(),
+        summary: None,
+        reason: None,
+        source_iteration: Some(2),
+    })
+    .unwrap();
+    db.add_feature_comment(AddFeatureCommentInput {
+        feature_name: "bookmark-crud".to_owned(),
+        category: "boundary".to_owned(),
+        discipline: Some("security".to_owned()),
+        agent_task_id: None,
+        body: "Never store raw user-provided HTML in bookmark notes. All note content goes through DOMPurify before persistence.".to_owned(),
+        summary: Some("Sanitize notes with DOMPurify".to_owned()),
+        reason: Some("Prevents stored XSS via bookmark notes".to_owned()),
+        source_iteration: None,
+    })
+    .unwrap();
+    db.add_feature_comment(AddFeatureCommentInput {
+        feature_name: "bookmark-crud".to_owned(),
+        category: "dependency".to_owned(),
+        discipline: Some("frontend".to_owned()),
+        agent_task_id: None,
+        body: "The bookmark card component depends on the favicon proxy service. If the proxy is down, cards should render with a generic globe icon instead of breaking.".to_owned(),
+        summary: Some("Favicon proxy fallback to globe icon".to_owned()),
+        reason: None,
+        source_iteration: None,
+    })
+    .unwrap();
+    db.add_feature_comment(AddFeatureCommentInput {
+        feature_name: "bookmark-crud".to_owned(),
+        category: "design-decision".to_owned(),
+        discipline: Some("frontend".to_owned()),
+        agent_task_id: Some(5),
+        body: "Edit modal uses a sheet sliding in from the right, not a centered dialog. This keeps the bookmark list visible for context while editing.".to_owned(),
+        summary: Some("Sheet for edit, not dialog".to_owned()),
+        reason: Some("User can see the list while editing".to_owned()),
+        source_iteration: Some(3),
+    })
+    .unwrap();
+    db.add_feature_comment(AddFeatureCommentInput {
+        feature_name: "bookmark-crud".to_owned(),
+        category: "gotcha".to_owned(),
+        discipline: Some("data".to_owned()),
+        agent_task_id: None,
+        body: "Bulk delete must cascade to collection membership. Deleting a bookmark that belongs to 3 collections needs to clean up all 3 junction rows.".to_owned(),
+        summary: None,
+        reason: Some("Orphaned junction rows cause ghost counts in collection sidebar".to_owned()),
+        source_iteration: None,
+    })
+    .unwrap();
+    db.add_feature_comment(AddFeatureCommentInput {
+        feature_name: "bookmark-crud".to_owned(),
+        category: "convention".to_owned(),
+        discipline: Some("platform".to_owned()),
+        agent_task_id: None,
+        body: "All CRUD endpoints follow the pattern: POST /bookmarks, GET /bookmarks/:id, PATCH /bookmarks/:id, DELETE /bookmarks/:id. No PUT — partial updates only.".to_owned(),
+        summary: Some("PATCH for updates, no PUT".to_owned()),
+        reason: Some("Partial updates reduce payload size and merge conflicts".to_owned()),
+        source_iteration: None,
+    })
+    .unwrap();
+    db.add_feature_comment(AddFeatureCommentInput {
+        feature_name: "bookmark-crud".to_owned(),
+        category: "architecture".to_owned(),
+        discipline: Some("frontend".to_owned()),
+        agent_task_id: Some(1),
+        body: "Bookmark list uses virtual scrolling via tanstack-virtual. Only visible cards are in the DOM. This is critical — users with 5k+ bookmarks were hitting 2s render times without it.".to_owned(),
+        summary: Some("Virtual scrolling for large lists".to_owned()),
+        reason: Some("5k+ bookmarks caused 2s render without virtualization".to_owned()),
+        source_iteration: Some(1),
+    })
+    .unwrap();
+    db.add_feature_comment(AddFeatureCommentInput {
+        feature_name: "bookmark-crud".to_owned(),
+        category: "boundary".to_owned(),
+        discipline: Some("backend".to_owned()),
+        agent_task_id: None,
+        body: "Maximum bookmark title length is 500 chars, URL is 2048 chars, notes is 10000 chars. Enforce at both API and DB constraint level.".to_owned(),
+        summary: Some("Field length limits: title 500, URL 2048, notes 10k".to_owned()),
+        reason: None,
+        source_iteration: None,
+    })
+    .unwrap();
+    db.add_feature_comment(AddFeatureCommentInput {
+        feature_name: "bookmark-crud".to_owned(),
+        category: "design-decision".to_owned(),
+        discipline: None,
+        agent_task_id: None,
+        body: "Soft delete with 30-day trash retention. Deleted bookmarks move to a trash view and auto-purge after 30 days. Users can restore from trash.".to_owned(),
+        summary: Some("Soft delete with 30-day trash".to_owned()),
+        reason: Some("Prevents accidental permanent data loss".to_owned()),
+        source_iteration: None,
+    })
+    .unwrap();
+    db.add_feature_comment(AddFeatureCommentInput {
+        feature_name: "collections".to_owned(),
+        category: "architecture".to_owned(),
+
+        discipline: None,
+        agent_task_id: None,
+        body: "Collections are flat, not nested — no recursive trees".to_owned(),
+        summary: Some("Flat collections only, no nesting".to_owned()),
+        reason: Some("Keeps the data model simple and avoids infinite depth bugs".to_owned()),
+        source_iteration: None,
+    })
+    .unwrap();
+    db.add_feature_comment(AddFeatureCommentInput {
+        feature_name: "collections".to_owned(),
+        category: "convention".to_owned(),
+
+        discipline: None,
+        agent_task_id: None,
+        body: "Collection names are unique per user, case-insensitive".to_owned(),
+        summary: None,
+        reason: None,
+        source_iteration: None,
+    })
+    .unwrap();
+    db.add_feature_comment(AddFeatureCommentInput {
+        feature_name: "search".to_owned(),
+        category: "design-decision".to_owned(),
+
+        discipline: None,
+        agent_task_id: None,
+        body: "Use SQLite FTS5 for full-text search instead of client-side filtering".to_owned(),
+        summary: Some("Use FTS5 for search".to_owned()),
+        reason: Some("Scales better with large bookmark collections".to_owned()),
+        source_iteration: None,
+    })
+    .unwrap();
+    db.add_feature_comment(AddFeatureCommentInput {
+        feature_name: "search".to_owned(),
+        category: "gotcha".to_owned(),
+
+        discipline: Some("backend".to_owned()),
+        agent_task_id: Some(8),
+        body: "FTS5 tokenizer splits on hyphens — URLs with dashes need special handling"
+            .to_owned(),
+        summary: None,
+        reason: None,
+        source_iteration: Some(2),
     })
     .unwrap();
 
@@ -1084,10 +1277,8 @@ just dev-mock 04-desktop-dev
     db.execute_raw("UPDATE tasks SET provenance = 'system' WHERE id = 19")
         .unwrap();
 
-    // Add discipline-named comments with discipline FK
     db.add_comment(
         1,
-        "frontend".to_owned(),
         Some("frontend".to_owned()),
         None,
         None,
@@ -1096,7 +1287,6 @@ just dev-mock 04-desktop-dev
     .unwrap();
     db.add_comment(
         2,
-        "frontend".to_owned(),
         Some("frontend".to_owned()),
         None,
         None,
@@ -1105,7 +1295,6 @@ just dev-mock 04-desktop-dev
     .unwrap();
     db.add_comment(
         3,
-        "backend".to_owned(),
         Some("backend".to_owned()),
         Some(3),
         None,
@@ -1114,7 +1303,6 @@ just dev-mock 04-desktop-dev
     .unwrap();
     db.add_comment(
         4,
-        "quality".to_owned(),
         Some("quality".to_owned()),
         Some(4),
         Some("high".to_owned()),
@@ -1123,7 +1311,6 @@ just dev-mock 04-desktop-dev
     .unwrap();
     db.add_comment(
         4,
-        "human".to_owned(),
         None,
         None,
         None,
@@ -1132,7 +1319,6 @@ just dev-mock 04-desktop-dev
     .unwrap();
     db.add_comment(
         7,
-        "security".to_owned(),
         Some("security".to_owned()),
         None,
         Some("high".to_owned()),
@@ -1141,7 +1327,6 @@ just dev-mock 04-desktop-dev
     .unwrap();
     db.add_comment(
         8,
-        "backend".to_owned(),
         Some("backend".to_owned()),
         Some(8),
         None,
@@ -1150,7 +1335,6 @@ just dev-mock 04-desktop-dev
     .unwrap();
     db.add_comment(
         9,
-        "frontend".to_owned(),
         Some("frontend".to_owned()),
         Some(9),
         Some("medium".to_owned()),
@@ -1159,7 +1343,6 @@ just dev-mock 04-desktop-dev
     .unwrap();
     db.add_comment(
         9,
-        "frontend".to_owned(),
         Some("frontend".to_owned()),
         Some(9),
         None,
@@ -1168,7 +1351,6 @@ just dev-mock 04-desktop-dev
     .unwrap();
     db.add_comment(
         13,
-        "backend".to_owned(),
         Some("backend".to_owned()),
         None,
         None,
@@ -1177,7 +1359,6 @@ just dev-mock 04-desktop-dev
     .unwrap();
     db.add_comment(
         14,
-        "human".to_owned(),
         None,
         None,
         Some("low".to_owned()),
@@ -1186,7 +1367,6 @@ just dev-mock 04-desktop-dev
     .unwrap();
     db.add_comment(
         16,
-        "backend".to_owned(),
         Some("backend".to_owned()),
         None,
         None,
@@ -1195,7 +1375,6 @@ just dev-mock 04-desktop-dev
     .unwrap();
     db.add_comment(
         16,
-        "quality".to_owned(),
         Some("quality".to_owned()),
         None,
         None,
@@ -1204,7 +1383,6 @@ just dev-mock 04-desktop-dev
     .unwrap();
     db.add_comment(
         17,
-        "human".to_owned(),
         None,
         None,
         None,
@@ -1213,7 +1391,6 @@ just dev-mock 04-desktop-dev
     .unwrap();
     db.add_comment(
         20,
-        "data".to_owned(),
         Some("data".to_owned()),
         None,
         None,

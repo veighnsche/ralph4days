@@ -127,12 +127,13 @@ pub fn get_disciplines_config(state: State<'_, AppState>) -> Result<Vec<Discipli
 pub struct FeatureCommentData {
     pub id: u32,
     pub category: String,
-    pub author: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub discipline: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub agent_task_id: Option<u32>,
     pub body: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -163,10 +164,10 @@ fn to_comment_data(c: &sqlite_db::FeatureComment) -> FeatureCommentData {
     FeatureCommentData {
         id: c.id,
         category: c.category.clone(),
-        author: c.author.clone(),
         discipline: c.discipline.clone(),
         agent_task_id: c.agent_task_id,
         body: c.body.clone(),
+        summary: c.summary.clone(),
         reason: c.reason.clone(),
         source_iteration: c.source_iteration,
         created: c.created.clone(),
@@ -257,10 +258,10 @@ pub fn update_feature(
 pub struct AddFeatureCommentParams {
     pub feature_name: String,
     pub category: String,
-    pub author: String,
     pub discipline: Option<String>,
     pub agent_task_id: Option<u32>,
     pub body: String,
+    pub summary: Option<String>,
     pub reason: Option<String>,
     pub source_iteration: Option<u32>,
 }
@@ -276,10 +277,10 @@ pub async fn add_feature_comment(
         db.add_feature_comment(sqlite_db::AddFeatureCommentInput {
             feature_name: params.feature_name.clone(),
             category: params.category.clone(),
-            author: params.author.clone(),
             discipline: params.discipline,
             agent_task_id: params.agent_task_id,
             body: params.body.clone(),
+            summary: params.summary,
             reason: params.reason.clone(),
             source_iteration: params.source_iteration,
         })?;
@@ -315,6 +316,7 @@ pub struct UpdateFeatureCommentParams {
     pub feature_name: String,
     pub comment_id: u32,
     pub body: String,
+    pub summary: Option<String>,
     pub reason: Option<String>,
 }
 
@@ -330,6 +332,7 @@ pub async fn update_feature_comment(
             &params.feature_name,
             params.comment_id,
             &params.body,
+            params.summary,
             params.reason.clone(),
         )?;
 
