@@ -401,3 +401,13 @@ pub fn close_splash(app: tauri::AppHandle) {
         let _ = main.set_focus();
     }
 }
+
+#[tauri::command]
+pub fn open_new_window() -> Result<(), String> {
+    let exe = std::env::current_exe()
+        .ralph_err(codes::INTERNAL, "Failed to get current executable path")?;
+    std::process::Command::new(exe)
+        .spawn()
+        .ralph_err(codes::INTERNAL, "Failed to spawn new window")?;
+    Ok(())
+}

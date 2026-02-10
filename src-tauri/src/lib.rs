@@ -117,6 +117,7 @@ pub fn run() {
             commands::project::get_recent_projects,
             commands::project::get_project_info,
             commands::project::close_splash,
+            commands::project::open_new_window,
             commands::tasks::create_task,
             commands::tasks::update_task,
             commands::tasks::set_task_status,
