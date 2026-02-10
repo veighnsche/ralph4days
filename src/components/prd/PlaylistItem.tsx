@@ -23,6 +23,72 @@ interface PlaylistItemProps {
   onClick: () => void
 }
 
+const PRIORITY_ICONS = { high: ArrowUp, medium: Equal, low: ArrowDown } as const
+
+const PROVENANCE_ICONS = { agent: Bot, human: User, system: Cog } as const
+
+function PlaylistItemIndicators({
+  task,
+  priorityConfig
+}: {
+  task: Task
+  priorityConfig: (typeof PRIORITY_CONFIG)[keyof typeof PRIORITY_CONFIG] | null
+}) {
+  const hasAny =
+    (task.comments?.length ?? 0) > 0 ||
+    (task.dependsOn?.length ?? 0) > 0 ||
+    (task.acceptanceCriteria?.length ?? 0) > 0 ||
+    priorityConfig
+
+  if (!hasAny) return null
+
+  return (
+    <div className="absolute top-2 right-3 flex items-center gap-2 text-muted-foreground z-10">
+      {task.comments && task.comments.length > 0 && (
+        <div className="flex items-center gap-1">
+          <MessageSquare className="h-3 w-3" />
+          <span className="text-xs">{task.comments.length}</span>
+        </div>
+      )}
+      {task.dependsOn && task.dependsOn.length > 0 && (
+        <div
+          className="flex items-center gap-1"
+          style={
+            task.inferredStatus === 'waiting_on_deps'
+              ? { color: INFERRED_STATUS_CONFIG.waiting_on_deps.color }
+              : undefined
+          }>
+          <GitBranch className="h-3 w-3" />
+          <span className="text-xs">{task.dependsOn.length}</span>
+        </div>
+      )}
+      {task.acceptanceCriteria && task.acceptanceCriteria.length > 0 && (
+        <div className="flex items-center gap-1">
+          <ListChecks className="h-3 w-3" />
+          <span className="text-xs">{task.acceptanceCriteria.length}</span>
+        </div>
+      )}
+      {priorityConfig &&
+        (() => {
+          const PriorityIcon = PRIORITY_ICONS[task.priority as keyof typeof PRIORITY_ICONS] ?? Equal
+          return <PriorityIcon className="h-3 w-3" style={{ color: priorityConfig.color }} />
+        })()}
+    </div>
+  )
+}
+
+function ProvenanceIcon({ provenance }: { provenance: string }) {
+  const Icon = PROVENANCE_ICONS[provenance as keyof typeof PROVENANCE_ICONS] ?? Cog
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Icon className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 cursor-help" />
+      </TooltipTrigger>
+      <TooltipContent>Created by {provenance}</TooltipContent>
+    </Tooltip>
+  )
+}
+
 function PlaylistItemActions({ task }: { task: Task }) {
   return (
     <ItemActions className="flex-col items-end justify-end self-stretch gap-2 relative z-10">
@@ -71,42 +137,7 @@ export const PlaylistItem = memo(function PlaylistItem({
         />
       )}
 
-      {(task.dependsOn?.length > 0 ||
-        task.acceptanceCriteria?.length > 0 ||
-        task.comments?.length > 0 ||
-        priorityConfig) && (
-        <div className="absolute top-2 right-3 flex items-center gap-2 text-muted-foreground z-10">
-          {task.comments && task.comments.length > 0 && (
-            <div className="flex items-center gap-1">
-              <MessageSquare className="h-3 w-3" />
-              <span className="text-xs">{task.comments.length}</span>
-            </div>
-          )}
-          {task.dependsOn && task.dependsOn.length > 0 && (
-            <div
-              className="flex items-center gap-1"
-              style={
-                task.inferredStatus === 'waiting_on_deps'
-                  ? { color: INFERRED_STATUS_CONFIG.waiting_on_deps.color }
-                  : undefined
-              }>
-              <GitBranch className="h-3 w-3" />
-              <span className="text-xs">{task.dependsOn.length}</span>
-            </div>
-          )}
-          {task.acceptanceCriteria && task.acceptanceCriteria.length > 0 && (
-            <div className="flex items-center gap-1">
-              <ListChecks className="h-3 w-3" />
-              <span className="text-xs">{task.acceptanceCriteria.length}</span>
-            </div>
-          )}
-          {priorityConfig &&
-            (() => {
-              const PriorityIcon = task.priority === 'high' ? ArrowUp : task.priority === 'low' ? ArrowDown : Equal
-              return <PriorityIcon className="h-3 w-3" style={{ color: priorityConfig.color }} />
-            })()}
-        </div>
-      )}
+      <PlaylistItemIndicators task={task} priorityConfig={priorityConfig} />
 
       {hasHeadshot && (
         <DisciplineHeadshot
@@ -134,18 +165,7 @@ export const PlaylistItem = memo(function PlaylistItem({
         <ItemTitle
           className={`flex items-center gap-1.5 truncate ${isNowPlaying ? 'text-base' : 'text-sm'}`}
           style={isNowPlaying ? { color: statusConfig.color } : undefined}>
-          {task.provenance &&
-            (() => {
-              const Icon = task.provenance === 'agent' ? Bot : task.provenance === 'human' ? User : Cog
-              return (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Icon className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>Created by {task.provenance}</TooltipContent>
-                </Tooltip>
-              )
-            })()}
+          {task.provenance && <ProvenanceIcon provenance={task.provenance} />}
           <span className="truncate">{task.title}</span>
           {isNowPlaying && <span className="ml-1 text-xs opacity-70 flex-shrink-0">[NOW PLAYING]</span>}
         </ItemTitle>
