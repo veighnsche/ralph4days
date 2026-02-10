@@ -6,19 +6,24 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import type { DisciplineCropsData, Task } from '@/types/generated'
 import { PlaylistItem } from './PlaylistItem'
 
-interface DisciplineImageEntry {
-  imageUrl: string
-  crops?: DisciplineCropsData
-}
-
 interface PlaylistViewProps {
   tasks: Task[]
-  imageStore: Map<string, DisciplineImageEntry>
+  cropsStore: Map<string, DisciplineCropsData>
   onTaskClick: (task: Task) => void
 }
 
-export function PlaylistView({ tasks, imageStore, onTaskClick }: PlaylistViewProps) {
+function countUnresolvedDeps(task: Task, statusById: Map<number, string>): number {
+  if (!task.dependsOn || task.dependsOn.length === 0) return 0
+  return task.dependsOn.filter(id => {
+    const s = statusById.get(id)
+    return s !== 'done' && s !== 'skipped'
+  }).length
+}
+
+export function PlaylistView({ tasks, cropsStore, onTaskClick }: PlaylistViewProps) {
   const [issuesOpen, setIssuesOpen] = useState(true)
+
+  const statusById = new Map(tasks.map(t => [t.id, t.status]))
 
   const { blockedSkipped, done, inProgress, pending } = (() => {
     const result = {
@@ -69,8 +74,8 @@ export function PlaylistView({ tasks, imageStore, onTaskClick }: PlaylistViewPro
                   <Fragment key={task.id}>
                     <PlaylistItem
                       task={task}
-                      image={imageStore.get(task.discipline)}
-                      isIssue
+                      crops={cropsStore.get(task.discipline)}
+                      unresolvedDeps={countUnresolvedDeps(task, statusById)}
                       onClick={() => onTaskClick(task)}
                     />
                     {index < blockedSkipped.length - 1 && <ItemSeparator />}
@@ -84,7 +89,12 @@ export function PlaylistView({ tasks, imageStore, onTaskClick }: PlaylistViewPro
         <ItemGroup className="rounded-md">
           {done.map(task => (
             <Fragment key={task.id}>
-              <PlaylistItem task={task} image={imageStore.get(task.discipline)} onClick={() => onTaskClick(task)} />
+              <PlaylistItem
+                task={task}
+                crops={cropsStore.get(task.discipline)}
+                unresolvedDeps={countUnresolvedDeps(task, statusById)}
+                onClick={() => onTaskClick(task)}
+              />
               <ItemSeparator />
             </Fragment>
           ))}
@@ -93,7 +103,8 @@ export function PlaylistView({ tasks, imageStore, onTaskClick }: PlaylistViewPro
             <Fragment key={task.id}>
               <PlaylistItem
                 task={task}
-                image={imageStore.get(task.discipline)}
+                crops={cropsStore.get(task.discipline)}
+                unresolvedDeps={countUnresolvedDeps(task, statusById)}
                 isNowPlaying
                 onClick={() => onTaskClick(task)}
               />
@@ -103,7 +114,12 @@ export function PlaylistView({ tasks, imageStore, onTaskClick }: PlaylistViewPro
 
           {pending.map((task, index) => (
             <Fragment key={task.id}>
-              <PlaylistItem task={task} image={imageStore.get(task.discipline)} onClick={() => onTaskClick(task)} />
+              <PlaylistItem
+                task={task}
+                crops={cropsStore.get(task.discipline)}
+                unresolvedDeps={countUnresolvedDeps(task, statusById)}
+                onClick={() => onTaskClick(task)}
+              />
               {index < pending.length - 1 && <ItemSeparator />}
             </Fragment>
           ))}
