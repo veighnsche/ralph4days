@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 **Ralph4days** — Tauri 2.5 desktop app for autonomous multi-agent task execution. Plays tasks in sequence using Claude Haiku with periodic Opus reviews.
 
 ## CRITICAL: Token Conservation - Stubs Prevent Homelessness
@@ -44,6 +46,10 @@
 - Two task creation paths: agent-structured (robot icon) vs human-explained (message icon)
 - **Dynamic MCP servers** — Ralph generates bash MCP servers on-the-fly, giving Claude access to `.ralph/db/` as tools/resources. Restarting Claude with new MCP config is core to "ralphing" (perfect prompt + perfect toolset for Haiku)
 
+## CRITICAL: MCP dev_tauri Is for the User
+
+**`start_dev_tauri` hands the app to the user for visual inspection. NEVER call `stop_dev_tauri` after.** The only reason to stop is when you need to edit Rust code, Cargo.toml, or tauri.conf.json (Tauri hot-reloads and triggers rebuilds). After those edits, restart it. "Task complete" is NOT a reason to stop — leave it running so the user can inspect.
+
 ## Dev Environment
 
 Intel NUC12WSKi5 (i5-1240P, 64GB RAM, RTX 3090, Ultramarine Linux 43 Wayland/KDE). Builds target Alder Lake x86_64.
@@ -52,6 +58,8 @@ Intel NUC12WSKi5 (i5-1240P, 64GB RAM, RTX 3090, Ultramarine Linux 43 Wayland/KDE
 
 Use `just --list` for all commands. Key ones: `just dev`, `just test`, `just build`, `just lint`, `just fmt`. Run built app: `ralph` (picker) or `ralph --project /path` (locked). Pre-commit hook runs oxlint, biome, tsc, and vitest on staged frontend files, and clippy + cargo test on staged Rust files.
 
+**Single test**: `cargo test -p sqlite-db test_name` (Rust), `bun vitest run src/path/to/file.test.ts` (frontend). Use `just types` to regenerate TypeScript types from Rust (ts-rs) after changing shared structs.
+
 **Testing workflow**: `just reset-mock` creates gitignored `mock/` from `fixtures/` (renames `.undetect-ralph/` to `.ralph/`). Use `just dev-mock <project>` or `ralph --project mock/<project>` for testing. Fixtures stay clean, mock is disposable.
 
 ## Architecture
@@ -59,9 +67,11 @@ Use `just --list` for all commands. Key ones: `just dev`, `just test`, `just bui
 Frontend (React 19/Zustand) → IPC → Backend (Tauri/Rust: sqlite-db, loop_engine, claude_client, prompt_builder) → subprocess → Claude CLI (--output-format stream-json, --max-turns 50)
 
 Key files:
-- Backend: `src-tauri/src/{commands/,terminal/,lib.rs}` + `crates/{sqlite-db,prompt-builder,ralph-*}/`
-- Frontend: `src/{components,stores}/`
+- Backend: `src-tauri/src/{commands/,terminal/,lib.rs}` + `crates/{sqlite-db,prompt-builder,ralph-errors,ralph-rag,ralph-external,ralph-macros,predefined-disciplines}/`
+- Frontend: `src/{components,stores,hooks,pages}/`
 - Specs: `.specs/`
+
+Note: `crates/` is at the repo root, not under `src-tauri/`.
 
 ## Execution Model
 

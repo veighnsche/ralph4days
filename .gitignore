@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Dev MCP state
+.dev-last-project
+
 # Build outputs
 dist/
 dist-ssr/

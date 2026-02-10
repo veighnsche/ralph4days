@@ -1,4 +1,6 @@
+import { invoke } from '@tauri-apps/api/core'
 import {
+  AppWindow,
   Layers,
   ListTodo,
   Menu,
@@ -46,6 +48,13 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-48">
+          <DropdownMenuItem onClick={() => invoke('open_new_window')}>
+            <AppWindow className="mr-2 h-4 w-4" />
+            New Window
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+
           <DropdownMenuItem onClick={() => setPromptBuilderOpen(true)}>
             <Wrench className="mr-2 h-4 w-4" />
             Prompt Builder

@@ -51,9 +51,8 @@ pub fn run() {
         .setup(|app| {
             // WHY: tao#1046 / tauri#11856 — on Wayland, a window created with
             // visible(false) then shown via .show() has a stale CSD input region,
-            // making decoration buttons unclickable. Creating the main window here
-            // (born visible, loading behind the splash) sidesteps the bug entirely.
-            // The splash (from tauri.conf.json) covers this window while Vite boots.
+            // making decoration buttons unclickable. Both windows are created here
+            // in order: main first (born visible), then splash on top.
             let _main = tauri::WebviewWindowBuilder::new(
                 app,
                 "main",
@@ -68,6 +67,20 @@ pub fn run() {
             .decorations(true)
             .visible(true)
             .focused(false)
+            .build()?;
+
+            let _splash = tauri::WebviewWindowBuilder::new(
+                app,
+                "splash",
+                tauri::WebviewUrl::App("splash.html".into()),
+            )
+            .inner_size(400.0, 250.0)
+            .center()
+            .decorations(false)
+            .skip_taskbar(true)
+            .resizable(false)
+            .always_on_top(true)
+            .focused(true)
             .build()?;
 
             if let Ok(matches) = app.cli().matches() {

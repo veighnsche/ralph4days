@@ -17,6 +17,12 @@
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
       "env": {}
+    },
+    "dev-tauri": {
+      "type": "stdio",
+      "command": "bun",
+      "args": ["run", "/home/vince/Projects/ralph4days/mcp-dev-server.ts"],
+      "env": {}
     }
   }
 }
