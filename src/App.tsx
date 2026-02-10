@@ -17,8 +17,6 @@ function App() {
 
   const { data: lockedProject, isLoading: isLoadingProject } = useInvoke<string | null>('get_locked_project')
 
-  // WHY: Window starts hidden (visible:false in tauri.conf.json) to avoid
-  // showing a black rectangle while React loads. Show it once we know what to render.
   useEffect(() => {
     if (!isLoadingProject) {
       invoke('close_splash').catch(() => {})

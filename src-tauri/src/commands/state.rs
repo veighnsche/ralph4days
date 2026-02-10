@@ -1,4 +1,5 @@
 use crate::terminal::PTYManager;
+use crate::xdg::XdgDirs;
 use prompt_builder::{CodebaseSnapshot, PromptContext};
 use ralph_errors::{codes, ralph_err, RalphResultExt, ToStringErr};
 use sqlite_db::SqliteDb;
@@ -12,6 +13,7 @@ pub struct AppState {
     pub codebase_snapshot: Mutex<Option<CodebaseSnapshot>>,
     pub pty_manager: PTYManager,
     pub(super) mcp_dir: PathBuf,
+    pub xdg: XdgDirs,
 }
 
 impl Default for AppState {
@@ -22,6 +24,7 @@ impl Default for AppState {
             codebase_snapshot: Mutex::new(None),
             pty_manager: PTYManager::new(),
             mcp_dir: std::env::temp_dir().join(format!("ralph-mcp-{}", std::process::id())),
+            xdg: XdgDirs::resolve().expect("Failed to resolve XDG directories"),
         }
     }
 }

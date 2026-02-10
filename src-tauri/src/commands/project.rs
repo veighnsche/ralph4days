@@ -240,6 +240,15 @@ pub fn lock_project_validated(state: &AppState, path: String) -> Result<(), Stri
     let mut db_guard = state.db.lock().err_str(codes::INTERNAL)?;
     *db_guard = Some(db);
 
+    let project_name = canonical_path
+        .file_name()
+        .map_or_else(|| "Unknown".to_owned(), |n| n.to_string_lossy().to_string());
+    let _ = crate::recent_projects::add(
+        &state.xdg,
+        canonical_path.to_string_lossy().to_string(),
+        project_name,
+    );
+
     *locked = Some(canonical_path);
     Ok(())
 }
@@ -254,6 +263,13 @@ pub fn set_locked_project(state: State<'_, AppState>, path: String) -> Result<()
 pub fn get_locked_project(state: State<'_, AppState>) -> Result<Option<String>, String> {
     let locked = state.locked_project.lock().err_str(codes::INTERNAL)?;
     Ok(locked.as_ref().map(|p| p.to_string_lossy().to_string()))
+}
+
+#[tauri::command]
+pub fn get_recent_projects(
+    state: State<'_, AppState>,
+) -> Result<Vec<crate::recent_projects::RecentProject>, String> {
+    crate::recent_projects::load(&state.xdg)
 }
 
 #[tauri::command]
@@ -382,7 +398,6 @@ pub fn close_splash(app: tauri::AppHandle) {
         let _ = splash.close();
     }
     if let Some(main) = app.get_webview_window("main") {
-        let _ = main.show();
         let _ = main.set_focus();
     }
 }

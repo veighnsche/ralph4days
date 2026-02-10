@@ -4,13 +4,15 @@ import { FolderOpen } from 'lucide-react'
 import { useState } from 'react'
 import { InlineError } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Spinner } from '@/components/ui/spinner'
 import { useInvoke } from '@/hooks/api'
-import type { RalphProject } from '@/types/generated'
+import type { RalphProject, RecentProject } from '@/types/generated'
 
 interface ProjectSelectorProps {
   onProjectSelected: (path: string) => void
@@ -24,19 +26,96 @@ const STACK_OPTIONS = [
   { value: 4, label: 'Flutter Mobile', description: '8 mobile disciplines (Flutter + Firebase)' }
 ] as const
 
+function ProjectListItem({
+  project,
+  opening,
+  onOpen
+}: {
+  project: RalphProject
+  opening: boolean
+  onOpen: (path: string) => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(project.path)}
+      className="flex items-center gap-3 rounded-md border px-3 py-2 hover:bg-accent cursor-pointer transition-colors duration-100 w-full text-left">
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-medium">{project.name}</div>
+        <div className="text-xs text-muted-foreground font-mono truncate">{project.path}</div>
+      </div>
+      {opening && <Spinner />}
+    </button>
+  )
+}
+
+function ProjectSection({
+  label,
+  projects,
+  loading,
+  error,
+  openingPath,
+  onOpen
+}: {
+  label: string
+  projects: RalphProject[]
+  loading: boolean
+  error: Error | null
+  openingPath: string | null
+  onOpen: (path: string) => void
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <h2 className="text-sm font-medium text-muted-foreground">
+        {label} {!loading && `(${projects.length})`}
+      </h2>
+      {loading ? (
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      ) : error ? (
+        <InlineError error={error} />
+      ) : projects.length === 0 ? (
+        <p className="py-2 text-xs text-muted-foreground">None</p>
+      ) : (
+        projects.map(project => (
+          <ProjectListItem
+            key={project.path}
+            project={project}
+            opening={openingPath === project.path}
+            onOpen={onOpen}
+          />
+        ))
+      )}
+    </div>
+  )
+}
+
 export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
   const [initPath, setInitPath] = useState('')
   const [stack, setStack] = useState<number>(2)
   const [initializing, setInitializing] = useState(false)
   const [initError, setInitError] = useState<string | null>(null)
   const [openError, setOpenError] = useState<string | null>(null)
+  const [openingPath, setOpeningPath] = useState<string | null>(null)
 
   const {
-    data: projects = [],
-    isLoading: scanning,
+    data: recentProjects,
+    isLoading: loadingRecent,
+    error: recentError
+  } = useInvoke<RecentProject[]>('get_recent_projects')
+
+  const recentAsProjects: RalphProject[] = (recentProjects ?? []).map(p => ({ name: p.name, path: p.path }))
+  const recentPaths = new Set(recentAsProjects.map(p => p.path))
+
+  const {
+    data: scannedProjects,
+    isLoading: loadingScan,
     error: scanError
   } = useInvoke<RalphProject[]>('scan_for_ralph_projects')
-  const [selectedProject, setSelectedProject] = useState('')
+
+  const discoveredProjects = (scannedProjects ?? []).filter(p => !recentPaths.has(p.path))
 
   const handleBrowseInit = async () => {
     try {
@@ -69,108 +148,100 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
     }
   }
 
-  const handleOpenProject = async () => {
-    if (!selectedProject) return
+  const handleOpenProject = async (path: string) => {
     setOpenError(null)
+    setOpeningPath(path)
     try {
-      await invoke('set_locked_project', { path: selectedProject })
-      onProjectSelected(selectedProject)
+      await invoke('set_locked_project', { path })
+      onProjectSelected(path)
     } catch (err) {
       setOpenError(`Failed to open: ${err}`)
+      setOpeningPath(null)
     }
   }
 
   return (
-    <Dialog open={true}>
-      <DialogContent className="max-w-[700px]" showCloseButton={false}>
-        <div className="grid grid-cols-[1fr_auto_1fr] gap-4">
-          <div className="flex flex-col">
-            <DialogTitle>Add Ralph to Existing Project</DialogTitle>
-            <FieldGroup className="flex-1">
-              <div className="flex-1 space-y-4">
-                <Field>
-                  <FieldLabel>Tech Stack</FieldLabel>
-                  <Select value={String(stack)} onValueChange={value => setStack(Number(value))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {STACK_OPTIONS.map(opt => (
-                        <SelectItem key={opt.value} value={String(opt.value)}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{opt.label}</span>
-                            <span className="text-xs text-muted-foreground">{opt.description}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FieldDescription>Disciplines to seed for this project</FieldDescription>
-                </Field>
+    <div className="grid h-screen grid-cols-[1fr_auto_1fr]">
+      {/* Left — project lists (primary) */}
+      <div className="flex flex-col gap-3 overflow-hidden px-8 py-10">
+        <InlineError error={openError} onDismiss={() => setOpenError(null)} />
 
-                <Field>
-                  <FieldLabel>Project Directory</FieldLabel>
-                  <InputGroup>
-                    <InputGroupInput
-                      value={initPath}
-                      onChange={e => setInitPath(e.target.value)}
-                      placeholder="/path/to/your-project"
-                    />
-                    <InputGroupAddon align="inline-end">
-                      <InputGroupButton size="icon-xs" onClick={handleBrowseInit}>
-                        <FolderOpen className="h-4 w-4" />
-                      </InputGroupButton>
-                    </InputGroupAddon>
-                  </InputGroup>
-                  <FieldDescription>Creates .ralph/ folder with selected disciplines</FieldDescription>
-                </Field>
-              </div>
+        <ScrollArea className="flex-1">
+          <div className="flex flex-col gap-4">
+            <ProjectSection
+              label="Recent Projects"
+              projects={recentAsProjects}
+              loading={loadingRecent}
+              error={recentError}
+              openingPath={openingPath}
+              onOpen={handleOpenProject}
+            />
 
-              <InlineError error={initError} onDismiss={() => setInitError(null)} />
-              <Button onClick={handleInitialize} disabled={!initPath || initializing} className="w-full">
-                {initializing ? 'Initializing...' : 'Add Ralph'}
-              </Button>
-            </FieldGroup>
+            <ProjectSection
+              label="Discovered Projects"
+              projects={discoveredProjects}
+              loading={loadingScan}
+              error={scanError}
+              openingPath={openingPath}
+              onOpen={handleOpenProject}
+            />
           </div>
+        </ScrollArea>
+      </div>
 
-          <Separator orientation="vertical" />
+      <Separator orientation="vertical" />
 
-          <div className="flex flex-col">
-            <DialogTitle>Open Existing Project</DialogTitle>
-            <FieldGroup className="flex-1">
-              {scanning ? (
-                <FieldDescription>Scanning for Ralph projects...</FieldDescription>
-              ) : (
-                <>
-                  <div className="flex-1">
-                    <Field>
-                      <FieldLabel>Discovered Projects ({projects.length})</FieldLabel>
-                      <Select value={selectedProject} onValueChange={setSelectedProject}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="-- Select a project --" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {projects.map(project => (
-                            <SelectItem key={project.path} value={project.path}>
-                              {project.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </Field>
-                  </div>
-
-                  <InlineError error={scanError} />
-                  <InlineError error={openError} onDismiss={() => setOpenError(null)} />
-                  <Button onClick={handleOpenProject} disabled={!selectedProject} className="w-full">
-                    Open Project
-                  </Button>
-                </>
-              )}
-            </FieldGroup>
-          </div>
+      {/* Right — branding + init (secondary) */}
+      <div className="flex flex-col justify-center px-8">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold tracking-tight">Ralph4days</h1>
+          <p className="text-sm text-muted-foreground">Autonomous multi-agent task execution</p>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        <FieldGroup>
+          <Field>
+            <FieldLabel>Tech Stack</FieldLabel>
+            <Select value={String(stack)} onValueChange={value => setStack(Number(value))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STACK_OPTIONS.map(opt => (
+                  <SelectItem key={opt.value} value={String(opt.value)}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{opt.label}</span>
+                      <span className="text-xs text-muted-foreground">{opt.description}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FieldDescription>Disciplines to seed for this project</FieldDescription>
+          </Field>
+
+          <Field>
+            <FieldLabel>Project Directory</FieldLabel>
+            <InputGroup>
+              <InputGroupInput
+                value={initPath}
+                onChange={e => setInitPath(e.target.value)}
+                placeholder="/path/to/your-project"
+              />
+              <InputGroupAddon align="inline-end">
+                <InputGroupButton size="icon-xs" onClick={handleBrowseInit}>
+                  <FolderOpen className="h-4 w-4" />
+                </InputGroupButton>
+              </InputGroupAddon>
+            </InputGroup>
+            <FieldDescription>Creates .ralph/ folder with selected disciplines</FieldDescription>
+          </Field>
+
+          <InlineError error={initError} onDismiss={() => setInitError(null)} />
+          <Button onClick={handleInitialize} disabled={!initPath || initializing} className="w-full">
+            {initializing ? 'Initializing...' : 'Add Ralph'}
+          </Button>
+        </FieldGroup>
+      </div>
+    </div>
   )
 }

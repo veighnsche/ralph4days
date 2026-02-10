@@ -88,6 +88,7 @@ export type ProjectProgress = { totalTasks: number; doneTasks: number; progressP
 export type PromptPreviewSection = { name: string; content: string }
 export type PromptPreview = { sections: PromptPreviewSection[]; fullPrompt: string }
 export type RalphProject = { name: string; path: string }
+export type RecentProject = { path: string; name: string; lastOpened: string }
 export type RecipeConfigData = {
   name: string
   baseRecipe: string
