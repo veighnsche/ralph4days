@@ -117,6 +117,7 @@ pub fn run() {
             commands::features::delete_discipline,
             commands::features::get_stack_metadata,
             commands::features::get_discipline_image_data,
+            commands::features::get_cropped_image,
             commands::prompts::preview_custom_recipe,
             commands::prompts::list_recipe_configs,
             commands::prompts::get_recipe_config,

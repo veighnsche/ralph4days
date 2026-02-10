@@ -4,15 +4,10 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import type { DisciplineCropsData, Task } from '@/types/generated'
 import { PlaylistView } from './PlaylistView'
 
-interface DisciplineImageEntry {
-  imageUrl: string
-  crops?: DisciplineCropsData
-}
-
 interface PRDBodyProps {
   filteredTasks: Task[]
   totalTasks: number
-  imageStore: Map<string, DisciplineImageEntry>
+  cropsStore: Map<string, DisciplineCropsData>
   onTaskClick: (task: Task) => void
   onClearFilters: () => void
   onBraindump: () => void
@@ -22,7 +17,7 @@ interface PRDBodyProps {
 export function PRDBody({
   filteredTasks,
   totalTasks,
-  imageStore,
+  cropsStore,
   onTaskClick,
   onClearFilters,
   onBraindump,
@@ -77,5 +72,5 @@ export function PRDBody({
     )
   }
 
-  return <PlaylistView tasks={filteredTasks} imageStore={imageStore} onTaskClick={onTaskClick} />
+  return <PlaylistView tasks={filteredTasks} cropsStore={cropsStore} onTaskClick={onTaskClick} />
 }

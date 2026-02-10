@@ -5,12 +5,11 @@ import { PRDHeader } from '@/components/prd/PRDHeader'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useInvoke } from '@/hooks/api'
-import { useDisciplineImageStore } from '@/hooks/disciplines/useDisciplineImageStore'
 import { useDisciplines } from '@/hooks/disciplines/useDisciplines'
 import { usePRDData, usePRDFilters } from '@/hooks/tasks'
 import { useWorkspaceActions } from '@/hooks/workspace'
 import { computeProjectProgress, getAllTags } from '@/lib/stats'
-import type { ProjectInfo } from '@/types/generated'
+import type { DisciplineCropsData, ProjectInfo } from '@/types/generated'
 
 // TODO: Implement task-bound terminal system (POC tested 2026-02-06)
 // - Add play button to tasks, bind to terminal, generate task prompt
@@ -20,7 +19,13 @@ export function TasksPage() {
   const { tasks, isLoading: tasksLoading, error } = usePRDData()
   const { data: projectInfo } = useInvoke<ProjectInfo>('get_project_info')
   const { disciplines } = useDisciplines()
-  const imageStore = useDisciplineImageStore(disciplines)
+  const cropsStore = useMemo(() => {
+    const map = new Map<string, DisciplineCropsData>()
+    for (const d of disciplines) {
+      if (d.crops) map.set(d.name, d.crops)
+    }
+    return map
+  }, [disciplines])
 
   const allTags = useMemo(() => getAllTags(tasks ?? []), [tasks])
   const progress = useMemo(() => computeProjectProgress(tasks ?? []), [tasks])
@@ -95,7 +100,7 @@ export function TasksPage() {
         <PRDBody
           filteredTasks={filteredTasks}
           totalTasks={totalTasks}
-          imageStore={imageStore}
+          cropsStore={cropsStore}
           onTaskClick={openTaskDetailTab}
           onClearFilters={clearFilters}
           onBraindump={() => openBraindumpTab('Braindump Project')}

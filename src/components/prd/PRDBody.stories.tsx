@@ -8,7 +8,7 @@ const meta = {
   tags: ['autodocs'],
   args: {
     totalTasks: 0,
-    imageStore: new Map(),
+    cropsStore: new Map(),
     onTaskClick: () => {},
     onClearFilters: () => {},
     onBraindump: () => {},

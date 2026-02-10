@@ -8,15 +8,13 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DisciplineDetailTabContent } from '@/components/workspace/DisciplineDetailTabContent'
-import { useDisciplineImageStore, useDisciplineStats, useStackMetadata } from '@/hooks/disciplines'
+import { useDisciplineStats, useStackMetadata } from '@/hooks/disciplines'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
 export function DisciplinesPage() {
   const { disciplines, statsMap, progress, isLoading: disciplinesLoading } = useDisciplineStats()
   const { stacks, isLoading: stacksLoading } = useStackMetadata()
   const openTab = useWorkspaceStore(state => state.openTab)
-  const disciplineImageStore = useDisciplineImageStore(disciplines)
-
   const handleDisciplineClick = (disciplineName: string, displayName: string) => {
     openTab({
       type: 'discipline-detail',
@@ -115,8 +113,6 @@ export function DisciplinesPage() {
                 blocked: 0,
                 skipped: 0
               }
-              const imageEntry = disciplineImageStore.get(discipline.name)
-              const imageUrl = imageEntry?.imageUrl
               const stackName = discipline.stackId != null ? stackNameMap.get(discipline.stackId) : undefined
 
               return (
@@ -143,9 +139,10 @@ export function DisciplinesPage() {
                     </div>
 
                     <div className="px-2.5 pb-1">
-                      {imageUrl && discipline.crops?.card ? (
+                      {discipline.imagePath && discipline.crops?.card ? (
                         <CroppedImage
-                          src={imageUrl}
+                          disciplineName={discipline.name}
+                          label="card"
                           crop={discipline.crops.card}
                           className="rounded w-full h-[180px]"
                         />

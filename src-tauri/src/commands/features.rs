@@ -493,3 +493,71 @@ pub fn get_discipline_image_data(
         Ok(Some(b64))
     })
 }
+
+#[tauri::command]
+pub fn get_cropped_image(
+    state: State<'_, AppState>,
+    name: String,
+    crop: CropBoxData,
+    label: String,
+) -> Result<Option<String>, String> {
+    use base64::Engine;
+
+    let db = get_db(&state)?;
+    let disciplines = db.get_disciplines();
+    let disc = disciplines.iter().find(|d| d.name == name);
+
+    let Some(disc) = disc else {
+        return Ok(None);
+    };
+    let Some(ref image_path) = disc.image_path else {
+        return Ok(None);
+    };
+
+    let project_path = get_locked_project_path(&state)?;
+    let cache_dir = project_path.join(".ralph").join("cache").join("crops");
+    let cache_key = format!(
+        "{}_{}_{}_{}_{}_{}.png",
+        name, label, crop.x, crop.y, crop.w, crop.h
+    );
+    let cache_path = cache_dir.join(&cache_key);
+
+    if cache_path.exists() {
+        return std::fs::read(&cache_path).map_or(Ok(None), |bytes| {
+            Ok(Some(
+                base64::engine::general_purpose::STANDARD.encode(&bytes),
+            ))
+        });
+    }
+
+    let abs_path = project_path.join(".ralph").join(image_path);
+    let Ok(src_bytes) = std::fs::read(&abs_path) else {
+        return Ok(None);
+    };
+
+    let img = image::load_from_memory(&src_bytes).map_err(|e| e.to_string())?;
+    let (iw, ih) = (img.width(), img.height());
+
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let (sx, sy, sw, sh) = (
+        (crop.x * iw as f32) as u32,
+        (crop.y * ih as f32) as u32,
+        (crop.w * iw as f32).min((iw as f32) - (crop.x * iw as f32)) as u32,
+        (crop.h * ih as f32).min((ih as f32) - (crop.y * ih as f32)) as u32,
+    );
+
+    if sw == 0 || sh == 0 {
+        return Ok(None);
+    }
+
+    let cropped = img.crop_imm(sx, sy, sw, sh);
+
+    std::fs::create_dir_all(&cache_dir).map_err(|e| e.to_string())?;
+    cropped.save(&cache_path).map_err(|e| e.to_string())?;
+
+    std::fs::read(&cache_path).map_or(Ok(None), |bytes| {
+        Ok(Some(
+            base64::engine::general_purpose::STANDARD.encode(&bytes),
+        ))
+    })
+}

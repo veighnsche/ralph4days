@@ -1,4 +1,3 @@
-export { useDisciplineImageStore } from './useDisciplineImageStore'
 export { useDisciplineMutations } from './useDisciplineMutations'
 export { useDisciplineStats } from './useDisciplineStats'
 export type { DisciplineConfig } from './useDisciplines'

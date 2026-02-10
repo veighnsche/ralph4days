@@ -1,6 +1,4 @@
-import { invoke } from '@tauri-apps/api/core'
 import { Layers } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { DisciplineLabel } from '@/components/prd/DisciplineLabel'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -16,31 +14,19 @@ import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { DisciplineConfig } from '@/types/generated'
 import { PropertyRow } from './PropertyRow'
 
-function useDisciplineImage(name: string, hasImage: boolean) {
-  const [imageUrl, setImageUrl] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!hasImage) return
-    let cancelled = false
-    invoke<string | null>('get_discipline_image_data', { name }).then(b64 => {
-      if (!cancelled && b64) setImageUrl(`data:image/png;base64,${b64}`)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [name, hasImage])
-
-  return imageUrl
-}
-
-function DisciplineContent({ discipline, imageUrl }: { discipline: DisciplineConfig; imageUrl: string | null }) {
+function DisciplineContent({ discipline }: { discipline: DisciplineConfig }) {
   const Icon = resolveIcon(discipline.icon)
   const sections: React.ReactNode[] = []
 
   sections.push(
     <div key="header" className="px-6 flex items-start gap-3">
-      {imageUrl && discipline.crops?.face ? (
-        <CroppedImage src={imageUrl} crop={discipline.crops.face} className="h-12 w-12 rounded-md shrink-0" />
+      {discipline.imagePath && discipline.crops?.face ? (
+        <CroppedImage
+          disciplineName={discipline.name}
+          label="face"
+          crop={discipline.crops.face}
+          className="h-12 w-12 rounded-md shrink-0"
+        />
       ) : (
         <div
           className="h-12 w-12 rounded-md shrink-0 flex items-center justify-center"
@@ -180,7 +166,6 @@ export function DisciplineDetailTabContent({ tab }: { tab: WorkspaceTab }) {
   const { stacks } = useStackMetadata()
 
   const discipline = disciplines?.find(d => d.name === disciplineName)
-  const imageUrl = useDisciplineImage(disciplineName, !!discipline?.imagePath)
   const stackName = discipline?.stackId != null ? stacks.find(s => s.stackId === discipline.stackId)?.name : undefined
 
   useTabMeta(tab.id, discipline?.displayName ?? 'Discipline', Layers)
@@ -223,15 +208,16 @@ export function DisciplineDetailTabContent({ tab }: { tab: WorkspaceTab }) {
         <div className="py-3 space-y-3">
           <Card className="shadow-sm flex flex-row gap-0 py-0" style={{ borderColor: `${discipline.color}40` }}>
             <div className="flex-1 min-w-0 py-4">
-              <DisciplineContent discipline={discipline} imageUrl={imageUrl} />
+              <DisciplineContent discipline={discipline} />
             </div>
 
             <div
               className="w-56 flex-shrink-0 border-l relative overflow-hidden"
               style={{ borderColor: `${discipline.color}40` }}>
-              {imageUrl && discipline.crops?.strip && (
+              {discipline.imagePath && discipline.crops?.strip && (
                 <CroppedImage
-                  src={imageUrl}
+                  disciplineName={discipline.name}
+                  label="strip"
                   crop={discipline.crops.strip}
                   className="absolute inset-0 w-full h-full object-cover opacity-15"
                 />

@@ -1,38 +1,45 @@
+import { invoke } from '@tauri-apps/api/core'
 import { useEffect, useState } from 'react'
 import type { CropBoxData } from '@/types/generated'
 
+const cropCache = new Map<string, string>()
+
+function cacheKey(name: string, label: string, crop: CropBoxData): string {
+  return `${name}|${label}|${crop.x},${crop.y},${crop.w},${crop.h}`
+}
+
 export function CroppedImage({
-  src,
+  disciplineName,
+  label,
   crop,
   className,
   style
 }: {
-  src: string
+  disciplineName: string
+  label: string
   crop: CropBoxData
   className?: string
   style?: React.CSSProperties
 }) {
-  const [croppedSrc, setCroppedSrc] = useState<string>()
+  const key = cacheKey(disciplineName, label, crop)
+  const [src, setSrc] = useState<string | undefined>(cropCache.get(key))
 
   useEffect(() => {
-    const img = new Image()
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      const sx = Math.round(crop.x * img.naturalWidth)
-      const sy = Math.round(crop.y * img.naturalHeight)
-      const sw = Math.round(crop.w * img.naturalWidth)
-      const sh = Math.round(crop.h * img.naturalHeight)
-      canvas.width = sw
-      canvas.height = sh
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
-      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh)
-      setCroppedSrc(canvas.toDataURL('image/png'))
+    if (cropCache.has(key)) {
+      setSrc(cropCache.get(key))
+      return
     }
-    img.src = src
-  }, [src, crop.x, crop.y, crop.w, crop.h])
 
-  if (!croppedSrc) return <div className={className} style={style} />
+    invoke<string | null>('get_cropped_image', { name: disciplineName, crop, label }).then(b64 => {
+      if (b64) {
+        const dataUrl = `data:image/png;base64,${b64}`
+        cropCache.set(key, dataUrl)
+        setSrc(dataUrl)
+      }
+    })
+  }, [key, disciplineName, crop, label])
 
-  return <img src={croppedSrc} alt="" className={`object-cover ${className ?? ''}`} style={style} />
+  if (!src) return <div className={className} style={style} />
+
+  return <img src={src} alt="" className={`object-cover ${className ?? ''}`} style={style} />
 }
