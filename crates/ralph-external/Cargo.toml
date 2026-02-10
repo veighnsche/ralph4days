@@ -27,3 +27,4 @@ uuid = { version = "1", features = ["v4"] }
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt"] }
 wiremock = "0.6"
+prompt-builder = { path = "../prompt-builder" }
