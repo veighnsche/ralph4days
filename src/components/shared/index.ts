@@ -1,2 +1,4 @@
 export { ErrorBoundary } from './ErrorBoundary'
 export { InlineError } from './InlineError'
+export { PriorityIcon } from './PriorityIcon'
+export { PriorityRadial } from './PriorityRadial'

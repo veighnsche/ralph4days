@@ -8,7 +8,9 @@ impl SqliteDb {
         &self,
         task_id: u32,
         author: String,
+        discipline: Option<String>,
         agent_task_id: Option<u32>,
+        priority: Option<String>,
         body: String,
     ) -> Result<(), String> {
         if author.trim().is_empty() {
@@ -34,9 +36,9 @@ impl SqliteDb {
 
         self.conn
             .execute(
-                "INSERT INTO task_comments (task_id, author, agent_task_id, body, created) \
-                 VALUES (?1, ?2, ?3, ?4, ?5)",
-                rusqlite::params![task_id, author, agent_task_id, body, now],
+                "INSERT INTO task_comments (task_id, author, discipline, agent_task_id, priority, body, created) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                rusqlite::params![task_id, author, discipline, agent_task_id, priority, body, now],
             )
             .ralph_err(codes::DB_WRITE, "Failed to insert comment")?;
 
@@ -116,7 +118,7 @@ impl SqliteDb {
 
     pub(crate) fn get_comments_for_task(&self, task_id: u32) -> Vec<TaskComment> {
         let Ok(mut stmt) = self.conn.prepare(
-            "SELECT id, author, agent_task_id, body, created \
+            "SELECT id, author, discipline, agent_task_id, priority, body, created \
              FROM task_comments WHERE task_id = ?1 ORDER BY id",
         ) else {
             return vec![];
@@ -126,9 +128,11 @@ impl SqliteDb {
             Ok(TaskComment {
                 id: row.get(0)?,
                 author: row.get(1)?,
-                agent_task_id: row.get(2)?,
-                body: row.get(3)?,
-                created: row.get(4)?,
+                discipline: row.get(2)?,
+                agent_task_id: row.get(3)?,
+                priority: row.get(4)?,
+                body: row.get(5)?,
+                created: row.get(6)?,
             })
         })
         .map_or_else(
@@ -139,7 +143,7 @@ impl SqliteDb {
 
     pub(crate) fn get_all_comments_by_task(&self) -> HashMap<u32, Vec<TaskComment>> {
         let Ok(mut stmt) = self.conn.prepare(
-            "SELECT id, task_id, author, agent_task_id, body, created \
+            "SELECT id, task_id, author, discipline, agent_task_id, priority, body, created \
              FROM task_comments ORDER BY task_id, id",
         ) else {
             return HashMap::new();
@@ -153,9 +157,11 @@ impl SqliteDb {
                 TaskComment {
                     id: row.get(0)?,
                     author: row.get(2)?,
-                    agent_task_id: row.get(3)?,
-                    body: row.get(4)?,
-                    created: row.get(5)?,
+                    discipline: row.get(3)?,
+                    agent_task_id: row.get(4)?,
+                    priority: row.get(5)?,
+                    body: row.get(6)?,
+                    created: row.get(7)?,
                 },
             ))
         }) else {

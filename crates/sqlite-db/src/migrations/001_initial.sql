@@ -32,7 +32,9 @@ CREATE TABLE disciplines (
   mcp_servers TEXT DEFAULT '[]',
   stack_id INTEGER DEFAULT NULL,
   image_path TEXT DEFAULT NULL,
-  crops TEXT DEFAULT NULL
+  crops TEXT DEFAULT NULL,
+  description TEXT DEFAULT NULL,
+  image_prompt TEXT DEFAULT NULL
 ) STRICT;
 
 CREATE TABLE tasks (
@@ -54,14 +56,18 @@ CREATE TABLE tasks (
   output_artifacts TEXT DEFAULT '[]',
   hints TEXT,
   estimated_turns INTEGER,
-  provenance TEXT
+  provenance TEXT,
+  pseudocode TEXT DEFAULT NULL,
+  enriched_at TEXT DEFAULT NULL
 ) STRICT;
 
 CREATE TABLE task_comments (
   id INTEGER PRIMARY KEY,
   task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
   author TEXT NOT NULL,
+  discipline TEXT REFERENCES disciplines(name) ON DELETE SET NULL,
   agent_task_id INTEGER,
+  priority TEXT DEFAULT NULL,
   body TEXT NOT NULL,
   created TEXT
 ) STRICT;

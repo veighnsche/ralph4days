@@ -1,9 +1,10 @@
-import { ArrowDown, ArrowUp, Bot, Cog, Equal, GitBranch, ListChecks, MessageSquare, User } from 'lucide-react'
+import { Bot, Cog, GitBranch, ListChecks, MessageSquare, User } from 'lucide-react'
 import { memo } from 'react'
+import { PriorityIcon, PriorityRadial } from '@/components/shared'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { INFERRED_STATUS_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from '@/constants/prd'
+import { INFERRED_STATUS_CONFIG, STATUS_CONFIG } from '@/constants/prd'
 import type { DisciplineCropsData, Task } from '@/types/generated'
 import { DisciplineHeadshot } from './DisciplineHeadshot'
 import { DisciplineLabel } from './DisciplineLabel'
@@ -16,22 +17,12 @@ interface PlaylistItemProps {
   onClick: () => void
 }
 
-const PRIORITY_ICONS = { high: ArrowUp, medium: Equal, low: ArrowDown } as const
-
 const PROVENANCE_ICONS = { agent: Bot, human: User, system: Cog } as const
 
-function PlaylistItemIndicators({
-  task,
-  unresolvedDeps,
-  priorityConfig
-}: {
-  task: Task
-  unresolvedDeps: number
-  priorityConfig: (typeof PRIORITY_CONFIG)[keyof typeof PRIORITY_CONFIG] | null
-}) {
+function PlaylistItemIndicators({ task, unresolvedDeps }: { task: Task; unresolvedDeps: number }) {
   const totalDeps = task.dependsOn?.length ?? 0
   const hasAny =
-    (task.comments?.length ?? 0) > 0 || totalDeps > 0 || (task.acceptanceCriteria?.length ?? 0) > 0 || priorityConfig
+    (task.comments?.length ?? 0) > 0 || totalDeps > 0 || (task.acceptanceCriteria?.length ?? 0) > 0 || task.priority
 
   if (!hasAny) return null
 
@@ -59,11 +50,7 @@ function PlaylistItemIndicators({
           <span className="text-xs">{task.acceptanceCriteria.length}</span>
         </div>
       )}
-      {priorityConfig &&
-        (() => {
-          const PriorityIcon = PRIORITY_ICONS[task.priority as keyof typeof PRIORITY_ICONS] ?? Equal
-          return <PriorityIcon className="h-3 w-3" style={{ color: priorityConfig.color }} />
-        })()}
+      {task.priority && <PriorityIcon priority={task.priority} />}
     </div>
   )
 }
@@ -88,7 +75,6 @@ export const PlaylistItem = memo(function PlaylistItem({
   onClick
 }: PlaylistItemProps) {
   const statusConfig = STATUS_CONFIG[task.status]
-  const priorityConfig = task.priority ? PRIORITY_CONFIG[task.priority] : null
   const hasHeadshot = !!crops?.face
 
   return (
@@ -101,14 +87,7 @@ export const PlaylistItem = memo(function PlaylistItem({
         opacity: task.status === 'done' || task.status === 'skipped' || task.status === 'draft' ? 0.5 : 1
       }}
       onClick={onClick}>
-      {priorityConfig && (
-        <div
-          className="absolute top-0 right-0 w-32 h-32 pointer-events-none"
-          style={{
-            background: `radial-gradient(circle at top right, ${priorityConfig.bgColor} 0%, transparent 70%)`
-          }}
-        />
-      )}
+      {task.priority && <PriorityRadial priority={task.priority} />}
 
       {hasHeadshot && (
         <DisciplineHeadshot disciplineName={task.discipline} faceCrop={crops?.face ?? { x: 0, y: 0, w: 1, h: 1 }} />
@@ -138,7 +117,7 @@ export const PlaylistItem = memo(function PlaylistItem({
 
       {/* Col 3: Indicators + Tags */}
       <div className="flex flex-col items-end justify-between self-stretch relative z-10">
-        <PlaylistItemIndicators task={task} unresolvedDeps={unresolvedDeps} priorityConfig={priorityConfig} />
+        <PlaylistItemIndicators task={task} unresolvedDeps={unresolvedDeps} />
         {task.tags && task.tags.length > 0 && (
           <div className="flex flex-wrap justify-end gap-1">
             {task.tags.map(tag => (

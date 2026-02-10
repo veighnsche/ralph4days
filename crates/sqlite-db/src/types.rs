@@ -118,7 +118,11 @@ pub struct TaskComment {
     pub id: u32,
     pub author: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub discipline: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub agent_task_id: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub priority: Option<String>,
     pub body: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,

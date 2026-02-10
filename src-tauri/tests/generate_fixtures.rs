@@ -444,7 +444,9 @@ just dev-mock 03-desktop-tasks
     db.add_comment(
         1,
         "agent".to_owned(),
+        None,
         Some(1),
+        None,
         "First attempt failed: forgot to add JWT_SECRET to .env".to_owned(),
     )
     .unwrap();
@@ -1082,10 +1084,12 @@ just dev-mock 04-desktop-dev
     db.execute_raw("UPDATE tasks SET provenance = 'system' WHERE id = 19")
         .unwrap();
 
-    // Add discipline-named comments (free-text author)
+    // Add discipline-named comments with discipline FK
     db.add_comment(
         1,
         "frontend".to_owned(),
+        Some("frontend".to_owned()),
+        None,
         None,
         "Card layout finalized, using 3-column grid on desktop.".to_owned(),
     )
@@ -1093,6 +1097,8 @@ just dev-mock 04-desktop-dev
     db.add_comment(
         2,
         "frontend".to_owned(),
+        Some("frontend".to_owned()),
+        None,
         None,
         "Auto-title fetch uses og:title with URL fallback.".to_owned(),
     )
@@ -1100,14 +1106,18 @@ just dev-mock 04-desktop-dev
     db.add_comment(
         3,
         "backend".to_owned(),
+        Some("backend".to_owned()),
         Some(3),
+        None,
         "localStorage wrapper handles quota errors with LRU eviction.".to_owned(),
     )
     .unwrap();
     db.add_comment(
         4,
         "quality".to_owned(),
+        Some("quality".to_owned()),
         Some(4),
+        Some("high".to_owned()),
         "Found edge case: empty URL string passes validation. Adding test.".to_owned(),
     )
     .unwrap();
@@ -1115,40 +1125,52 @@ just dev-mock 04-desktop-dev
         4,
         "human".to_owned(),
         None,
+        None,
+        None,
         "Also test unicode URLs please.".to_owned(),
     )
     .unwrap();
     db.add_comment(
         7,
         "security".to_owned(),
+        Some("security".to_owned()),
         None,
+        Some("high".to_owned()),
         "Added CSP header and input sanitization for all URL fields.".to_owned(),
     )
     .unwrap();
     db.add_comment(
         8,
         "backend".to_owned(),
+        Some("backend".to_owned()),
         Some(8),
+        None,
         "Schema uses JSON column for bookmark refs, supports ordering.".to_owned(),
     )
     .unwrap();
     db.add_comment(
         9,
         "frontend".to_owned(),
+        Some("frontend".to_owned()),
         Some(9),
+        Some("medium".to_owned()),
         "Sidebar uses virtual scroll for collections > 50.".to_owned(),
     )
     .unwrap();
     db.add_comment(
         9,
         "frontend".to_owned(),
+        Some("frontend".to_owned()),
         Some(9),
+        None,
         "Collapse state persisted in localStorage.".to_owned(),
     )
     .unwrap();
     db.add_comment(
         13,
         "backend".to_owned(),
+        Some("backend".to_owned()),
+        None,
         None,
         "Evaluating lunr.js vs custom inverted index. lunr.js is 8kb gzipped.".to_owned(),
     )
@@ -1157,12 +1179,16 @@ just dev-mock 04-desktop-dev
         14,
         "human".to_owned(),
         None,
+        None,
+        Some("low".to_owned()),
         "Blocked until search index is ready. Low priority for now.".to_owned(),
     )
     .unwrap();
     db.add_comment(
         16,
         "backend".to_owned(),
+        Some("backend".to_owned()),
+        None,
         None,
         "Chrome and Firefox use same Netscape format. Safari differs slightly.".to_owned(),
     )
@@ -1170,6 +1196,8 @@ just dev-mock 04-desktop-dev
     db.add_comment(
         16,
         "quality".to_owned(),
+        Some("quality".to_owned()),
+        None,
         None,
         "Need sample export files from each browser for test fixtures.".to_owned(),
     )
@@ -1178,12 +1206,16 @@ just dev-mock 04-desktop-dev
         17,
         "human".to_owned(),
         None,
+        None,
+        None,
         "Blocked on HTML parser. Will design the UI in parallel once unblocked.".to_owned(),
     )
     .unwrap();
     db.add_comment(
         20,
         "data".to_owned(),
+        Some("data".to_owned()),
+        None,
         None,
         "Using IndexedDB for theme + future settings. localStorage too limited.".to_owned(),
     )

@@ -88,7 +88,6 @@ export type ProjectProgress = { totalTasks: number; doneTasks: number; progressP
 export type PromptPreviewSection = { name: string; content: string }
 export type PromptPreview = { sections: PromptPreviewSection[]; fullPrompt: string }
 export type RalphProject = { name: string; path: string }
-export type RecentProject = { path: string; name: string; lastOpened: string }
 export type RecipeConfigData = {
   name: string
   baseRecipe: string
@@ -122,7 +121,15 @@ export type StackMetadataData = {
   disciplineCount: number
   characteristics: string[]
 }
-export type TaskComment = { id: number; author: string; agent_task_id?: number; body: string; created?: string }
+export type TaskComment = {
+  id: number
+  author: string
+  discipline?: string
+  agent_task_id?: number
+  priority?: string
+  body: string
+  created?: string
+}
 export type TaskProvenance = 'agent' | 'human' | 'system'
 export type TaskStatus = 'draft' | 'pending' | 'in_progress' | 'done' | 'blocked' | 'skipped'
 export type Task = {

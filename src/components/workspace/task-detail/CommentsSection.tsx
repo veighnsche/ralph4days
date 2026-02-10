@@ -1,12 +1,42 @@
 import { Bot, MessageSquare, Pencil, Trash2, User } from 'lucide-react'
 import { useState } from 'react'
-import { InlineError } from '@/components/shared'
+import { InlineError, PriorityIcon, PriorityRadial } from '@/components/shared'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import { CroppedImage } from '@/components/ui/cropped-image'
+import { useDisciplines } from '@/hooks/disciplines'
 import { useCommentMutations } from '@/hooks/tasks'
 import { formatDate } from '@/lib/formatDate'
-import type { Task } from '@/types/generated'
+import type { Task, TaskComment as TaskCommentType } from '@/types/generated'
 import { CommentEditor } from './CommentEditor'
+
+function CommentAvatar({ comment }: { comment: TaskCommentType }) {
+  const { disciplines } = useDisciplines()
+
+  if (comment.discipline) {
+    const disc = disciplines.find(d => d.name === comment.discipline)
+    if (disc?.crops?.face) {
+      return (
+        <div className="size-12 flex-shrink-0 rounded-md overflow-hidden self-start">
+          <CroppedImage
+            disciplineName={disc.name}
+            label="comment-face"
+            crop={disc.crops.face}
+            className="size-full object-cover"
+          />
+        </div>
+      )
+    }
+  }
+
+  return (
+    <Avatar size="sm" className="mt-0.5 flex-shrink-0">
+      <AvatarFallback className="text-muted-foreground">
+        {comment.author === 'human' ? <User className="h-3 w-3" /> : <Bot className="h-3 w-3" />}
+      </AvatarFallback>
+    </Avatar>
+  )
+}
 
 export function CommentsSection({ task }: { task: Task }) {
   const comments = task.comments ?? []
@@ -48,12 +78,11 @@ export function CommentsSection({ task }: { task: Task }) {
       {comments.length > 0 && (
         <div className="space-y-3 mb-4">
           {comments.map(comment => (
-            <div key={comment.id} className="group/comment flex gap-2.5">
-              <Avatar size="sm" className="mt-0.5 flex-shrink-0">
-                <AvatarFallback className="text-muted-foreground">
-                  {comment.author === 'human' ? <User className="h-3 w-3" /> : <Bot className="h-3 w-3" />}
-                </AvatarFallback>
-              </Avatar>
+            <div
+              key={comment.id}
+              className="group/comment flex gap-2.5 relative overflow-hidden rounded-md px-2 py-1.5">
+              {comment.priority && <PriorityRadial priority={comment.priority} />}
+              <CommentAvatar comment={comment} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2">
                   <span className="text-sm font-medium">
@@ -66,17 +95,24 @@ export function CommentsSection({ task }: { task: Task }) {
                   {comment.created && (
                     <span className="text-xs text-muted-foreground">{formatDate(comment.created)}</span>
                   )}
-                  <div className="ml-auto opacity-0 group-hover/comment:opacity-100 transition-opacity flex gap-0.5">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-5 w-5 p-0"
-                      onClick={() => startEdit(comment.id, comment.body)}>
-                      <Pencil className="h-3 w-3 text-muted-foreground" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={() => deleteComment(comment.id)}>
-                      <Trash2 className="h-3 w-3 text-muted-foreground" />
-                    </Button>
+                  <div className="ml-auto flex items-center gap-1">
+                    <div className="opacity-0 group-hover/comment:opacity-100 transition-opacity flex gap-0.5">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 w-5 p-0"
+                        onClick={() => startEdit(comment.id, comment.body)}>
+                        <Pencil className="h-3 w-3 text-muted-foreground" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 w-5 p-0"
+                        onClick={() => deleteComment(comment.id)}>
+                        <Trash2 className="h-3 w-3 text-muted-foreground" />
+                      </Button>
+                    </div>
+                    {comment.priority && <PriorityIcon priority={comment.priority} size="md" />}
                   </div>
                 </div>
                 {editingId === comment.id ? (
