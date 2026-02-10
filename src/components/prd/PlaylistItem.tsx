@@ -1,11 +1,10 @@
-import { Bot, Cog, MessageSquare, User } from 'lucide-react'
+import { ArrowDown, ArrowUp, Bot, Cog, Equal, GitBranch, ListChecks, MessageSquare, User } from 'lucide-react'
 import { memo } from 'react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from '@/components/ui/item'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { INFERRED_STATUS_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from '@/constants/prd'
-import { getInferredStatusExplanation } from '@/lib/taskStatus'
 import type { DisciplineCropsData, Task } from '@/types/generated'
 import { DisciplineHeadshot } from './DisciplineHeadshot'
 import { DisciplineLabel } from './DisciplineLabel'
@@ -24,85 +23,15 @@ interface PlaylistItemProps {
   onClick: () => void
 }
 
-function PlaylistItemActions({
-  task,
-  priorityConfig
-}: {
-  task: Task
-  priorityConfig: (typeof PRIORITY_CONFIG)[keyof typeof PRIORITY_CONFIG] | null
-}) {
+function PlaylistItemActions({ task }: { task: Task }) {
   return (
     <ItemActions className="flex-col items-end justify-end self-stretch gap-2 relative z-10">
-      <div className="flex items-center gap-2">
-        {task.acceptanceCriteria && task.acceptanceCriteria.length > 0 && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5 cursor-help">
-                {task.acceptanceCriteria.length} AC
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>{task.acceptanceCriteria.length} Acceptance Criteria</TooltipContent>
-          </Tooltip>
-        )}
-
-        {task.dependsOn &&
-          task.dependsOn.length > 0 &&
-          (() => {
-            const isWaiting = task.inferredStatus === 'waiting_on_deps'
-            const inferredConfig = isWaiting ? INFERRED_STATUS_CONFIG.waiting_on_deps : null
-
-            return (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge
-                    variant="outline"
-                    className="text-xs px-1.5 py-0.5 h-5 cursor-help"
-                    style={
-                      inferredConfig
-                        ? {
-                            borderColor: inferredConfig.color,
-                            color: inferredConfig.color,
-                            backgroundColor: inferredConfig.bgColor
-                          }
-                        : undefined
-                    }>
-                    {task.dependsOn.length} dep{task.dependsOn.length !== 1 ? 's' : ''}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {isWaiting
-                    ? getInferredStatusExplanation(task.status, task.inferredStatus, task.dependsOn.length)
-                    : `${task.dependsOn.length} ${task.dependsOn.length === 1 ? 'Dependency' : 'Dependencies'}`}
-                </TooltipContent>
-              </Tooltip>
-            )
-          })()}
-      </div>
-
       <div className="flex flex-wrap gap-1 justify-end">
         {task.tags?.map(tag => (
           <Badge key={tag} variant="outline" className="text-xs px-2.5 py-0.5 h-5 min-w-[3rem]">
             {tag}
           </Badge>
         ))}
-
-        {priorityConfig && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge
-                variant="outline"
-                className="text-xs px-2 py-0.5 h-5 cursor-help"
-                style={{
-                  backgroundColor: priorityConfig.bgColor,
-                  color: priorityConfig.color,
-                  borderColor: priorityConfig.color
-                }}>
-                {priorityConfig.label}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>{priorityConfig.label} Priority</TooltipContent>
-          </Tooltip>
-        )}
       </div>
     </ItemActions>
   )
@@ -135,17 +64,47 @@ export const PlaylistItem = memo(function PlaylistItem({
       onClick={onClick}>
       {priorityConfig && (
         <div
-          className="absolute bottom-0 right-0 w-32 h-32 pointer-events-none"
+          className="absolute top-0 right-0 w-32 h-32 pointer-events-none"
           style={{
-            background: `radial-gradient(circle at bottom right, ${priorityConfig.bgColor} 0%, transparent 70%)`
+            background: `radial-gradient(circle at top right, ${priorityConfig.bgColor} 0%, transparent 70%)`
           }}
         />
       )}
 
-      {task.comments && task.comments.length > 0 && (
-        <div className="absolute top-2 right-3 flex items-center gap-1 text-muted-foreground z-10">
-          <MessageSquare className="h-3 w-3" />
-          <span className="text-xs">{task.comments.length}</span>
+      {(task.dependsOn?.length > 0 ||
+        task.acceptanceCriteria?.length > 0 ||
+        task.comments?.length > 0 ||
+        priorityConfig) && (
+        <div className="absolute top-2 right-3 flex items-center gap-2 text-muted-foreground z-10">
+          {task.comments && task.comments.length > 0 && (
+            <div className="flex items-center gap-1">
+              <MessageSquare className="h-3 w-3" />
+              <span className="text-xs">{task.comments.length}</span>
+            </div>
+          )}
+          {task.dependsOn && task.dependsOn.length > 0 && (
+            <div
+              className="flex items-center gap-1"
+              style={
+                task.inferredStatus === 'waiting_on_deps'
+                  ? { color: INFERRED_STATUS_CONFIG.waiting_on_deps.color }
+                  : undefined
+              }>
+              <GitBranch className="h-3 w-3" />
+              <span className="text-xs">{task.dependsOn.length}</span>
+            </div>
+          )}
+          {task.acceptanceCriteria && task.acceptanceCriteria.length > 0 && (
+            <div className="flex items-center gap-1">
+              <ListChecks className="h-3 w-3" />
+              <span className="text-xs">{task.acceptanceCriteria.length}</span>
+            </div>
+          )}
+          {priorityConfig &&
+            (() => {
+              const PriorityIcon = task.priority === 'high' ? ArrowUp : task.priority === 'low' ? ArrowDown : Equal
+              return <PriorityIcon className="h-3 w-3" style={{ color: priorityConfig.color }} />
+            })()}
         </div>
       )}
 
@@ -200,7 +159,7 @@ export const PlaylistItem = memo(function PlaylistItem({
         )}
       </ItemContent>
 
-      <PlaylistItemActions task={task} priorityConfig={priorityConfig} />
+      <PlaylistItemActions task={task} />
     </Item>
   )
 })
