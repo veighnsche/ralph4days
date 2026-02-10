@@ -1,2 +1,0 @@
-ALTER TABLE disciplines ADD COLUMN description TEXT DEFAULT NULL;
-ALTER TABLE disciplines ADD COLUMN image_prompt TEXT DEFAULT NULL;
