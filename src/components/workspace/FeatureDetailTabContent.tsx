@@ -50,8 +50,6 @@ function FeatureContent({ feature, onEdit }: { feature: FeatureData; onEdit: () 
     )
   }
 
-  sections.push(<FeatureCommentsSection key="comments" feature={feature} />)
-
   if (feature.contextFiles.length > 0 || feature.knowledgePaths.length > 0) {
     sections.push(
       <div key="files" className="px-6 space-y-2">
@@ -248,7 +246,8 @@ export function FeatureDetailTabContent({ tab }: { tab: WorkspaceTab }) {
     <DetailPageLayout
       accentColor="hsl(var(--muted-foreground))"
       mainContent={<FeatureContent feature={feature} onEdit={handleEdit} />}
-      sidebar={<FeatureSidebar feature={feature} stats={stats} featureProgress={featureProgress} />}
-    />
+      sidebar={<FeatureSidebar feature={feature} stats={stats} featureProgress={featureProgress} />}>
+      <FeatureCommentsSection feature={feature} />
+    </DetailPageLayout>
   )
 }

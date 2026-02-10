@@ -28,10 +28,10 @@ export type DisciplineImagePromptData = { positive: string; negative: string }
 export type FeatureCommentData = {
   id: number
   category: string
-  author: string
   discipline?: string
   agentTaskId?: number
   body: string
+  summary?: string
   reason?: string
   sourceIteration?: number
   created?: string
@@ -40,10 +40,10 @@ export type FeatureCommentData = {
 export type FeatureComment = {
   id: number
   category: string
-  author: string
   discipline?: string
   agent_task_id?: number
   body: string
+  summary?: string
   reason?: string
   source_iteration?: number
   created?: string
@@ -84,14 +84,6 @@ export type GroupStats = {
   blocked: number
   skipped: number
 }
-export type InferredTaskStatus =
-  | 'draft'
-  | 'ready'
-  | 'waiting_on_deps'
-  | 'externally_blocked'
-  | 'in_progress'
-  | 'done'
-  | 'skipped'
 export type LearningSource = 'auto' | 'agent' | 'human' | 'opus_reviewed'
 export type McpServerConfigData = { name: string; command: string; args: string[]; env: { [key in string]: string } }
 export type McpServerConfig = { name: string; command: string; args: string[]; env: { [key in string]: string } }
@@ -136,7 +128,6 @@ export type StackMetadataData = {
 }
 export type TaskComment = {
   id: number
-  author: string
   discipline?: string
   agent_task_id?: number
   priority?: string
@@ -152,7 +143,6 @@ export type Task = {
   title: string
   description?: string
   status: TaskStatus
-  inferredStatus: InferredTaskStatus
   priority?: Priority
   tags: string[]
   dependsOn: number[]

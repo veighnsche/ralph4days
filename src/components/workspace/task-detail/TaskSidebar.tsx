@@ -5,6 +5,7 @@ import { Separator } from '@/components/ui/separator'
 import { INFERRED_STATUS_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from '@/constants/prd'
 import { formatDate } from '@/lib/formatDate'
 import { resolveIcon } from '@/lib/iconRegistry'
+import type { InferredTaskStatus } from '@/lib/taskStatus'
 import { shouldShowInferredStatus } from '@/lib/taskStatus'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { Task } from '@/types/generated'
@@ -17,7 +18,7 @@ const PROVENANCE_CONFIG = {
   system: { label: 'System', icon: Cog }
 } as const
 
-export function TaskSidebar({ task }: { task: Task }) {
+export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStatus: InferredTaskStatus }) {
   const statusConfig = STATUS_CONFIG[task.status]
   const StatusIcon = statusConfig.icon
   const priorityConfig = task.priority ? PRIORITY_CONFIG[task.priority] : null
@@ -50,9 +51,9 @@ export function TaskSidebar({ task }: { task: Task }) {
             )}
           </div>
 
-          {shouldShowInferredStatus(task.status, task.inferredStatus) &&
+          {shouldShowInferredStatus(task.status, inferredStatus) &&
             (() => {
-              const inferredConfig = INFERRED_STATUS_CONFIG[task.inferredStatus]
+              const inferredConfig = INFERRED_STATUS_CONFIG[inferredStatus]
               const InferredIcon = inferredConfig.icon
               const hasDeps = task.dependsOn && task.dependsOn.length > 0
 
@@ -81,18 +82,16 @@ export function TaskSidebar({ task }: { task: Task }) {
               )
             })()}
 
-          {!shouldShowInferredStatus(task.status, task.inferredStatus) &&
-            task.dependsOn &&
-            task.dependsOn.length > 0 && (
-              <div className="flex flex-wrap gap-1 items-center pl-5">
-                <span className="text-xs text-muted-foreground">Depends on:</span>
-                {task.dependsOn.map(depId => (
-                  <Badge key={depId} variant="outline" className="text-xs font-mono px-1.5 py-0 h-4">
-                    #{depId.toString().padStart(3, '0')}
-                  </Badge>
-                ))}
-              </div>
-            )}
+          {!shouldShowInferredStatus(task.status, inferredStatus) && task.dependsOn && task.dependsOn.length > 0 && (
+            <div className="flex flex-wrap gap-1 items-center pl-5">
+              <span className="text-xs text-muted-foreground">Depends on:</span>
+              {task.dependsOn.map(depId => (
+                <Badge key={depId} variant="outline" className="text-xs font-mono px-1.5 py-0 h-4">
+                  #{depId.toString().padStart(3, '0')}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
       </PropertyRow>
 

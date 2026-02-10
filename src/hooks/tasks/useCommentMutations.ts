@@ -6,7 +6,7 @@ export function useCommentMutations(taskId: number) {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editBody, setEditBody] = useState('')
 
-  const addCommentMutation = useInvokeMutation<{ taskId: number; author: string; body: string }>('add_task_comment', {
+  const addCommentMutation = useInvokeMutation<{ taskId: number; body: string }>('add_task_comment', {
     invalidateKeys: QUERY_KEYS.TASKS
   })
 

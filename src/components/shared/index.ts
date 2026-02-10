@@ -1,3 +1,5 @@
+export { CommentAvatar } from './CommentAvatar'
+export { DisciplineRadial } from './DisciplineRadial'
 export { ErrorBoundary } from './ErrorBoundary'
 export { InlineError } from './InlineError'
 export { PriorityIcon } from './PriorityIcon'

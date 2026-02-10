@@ -5,13 +5,14 @@ import { useInvokeMutation } from '@/hooks/api'
 export function useFeatureCommentMutations(featureName: string) {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editBody, setEditBody] = useState('')
+  const [editSummary, setEditSummary] = useState('')
   const [editReason, setEditReason] = useState('')
 
   const addCommentMutation = useInvokeMutation<{
     featureName: string
     category: string
-    author: string
     body: string
+    summary?: string
     reason?: string
   }>('add_feature_comment', {
     invalidateKeys: QUERY_KEYS.FEATURES
@@ -21,12 +22,14 @@ export function useFeatureCommentMutations(featureName: string) {
     featureName: string
     commentId: number
     body: string
+    summary?: string
     reason?: string
   }>('update_feature_comment', {
     invalidateKeys: QUERY_KEYS.FEATURES,
     onSuccess: () => {
       setEditingId(null)
       setEditBody('')
+      setEditSummary('')
       setEditReason('')
     }
   })
@@ -47,14 +50,16 @@ export function useFeatureCommentMutations(featureName: string) {
 
   return {
     addComment: addCommentMutation,
-    startEdit: (commentId: number, body: string, reason: string) => {
+    startEdit: (commentId: number, body: string, summary: string, reason: string) => {
       setEditingId(commentId)
       setEditBody(body)
+      setEditSummary(summary)
       setEditReason(reason)
     },
     cancelEdit: () => {
       setEditingId(null)
       setEditBody('')
+      setEditSummary('')
       setEditReason('')
     },
     submitEdit: () => {
@@ -63,6 +68,7 @@ export function useFeatureCommentMutations(featureName: string) {
         featureName,
         commentId: editingId,
         body: editBody.trim(),
+        summary: editSummary.trim() || undefined,
         reason: editReason.trim() || undefined
       })
     },
@@ -70,6 +76,8 @@ export function useFeatureCommentMutations(featureName: string) {
     editingId,
     editBody,
     setEditBody,
+    editSummary,
+    setEditSummary,
     editReason,
     setEditReason,
     isPending: addCommentMutation.isPending || editComment.isPending || deleteComment.isPending,

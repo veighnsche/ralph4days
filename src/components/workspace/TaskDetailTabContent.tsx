@@ -4,6 +4,7 @@ import { STATUS_CONFIG } from '@/constants/prd'
 import { useDisciplines } from '@/hooks/disciplines'
 import { usePRDData } from '@/hooks/tasks'
 import { useTabMeta } from '@/hooks/workspace'
+import { computeInferredStatus } from '@/lib/taskStatus'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { Task } from '@/types/generated'
 import { DetailPageLayout } from './DetailPageLayout'
@@ -50,7 +51,7 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
         )
       }
       mainContent={<TaskCardContent task={task} />}
-      sidebar={<TaskSidebar task={task} />}>
+      sidebar={<TaskSidebar task={task} inferredStatus={computeInferredStatus(task, tasks ?? [])} />}>
       <CommentsSection task={task} />
     </DetailPageLayout>
   )

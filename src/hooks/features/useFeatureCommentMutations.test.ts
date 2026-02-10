@@ -1,0 +1,153 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { act, renderHook, waitFor } from '@testing-library/react'
+import { createElement, type ReactNode } from 'react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { useFeatureCommentMutations } from './useFeatureCommentMutations'
+
+const mockInvoke = vi.fn()
+
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: (...args: unknown[]) => mockInvoke(...args)
+}))
+
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: { mutations: { retry: false } }
+  })
+  return ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children)
+}
+
+describe('useFeatureCommentMutations', () => {
+  beforeEach(() => {
+    mockInvoke.mockReset()
+    mockInvoke.mockResolvedValue(undefined)
+  })
+
+  it('addComment.mutate calls invoke with correct params', async () => {
+    const { result } = renderHook(() => useFeatureCommentMutations('auth'), {
+      wrapper: createWrapper()
+    })
+
+    act(() => {
+      result.current.addComment.mutate({
+        featureName: 'auth',
+        category: 'gotcha',
+        body: 'Watch out for XSS',
+        reason: 'OWASP top 10'
+      })
+    })
+
+    await waitFor(() =>
+      expect(mockInvoke).toHaveBeenCalledWith('add_feature_comment', {
+        featureName: 'auth',
+        category: 'gotcha',
+        body: 'Watch out for XSS',
+        reason: 'OWASP top 10'
+      })
+    )
+  })
+
+  it('startEdit / cancelEdit state management', () => {
+    const { result } = renderHook(() => useFeatureCommentMutations('auth'), {
+      wrapper: createWrapper()
+    })
+
+    expect(result.current.editingId).toBeNull()
+    expect(result.current.editBody).toBe('')
+    expect(result.current.editSummary).toBe('')
+    expect(result.current.editReason).toBe('')
+
+    act(() => {
+      result.current.startEdit(42, 'old body', 'old summary', 'old reason')
+    })
+
+    expect(result.current.editingId).toBe(42)
+    expect(result.current.editBody).toBe('old body')
+    expect(result.current.editSummary).toBe('old summary')
+    expect(result.current.editReason).toBe('old reason')
+
+    act(() => {
+      result.current.cancelEdit()
+    })
+
+    expect(result.current.editingId).toBeNull()
+    expect(result.current.editBody).toBe('')
+    expect(result.current.editSummary).toBe('')
+    expect(result.current.editReason).toBe('')
+  })
+
+  it('submitEdit calls invoke with trimmed values', async () => {
+    const { result } = renderHook(() => useFeatureCommentMutations('auth'), {
+      wrapper: createWrapper()
+    })
+
+    act(() => {
+      result.current.startEdit(7, '  trimmed body  ', '  trimmed summary  ', '  trimmed reason  ')
+    })
+
+    act(() => {
+      result.current.submitEdit()
+    })
+
+    await waitFor(() =>
+      expect(mockInvoke).toHaveBeenCalledWith('update_feature_comment', {
+        featureName: 'auth',
+        commentId: 7,
+        body: 'trimmed body',
+        summary: 'trimmed summary',
+        reason: 'trimmed reason'
+      })
+    )
+  })
+
+  it('submitEdit no-op when editingId is null', () => {
+    const { result } = renderHook(() => useFeatureCommentMutations('auth'), {
+      wrapper: createWrapper()
+    })
+
+    act(() => {
+      result.current.submitEdit()
+    })
+
+    expect(mockInvoke).not.toHaveBeenCalled()
+  })
+
+  it('deleteComment calls invoke with featureName and commentId', async () => {
+    const { result } = renderHook(() => useFeatureCommentMutations('auth'), {
+      wrapper: createWrapper()
+    })
+
+    act(() => {
+      result.current.deleteComment(99)
+    })
+
+    await waitFor(() =>
+      expect(mockInvoke).toHaveBeenCalledWith('delete_feature_comment', { featureName: 'auth', commentId: 99 })
+    )
+  })
+
+  it('error aggregation and reset', async () => {
+    mockInvoke.mockRejectedValueOnce('Add failed')
+
+    const { result } = renderHook(() => useFeatureCommentMutations('auth'), {
+      wrapper: createWrapper()
+    })
+
+    act(() => {
+      result.current.addComment.mutate({
+        featureName: 'auth',
+        category: 'gotcha',
+        body: 'test'
+      })
+    })
+
+    await waitFor(() => expect(result.current.error).toBeTruthy())
+
+    act(() => {
+      result.current.resetError()
+    })
+
+    await waitFor(() => expect(result.current.error).toBeNull())
+  })
+})
