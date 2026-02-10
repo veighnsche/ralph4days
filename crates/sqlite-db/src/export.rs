@@ -65,7 +65,10 @@ impl SqliteDb {
                     for c in &f.comments {
                         output
                             .push_str(&format!("  - category: \"{}\"\n", yaml_escape(&c.category)));
-                        output.push_str(&format!("    author: \"{}\"\n", yaml_escape(&c.author)));
+                        if let Some(disc) = &c.discipline {
+                            output
+                                .push_str(&format!("    discipline: \"{}\"\n", yaml_escape(disc)));
+                        }
                         output.push_str(&format!("    body: \"{}\"\n", yaml_escape(&c.body)));
                         if let Some(reason) = &c.reason {
                             output.push_str(&format!("    reason: \"{}\"\n", yaml_escape(reason)));
@@ -177,10 +180,11 @@ impl SqliteDb {
                 if !t.comments.is_empty() {
                     output.push_str("  comments:\n");
                     for c in &t.comments {
-                        output.push_str(&format!("  - author: \"{}\"\n", yaml_escape(&c.author)));
                         if let Some(disc) = &c.discipline {
                             output
-                                .push_str(&format!("    discipline: \"{}\"\n", yaml_escape(disc)));
+                                .push_str(&format!("  - discipline: \"{}\"\n", yaml_escape(disc)));
+                        } else {
+                            output.push_str("  - discipline: ~\n");
                         }
                         if let Some(atid) = c.agent_task_id {
                             output.push_str(&format!("    agent_task_id: {atid}\n"));

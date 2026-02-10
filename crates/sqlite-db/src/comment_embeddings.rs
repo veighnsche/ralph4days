@@ -42,7 +42,7 @@ impl SqliteDb {
         min_score: f32,
     ) -> Vec<ScoredCommentRow> {
         let Ok(mut stmt) = self.conn.prepare(
-            "SELECT ce.comment_id, ce.embedding, fc.category, fc.body, fc.reason
+            "SELECT ce.comment_id, ce.embedding, fc.category, fc.body, fc.summary, fc.reason
              FROM comment_embeddings ce
              JOIN feature_comments fc ON fc.id = ce.comment_id
              WHERE fc.feature_name = ?1",
@@ -55,15 +55,16 @@ impl SqliteDb {
             let blob: Vec<u8> = row.get(1)?;
             let category: String = row.get(2)?;
             let body: String = row.get(3)?;
-            let reason: Option<String> = row.get(4)?;
-            Ok((comment_id, blob, category, body, reason))
+            let summary: Option<String> = row.get(4)?;
+            let reason: Option<String> = row.get(5)?;
+            Ok((comment_id, blob, category, body, summary, reason))
         }) else {
             return vec![];
         };
 
         let mut results: Vec<ScoredCommentRow> = rows
             .filter_map(Result::ok)
-            .filter_map(|(comment_id, blob, category, body, reason)| {
+            .filter_map(|(comment_id, blob, category, body, summary, reason)| {
                 let stored = blob_to_embedding(&blob)?;
                 let score = cosine_similarity(query_embedding, &stored);
                 if score >= min_score {
@@ -71,6 +72,7 @@ impl SqliteDb {
                         comment_id,
                         category,
                         body,
+                        summary,
                         reason,
                         score,
                     })
@@ -115,6 +117,7 @@ pub struct ScoredCommentRow {
     pub comment_id: u32,
     pub category: String,
     pub body: String,
+    pub summary: Option<String>,
     pub reason: Option<String>,
     pub score: f32,
 }
@@ -209,10 +212,11 @@ mod tests {
         db.add_feature_comment(crate::AddFeatureCommentInput {
             feature_name: "auth".to_owned(),
             category: "gotcha".to_owned(),
-            author: "human".to_owned(),
+
             discipline: None,
             agent_task_id: None,
             body: "Use JWT not sessions".to_owned(),
+            summary: None,
             reason: None,
             source_iteration: None,
         })
@@ -252,10 +256,11 @@ mod tests {
         db.add_feature_comment(crate::AddFeatureCommentInput {
             feature_name: "auth".to_owned(),
             category: "gotcha".to_owned(),
-            author: "human".to_owned(),
+
             discipline: None,
             agent_task_id: None,
             body: "Low relevance".to_owned(),
+            summary: None,
             reason: None,
             source_iteration: None,
         })
@@ -290,10 +295,11 @@ mod tests {
         db.add_feature_comment(crate::AddFeatureCommentInput {
             feature_name: "auth".to_owned(),
             category: "gotcha".to_owned(),
-            author: "human".to_owned(),
+
             discipline: None,
             agent_task_id: None,
             body: "Test".to_owned(),
+            summary: None,
             reason: None,
             source_iteration: None,
         })
@@ -307,5 +313,197 @@ mod tests {
 
         db.delete_feature_comment("auth", comment_id).unwrap();
         assert!(!db.has_comment_embedding(comment_id));
+    }
+
+    #[test]
+    fn delete_embedding_direct() {
+        let db = SqliteDb::open_in_memory().unwrap();
+        db.create_feature(crate::FeatureInput {
+            name: "auth".to_owned(),
+            display_name: "Auth".to_owned(),
+            acronym: "AUTH".to_owned(),
+            ..Default::default()
+        })
+        .unwrap();
+
+        db.add_feature_comment(crate::AddFeatureCommentInput {
+            feature_name: "auth".to_owned(),
+            category: "gotcha".to_owned(),
+
+            discipline: None,
+            agent_task_id: None,
+            body: "Test delete".to_owned(),
+            summary: None,
+            reason: None,
+            source_iteration: None,
+        })
+        .unwrap();
+        let comment_id = db.get_features()[0].comments[0].id;
+
+        db.upsert_comment_embedding(comment_id, &[0.5; 768], "test", "hash1")
+            .unwrap();
+        assert!(db.has_comment_embedding(comment_id));
+
+        db.delete_comment_embedding(comment_id).unwrap();
+        assert!(!db.has_comment_embedding(comment_id));
+    }
+
+    #[test]
+    fn upsert_overwrites_embedding() {
+        let db = SqliteDb::open_in_memory().unwrap();
+        db.create_feature(crate::FeatureInput {
+            name: "auth".to_owned(),
+            display_name: "Auth".to_owned(),
+            acronym: "AUTH".to_owned(),
+            ..Default::default()
+        })
+        .unwrap();
+
+        db.add_feature_comment(crate::AddFeatureCommentInput {
+            feature_name: "auth".to_owned(),
+            category: "gotcha".to_owned(),
+
+            discipline: None,
+            agent_task_id: None,
+            body: "Test upsert".to_owned(),
+            summary: None,
+            reason: None,
+            source_iteration: None,
+        })
+        .unwrap();
+        let comment_id = db.get_features()[0].comments[0].id;
+
+        db.upsert_comment_embedding(comment_id, &[0.1; 768], "test", "hash_old")
+            .unwrap();
+        assert_eq!(
+            db.get_embedding_hash(comment_id),
+            Some("hash_old".to_owned())
+        );
+
+        db.upsert_comment_embedding(comment_id, &[0.9; 768], "test", "hash_new")
+            .unwrap();
+        assert_eq!(
+            db.get_embedding_hash(comment_id),
+            Some("hash_new".to_owned())
+        );
+    }
+
+    #[test]
+    fn search_multiple_features_isolated() {
+        let db = SqliteDb::open_in_memory().unwrap();
+        for (name, display, acronym) in [("auth", "Auth", "AUTH"), ("billing", "Billing", "BILL")] {
+            db.create_feature(crate::FeatureInput {
+                name: name.to_owned(),
+                display_name: display.to_owned(),
+                acronym: acronym.to_owned(),
+                ..Default::default()
+            })
+            .unwrap();
+        }
+
+        db.add_feature_comment(crate::AddFeatureCommentInput {
+            feature_name: "auth".to_owned(),
+            category: "gotcha".to_owned(),
+
+            discipline: None,
+            agent_task_id: None,
+            body: "Auth only".to_owned(),
+            summary: None,
+            reason: None,
+            source_iteration: None,
+        })
+        .unwrap();
+
+        db.add_feature_comment(crate::AddFeatureCommentInput {
+            feature_name: "billing".to_owned(),
+            category: "gotcha".to_owned(),
+
+            discipline: None,
+            agent_task_id: None,
+            body: "Billing only".to_owned(),
+            summary: None,
+            reason: None,
+            source_iteration: None,
+        })
+        .unwrap();
+
+        let features = db.get_features();
+        let auth_cid = features.iter().find(|f| f.name == "auth").unwrap().comments[0].id;
+        let bill_cid = features
+            .iter()
+            .find(|f| f.name == "billing")
+            .unwrap()
+            .comments[0]
+            .id;
+
+        let emb = vec![0.5_f32; 768];
+        db.upsert_comment_embedding(auth_cid, &emb, "test", "h1")
+            .unwrap();
+        db.upsert_comment_embedding(bill_cid, &emb, "test", "h2")
+            .unwrap();
+
+        let auth_results = db.search_feature_comments("auth", &emb, 10, 0.0);
+        assert_eq!(auth_results.len(), 1);
+        assert_eq!(auth_results[0].body, "Auth only");
+
+        let billing_results = db.search_feature_comments("billing", &emb, 10, 0.0);
+        assert_eq!(billing_results.len(), 1);
+        assert_eq!(billing_results[0].body, "Billing only");
+    }
+
+    #[test]
+    fn search_ordering_by_score() {
+        let db = SqliteDb::open_in_memory().unwrap();
+        db.create_feature(crate::FeatureInput {
+            name: "auth".to_owned(),
+            display_name: "Auth".to_owned(),
+            acronym: "AUTH".to_owned(),
+            ..Default::default()
+        })
+        .unwrap();
+
+        db.add_feature_comment(crate::AddFeatureCommentInput {
+            feature_name: "auth".to_owned(),
+            category: "gotcha".to_owned(),
+
+            discipline: None,
+            agent_task_id: None,
+            body: "Low match".to_owned(),
+            summary: None,
+            reason: None,
+            source_iteration: None,
+        })
+        .unwrap();
+        db.add_feature_comment(crate::AddFeatureCommentInput {
+            feature_name: "auth".to_owned(),
+            category: "convention".to_owned(),
+
+            discipline: None,
+            agent_task_id: None,
+            body: "High match".to_owned(),
+            summary: None,
+            reason: None,
+            source_iteration: None,
+        })
+        .unwrap();
+
+        let features = db.get_features();
+        let comments = &features.iter().find(|f| f.name == "auth").unwrap().comments;
+        let cid_low = comments.iter().find(|c| c.body == "Low match").unwrap().id;
+        let cid_high = comments.iter().find(|c| c.body == "High match").unwrap().id;
+
+        // Low match: orthogonal to query
+        db.upsert_comment_embedding(cid_low, &[1.0, 0.0, 0.0], "test", "h1")
+            .unwrap();
+        // High match: identical to query
+        db.upsert_comment_embedding(cid_high, &[0.0, 1.0, 0.0], "test", "h2")
+            .unwrap();
+
+        let query = vec![0.0, 1.0, 0.0];
+        let results = db.search_feature_comments("auth", &query, 10, 0.0);
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0].body, "High match");
+        assert_eq!(results[1].body, "Low match");
+        assert!(results[0].score > results[1].score);
     }
 }

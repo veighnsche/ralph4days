@@ -6,19 +6,16 @@ use std::collections::HashMap;
 pub struct AddFeatureCommentInput {
     pub feature_name: String,
     pub category: String,
-    pub author: String,
     pub discipline: Option<String>,
     pub agent_task_id: Option<u32>,
     pub body: String,
+    pub summary: Option<String>,
     pub reason: Option<String>,
     pub source_iteration: Option<u32>,
 }
 
 impl SqliteDb {
     pub fn add_feature_comment(&self, input: AddFeatureCommentInput) -> Result<(), String> {
-        if input.author.trim().is_empty() {
-            return ralph_err!(codes::COMMENT_OPS, "Comment author cannot be empty");
-        }
         if input.body.trim().is_empty() {
             return ralph_err!(codes::COMMENT_OPS, "Comment body cannot be empty");
         }
@@ -47,15 +44,15 @@ impl SqliteDb {
         self.conn
             .execute(
                 "INSERT INTO feature_comments \
-                 (feature_name, category, author, discipline, agent_task_id, body, reason, source_iteration, created, updated) \
+                 (feature_name, category, discipline, agent_task_id, body, summary, reason, source_iteration, created, updated) \
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
                 rusqlite::params![
                     input.feature_name,
                     input.category.trim(),
-                    input.author.trim(),
                     input.discipline,
                     input.agent_task_id,
                     input.body.trim(),
+                    input.summary,
                     input.reason,
                     input.source_iteration,
                     now,
@@ -71,6 +68,7 @@ impl SqliteDb {
         feature_name: &str,
         comment_id: u32,
         body: &str,
+        summary: Option<String>,
         reason: Option<String>,
     ) -> Result<(), String> {
         if body.trim().is_empty() {
@@ -82,9 +80,9 @@ impl SqliteDb {
         let affected = self
             .conn
             .execute(
-                "UPDATE feature_comments SET body = ?1, reason = ?2, updated = ?3 \
-                 WHERE id = ?4 AND feature_name = ?5",
-                rusqlite::params![body.trim(), reason, now, comment_id, feature_name],
+                "UPDATE feature_comments SET body = ?1, summary = ?2, reason = ?3, updated = ?4 \
+                 WHERE id = ?5 AND feature_name = ?6",
+                rusqlite::params![body.trim(), summary, reason, now, comment_id, feature_name],
             )
             .ralph_err(codes::DB_WRITE, "Failed to update feature comment")?;
 
@@ -123,8 +121,8 @@ impl SqliteDb {
 
     pub(crate) fn get_all_comments_by_feature(&self) -> HashMap<String, Vec<FeatureComment>> {
         let Ok(mut stmt) = self.conn.prepare(
-            "SELECT id, feature_name, category, author, discipline, agent_task_id, body, reason, source_iteration, created, updated \
-             FROM feature_comments ORDER BY feature_name, id",
+            "SELECT id, feature_name, category, discipline, agent_task_id, body, summary, reason, source_iteration, created, updated \
+             FROM feature_comments ORDER BY feature_name, id DESC",
         ) else {
             return HashMap::new();
         };
@@ -137,10 +135,10 @@ impl SqliteDb {
                 FeatureComment {
                     id: row.get(0)?,
                     category: row.get(2)?,
-                    author: row.get(3)?,
-                    discipline: row.get(4)?,
-                    agent_task_id: row.get(5)?,
-                    body: row.get(6)?,
+                    discipline: row.get(3)?,
+                    agent_task_id: row.get(4)?,
+                    body: row.get(5)?,
+                    summary: row.get(6)?,
                     reason: row.get(7)?,
                     source_iteration: row.get(8)?,
                     created: row.get(9)?,

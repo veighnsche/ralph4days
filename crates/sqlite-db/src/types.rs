@@ -41,19 +41,6 @@ impl TaskStatus {
 
 #[ipc_type]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-pub enum InferredTaskStatus {
-    Draft,
-    Ready,
-    WaitingOnDeps,
-    ExternallyBlocked,
-    InProgress,
-    Done,
-    Skipped,
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum Priority {
     Low,
@@ -115,7 +102,6 @@ impl TaskProvenance {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TaskComment {
     pub id: u32,
-    pub author: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub discipline: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -149,7 +135,6 @@ pub struct Task {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     pub status: TaskStatus,
-    pub inferred_status: InferredTaskStatus,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub priority: Option<Priority>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -244,12 +229,13 @@ impl FeatureStatus {
 pub struct FeatureComment {
     pub id: u32,
     pub category: String,
-    pub author: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub discipline: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub agent_task_id: Option<u32>,
     pub body: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

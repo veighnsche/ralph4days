@@ -394,10 +394,6 @@ impl SqliteDb {
 
         task.comments = self.get_comments_for_task(task.id);
 
-        let status_map = self.get_task_status_map();
-        task.inferred_status =
-            Self::compute_inferred_status(task.status, &task.depends_on, &status_map);
-
         Some(task)
     }
 
@@ -428,16 +424,11 @@ impl SqliteDb {
                 |rows| rows.filter_map(std::result::Result::ok).collect(),
             );
 
-        let status_map: std::collections::HashMap<u32, TaskStatus> =
-            tasks.iter().map(|t| (t.id, t.status)).collect();
-
         let comment_map = self.get_all_comments_by_task();
 
         tasks
             .into_iter()
             .map(|mut t| {
-                t.inferred_status =
-                    Self::compute_inferred_status(t.status, &t.depends_on, &status_map);
                 t.comments = comment_map.get(&t.id).cloned().unwrap_or_default();
                 t
             })
@@ -462,7 +453,6 @@ impl SqliteDb {
             title: row.get(3).unwrap_or_default(),
             description: row.get(4).unwrap_or_default(),
             status: TaskStatus::parse(&status_str).unwrap_or(TaskStatus::Pending),
-            inferred_status: InferredTaskStatus::Ready,
             priority: priority_str.and_then(|s| Priority::parse(&s)),
             tags: serde_json::from_str(&tags_json).unwrap_or_default(),
             depends_on: serde_json::from_str(&deps_json).unwrap_or_default(),
@@ -485,52 +475,6 @@ impl SqliteDb {
             discipline_acronym: row.get(24).unwrap_or_default(),
             discipline_icon: row.get(25).unwrap_or_else(|_| "Circle".to_owned()),
             discipline_color: row.get(26).unwrap_or_else(|_| "#94a3b8".to_owned()),
-        }
-    }
-
-    fn get_task_status_map(&self) -> std::collections::HashMap<u32, TaskStatus> {
-        let Ok(mut stmt) = self.conn.prepare("SELECT id, status FROM tasks") else {
-            return std::collections::HashMap::new();
-        };
-
-        stmt.query_map([], |row| {
-            let id: u32 = row.get(0)?;
-            let status_str: String = row.get(1)?;
-            Ok((
-                id,
-                TaskStatus::parse(&status_str).unwrap_or(TaskStatus::Pending),
-            ))
-        })
-        .map_or_else(
-            |_| std::collections::HashMap::new(),
-            |rows| rows.filter_map(std::result::Result::ok).collect(),
-        )
-    }
-
-    fn compute_inferred_status(
-        status: TaskStatus,
-        depends_on: &[u32],
-        status_map: &std::collections::HashMap<u32, TaskStatus>,
-    ) -> InferredTaskStatus {
-        match status {
-            TaskStatus::Draft => InferredTaskStatus::Draft,
-            TaskStatus::InProgress => InferredTaskStatus::InProgress,
-            TaskStatus::Done => InferredTaskStatus::Done,
-            TaskStatus::Skipped => InferredTaskStatus::Skipped,
-            TaskStatus::Blocked => InferredTaskStatus::ExternallyBlocked,
-            TaskStatus::Pending => {
-                let all_deps_met = depends_on.iter().all(|dep_id| {
-                    status_map
-                        .get(dep_id)
-                        .is_some_and(|s| *s == TaskStatus::Done)
-                });
-
-                if all_deps_met {
-                    InferredTaskStatus::Ready
-                } else {
-                    InferredTaskStatus::WaitingOnDeps
-                }
-            }
         }
     }
 

@@ -2,14 +2,14 @@ use sqlite_db::{
     AddFeatureCommentInput, FeatureInput, FixedClock, Priority, SqliteDb, TaskInput, TaskStatus,
 };
 
-fn comment(feature: &str, category: &str, author: &str, body: &str) -> AddFeatureCommentInput {
+fn comment(feature: &str, category: &str, body: &str) -> AddFeatureCommentInput {
     AddFeatureCommentInput {
         feature_name: feature.to_owned(),
         category: category.to_owned(),
-        author: author.to_owned(),
         discipline: None,
         agent_task_id: None,
         body: body.to_owned(),
+        summary: None,
         reason: None,
         source_iteration: None,
     }
@@ -629,13 +629,8 @@ fn test_update_feature_preserves_comments() {
     let db = create_test_db();
     db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
 
-    db.add_feature_comment(comment(
-        "auth",
-        "architecture",
-        "human",
-        "Use bcrypt not SHA256",
-    ))
-    .unwrap();
+    db.add_feature_comment(comment("auth", "architecture", "Use bcrypt not SHA256"))
+        .unwrap();
 
     db.update_feature(FeatureInput {
         name: "auth".into(),
@@ -661,7 +656,7 @@ fn test_add_feature_comment_basic() {
 
     db.add_feature_comment(AddFeatureCommentInput {
         reason: Some("Industry standard".into()),
-        ..comment("auth", "architecture", "human", "OAuth2 + JWT flow")
+        ..comment("auth", "architecture", "OAuth2 + JWT flow")
     })
     .unwrap();
 
@@ -669,7 +664,6 @@ fn test_add_feature_comment_basic() {
     let f = features.iter().find(|f| f.name == "auth").unwrap();
     assert_eq!(f.comments.len(), 1);
     assert_eq!(f.comments[0].category, "architecture");
-    assert_eq!(f.comments[0].author, "human");
     assert_eq!(f.comments[0].body, "OAuth2 + JWT flow");
     assert_eq!(f.comments[0].reason, Some("Industry standard".into()));
     assert!(f.comments[0].created.is_some());
@@ -680,7 +674,7 @@ fn test_add_feature_comment_empty_body_rejected() {
     let db = create_test_db();
     db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
 
-    let result = db.add_feature_comment(comment("auth", "architecture", "human", "   "));
+    let result = db.add_feature_comment(comment("auth", "architecture", "   "));
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("cannot be empty"));
 }
@@ -690,7 +684,7 @@ fn test_add_feature_comment_empty_category_rejected() {
     let db = create_test_db();
     db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
 
-    let result = db.add_feature_comment(comment("auth", "  ", "human", "body"));
+    let result = db.add_feature_comment(comment("auth", "  ", "body"));
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("category cannot be empty"));
 }
@@ -698,7 +692,7 @@ fn test_add_feature_comment_empty_category_rejected() {
 #[test]
 fn test_add_feature_comment_nonexistent_feature() {
     let db = create_test_db();
-    let result = db.add_feature_comment(comment("nope", "architecture", "human", "body"));
+    let result = db.add_feature_comment(comment("nope", "architecture", "body"));
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("does not exist"));
 }
@@ -708,14 +702,20 @@ fn test_update_feature_comment() {
     let db = create_test_db();
     db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
 
-    db.add_feature_comment(comment("auth", "gotcha", "human", "Original"))
+    db.add_feature_comment(comment("auth", "gotcha", "Original"))
         .unwrap();
 
     let features = db.get_features();
     let comment_id = features.iter().find(|f| f.name == "auth").unwrap().comments[0].id;
 
-    db.update_feature_comment("auth", comment_id, "Edited", Some("new reason".into()))
-        .unwrap();
+    db.update_feature_comment(
+        "auth",
+        comment_id,
+        "Edited",
+        None,
+        Some("new reason".into()),
+    )
+    .unwrap();
 
     let features = db.get_features();
     let f = features.iter().find(|f| f.name == "auth").unwrap();
@@ -729,13 +729,14 @@ fn test_delete_feature_comment() {
     let db = create_test_db();
     db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
 
-    db.add_feature_comment(comment("auth", "gotcha", "human", "First"))
+    db.add_feature_comment(comment("auth", "gotcha", "First"))
         .unwrap();
-    db.add_feature_comment(comment("auth", "convention", "agent", "Second"))
+    db.add_feature_comment(comment("auth", "convention", "Second"))
         .unwrap();
 
     let features = db.get_features();
-    let first_id = features.iter().find(|f| f.name == "auth").unwrap().comments[0].id;
+    let f = features.iter().find(|f| f.name == "auth").unwrap();
+    let first_id = f.comments.iter().find(|c| c.body == "First").unwrap().id;
 
     db.delete_feature_comment("auth", first_id).unwrap();
 
@@ -749,13 +750,136 @@ fn test_delete_feature_comment() {
 fn test_delete_feature_cascades_comments() {
     let db = create_test_db();
     db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
-    db.add_feature_comment(comment("auth", "gotcha", "human", "Note"))
+    db.add_feature_comment(comment("auth", "gotcha", "Note"))
         .unwrap();
 
     db.delete_feature("auth".into()).unwrap();
 
     // Feature and its comments are gone
     assert!(db.get_features().iter().all(|f| f.name != "auth"));
+}
+
+// === FEATURE COMMENT EXTENDED tests ===
+
+#[test]
+fn test_feature_comment_with_all_fields() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+
+    db.add_feature_comment(AddFeatureCommentInput {
+        discipline: Some("backend".to_owned()),
+        agent_task_id: Some(42),
+        reason: Some("Prevents replay attacks".to_owned()),
+        source_iteration: Some(3),
+        ..comment("auth", "design-decision", "Use nonce-based CSRF tokens")
+    })
+    .unwrap();
+
+    let f = db
+        .get_features()
+        .into_iter()
+        .find(|f| f.name == "auth")
+        .unwrap();
+    let c = &f.comments[0];
+    assert_eq!(c.discipline, Some("backend".to_owned()));
+    assert_eq!(c.agent_task_id, Some(42));
+    assert_eq!(c.reason, Some("Prevents replay attacks".to_owned()));
+    assert_eq!(c.source_iteration, Some(3));
+}
+
+#[test]
+fn test_feature_comment_update_clears_reason() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+
+    db.add_feature_comment(AddFeatureCommentInput {
+        reason: Some("Old reason".to_owned()),
+        ..comment("auth", "gotcha", "Watch out for XSS")
+    })
+    .unwrap();
+
+    let comment_id = db
+        .get_features()
+        .into_iter()
+        .find(|f| f.name == "auth")
+        .unwrap()
+        .comments[0]
+        .id;
+
+    db.update_feature_comment("auth", comment_id, "Watch out for XSS", None, None)
+        .unwrap();
+
+    let f = db
+        .get_features()
+        .into_iter()
+        .find(|f| f.name == "auth")
+        .unwrap();
+    assert_eq!(f.comments[0].reason, None);
+}
+
+#[test]
+fn test_feature_comment_ordering() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+
+    db.add_feature_comment(comment("auth", "gotcha", "First"))
+        .unwrap();
+    db.add_feature_comment(comment("auth", "convention", "Second"))
+        .unwrap();
+    db.add_feature_comment(comment("auth", "architecture", "Third"))
+        .unwrap();
+
+    let f = db
+        .get_features()
+        .into_iter()
+        .find(|f| f.name == "auth")
+        .unwrap();
+    assert_eq!(f.comments.len(), 3);
+    assert_eq!(f.comments[0].body, "Third");
+    assert_eq!(f.comments[1].body, "Second");
+    assert_eq!(f.comments[2].body, "First");
+    assert!(f.comments[0].id > f.comments[1].id);
+    assert!(f.comments[1].id > f.comments[2].id);
+}
+
+#[test]
+fn test_update_nonexistent_feature_comment() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+
+    let result = db.update_feature_comment("auth", 9999, "new body", None, None);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_delete_nonexistent_feature_comment() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+
+    let result = db.delete_feature_comment("auth", 9999);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_multiple_features_comments_isolated() {
+    let db = create_test_db();
+    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    db.create_feature(feature("billing", "Billing", "BILL"))
+        .unwrap();
+
+    db.add_feature_comment(comment("auth", "gotcha", "Auth comment"))
+        .unwrap();
+    db.add_feature_comment(comment("billing", "convention", "Billing comment"))
+        .unwrap();
+
+    let features = db.get_features();
+    let auth = features.iter().find(|f| f.name == "auth").unwrap();
+    let billing = features.iter().find(|f| f.name == "billing").unwrap();
+
+    assert_eq!(auth.comments.len(), 1);
+    assert_eq!(auth.comments[0].body, "Auth comment");
+    assert_eq!(billing.comments.len(), 1);
+    assert_eq!(billing.comments[0].body, "Billing comment");
 }
 
 // === CONTEXT FILE tests ===
@@ -981,19 +1105,11 @@ fn test_add_human_comment() {
         })
         .unwrap();
 
-    db.add_comment(
-        task_id,
-        "human".to_owned(),
-        None,
-        None,
-        None,
-        "Use bcrypt".into(),
-    )
-    .unwrap();
+    db.add_comment(task_id, None, None, None, "Use bcrypt".into())
+        .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
     assert_eq!(task.comments.len(), 1);
-    assert_eq!(task.comments[0].author, "human".to_owned());
     assert_eq!(task.comments[0].body, "Use bcrypt");
     assert!(task.comments[0].discipline.is_none());
     assert!(task.comments[0].agent_task_id.is_none());
@@ -1016,18 +1132,10 @@ fn test_add_agent_comment() {
         })
         .unwrap();
 
-    db.add_comment(
-        task_id,
-        "agent".to_owned(),
-        None,
-        Some(5),
-        None,
-        "Failed: missing .env".into(),
-    )
-    .unwrap();
+    db.add_comment(task_id, None, Some(5), None, "Failed: missing .env".into())
+        .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
-    assert_eq!(task.comments[0].author, "agent".to_owned());
     assert_eq!(task.comments[0].agent_task_id, Some(5));
 }
 
@@ -1044,61 +1152,15 @@ fn test_add_comment_empty_body_rejected() {
         })
         .unwrap();
 
-    let result = db.add_comment(task_id, "human".to_owned(), None, None, None, "   ".into());
+    let result = db.add_comment(task_id, None, None, None, "   ".into());
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("cannot be empty"));
 }
 
 #[test]
-fn test_add_comment_empty_author_rejected() {
-    let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
-    let task_id = db
-        .create_task(TaskInput {
-            feature: "test".into(),
-            discipline: "backend".into(),
-            title: "Task".into(),
-            ..Default::default()
-        })
-        .unwrap();
-
-    let result = db.add_comment(task_id, "   ".to_owned(), None, None, None, "Note".into());
-    assert!(result.is_err());
-    assert!(result.unwrap_err().contains("author cannot be empty"));
-}
-
-#[test]
-fn test_add_comment_discipline_author() {
-    let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
-    let task_id = db
-        .create_task(TaskInput {
-            feature: "test".into(),
-            discipline: "backend".into(),
-            title: "Task".into(),
-            ..Default::default()
-        })
-        .unwrap();
-
-    db.add_comment(
-        task_id,
-        "backend".to_owned(),
-        Some("backend".to_owned()),
-        Some(1),
-        None,
-        "Note from backend".into(),
-    )
-    .unwrap();
-
-    let task = db.get_task_by_id(task_id).unwrap();
-    assert_eq!(task.comments[0].author, "backend");
-    assert_eq!(task.comments[0].discipline, Some("backend".to_owned()));
-}
-
-#[test]
 fn test_add_comment_nonexistent_task() {
     let db = create_test_db();
-    let result = db.add_comment(999, "human".to_owned(), None, None, None, "Hello".into());
+    let result = db.add_comment(999, None, None, None, "Hello".into());
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("does not exist"));
 }
@@ -1116,15 +1178,8 @@ fn test_update_comment_by_id() {
         })
         .unwrap();
 
-    db.add_comment(
-        task_id,
-        "human".to_owned(),
-        None,
-        None,
-        None,
-        "Original".into(),
-    )
-    .unwrap();
+    db.add_comment(task_id, None, None, None, "Original".into())
+        .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
     let comment_id = task.comments[0].id;
@@ -1134,7 +1189,6 @@ fn test_update_comment_by_id() {
 
     let task = db.get_task_by_id(task_id).unwrap();
     assert_eq!(task.comments[0].body, "Edited");
-    assert_eq!(task.comments[0].author, "human".to_owned()); // Preserved
 }
 
 #[test]
@@ -1150,44 +1204,28 @@ fn test_delete_comment_by_id() {
         })
         .unwrap();
 
-    db.add_comment(
-        task_id,
-        "human".to_owned(),
-        None,
-        None,
-        None,
-        "First".into(),
-    )
-    .unwrap();
-    db.add_comment(
-        task_id,
-        "human".to_owned(),
-        None,
-        None,
-        None,
-        "Second".into(),
-    )
-    .unwrap();
-    db.add_comment(
-        task_id,
-        "human".to_owned(),
-        None,
-        None,
-        None,
-        "Third".into(),
-    )
-    .unwrap();
+    db.add_comment(task_id, None, None, None, "First".into())
+        .unwrap();
+    db.add_comment(task_id, None, None, None, "Second".into())
+        .unwrap();
+    db.add_comment(task_id, None, None, None, "Third".into())
+        .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
-    let second_id = task.comments[1].id;
+    let second_id = task
+        .comments
+        .iter()
+        .find(|c| c.body == "Second")
+        .unwrap()
+        .id;
 
     // Delete middle comment by stable ID
     db.delete_comment(task_id, second_id).unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
     assert_eq!(task.comments.len(), 2);
-    assert_eq!(task.comments[0].body, "First");
-    assert_eq!(task.comments[1].body, "Third");
+    assert_eq!(task.comments[0].body, "Third");
+    assert_eq!(task.comments[1].body, "First");
 }
 
 #[test]
@@ -1203,15 +1241,8 @@ fn test_update_task_preserves_comments() {
         })
         .unwrap();
 
-    db.add_comment(
-        task_id,
-        "human".to_owned(),
-        None,
-        None,
-        None,
-        "Keep me".into(),
-    )
-    .unwrap();
+    db.add_comment(task_id, None, None, None, "Keep me".into())
+        .unwrap();
 
     db.update_task(
         task_id,
@@ -1270,15 +1301,8 @@ fn test_enriched_tasks_comments_visible() {
         ..Default::default()
     })
     .unwrap();
-    db.add_comment(
-        1,
-        "human".to_owned(),
-        None,
-        None,
-        None,
-        "Visible in enriched".into(),
-    )
-    .unwrap();
+    db.add_comment(1, None, None, None, "Visible in enriched".into())
+        .unwrap();
 
     let enriched = db.get_tasks();
     assert_eq!(enriched[0].comments.len(), 1);
@@ -1286,55 +1310,6 @@ fn test_enriched_tasks_comments_visible() {
 }
 
 // === INFERRED STATUS tests ===
-
-#[test]
-fn test_inferred_status_ready() {
-    let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
-    db.create_task(TaskInput {
-        feature: "test".into(),
-        discipline: "backend".into(),
-        title: "Task".into(),
-        ..Default::default()
-    })
-    .unwrap();
-
-    let enriched = db.get_tasks();
-    assert_eq!(
-        enriched[0].inferred_status,
-        sqlite_db::InferredTaskStatus::Ready
-    );
-}
-
-#[test]
-fn test_inferred_status_waiting_on_deps() {
-    let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
-
-    let a = db
-        .create_task(TaskInput {
-            feature: "test".into(),
-            discipline: "backend".into(),
-            title: "A".into(),
-            ..Default::default()
-        })
-        .unwrap();
-    db.create_task(TaskInput {
-        feature: "test".into(),
-        discipline: "backend".into(),
-        title: "B".into(),
-        depends_on: vec![a],
-        ..Default::default()
-    })
-    .unwrap();
-
-    let enriched = db.get_tasks();
-    let b_enriched = enriched.iter().find(|t| t.title == "B").unwrap();
-    assert_eq!(
-        b_enriched.inferred_status,
-        sqlite_db::InferredTaskStatus::WaitingOnDeps
-    );
-}
 
 // === STATS tests ===
 
@@ -1491,7 +1466,6 @@ fn test_export_yaml_escapes_special_chars() {
         .unwrap();
     db.add_comment(
         task_id,
-        "human".to_owned(),
         None,
         None,
         None,

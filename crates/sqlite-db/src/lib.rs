@@ -16,8 +16,8 @@ pub use feature_comments::AddFeatureCommentInput;
 pub use recipe_configs::{RecipeConfigData, RecipeConfigInput, SectionSettingsData};
 pub use types::{
     Discipline, DisciplineInput, Feature, FeatureComment, FeatureInput, FeatureStatus,
-    InferredTaskStatus, McpServerConfig, Priority, ProjectMetadata, Task, TaskComment, TaskInput,
-    TaskProvenance, TaskStatus,
+    McpServerConfig, Priority, ProjectMetadata, Task, TaskComment, TaskInput, TaskProvenance,
+    TaskStatus,
 };
 
 use ralph_errors::{codes, RalphResultExt};
@@ -64,6 +64,8 @@ impl SqliteDb {
             M::up(include_str!("migrations/001_initial.sql")),
             M::up(include_str!("migrations/002_feature_comments.sql")),
             M::up(include_str!("migrations/003_comment_embeddings.sql")),
+            M::up(include_str!("migrations/004_add_comment_summary.sql")),
+            M::up(include_str!("migrations/005_drop_comment_author.sql")),
         ]);
 
         migrations
@@ -91,6 +93,8 @@ impl SqliteDb {
             M::up(include_str!("migrations/001_initial.sql")),
             M::up(include_str!("migrations/002_feature_comments.sql")),
             M::up(include_str!("migrations/003_comment_embeddings.sql")),
+            M::up(include_str!("migrations/004_add_comment_summary.sql")),
+            M::up(include_str!("migrations/005_drop_comment_author.sql")),
         ]);
 
         migrations
@@ -125,6 +129,8 @@ impl SqliteDb {
             M::up(include_str!("migrations/001_initial.sql")),
             M::up(include_str!("migrations/002_feature_comments.sql")),
             M::up(include_str!("migrations/003_comment_embeddings.sql")),
+            M::up(include_str!("migrations/004_add_comment_summary.sql")),
+            M::up(include_str!("migrations/005_drop_comment_author.sql")),
         ]);
 
         migrations
