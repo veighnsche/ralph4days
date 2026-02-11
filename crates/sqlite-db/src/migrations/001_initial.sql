@@ -62,14 +62,17 @@ CREATE TABLE tasks (
 ) STRICT;
 
 CREATE TABLE task_comments (
-  id INTEGER PRIMARY KEY,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
   task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  session_id TEXT,
   author TEXT NOT NULL,
-  discipline TEXT REFERENCES disciplines(name) ON DELETE SET NULL,
-  agent_task_id INTEGER,
-  priority TEXT DEFAULT NULL,
+
+  signal_verb TEXT CHECK(signal_verb IN ('done','partial','stuck','ask','flag','learned','suggest','blocked') OR signal_verb IS NULL),
+  signal_payload TEXT,
+  signal_answered TEXT,
+
   body TEXT NOT NULL,
-  created TEXT
+  created TEXT NOT NULL DEFAULT (datetime('now'))
 ) STRICT;
 
 CREATE TABLE recipe_configs (
@@ -85,3 +88,5 @@ CREATE INDEX idx_tasks_feature ON tasks(feature);
 CREATE INDEX idx_tasks_discipline ON tasks(discipline);
 CREATE INDEX idx_tasks_status ON tasks(status);
 CREATE INDEX idx_comments_task ON task_comments(task_id);
+CREATE INDEX idx_comments_session ON task_comments(session_id);
+CREATE INDEX idx_comments_verb ON task_comments(signal_verb);
