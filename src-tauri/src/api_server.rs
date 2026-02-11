@@ -129,11 +129,14 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .and_then(|v| v.as_str())
                 .ok_or("Missing summary")?;
 
-            db.insert_done_signal(sqlite_db::DoneSignalInput {
-                task_id: request.task_id,
-                session_id: request.session_id.clone(),
-                summary: summary.to_owned(),
-            })?;
+            db.insert_done_signal(
+                None,
+                sqlite_db::DoneSignalInput {
+                    task_id: request.task_id,
+                    session_id: request.session_id.clone(),
+                    summary: summary.to_owned(),
+                },
+            )?;
         }
         "partial" => {
             let summary = request
@@ -147,12 +150,15 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .and_then(|v| v.as_str())
                 .ok_or("Missing remaining")?;
 
-            db.insert_partial_signal(sqlite_db::PartialSignalInput {
-                task_id: request.task_id,
-                session_id: request.session_id.clone(),
-                summary: summary.to_owned(),
-                remaining: remaining.to_owned(),
-            })?;
+            db.insert_partial_signal(
+                None,
+                sqlite_db::PartialSignalInput {
+                    task_id: request.task_id,
+                    session_id: request.session_id.clone(),
+                    summary: summary.to_owned(),
+                    remaining: remaining.to_owned(),
+                },
+            )?;
         }
         "stuck" => {
             let reason = request
@@ -161,11 +167,14 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .and_then(|v| v.as_str())
                 .ok_or("Missing reason")?;
 
-            db.insert_stuck_signal(sqlite_db::StuckSignalInput {
-                task_id: request.task_id,
-                session_id: request.session_id.clone(),
-                reason: reason.to_owned(),
-            })?;
+            db.insert_stuck_signal(
+                None,
+                sqlite_db::StuckSignalInput {
+                    task_id: request.task_id,
+                    session_id: request.session_id.clone(),
+                    reason: reason.to_owned(),
+                },
+            )?;
         }
         "ask" => {
             let question = request
@@ -194,14 +203,17 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .and_then(|v| v.as_str())
                 .map(str::to_owned);
 
-            db.insert_ask_signal(sqlite_db::AskSignalInput {
-                task_id: request.task_id,
-                session_id: request.session_id.clone(),
-                question: question.to_owned(),
-                blocking,
-                options,
-                preferred,
-            })?;
+            db.insert_ask_signal(
+                None,
+                sqlite_db::AskSignalInput {
+                    task_id: request.task_id,
+                    session_id: request.session_id.clone(),
+                    question: question.to_owned(),
+                    blocking,
+                    options,
+                    preferred,
+                },
+            )?;
         }
         "flag" => {
             let what = request
@@ -220,13 +232,16 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .and_then(|v| v.as_str())
                 .ok_or("Missing category")?;
 
-            db.insert_flag_signal(sqlite_db::FlagSignalInput {
-                task_id: request.task_id,
-                session_id: request.session_id.clone(),
-                what: what.to_owned(),
-                severity: severity.to_owned(),
-                category: category.to_owned(),
-            })?;
+            db.insert_flag_signal(
+                None,
+                sqlite_db::FlagSignalInput {
+                    task_id: request.task_id,
+                    session_id: request.session_id.clone(),
+                    what: what.to_owned(),
+                    severity: severity.to_owned(),
+                    category: category.to_owned(),
+                },
+            )?;
         }
         "learned" => {
             let text = request
@@ -250,14 +265,17 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .and_then(|v| v.as_str())
                 .map(str::to_owned);
 
-            db.insert_learned_signal(sqlite_db::LearnedSignalInput {
-                task_id: request.task_id,
-                session_id: request.session_id.clone(),
-                text: text.to_owned(),
-                kind: kind.to_owned(),
-                scope: scope.to_owned(),
-                rationale,
-            })?;
+            db.insert_learned_signal(
+                None,
+                sqlite_db::LearnedSignalInput {
+                    task_id: request.task_id,
+                    session_id: request.session_id.clone(),
+                    text: text.to_owned(),
+                    kind: kind.to_owned(),
+                    scope: scope.to_owned(),
+                    rationale,
+                },
+            )?;
         }
         "suggest" => {
             let what = request
@@ -276,13 +294,16 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .and_then(|v| v.as_str())
                 .ok_or("Missing why")?;
 
-            db.insert_suggest_signal(sqlite_db::SuggestSignalInput {
-                task_id: request.task_id,
-                session_id: request.session_id.clone(),
-                what: what.to_owned(),
-                kind: kind.to_owned(),
-                why: why.to_owned(),
-            })?;
+            db.insert_suggest_signal(
+                None,
+                sqlite_db::SuggestSignalInput {
+                    task_id: request.task_id,
+                    session_id: request.session_id.clone(),
+                    what: what.to_owned(),
+                    kind: kind.to_owned(),
+                    why: why.to_owned(),
+                },
+            )?;
         }
         "blocked" => {
             let on = request
@@ -301,13 +322,16 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .and_then(|v| v.as_str())
                 .map(str::to_owned);
 
-            db.insert_blocked_signal(sqlite_db::BlockedSignalInput {
-                task_id: request.task_id,
-                session_id: request.session_id.clone(),
-                on: on.to_owned(),
-                kind: kind.to_owned(),
-                detail,
-            })?;
+            db.insert_blocked_signal(
+                None,
+                sqlite_db::BlockedSignalInput {
+                    task_id: request.task_id,
+                    session_id: request.session_id.clone(),
+                    on: on.to_owned(),
+                    kind: kind.to_owned(),
+                    detail,
+                },
+            )?;
         }
         _ => return Err(format!("Unknown verb: {}", request.verb)),
     }

@@ -430,19 +430,32 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn insert_done_signal(&self, input: DoneSignalInput) -> Result<(), String> {
+    pub fn insert_done_signal(
+        &self,
+        discipline_name: Option<&str>,
+        input: DoneSignalInput,
+    ) -> Result<(), String> {
         if input.summary.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "Summary cannot be empty");
         }
 
-        let discipline_id: Option<u32> = self
-            .conn
-            .query_row(
-                "SELECT discipline_id FROM tasks WHERE id = ?1",
-                [input.task_id],
-                |row| row.get(0),
-            )
-            .ok();
+        let discipline_id: Option<u32> = if let Some(name) = discipline_name {
+            self.conn
+                .query_row(
+                    "SELECT id FROM disciplines WHERE name = ?1",
+                    [name],
+                    |row| row.get(0),
+                )
+                .ok()
+        } else {
+            self.conn
+                .query_row(
+                    "SELECT discipline_id FROM tasks WHERE id = ?1",
+                    [input.task_id],
+                    |row| row.get(0),
+                )
+                .ok()
+        };
 
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
@@ -462,7 +475,11 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn insert_partial_signal(&self, input: PartialSignalInput) -> Result<(), String> {
+    pub fn insert_partial_signal(
+        &self,
+        discipline_name: Option<&str>,
+        input: PartialSignalInput,
+    ) -> Result<(), String> {
         if input.summary.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "Summary cannot be empty");
         }
@@ -470,14 +487,23 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "Remaining cannot be empty");
         }
 
-        let discipline_id: Option<u32> = self
-            .conn
-            .query_row(
-                "SELECT discipline_id FROM tasks WHERE id = ?1",
-                [input.task_id],
-                |row| row.get(0),
-            )
-            .ok();
+        let discipline_id: Option<u32> = if let Some(name) = discipline_name {
+            self.conn
+                .query_row(
+                    "SELECT id FROM disciplines WHERE name = ?1",
+                    [name],
+                    |row| row.get(0),
+                )
+                .ok()
+        } else {
+            self.conn
+                .query_row(
+                    "SELECT discipline_id FROM tasks WHERE id = ?1",
+                    [input.task_id],
+                    |row| row.get(0),
+                )
+                .ok()
+        };
 
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
@@ -498,19 +524,32 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn insert_stuck_signal(&self, input: StuckSignalInput) -> Result<(), String> {
+    pub fn insert_stuck_signal(
+        &self,
+        discipline_name: Option<&str>,
+        input: StuckSignalInput,
+    ) -> Result<(), String> {
         if input.reason.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "Reason cannot be empty");
         }
 
-        let discipline_id: Option<u32> = self
-            .conn
-            .query_row(
-                "SELECT discipline_id FROM tasks WHERE id = ?1",
-                [input.task_id],
-                |row| row.get(0),
-            )
-            .ok();
+        let discipline_id: Option<u32> = if let Some(name) = discipline_name {
+            self.conn
+                .query_row(
+                    "SELECT id FROM disciplines WHERE name = ?1",
+                    [name],
+                    |row| row.get(0),
+                )
+                .ok()
+        } else {
+            self.conn
+                .query_row(
+                    "SELECT discipline_id FROM tasks WHERE id = ?1",
+                    [input.task_id],
+                    |row| row.get(0),
+                )
+                .ok()
+        };
 
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
@@ -530,19 +569,32 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn insert_ask_signal(&self, input: AskSignalInput) -> Result<(), String> {
+    pub fn insert_ask_signal(
+        &self,
+        discipline_name: Option<&str>,
+        input: AskSignalInput,
+    ) -> Result<(), String> {
         if input.question.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "Question cannot be empty");
         }
 
-        let discipline_id: Option<u32> = self
-            .conn
-            .query_row(
-                "SELECT discipline_id FROM tasks WHERE id = ?1",
-                [input.task_id],
-                |row| row.get(0),
-            )
-            .ok();
+        let discipline_id: Option<u32> = if let Some(name) = discipline_name {
+            self.conn
+                .query_row(
+                    "SELECT id FROM disciplines WHERE name = ?1",
+                    [name],
+                    |row| row.get(0),
+                )
+                .ok()
+        } else {
+            self.conn
+                .query_row(
+                    "SELECT discipline_id FROM tasks WHERE id = ?1",
+                    [input.task_id],
+                    |row| row.get(0),
+                )
+                .ok()
+        };
 
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         let options = input.options.map(|opts| opts.join("\n"));
@@ -567,19 +619,32 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn insert_flag_signal(&self, input: FlagSignalInput) -> Result<(), String> {
+    pub fn insert_flag_signal(
+        &self,
+        discipline_name: Option<&str>,
+        input: FlagSignalInput,
+    ) -> Result<(), String> {
         if input.what.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "What cannot be empty");
         }
 
-        let discipline_id: Option<u32> = self
-            .conn
-            .query_row(
-                "SELECT discipline_id FROM tasks WHERE id = ?1",
-                [input.task_id],
-                |row| row.get(0),
-            )
-            .ok();
+        let discipline_id: Option<u32> = if let Some(name) = discipline_name {
+            self.conn
+                .query_row(
+                    "SELECT id FROM disciplines WHERE name = ?1",
+                    [name],
+                    |row| row.get(0),
+                )
+                .ok()
+        } else {
+            self.conn
+                .query_row(
+                    "SELECT discipline_id FROM tasks WHERE id = ?1",
+                    [input.task_id],
+                    |row| row.get(0),
+                )
+                .ok()
+        };
 
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
@@ -601,19 +666,32 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn insert_learned_signal(&self, input: LearnedSignalInput) -> Result<(), String> {
+    pub fn insert_learned_signal(
+        &self,
+        discipline_name: Option<&str>,
+        input: LearnedSignalInput,
+    ) -> Result<(), String> {
         if input.text.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "Text cannot be empty");
         }
 
-        let discipline_id: Option<u32> = self
-            .conn
-            .query_row(
-                "SELECT discipline_id FROM tasks WHERE id = ?1",
-                [input.task_id],
-                |row| row.get(0),
-            )
-            .ok();
+        let discipline_id: Option<u32> = if let Some(name) = discipline_name {
+            self.conn
+                .query_row(
+                    "SELECT id FROM disciplines WHERE name = ?1",
+                    [name],
+                    |row| row.get(0),
+                )
+                .ok()
+        } else {
+            self.conn
+                .query_row(
+                    "SELECT discipline_id FROM tasks WHERE id = ?1",
+                    [input.task_id],
+                    |row| row.get(0),
+                )
+                .ok()
+        };
 
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
@@ -636,7 +714,11 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn insert_suggest_signal(&self, input: SuggestSignalInput) -> Result<(), String> {
+    pub fn insert_suggest_signal(
+        &self,
+        discipline_name: Option<&str>,
+        input: SuggestSignalInput,
+    ) -> Result<(), String> {
         if input.what.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "What cannot be empty");
         }
@@ -644,14 +726,23 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "Why cannot be empty");
         }
 
-        let discipline_id: Option<u32> = self
-            .conn
-            .query_row(
-                "SELECT discipline_id FROM tasks WHERE id = ?1",
-                [input.task_id],
-                |row| row.get(0),
-            )
-            .ok();
+        let discipline_id: Option<u32> = if let Some(name) = discipline_name {
+            self.conn
+                .query_row(
+                    "SELECT id FROM disciplines WHERE name = ?1",
+                    [name],
+                    |row| row.get(0),
+                )
+                .ok()
+        } else {
+            self.conn
+                .query_row(
+                    "SELECT discipline_id FROM tasks WHERE id = ?1",
+                    [input.task_id],
+                    |row| row.get(0),
+                )
+                .ok()
+        };
 
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
@@ -673,19 +764,32 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn insert_blocked_signal(&self, input: BlockedSignalInput) -> Result<(), String> {
+    pub fn insert_blocked_signal(
+        &self,
+        discipline_name: Option<&str>,
+        input: BlockedSignalInput,
+    ) -> Result<(), String> {
         if input.on.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "On cannot be empty");
         }
 
-        let discipline_id: Option<u32> = self
-            .conn
-            .query_row(
-                "SELECT discipline_id FROM tasks WHERE id = ?1",
-                [input.task_id],
-                |row| row.get(0),
-            )
-            .ok();
+        let discipline_id: Option<u32> = if let Some(name) = discipline_name {
+            self.conn
+                .query_row(
+                    "SELECT id FROM disciplines WHERE name = ?1",
+                    [name],
+                    |row| row.get(0),
+                )
+                .ok()
+        } else {
+            self.conn
+                .query_row(
+                    "SELECT discipline_id FROM tasks WHERE id = ?1",
+                    [input.task_id],
+                    |row| row.get(0),
+                )
+                .ok()
+        };
 
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn

@@ -14,112 +14,6 @@ use sqlite_db::{
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// Direct SQL signal writer for fixture generation
-struct SignalWriter<'a> {
-    db: &'a SqliteDb,
-    task_id: u32,
-    session_id: String,
-}
-
-impl<'a> SignalWriter<'a> {
-    fn new(db: &'a SqliteDb, task_id: u32, session_id: &str) -> Self {
-        Self {
-            db,
-            task_id,
-            session_id: session_id.to_owned(),
-        }
-    }
-
-    fn done(&self, summary: &str) -> Result<(), String> {
-        self.db.insert_done_signal(DoneSignalInput {
-            task_id: self.task_id,
-            session_id: self.session_id.clone(),
-            summary: summary.to_owned(),
-        })
-    }
-
-    fn partial(&self, summary: &str, remaining: &str) -> Result<(), String> {
-        self.db.insert_partial_signal(PartialSignalInput {
-            task_id: self.task_id,
-            session_id: self.session_id.clone(),
-            summary: summary.to_owned(),
-            remaining: remaining.to_owned(),
-        })
-    }
-
-    fn stuck(&self, reason: &str) -> Result<(), String> {
-        self.db.insert_stuck_signal(StuckSignalInput {
-            task_id: self.task_id,
-            session_id: self.session_id.clone(),
-            reason: reason.to_owned(),
-        })
-    }
-
-    fn ask(
-        &self,
-        question: &str,
-        options: Option<Vec<String>>,
-        preferred: Option<String>,
-        blocking: bool,
-    ) -> Result<(), String> {
-        self.db.insert_ask_signal(AskSignalInput {
-            task_id: self.task_id,
-            session_id: self.session_id.clone(),
-            question: question.to_owned(),
-            blocking,
-            options,
-            preferred,
-        })
-    }
-
-    fn flag(&self, what: &str, severity: &str, category: &str) -> Result<(), String> {
-        self.db.insert_flag_signal(FlagSignalInput {
-            task_id: self.task_id,
-            session_id: self.session_id.clone(),
-            what: what.to_owned(),
-            severity: severity.to_owned(),
-            category: category.to_owned(),
-        })
-    }
-
-    fn learned(
-        &self,
-        text: &str,
-        kind: &str,
-        scope: Option<&str>,
-        rationale: Option<&str>,
-    ) -> Result<(), String> {
-        self.db.insert_learned_signal(LearnedSignalInput {
-            task_id: self.task_id,
-            session_id: self.session_id.clone(),
-            text: text.to_owned(),
-            kind: kind.to_owned(),
-            scope: scope.unwrap_or("feature").to_owned(),
-            rationale: rationale.map(str::to_owned),
-        })
-    }
-
-    fn suggest(&self, what: &str, kind: &str, why: &str) -> Result<(), String> {
-        self.db.insert_suggest_signal(SuggestSignalInput {
-            task_id: self.task_id,
-            session_id: self.session_id.clone(),
-            what: what.to_owned(),
-            kind: kind.to_owned(),
-            why: why.to_owned(),
-        })
-    }
-
-    fn blocked(&self, on: &str, kind: &str, detail: Option<&str>) -> Result<(), String> {
-        self.db.insert_blocked_signal(BlockedSignalInput {
-            task_id: self.task_id,
-            session_id: self.session_id.clone(),
-            on: on.to_owned(),
-            kind: kind.to_owned(),
-            detail: detail.map(str::to_owned),
-        })
-    }
-}
-
 /// Helper to initialize a project (creates .undetect-ralph/ for fixtures)
 fn initialize_project_for_fixture(
     path: PathBuf,
@@ -1552,125 +1446,207 @@ just dev-mock 04-desktop-dev
 
     // --- Task Comments with Signal Verbs ---
     // Task 21: MCP Signal Reference - ALL 8 VERBS + VARIANTS (15 examples)
-    // Signals written directly via SignalWriter for fixtures
+    // Signals from DIFFERENT disciplines to demonstrate cross-discipline communication
 
-    let signal_writer = SignalWriter::new(&db, 21, "sess-21-ref");
+    let sess = "sess-21-ref";
 
-    // 1. DONE verb - closing signal
-    signal_writer.done(
-        "Implemented CSV/JSON export with quota handling, all 3 acceptance criteria pass, tests green, PR merged."
-    ).unwrap();
+    // 1. DONE verb - Frontend completes their work
+    db.insert_done_signal(
+        Some("frontend"),
+        DoneSignalInput {
+            task_id: 21,
+            session_id: sess.to_owned(),
+            summary: "Implemented CSV/JSON export with quota handling, all 3 acceptance criteria pass, tests green, PR merged.".to_owned(),
+        },
+    )
+    .unwrap();
 
-    // 2. PARTIAL verb - closing signal with summary + remaining
-    signal_writer.partial(
-        "Implemented CSV export format, added filename sanitization, wrote 12 of 18 unit tests.",
-        "JSON export format, bulk export UI, remaining 6 edge-case tests."
-    ).unwrap();
+    // 2. PARTIAL verb - Backend reports partial progress
+    db.insert_partial_signal(
+        Some("backend"),
+        PartialSignalInput {
+            task_id: 21,
+            session_id: sess.to_owned(),
+            summary: "Implemented CSV export format, added filename sanitization, wrote 12 of 18 unit tests.".to_owned(),
+            remaining: "JSON export format, bulk export UI, remaining 6 edge-case tests.".to_owned(),
+        },
+    )
+    .unwrap();
 
-    // 3. STUCK verb - closing signal with reason
-    signal_writer.stuck(
-        "Cannot determine correct MIME type for .bookmark files — RFC 7231 spec is ambiguous and Chrome/Firefox behave differently."
-    ).unwrap();
+    // 3. STUCK verb - Quality team is stuck
+    db.insert_stuck_signal(
+        Some("quality"),
+        StuckSignalInput {
+            task_id: 21,
+            session_id: sess.to_owned(),
+            reason: "Cannot determine correct MIME type for .bookmark files — RFC 7231 spec is ambiguous and Chrome/Firefox behave differently.".to_owned(),
+        },
+    )
+    .unwrap();
 
-    // 4. ASK verb (BLOCKING variant) - question with options
-    signal_writer.ask(
-        "Should export filename include timestamp (bookmarks-2025-01-22.json) or use static name (bookmarks.json)?",
-        Some(vec![
-            "Add timestamp".to_owned(),
-            "Static filename".to_owned(),
-            "Let user choose via dialog".to_owned(),
-        ]),
-        Some("Add timestamp".to_owned()),
-        true
-    ).unwrap();
+    // 4. ASK verb (BLOCKING variant) - Frontend asks for decision
+    db.insert_ask_signal(
+        Some("frontend"),
+        AskSignalInput {
+            task_id: 21,
+            session_id: sess.to_owned(),
+            question: "Should export filename include timestamp (bookmarks-2025-01-22.json) or use static name (bookmarks.json)?".to_owned(),
+            blocking: true,
+            options: Some(vec![
+                "Add timestamp".to_owned(),
+                "Static filename".to_owned(),
+                "Let user choose via dialog".to_owned(),
+            ]),
+            preferred: Some("Add timestamp".to_owned()),
+        },
+    )
+    .unwrap();
 
-    // 5. ASK verb (NON-BLOCKING variant)
-    signal_writer
-        .ask(
-            "Should we use .csv or .tsv extension for tab-separated exports?",
-            Some(vec![
+    // 5. ASK verb (NON-BLOCKING variant) - Backend asks for input
+    db.insert_ask_signal(
+        Some("backend"),
+        AskSignalInput {
+            task_id: 21,
+            session_id: sess.to_owned(),
+            question: "Should we use .csv or .tsv extension for tab-separated exports?".to_owned(),
+            blocking: false,
+            options: Some(vec![
                 "Use .csv (more common)".to_owned(),
                 "Use .tsv (more accurate)".to_owned(),
             ]),
-            Some("Use .tsv (more accurate)".to_owned()),
-            false,
-        )
-        .unwrap();
+            preferred: Some("Use .tsv (more accurate)".to_owned()),
+        },
+    )
+    .unwrap();
 
-    // 6-8. FLAG verb (3 severity variants: blocking, warning, info)
-    signal_writer
-        .flag(
-            "Export button downloads empty 0-byte file when localStorage.getItem() returns null.",
-            "blocking",
-            "bug",
-        )
-        .unwrap();
+    // 6-8. FLAG verb (3 severity variants) - Different disciplines flag issues
+    db.insert_flag_signal(
+        Some("frontend"),
+        FlagSignalInput {
+            task_id: 21,
+            session_id: sess.to_owned(),
+            what: "Export button downloads empty 0-byte file when localStorage.getItem() returns null.".to_owned(),
+            severity: "blocking".to_owned(),
+            category: "bug".to_owned(),
+        },
+    )
+    .unwrap();
 
-    signal_writer
-        .flag(
-            "Export with 10k+ bookmarks takes 3+ seconds and freezes UI thread.",
-            "warning",
-            "performance",
-        )
-        .unwrap();
+    db.insert_flag_signal(
+        Some("backend"),
+        FlagSignalInput {
+            task_id: 21,
+            session_id: sess.to_owned(),
+            what: "Export with 10k+ bookmarks takes 3+ seconds and freezes UI thread.".to_owned(),
+            severity: "warning".to_owned(),
+            category: "performance".to_owned(),
+        },
+    )
+    .unwrap();
 
-    signal_writer
-        .flag(
-            "Export filename gets truncated to 255 chars on older Windows filesystems.",
-            "info",
-            "ambiguity",
-        )
-        .unwrap();
+    db.insert_flag_signal(
+        Some("quality"),
+        FlagSignalInput {
+            task_id: 21,
+            session_id: sess.to_owned(),
+            what: "Export filename gets truncated to 255 chars on older Windows filesystems."
+                .to_owned(),
+            severity: "info".to_owned(),
+            category: "ambiguity".to_owned(),
+        },
+    )
+    .unwrap();
 
-    // 9-11. LEARNED verb (3 kind variants: discovery/gotcha, decision/pattern, convention)
-    signal_writer.learned(
-        "Browser download APIs create Blob URLs that must be manually revoked via URL.revokeObjectURL() or they leak memory until page reload.",
-        "gotcha",
-        Some("feature"),
-        Some("Without cleanup, every export leaks ~50KB. User with 100 exports = 5MB leaked RAM.")
-    ).unwrap();
+    // 9-11. LEARNED verb (3 kind variants) - Different disciplines share learnings
+    db.insert_learned_signal(
+        Some("frontend"),
+        LearnedSignalInput {
+            task_id: 21,
+            session_id: sess.to_owned(),
+            text: "Browser download APIs create Blob URLs that must be manually revoked via URL.revokeObjectURL() or they leak memory until page reload.".to_owned(),
+            kind: "gotcha".to_owned(),
+            scope: "feature".to_owned(),
+            rationale: Some("Without cleanup, every export leaks ~50KB. User with 100 exports = 5MB leaked RAM.".to_owned()),
+        },
+    )
+    .unwrap();
 
-    signal_writer.learned(
-        "Wrap all localStorage operations in try/catch with LRU eviction fallback — handles quota errors gracefully.",
-        "pattern",
-        Some("task"),
-        None
-    ).unwrap();
+    db.insert_learned_signal(
+        Some("backend"),
+        LearnedSignalInput {
+            task_id: 21,
+            session_id: sess.to_owned(),
+            text: "Wrap all localStorage operations in try/catch with LRU eviction fallback — handles quota errors gracefully.".to_owned(),
+            kind: "pattern".to_owned(),
+            scope: "task".to_owned(),
+            rationale: None,
+        },
+    )
+    .unwrap();
 
-    signal_writer.learned(
-        "All export filenames follow pattern: appname-entity-timestamp.ext (e.g., ralph-bookmarks-2025-01-22.json).",
-        "convention",
-        Some("feature"),
-        None
-    ).unwrap();
+    db.insert_learned_signal(
+        Some("data"),
+        LearnedSignalInput {
+            task_id: 21,
+            session_id: sess.to_owned(),
+            text: "All export filenames follow pattern: appname-entity-timestamp.ext (e.g., ralph-bookmarks-2025-01-22.json).".to_owned(),
+            kind: "convention".to_owned(),
+            scope: "feature".to_owned(),
+            rationale: None,
+        },
+    )
+    .unwrap();
 
-    // 12-13. SUGGEST verb (2 kind variants: improvement, new_task)
-    signal_writer.suggest(
-        "Add Copy to Clipboard button next to Download — users want to paste bookmark JSON into Slack without saving a file.",
-        "improvement",
-        "40% of exports in analytics are followed by manual file-open-copy-paste. Direct clipboard = better UX."
-    ).unwrap();
+    // 12-13. SUGGEST verb (2 kind variants) - Different disciplines suggest improvements
+    db.insert_suggest_signal(
+        Some("frontend"),
+        SuggestSignalInput {
+            task_id: 21,
+            session_id: sess.to_owned(),
+            what: "Add Copy to Clipboard button next to Download — users want to paste bookmark JSON into Slack without saving a file.".to_owned(),
+            kind: "improvement".to_owned(),
+            why: "40% of exports in analytics are followed by manual file-open-copy-paste. Direct clipboard = better UX.".to_owned(),
+        },
+    )
+    .unwrap();
 
-    signal_writer.suggest(
-        "Add scheduled auto-export that backs up bookmarks to user's chosen cloud storage every 24 hours.",
-        "new_task",
-        "Users in support threads frequently ask about backup/sync. Auto-export prevents data loss."
-    ).unwrap();
+    db.insert_suggest_signal(
+        Some("backend"),
+        SuggestSignalInput {
+            task_id: 21,
+            session_id: sess.to_owned(),
+            what: "Add scheduled auto-export that backs up bookmarks to user's chosen cloud storage every 24 hours.".to_owned(),
+            kind: "new_task".to_owned(),
+            why: "Users in support threads frequently ask about backup/sync. Auto-export prevents data loss.".to_owned(),
+        },
+    )
+    .unwrap();
 
-    // 14-15. BLOCKED verb (2 kind variants: dependency, external/environment)
-    signal_writer.blocked(
-        "Need backend API endpoint POST /export/stream for server-side export generation.",
-        "upstream_task",
-        Some("Client-side export works for <1000 bookmarks but crashes tab with larger datasets. Need streaming response.")
-    ).unwrap();
+    // 14-15. BLOCKED verb (2 kind variants) - Different disciplines report blockers
+    db.insert_blocked_signal(
+        Some("frontend"),
+        BlockedSignalInput {
+            task_id: 21,
+            session_id: sess.to_owned(),
+            on: "Need backend API endpoint POST /export/stream for server-side export generation.".to_owned(),
+            kind: "upstream_task".to_owned(),
+            detail: Some("Client-side export works for <1000 bookmarks but crashes tab with larger datasets. Need streaming response.".to_owned()),
+        },
+    )
+    .unwrap();
 
-    signal_writer
-        .blocked(
-            "Bun v1.2+ required for File System Access API — CI still running Bun v1.0.15.",
-            "external",
-            None,
-        )
-        .unwrap();
+    db.insert_blocked_signal(
+        Some("platform"),
+        BlockedSignalInput {
+            task_id: 21,
+            session_id: sess.to_owned(),
+            on: "Bun v1.2+ required for File System Access API — CI still running Bun v1.0.15."
+                .to_owned(),
+            kind: "external".to_owned(),
+            detail: None,
+        },
+    )
+    .unwrap();
 
     println!(
         "\n✓ Created 04-desktop-dev fixture at: {}",
