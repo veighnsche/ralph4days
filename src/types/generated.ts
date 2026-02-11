@@ -55,9 +55,6 @@ export type FeatureData = {
   acronym: string
   description?: string
   created?: string
-  knowledgePaths: string[]
-  contextFiles: string[]
-  dependencies: string[]
   status: string
   comments: FeatureCommentData[]
 }
@@ -158,7 +155,6 @@ export type Task = {
   priority?: Priority
   tags: string[]
   dependsOn: number[]
-  blockedBy?: string
   created?: string
   updated?: string
   completed?: string
