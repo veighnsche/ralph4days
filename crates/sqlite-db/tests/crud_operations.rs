@@ -1111,8 +1111,7 @@ fn test_add_human_comment() {
     let task = db.get_task_by_id(task_id).unwrap();
     assert_eq!(task.comments.len(), 1);
     assert_eq!(task.comments[0].body, "Use bcrypt");
-    assert!(task.comments[0].discipline.is_none());
-    assert!(task.comments[0].agent_task_id.is_none());
+    assert_eq!(task.comments[0].author, "human");
     assert_eq!(
         task.comments[0].created,
         Some("2026-01-01T00:00:00Z".into())
@@ -1132,11 +1131,17 @@ fn test_add_agent_comment() {
         })
         .unwrap();
 
-    db.add_comment(task_id, None, Some(5), None, "Failed: missing .env".into())
-        .unwrap();
+    db.add_comment(
+        task_id,
+        Some("backend".into()),
+        Some(5),
+        None,
+        "Failed: missing .env".into(),
+    )
+    .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
-    assert_eq!(task.comments[0].agent_task_id, Some(5));
+    assert_eq!(task.comments[0].author, "backend");
 }
 
 #[test]

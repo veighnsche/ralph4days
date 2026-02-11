@@ -180,18 +180,7 @@ impl SqliteDb {
                 if !t.comments.is_empty() {
                     output.push_str("  comments:\n");
                     for c in &t.comments {
-                        if let Some(disc) = &c.discipline {
-                            output
-                                .push_str(&format!("  - discipline: \"{}\"\n", yaml_escape(disc)));
-                        } else {
-                            output.push_str("  - discipline: ~\n");
-                        }
-                        if let Some(atid) = c.agent_task_id {
-                            output.push_str(&format!("    agent_task_id: {atid}\n"));
-                        }
-                        if let Some(pri) = &c.priority {
-                            output.push_str(&format!("    priority: \"{}\"\n", yaml_escape(pri)));
-                        }
+                        output.push_str(&format!("  - author: \"{}\"\n", yaml_escape(&c.author)));
                         output.push_str(&format!("    body: \"{}\"\n", yaml_escape(&c.body)));
                         if let Some(created) = &c.created {
                             output.push_str(&format!("    created: \"{created}\"\n"));

@@ -102,12 +102,7 @@ impl TaskProvenance {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TaskComment {
     pub id: u32,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub discipline: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub agent_task_id: Option<u32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub priority: Option<String>,
+    pub author: String,
     pub body: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
@@ -330,6 +325,34 @@ pub struct ProjectMetadata {
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TaskSignal {
+    pub id: u32,
+    pub task_id: u32,
+    pub session_id: String,
+    pub verb: String,
+    pub payload: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub answered: Option<String>,
+    pub created_at: String,
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TaskSignalSummary {
+    pub pending_asks: u32,
+    pub flag_count: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_flag_severity: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_closing_verb: Option<String>,
+    pub session_count: u32,
+    pub learned_count: u32,
 }
 
 #[derive(Default)]
