@@ -106,6 +106,18 @@ pub struct TaskComment {
     pub body: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub signal_verb: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub signal_payload: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub signal_answered: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parent_comment_id: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub priority: Option<String>,
 }
 
 #[ipc_type]
@@ -134,7 +146,7 @@ pub struct Task {
     pub priority: Option<Priority>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub depends_on: Vec<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub blocked_by: Option<String>,
@@ -325,20 +337,6 @@ pub struct ProjectMetadata {
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TaskSignal {
-    pub id: u32,
-    pub task_id: u32,
-    pub session_id: String,
-    pub verb: String,
-    pub payload: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub answered: Option<String>,
-    pub created_at: String,
 }
 
 #[ipc_type]
