@@ -162,8 +162,8 @@ export function CommentsSection({ task }: CommentsSectionProps) {
             let signalConfig = null
             let SignalIcon = null
 
-            if (isSignal) {
-              const verb = comment.signal_verb!
+            if (isSignal && comment.signal_verb) {
+              const verb = comment.signal_verb
               signalConfig = VERB_CONFIG[verb] || {
                 icon: MessageCircle,
                 color: 'text-muted-foreground',
