@@ -435,12 +435,27 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "Summary cannot be empty");
         }
 
+        let discipline_id: Option<u32> = self
+            .conn
+            .query_row(
+                "SELECT discipline_id FROM tasks WHERE id = ?1",
+                [input.task_id],
+                |row| row.get(0),
+            )
+            .ok();
+
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
-                "INSERT INTO task_signals (task_id, session_id, verb, summary, created) \
-                 VALUES (?1, ?2, 'done', ?3, ?4)",
-                rusqlite::params![input.task_id, input.session_id, input.summary.trim(), now],
+                "INSERT INTO task_signals (task_id, session_id, discipline_id, verb, summary, created) \
+                 VALUES (?1, ?2, ?3, 'done', ?4, ?5)",
+                rusqlite::params![
+                    input.task_id,
+                    input.session_id,
+                    discipline_id,
+                    input.summary.trim(),
+                    now
+                ],
             )
             .ralph_err(codes::DB_WRITE, "Failed to insert done signal")?;
 
@@ -455,14 +470,24 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "Remaining cannot be empty");
         }
 
+        let discipline_id: Option<u32> = self
+            .conn
+            .query_row(
+                "SELECT discipline_id FROM tasks WHERE id = ?1",
+                [input.task_id],
+                |row| row.get(0),
+            )
+            .ok();
+
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
-                "INSERT INTO task_signals (task_id, session_id, verb, summary, remaining, created) \
-                 VALUES (?1, ?2, 'partial', ?3, ?4, ?5)",
+                "INSERT INTO task_signals (task_id, session_id, discipline_id, verb, summary, remaining, created) \
+                 VALUES (?1, ?2, ?3, 'partial', ?4, ?5, ?6)",
                 rusqlite::params![
                     input.task_id,
                     input.session_id,
+                    discipline_id,
                     input.summary.trim(),
                     input.remaining.trim(),
                     now
@@ -478,12 +503,27 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "Reason cannot be empty");
         }
 
+        let discipline_id: Option<u32> = self
+            .conn
+            .query_row(
+                "SELECT discipline_id FROM tasks WHERE id = ?1",
+                [input.task_id],
+                |row| row.get(0),
+            )
+            .ok();
+
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
-                "INSERT INTO task_signals (task_id, session_id, verb, reason, created) \
-                 VALUES (?1, ?2, 'stuck', ?3, ?4)",
-                rusqlite::params![input.task_id, input.session_id, input.reason.trim(), now],
+                "INSERT INTO task_signals (task_id, session_id, discipline_id, verb, reason, created) \
+                 VALUES (?1, ?2, ?3, 'stuck', ?4, ?5)",
+                rusqlite::params![
+                    input.task_id,
+                    input.session_id,
+                    discipline_id,
+                    input.reason.trim(),
+                    now
+                ],
             )
             .ralph_err(codes::DB_WRITE, "Failed to insert stuck signal")?;
 
@@ -495,16 +535,26 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "Question cannot be empty");
         }
 
+        let discipline_id: Option<u32> = self
+            .conn
+            .query_row(
+                "SELECT discipline_id FROM tasks WHERE id = ?1",
+                [input.task_id],
+                |row| row.get(0),
+            )
+            .ok();
+
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         let options = input.options.map(|opts| opts.join("\n"));
 
         self.conn
             .execute(
-                "INSERT INTO task_signals (task_id, session_id, verb, question, options, preferred, blocking, created) \
-                 VALUES (?1, ?2, 'ask', ?3, ?4, ?5, ?6, ?7)",
+                "INSERT INTO task_signals (task_id, session_id, discipline_id, verb, question, options, preferred, blocking, created) \
+                 VALUES (?1, ?2, ?3, 'ask', ?4, ?5, ?6, ?7, ?8)",
                 rusqlite::params![
                     input.task_id,
                     input.session_id,
+                    discipline_id,
                     input.question.trim(),
                     options,
                     input.preferred,
@@ -522,14 +572,24 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "What cannot be empty");
         }
 
+        let discipline_id: Option<u32> = self
+            .conn
+            .query_row(
+                "SELECT discipline_id FROM tasks WHERE id = ?1",
+                [input.task_id],
+                |row| row.get(0),
+            )
+            .ok();
+
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
-                "INSERT INTO task_signals (task_id, session_id, verb, what, severity, category, created) \
-                 VALUES (?1, ?2, 'flag', ?3, ?4, ?5, ?6)",
+                "INSERT INTO task_signals (task_id, session_id, discipline_id, verb, what, severity, category, created) \
+                 VALUES (?1, ?2, ?3, 'flag', ?4, ?5, ?6, ?7)",
                 rusqlite::params![
                     input.task_id,
                     input.session_id,
+                    discipline_id,
                     input.what.trim(),
                     input.severity,
                     input.category,
@@ -546,14 +606,24 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "Text cannot be empty");
         }
 
+        let discipline_id: Option<u32> = self
+            .conn
+            .query_row(
+                "SELECT discipline_id FROM tasks WHERE id = ?1",
+                [input.task_id],
+                |row| row.get(0),
+            )
+            .ok();
+
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
-                "INSERT INTO task_signals (task_id, session_id, verb, text, kind, scope, rationale, created) \
-                 VALUES (?1, ?2, 'learned', ?3, ?4, ?5, ?6, ?7)",
+                "INSERT INTO task_signals (task_id, session_id, discipline_id, verb, text, kind, scope, rationale, created) \
+                 VALUES (?1, ?2, ?3, 'learned', ?4, ?5, ?6, ?7, ?8)",
                 rusqlite::params![
                     input.task_id,
                     input.session_id,
+                    discipline_id,
                     input.text.trim(),
                     input.kind,
                     input.scope,
@@ -574,14 +644,24 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "Why cannot be empty");
         }
 
+        let discipline_id: Option<u32> = self
+            .conn
+            .query_row(
+                "SELECT discipline_id FROM tasks WHERE id = ?1",
+                [input.task_id],
+                |row| row.get(0),
+            )
+            .ok();
+
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
-                "INSERT INTO task_signals (task_id, session_id, verb, what, kind, why, created) \
-                 VALUES (?1, ?2, 'suggest', ?3, ?4, ?5, ?6)",
+                "INSERT INTO task_signals (task_id, session_id, discipline_id, verb, what, kind, why, created) \
+                 VALUES (?1, ?2, ?3, 'suggest', ?4, ?5, ?6, ?7)",
                 rusqlite::params![
                     input.task_id,
                     input.session_id,
+                    discipline_id,
                     input.what.trim(),
                     input.kind,
                     input.why.trim(),
@@ -598,14 +678,24 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "On cannot be empty");
         }
 
+        let discipline_id: Option<u32> = self
+            .conn
+            .query_row(
+                "SELECT discipline_id FROM tasks WHERE id = ?1",
+                [input.task_id],
+                |row| row.get(0),
+            )
+            .ok();
+
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
-                "INSERT INTO task_signals (task_id, session_id, verb, \"on\", kind, detail, created) \
-                 VALUES (?1, ?2, 'blocked', ?3, ?4, ?5, ?6)",
+                "INSERT INTO task_signals (task_id, session_id, discipline_id, verb, \"on\", kind, detail, created) \
+                 VALUES (?1, ?2, ?3, 'blocked', ?4, ?5, ?6, ?7)",
                 rusqlite::params![
                     input.task_id,
                     input.session_id,
+                    discipline_id,
                     input.on.trim(),
                     input.kind,
                     input.detail,
