@@ -121,8 +121,6 @@ async fn handle_signal(
 }
 
 fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<(), String> {
-    let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
-
     match request.verb.as_str() {
         "done" => {
             let summary = request
@@ -131,14 +129,11 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .and_then(|v| v.as_str())
                 .ok_or("Missing summary")?;
 
-            db.execute_raw(&format!(
-                "INSERT INTO task_comments (task_id, session_id, verb, summary, created) \
-                 VALUES ({}, '{}', 'done', '{}', '{}')",
-                request.task_id,
-                request.session_id,
-                summary.replace('\'', "''"),
-                now
-            ))?;
+            db.insert_done_signal(sqlite_db::DoneSignalInput {
+                task_id: request.task_id,
+                session_id: request.session_id.clone(),
+                summary: summary.to_owned(),
+            })?;
         }
         "partial" => {
             let summary = request
@@ -152,15 +147,12 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .and_then(|v| v.as_str())
                 .ok_or("Missing remaining")?;
 
-            db.execute_raw(&format!(
-                "INSERT INTO task_comments (task_id, session_id, verb, summary, remaining, created) \
-                 VALUES ({}, '{}', 'partial', '{}', '{}', '{}')",
-                request.task_id,
-                request.session_id,
-                summary.replace('\'', "''"),
-                remaining.replace('\'', "''"),
-                now
-            ))?;
+            db.insert_partial_signal(sqlite_db::PartialSignalInput {
+                task_id: request.task_id,
+                session_id: request.session_id.clone(),
+                summary: summary.to_owned(),
+                remaining: remaining.to_owned(),
+            })?;
         }
         "stuck" => {
             let reason = request
@@ -169,14 +161,11 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .and_then(|v| v.as_str())
                 .ok_or("Missing reason")?;
 
-            db.execute_raw(&format!(
-                "INSERT INTO task_comments (task_id, session_id, verb, reason, created) \
-                 VALUES ({}, '{}', 'stuck', '{}', '{}')",
-                request.task_id,
-                request.session_id,
-                reason.replace('\'', "''"),
-                now
-            ))?;
+            db.insert_stuck_signal(sqlite_db::StuckSignalInput {
+                task_id: request.task_id,
+                session_id: request.session_id.clone(),
+                reason: reason.to_owned(),
+            })?;
         }
         "ask" => {
             let question = request
@@ -196,22 +185,23 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .map(|arr| {
                     arr.iter()
                         .filter_map(|v| v.as_str())
+                        .map(str::to_owned)
                         .collect::<Vec<_>>()
-                        .join("\n")
                 });
-            let preferred = request.payload.get("preferred").and_then(|v| v.as_str());
+            let preferred = request
+                .payload
+                .get("preferred")
+                .and_then(|v| v.as_str())
+                .map(str::to_owned);
 
-            db.execute_raw(&format!(
-                "INSERT INTO task_comments (task_id, session_id, verb, question, options, preferred, blocking, created) \
-                 VALUES ({}, '{}', 'ask', '{}', {}, {}, {}, '{}')",
-                request.task_id,
-                request.session_id,
-                question.replace('\'', "''"),
-                options.map_or("NULL".to_owned(), |o| format!("'{}'", o.replace('\'', "''"))),
-                preferred.map_or("NULL".to_owned(), |p| format!("'{}'", p.replace('\'', "''"))),
-                i32::from(blocking),
-                now
-            ))?;
+            db.insert_ask_signal(sqlite_db::AskSignalInput {
+                task_id: request.task_id,
+                session_id: request.session_id.clone(),
+                question: question.to_owned(),
+                blocking,
+                options,
+                preferred,
+            })?;
         }
         "flag" => {
             let what = request
@@ -230,16 +220,13 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .and_then(|v| v.as_str())
                 .ok_or("Missing category")?;
 
-            db.execute_raw(&format!(
-                "INSERT INTO task_comments (task_id, session_id, verb, what, severity, category, created) \
-                 VALUES ({}, '{}', 'flag', '{}', '{}', '{}', '{}')",
-                request.task_id,
-                request.session_id,
-                what.replace('\'', "''"),
-                severity,
-                category,
-                now
-            ))?;
+            db.insert_flag_signal(sqlite_db::FlagSignalInput {
+                task_id: request.task_id,
+                session_id: request.session_id.clone(),
+                what: what.to_owned(),
+                severity: severity.to_owned(),
+                category: category.to_owned(),
+            })?;
         }
         "learned" => {
             let text = request
@@ -257,19 +244,20 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .get("scope")
                 .and_then(|v| v.as_str())
                 .unwrap_or("feature");
-            let rationale = request.payload.get("rationale").and_then(|v| v.as_str());
+            let rationale = request
+                .payload
+                .get("rationale")
+                .and_then(|v| v.as_str())
+                .map(str::to_owned);
 
-            db.execute_raw(&format!(
-                "INSERT INTO task_comments (task_id, session_id, verb, text, kind, scope, rationale, created) \
-                 VALUES ({}, '{}', 'learned', '{}', '{}', '{}', {}, '{}')",
-                request.task_id,
-                request.session_id,
-                text.replace('\'', "''"),
-                kind,
-                scope,
-                rationale.map_or("NULL".to_owned(), |r| format!("'{}'", r.replace('\'', "''"))),
-                now
-            ))?;
+            db.insert_learned_signal(sqlite_db::LearnedSignalInput {
+                task_id: request.task_id,
+                session_id: request.session_id.clone(),
+                text: text.to_owned(),
+                kind: kind.to_owned(),
+                scope: scope.to_owned(),
+                rationale,
+            })?;
         }
         "suggest" => {
             let what = request
@@ -288,16 +276,13 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .and_then(|v| v.as_str())
                 .ok_or("Missing why")?;
 
-            db.execute_raw(&format!(
-                "INSERT INTO task_comments (task_id, session_id, verb, what, kind, why, created) \
-                 VALUES ({}, '{}', 'suggest', '{}', '{}', '{}', '{}')",
-                request.task_id,
-                request.session_id,
-                what.replace('\'', "''"),
-                kind,
-                why.replace('\'', "''"),
-                now
-            ))?;
+            db.insert_suggest_signal(sqlite_db::SuggestSignalInput {
+                task_id: request.task_id,
+                session_id: request.session_id.clone(),
+                what: what.to_owned(),
+                kind: kind.to_owned(),
+                why: why.to_owned(),
+            })?;
         }
         "blocked" => {
             let on = request
@@ -310,18 +295,19 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .get("kind")
                 .and_then(|v| v.as_str())
                 .ok_or("Missing kind")?;
-            let detail = request.payload.get("detail").and_then(|v| v.as_str());
+            let detail = request
+                .payload
+                .get("detail")
+                .and_then(|v| v.as_str())
+                .map(str::to_owned);
 
-            db.execute_raw(&format!(
-                "INSERT INTO task_comments (task_id, session_id, verb, \"on\", kind, detail, created) \
-                 VALUES ({}, '{}', 'blocked', '{}', '{}', {}, '{}')",
-                request.task_id,
-                request.session_id,
-                on.replace('\'', "''"),
-                kind,
-                detail.map_or("NULL".to_owned(), |d| format!("'{}'", d.replace('\'', "''"))),
-                now
-            ))?;
+            db.insert_blocked_signal(sqlite_db::BlockedSignalInput {
+                task_id: request.task_id,
+                session_id: request.session_id.clone(),
+                on: on.to_owned(),
+                kind: kind.to_owned(),
+                detail,
+            })?;
         }
         _ => return Err(format!("Unknown verb: {}", request.verb)),
     }

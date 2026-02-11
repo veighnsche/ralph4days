@@ -123,18 +123,6 @@ export type StackMetadataData = {
   disciplineCount: number
   characteristics: string[]
 }
-export type TaskComment = {
-  id: number
-  author: string
-  body: string
-  created?: string
-  session_id?: string
-  signal_verb?: string
-  signal_payload?: string
-  signal_answered?: string
-  parent_comment_id?: number
-  priority?: string
-}
 export type TaskProvenance = 'agent' | 'human' | 'system'
 export type TaskSignalSummary = {
   pendingAsks: number
@@ -143,6 +131,18 @@ export type TaskSignalSummary = {
   lastClosingVerb?: string
   sessionCount: number
   learnedCount: number
+}
+export type TaskSignal = {
+  id: number
+  author: string
+  body: string
+  created?: string
+  session_id?: string
+  signal_verb?: string
+  signal_payload?: string
+  signal_answered?: string
+  parent_signal_id?: number
+  priority?: string
 }
 export type TaskStatus = 'draft' | 'pending' | 'in_progress' | 'done' | 'blocked' | 'skipped'
 export type Task = {
@@ -166,7 +166,7 @@ export type Task = {
   provenance?: TaskProvenance
   pseudocode?: string
   enrichedAt?: string
-  comments: TaskComment[]
+  signals: TaskSignal[]
   featureDisplayName: string
   featureAcronym: string
   disciplineDisplayName: string

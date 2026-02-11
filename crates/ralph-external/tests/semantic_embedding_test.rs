@@ -300,7 +300,7 @@ async fn semantic_search_feeds_into_prompt_builder() {
         provenance: None,
         pseudocode: None,
         enriched_at: None,
-        comments: vec![],
+        signals: vec![],
         feature_display_name: "Authentication".to_owned(),
         feature_acronym: "AUTH".to_owned(),
         discipline_display_name: "Backend".to_owned(),

@@ -8,7 +8,7 @@ import { computeInferredStatus } from '@/lib/taskStatus'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { Task } from '@/types/generated'
 import { DetailPageLayout } from './DetailPageLayout'
-import { CommentsSection } from './task-detail/CommentsSection'
+import { CommentsSection } from './task-detail'
 import { TaskCardContent } from './task-detail/TaskCardContent'
 import { TaskSidebar } from './task-detail/TaskSidebar'
 

@@ -112,7 +112,7 @@ pub fn add_task_comment(
     body: String,
 ) -> Result<(), String> {
     let db = get_db(&state)?;
-    db.add_comment(task_id, discipline, agent_task_id, priority, body)
+    db.add_signal(task_id, discipline, agent_task_id, priority, body)
 }
 
 #[tauri::command]
@@ -123,7 +123,7 @@ pub fn update_task_comment(
     body: String,
 ) -> Result<(), String> {
     let db = get_db(&state)?;
-    db.update_comment(task_id, comment_id, body)
+    db.update_signal(task_id, comment_id, body)
 }
 
 #[tauri::command]
@@ -133,7 +133,7 @@ pub fn delete_task_comment(
     comment_id: u32,
 ) -> Result<(), String> {
     let db = get_db(&state)?;
-    db.delete_comment(task_id, comment_id)
+    db.delete_signal(task_id, comment_id)
 }
 
 #[tauri::command]
@@ -146,7 +146,7 @@ pub fn get_tasks(state: State<'_, AppState>) -> Result<Vec<sqlite_db::Task>, Str
 pub fn get_task_signals(
     state: State<'_, AppState>,
     task_id: u32,
-) -> Result<Vec<sqlite_db::TaskComment>, String> {
+) -> Result<Vec<sqlite_db::TaskSignal>, String> {
     let db = get_db(&state)?;
     db.get_task_signals(task_id)
 }
@@ -179,5 +179,5 @@ pub fn add_reply_to_comment(
     body: String,
 ) -> Result<(), String> {
     let db = get_db(&state)?;
-    db.add_comment_with_parent(task_id, None, priority, body, Some(parent_comment_id))
+    db.add_signal_with_parent(task_id, None, priority, body, Some(parent_comment_id))
 }

@@ -132,7 +132,6 @@ pub mod codes {
     pub const DB_WRITE: u16 = 2200;
     pub const TASK_VALIDATION: u16 = 3000;
     pub const TASK_OPS: u16 = 3100;
-    pub const COMMENT_OPS: u16 = 3200;
     pub const SIGNAL_OPS: u16 = 3300;
     pub const FEATURE_OPS: u16 = 4000;
     pub const DISCIPLINE_OPS: u16 = 4100;

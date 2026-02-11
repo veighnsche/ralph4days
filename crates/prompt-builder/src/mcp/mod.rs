@@ -377,7 +377,7 @@ mod tests {
             provenance: None,
             pseudocode: None,
             enriched_at: None,
-            comments: vec![],
+            signals: vec![],
             feature_display_name: "Auth".to_owned(),
             feature_acronym: "AU".to_owned(),
             discipline_display_name: "Frontend".to_owned(),

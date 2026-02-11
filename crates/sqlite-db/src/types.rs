@@ -100,7 +100,7 @@ impl TaskProvenance {
 
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TaskComment {
+pub struct TaskSignal {
     pub id: u32,
     pub author: String,
     pub body: String,
@@ -115,7 +115,7 @@ pub struct TaskComment {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub signal_answered: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub parent_comment_id: Option<u32>,
+    pub parent_signal_id: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub priority: Option<String>,
 }
@@ -171,7 +171,7 @@ pub struct Task {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enriched_at: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub comments: Vec<TaskComment>,
+    pub signals: Vec<TaskSignal>,
     pub feature_display_name: String,
     pub feature_acronym: String,
     pub discipline_display_name: String,

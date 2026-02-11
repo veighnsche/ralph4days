@@ -11,7 +11,7 @@ import { resolveIcon } from '@/lib/iconRegistry'
 import type { InferredTaskStatus } from '@/lib/taskStatus'
 import { shouldShowInferredStatus } from '@/lib/taskStatus'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
-import type { Task, TaskComment } from '@/types/generated'
+import type { Task, TaskSignal } from '@/types/generated'
 import { PropertyRow } from '../PropertyRow'
 import { TerminalTabContent } from '../TerminalTabContent'
 
@@ -21,7 +21,7 @@ const PROVENANCE_CONFIG = {
   system: { label: 'System', icon: Cog }
 } as const
 
-function buildSignalSummaryText(signals: TaskComment[]): string | null {
+function buildSignalSummaryText(signals: TaskSignal[]): string | null {
   if (signals.length === 0) return null
   const counts: Record<string, number> = {}
   const pendingAsks = signals.filter(s => s.signal_verb === 'ask' && !s.signal_answered).length
@@ -36,7 +36,7 @@ function buildSignalSummaryText(signals: TaskComment[]): string | null {
   return parts.length > 0 ? parts.join(' · ') : null
 }
 
-function getLastClosingVerb(signals: TaskComment[]): SignalVerb | null {
+function getLastClosingVerb(signals: TaskSignal[]): SignalVerb | null {
   for (let i = signals.length - 1; i >= 0; i--) {
     const verb = signals[i].signal_verb
     if (verb === 'done' || verb === 'partial' || verb === 'stuck') return verb as SignalVerb
@@ -45,7 +45,7 @@ function getLastClosingVerb(signals: TaskComment[]): SignalVerb | null {
 }
 
 export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStatus: InferredTaskStatus }) {
-  const signals = (task.comments ?? []).filter(c => c.signal_verb != null)
+  const signals = (task.signals ?? []).filter(c => c.signal_verb != null)
   const statusConfig = STATUS_CONFIG[task.status]
   const StatusIcon = statusConfig.icon
   const priorityConfig = task.priority ? PRIORITY_CONFIG[task.priority] : null

@@ -18,10 +18,10 @@ pub struct AddFeatureCommentInput {
 impl SqliteDb {
     pub fn add_feature_comment(&self, input: AddFeatureCommentInput) -> Result<(), String> {
         if input.body.trim().is_empty() {
-            return ralph_err!(codes::COMMENT_OPS, "Comment body cannot be empty");
+            return ralph_err!(codes::FEATURE_OPS, "Comment body cannot be empty");
         }
         if input.category.trim().is_empty() {
-            return ralph_err!(codes::COMMENT_OPS, "Comment category cannot be empty");
+            return ralph_err!(codes::FEATURE_OPS, "Comment category cannot be empty");
         }
 
         let feature_id: Option<i64> = self
@@ -37,7 +37,7 @@ impl SqliteDb {
         let feature_id = feature_id.ok_or_else(|| {
             format!(
                 "[R-{}] Feature '{}' does not exist",
-                codes::COMMENT_OPS,
+                codes::FEATURE_OPS,
                 input.feature_name
             )
         })?;
@@ -88,7 +88,7 @@ impl SqliteDb {
         reason: Option<String>,
     ) -> Result<(), String> {
         if body.trim().is_empty() {
-            return ralph_err!(codes::COMMENT_OPS, "Comment body cannot be empty");
+            return ralph_err!(codes::FEATURE_OPS, "Comment body cannot be empty");
         }
 
         let feature_id: Option<i64> = self
@@ -104,7 +104,7 @@ impl SqliteDb {
         let feature_id = feature_id.ok_or_else(|| {
             format!(
                 "[R-{}] Feature '{}' does not exist",
-                codes::COMMENT_OPS,
+                codes::FEATURE_OPS,
                 feature_name
             )
         })?;
@@ -122,7 +122,7 @@ impl SqliteDb {
 
         if affected == 0 {
             return ralph_err!(
-                codes::COMMENT_OPS,
+                codes::FEATURE_OPS,
                 "Comment {comment_id} does not exist on feature '{feature_name}'"
             );
         }
@@ -148,7 +148,7 @@ impl SqliteDb {
         let feature_id = feature_id.ok_or_else(|| {
             format!(
                 "[R-{}] Feature '{}' does not exist",
-                codes::COMMENT_OPS,
+                codes::FEATURE_OPS,
                 feature_name
             )
         })?;
@@ -163,7 +163,7 @@ impl SqliteDb {
 
         if affected == 0 {
             return ralph_err!(
-                codes::COMMENT_OPS,
+                codes::FEATURE_OPS,
                 "Comment {comment_id} does not exist on feature '{feature_name}'"
             );
         }

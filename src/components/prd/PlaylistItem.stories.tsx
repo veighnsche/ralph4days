@@ -55,6 +55,7 @@ function enrichFields(feature: string, discipline: string) {
   }
   return {
     featureDisplayName: featureDisplayName(feature),
+    signals: [],
     featureAcronym: featureAcronym(feature),
     disciplineDisplayName: disc.displayName,
     disciplineAcronym: disc.acronym,
@@ -76,7 +77,6 @@ const baseTask: Task = {
   acceptanceCriteria: ['Responsive on mobile, tablet, desktop', 'Sidebar collapses on mobile', 'Dark mode support'],
   contextFiles: [],
   outputArtifacts: [],
-  comments: [],
   created: '2026-02-01',
   updated: '2026-02-05',
   ...enrichFields('ui', 'frontend')
@@ -130,7 +130,6 @@ export const Blocked: Story = {
       discipline: 'testing',
       title: 'Add authentication middleware',
       status: 'blocked',
-      blockedBy: 'Waiting for security review',
       ...enrichFields('tests', 'testing')
     },
     onClick: () => console.log('Task clicked')
@@ -206,7 +205,6 @@ export const NoDescription: Story = {
       acceptanceCriteria: [],
       contextFiles: [],
       outputArtifacts: [],
-      comments: [],
       ...enrichFields('docs', 'docs')
     },
     onClick: () => console.log('Task clicked')

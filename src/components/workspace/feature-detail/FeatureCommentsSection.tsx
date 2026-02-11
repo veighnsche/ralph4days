@@ -12,12 +12,12 @@ import {
   Trash2
 } from 'lucide-react'
 import { useRef, useState } from 'react'
-import { CommentAvatar, DisciplineRadial, InlineError } from '@/components/shared'
+import { DisciplineRadial, InlineError, SignalAvatar } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { CommentEditor } from '@/components/workspace/task-detail/CommentEditor'
+import { SignalEditor } from '@/components/workspace/task-detail/SignalEditor'
 import { useFeatureCommentMutations } from '@/hooks/features'
 import { formatDate } from '@/lib/formatDate'
 import type { FeatureData } from '@/types/generated'
@@ -204,7 +204,7 @@ export function FeatureCommentsSection({ feature }: { feature: FeatureData }) {
               key={comment.id}
               className="group/comment flex gap-2.5 relative overflow-hidden rounded-md px-2 py-1.5">
               <DisciplineRadial discipline={comment.discipline} />
-              <CommentAvatar discipline={comment.discipline} />
+              <SignalAvatar discipline={comment.discipline} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium leading-none">{comment.discipline ?? 'You'}</span>
@@ -235,7 +235,7 @@ export function FeatureCommentsSection({ feature }: { feature: FeatureData }) {
                 </div>
                 {mutations.editingId === comment.id ? (
                   <div className="mt-1.5 space-y-2">
-                    <CommentEditor
+                    <SignalEditor
                       value={mutations.editBody}
                       onChange={mutations.setEditBody}
                       onSubmit={mutations.submitEdit}

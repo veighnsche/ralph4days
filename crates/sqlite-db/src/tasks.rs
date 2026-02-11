@@ -457,7 +457,7 @@ impl SqliteDb {
             i64::from(task.id),
             "artifact_path",
         );
-        task.comments = self.get_comments_for_task(task.id);
+        task.signals = self.get_signals_for_task(task.id);
 
         Some(task)
     }
@@ -501,12 +501,12 @@ impl SqliteDb {
             );
         }
 
-        let comment_map = self.get_all_comments_by_task();
+        let comment_map = self.get_all_signals_by_task();
 
         tasks
             .into_iter()
             .map(|mut t| {
-                t.comments = comment_map.get(&t.id).cloned().unwrap_or_default();
+                t.signals = comment_map.get(&t.id).cloned().unwrap_or_default();
                 t
             })
             .collect()
@@ -539,7 +539,7 @@ impl SqliteDb {
             provenance: provenance_str.and_then(|s| TaskProvenance::parse(&s)),
             pseudocode: row.get(13).ok(),
             enriched_at: row.get(14).ok(),
-            comments: vec![],
+            signals: vec![],
             feature_display_name: row.get(16).unwrap_or_default(),
             feature_acronym: row.get(17).unwrap_or_default(),
             discipline_display_name: row.get(19).unwrap_or_default(),

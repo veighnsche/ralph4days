@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { CroppedImage } from '@/components/ui/cropped-image'
 import { useDisciplines } from '@/hooks/disciplines'
 
-export function CommentAvatar({ discipline }: { discipline?: string | null }) {
+export function SignalAvatar({ discipline }: { discipline?: string | null }) {
   const { disciplines } = useDisciplines()
 
   if (discipline) {
@@ -13,7 +13,7 @@ export function CommentAvatar({ discipline }: { discipline?: string | null }) {
         <div className="size-12 flex-shrink-0 rounded-md overflow-hidden self-start">
           <CroppedImage
             disciplineName={disc.name}
-            label="comment-face"
+            label="signal-face"
             crop={disc.crops.face}
             className="size-full object-cover"
           />

@@ -1,6 +1,5 @@
 pub mod acronym;
 mod comment_embeddings;
-mod comments;
 mod disciplines;
 mod export;
 mod feature_comments;
@@ -8,6 +7,7 @@ mod features;
 mod helpers;
 mod metadata;
 mod recipe_configs;
+mod signals;
 mod tasks;
 pub mod types;
 
@@ -15,9 +15,13 @@ pub mod types;
 pub use comment_embeddings::ScoredCommentRow;
 pub use feature_comments::AddFeatureCommentInput;
 pub use recipe_configs::{RecipeConfigData, RecipeConfigInput, SectionSettingsData};
+pub use signals::{
+    AskSignalInput, BlockedSignalInput, DoneSignalInput, FlagSignalInput, LearnedSignalInput,
+    PartialSignalInput, StuckSignalInput, SuggestSignalInput,
+};
 pub use types::{
     Discipline, DisciplineInput, Feature, FeatureComment, FeatureInput, FeatureStatus,
-    McpServerConfig, Priority, ProjectMetadata, Task, TaskComment, TaskInput, TaskProvenance,
+    McpServerConfig, Priority, ProjectMetadata, Task, TaskInput, TaskProvenance, TaskSignal,
     TaskSignalSummary, TaskStatus,
 };
 
@@ -77,11 +81,19 @@ impl SqliteDb {
         self.clock.now()
     }
 
-    pub fn execute_raw(&self, sql: &str) -> Result<(), String> {
-        self.conn
-            .execute_batch(sql)
-            .ralph_err(codes::DB_WRITE, "Raw SQL failed")
-    }
+    // ⚠️ WARNING: DO NOT add execute_raw() or any raw SQL execution method here!
+    //
+    // Rationale: Raw SQL execution bypasses type safety, validation, and the proper
+    // MCP signal interface. It enables "reward hacking" where code takes shortcuts
+    // instead of using the typed API (insert_done_signal, insert_ask_signal, etc.).
+    //
+    // If you need to execute SQL:
+    // 1. For signals: Use the typed methods in signals.rs (insert_*_signal)
+    // 2. For features: Use the typed methods in features.rs
+    // 3. For new operations: Create a new typed method with proper validation
+    //
+    // The API server and fixture generator MUST use the same typed interface that
+    // agents use via MCP. No exceptions.
 
     pub fn open_in_memory(clock: Option<Box<dyn Clock>>) -> Result<Self, String> {
         let mut conn = Connection::open_in_memory()

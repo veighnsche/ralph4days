@@ -1,16 +1,16 @@
-import { CommentAvatar, DisciplineRadial, NumberedIdDisplay } from '@/components/shared'
+import { DisciplineRadial, NumberedIdDisplay, SignalAvatar } from '@/components/shared'
 import { formatDate } from '@/lib/formatDate'
-import type { TaskComment } from '@/types/generated'
+import type { TaskSignal } from '@/types/generated'
 
 interface ReplyCardProps {
-  reply: TaskComment
+  reply: TaskSignal
 }
 
 export function ReplyCard({ reply }: ReplyCardProps) {
   return (
     <div className="ml-12 group/reply flex gap-2.5 relative overflow-hidden rounded-md px-2 py-1.5 pb-6 border-l-2 border-border/50">
       <DisciplineRadial discipline={reply.author} />
-      <CommentAvatar discipline={reply.author} />
+      <SignalAvatar discipline={reply.author} />
       <div className="flex-1 min-w-0 space-y-2 pr-24">
         <div className="flex items-baseline gap-2">
           <NumberedIdDisplay id={reply.id} variant="inline" />

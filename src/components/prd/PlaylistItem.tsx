@@ -1,7 +1,6 @@
 import { Bot, CircleHelp, Cog, Flag, GitBranch, ListChecks, MessageSquare, User } from 'lucide-react'
 import { memo } from 'react'
 import { PriorityIcon, PriorityRadial } from '@/components/shared'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { INFERRED_STATUS_CONFIG, STATUS_CONFIG } from '@/constants/prd'
@@ -60,7 +59,7 @@ function PlaylistItemIndicators({
   const totalDeps = task.dependsOn?.length ?? 0
   const hasSignals = signalSummary && (signalSummary.pendingAsks > 0 || signalSummary.flagCount > 0)
   const hasAny =
-    (task.comments?.length ?? 0) > 0 ||
+    (task.signals?.length ?? 0) > 0 ||
     totalDeps > 0 ||
     (task.acceptanceCriteria?.length ?? 0) > 0 ||
     task.priority ||
@@ -71,10 +70,10 @@ function PlaylistItemIndicators({
   return (
     <div className="flex items-center gap-2 text-muted-foreground">
       {signalSummary && <SignalIndicators summary={signalSummary} />}
-      {task.comments && task.comments.length > 0 && (
+      {task.signals && task.signals.length > 0 && (
         <div className="flex items-center gap-1">
           <MessageSquare className="h-3 w-3" />
-          <span className="text-xs">{task.comments.length}</span>
+          <span className="text-xs">{task.signals.length}</span>
         </div>
       )}
       {totalDeps > 0 && (
@@ -172,13 +171,6 @@ export const PlaylistItem = memo(function PlaylistItem({
           </div>
         )}
       </div>
-
-      {/* Full-width row: BlockedBy alert */}
-      {task.blockedBy && (
-        <Alert variant="destructive" className="col-start-2 col-span-2 mt-1 py-1.5 px-2">
-          <AlertDescription className="text-xs flex items-center gap-1.5">{task.blockedBy}</AlertDescription>
-        </Alert>
-      )}
     </button>
   )
 })

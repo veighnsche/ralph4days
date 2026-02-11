@@ -12,14 +12,14 @@ import {
   Trash2
 } from 'lucide-react'
 import { useState } from 'react'
-import { CommentAvatar, DisciplineRadial, InlineError, NumberedIdDisplay } from '@/components/shared'
+import { DisciplineRadial, InlineError, NumberedIdDisplay, SignalAvatar } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { useCommentMutations } from '@/hooks/tasks'
+import { useCommentMutations as useSignalMutations } from '@/hooks/tasks'
 import { formatDate } from '@/lib/formatDate'
-import type { Task, TaskComment } from '@/types/generated'
-import { CommentEditor } from './CommentEditor'
+import type { Task, TaskSignal } from '@/types/generated'
 import { ReplyCard } from './ReplyCard'
 import { ReplyForm } from './ReplyForm'
+import { SignalEditor } from './SignalEditor'
 
 const VERB_CONFIG: Record<
   string,
@@ -71,28 +71,28 @@ const VERB_CONFIG: Record<
   }
 }
 
-interface CommentsSectionProps {
+interface SignalsSectionProps {
   task: Task
 }
 
-export function CommentsSection({ task }: CommentsSectionProps) {
-  const allComments = task.comments ?? []
-  const [commentInput, setCommentInput] = useState('')
+export function SignalsSection({ task }: SignalsSectionProps) {
+  const allSignals = task.signals ?? []
+  const [signalInput, setSignalInput] = useState('')
 
-  const topLevel: TaskComment[] = []
-  const repliesByParent = new Map<number, TaskComment[]>()
+  const topLevel: TaskSignal[] = []
+  const repliesByParent = new Map<number, TaskSignal[]>()
 
-  for (const comment of allComments) {
-    if (comment.parent_comment_id) {
-      const parentId = comment.parent_comment_id
+  for (const signal of allSignals) {
+    if (signal.parent_signal_id) {
+      const parentId = signal.parent_signal_id
       const existing = repliesByParent.get(parentId)
       if (existing) {
-        existing.push(comment)
+        existing.push(signal)
       } else {
-        repliesByParent.set(parentId, [comment])
+        repliesByParent.set(parentId, [signal])
       }
     } else {
-      topLevel.push(comment)
+      topLevel.push(signal)
     }
   }
 
@@ -103,11 +103,11 @@ export function CommentsSection({ task }: CommentsSectionProps) {
   }
 
   const {
-    addComment,
+    addSignal,
     startEdit,
     cancelEdit,
     submitEdit,
-    deleteComment,
+    deleteSignal,
     startReply,
     cancelReply,
     submitReply,
@@ -122,48 +122,48 @@ export function CommentsSection({ task }: CommentsSectionProps) {
     isPending,
     error,
     resetError
-  } = useCommentMutations(task.id)
+  } = useSignalMutations(task.id)
 
-  const handleAddComment = () => {
-    if (!commentInput.trim()) return
-    addComment.mutate({ taskId: task.id, body: commentInput.trim() }, { onSuccess: () => setCommentInput('') })
+  const handleAddSignal = () => {
+    if (!signalInput.trim()) return
+    addSignal.mutate({ taskId: task.id, body: signalInput.trim() }, { onSuccess: () => setSignalInput('') })
   }
 
-  const totalComments = allComments.length
+  const totalSignals = allSignals.length
 
   return (
     <div className="px-3 pb-1">
       <div className="flex items-center gap-1.5 mb-3">
         <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
         <span className="text-sm font-medium text-muted-foreground">
-          Comments{totalComments > 0 && ` (${totalComments})`}
+          Signals{totalSignals > 0 && ` (${totalSignals})`}
         </span>
       </div>
 
       <InlineError error={error} onDismiss={resetError} className="mb-3" />
 
       <div className="mb-4">
-        <CommentEditor
-          value={commentInput}
-          onChange={setCommentInput}
-          onSubmit={handleAddComment}
-          submitLabel="Comment"
-          placeholder="Add a comment..."
+        <SignalEditor
+          value={signalInput}
+          onChange={setSignalInput}
+          onSubmit={handleAddSignal}
+          submitLabel="Signal"
+          placeholder="Add a signal..."
           disabled={isPending}
         />
       </div>
 
       {topLevel.length > 0 && (
         <div className="space-y-1">
-          {topLevel.map(comment => {
-            const isSignal = comment.signal_verb != null
-            const replies = repliesByParent.get(comment.id) || []
+          {topLevel.map(signal => {
+            const isSignal = signal.signal_verb != null
+            const replies = repliesByParent.get(signal.id) || []
 
             let signalConfig = null
             let SignalIcon = null
 
-            if (isSignal && comment.signal_verb) {
-              const verb = comment.signal_verb
+            if (isSignal && signal.signal_verb) {
+              const verb = signal.signal_verb
               signalConfig = VERB_CONFIG[verb] || {
                 icon: MessageCircle,
                 color: 'text-muted-foreground',
@@ -173,8 +173,8 @@ export function CommentsSection({ task }: CommentsSectionProps) {
             }
 
             return (
-              <div key={`comment-${comment.id}`} className="space-y-2">
-                <div className="group/comment flex gap-3 relative overflow-hidden rounded-lg px-3 py-2.5 pb-8 border border-border/30">
+              <div key={`signal-${signal.id}`} className="space-y-2">
+                <div className="group/signal flex gap-3 relative overflow-hidden rounded-lg px-3 py-2.5 pb-8 border border-border/30">
                   {signalConfig && (
                     <div
                       className="absolute top-0 right-0 w-32 h-32 pointer-events-none"
@@ -187,43 +187,39 @@ export function CommentsSection({ task }: CommentsSectionProps) {
                   {signalConfig && SignalIcon && (
                     <div className="absolute top-2 right-2 flex items-center gap-1.5">
                       <span className={`text-xs font-bold uppercase tracking-wider ${signalConfig.color}`}>
-                        {comment.signal_verb}
+                        {signal.signal_verb}
                       </span>
                       <SignalIcon className={`h-4 w-4 ${signalConfig.color}`} />
                     </div>
                   )}
 
                   {!isSignal && (
-                    <div className="absolute top-2 right-2 opacity-0 group-hover/comment:opacity-100 transition-opacity flex gap-0.5">
+                    <div className="absolute top-2 right-2 opacity-0 group-hover/signal:opacity-100 transition-opacity flex gap-0.5">
                       <Button
                         variant="ghost"
                         size="sm"
                         className="h-5 w-5 p-0"
-                        onClick={() => startEdit(comment.id, comment.body)}>
+                        onClick={() => startEdit(signal.id, signal.body)}>
                         <Pencil className="h-3 w-3 text-muted-foreground" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-5 w-5 p-0"
-                        onClick={() => deleteComment(comment.id)}>
+                      <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={() => deleteSignal(signal.id)}>
                         <Trash2 className="h-3 w-3 text-muted-foreground" />
                       </Button>
                     </div>
                   )}
 
-                  <DisciplineRadial discipline={comment.author} />
-                  <CommentAvatar discipline={comment.author} />
+                  <DisciplineRadial discipline={signal.author} />
+                  <SignalAvatar discipline={signal.author} />
 
                   <div className="flex-1 min-w-0 space-y-2.5">
                     <div className="flex items-baseline gap-2">
-                      <NumberedIdDisplay id={comment.id} variant="inline" />
-                      <span className="text-sm font-medium">{comment.author ?? 'You'}</span>
+                      <NumberedIdDisplay id={signal.id} variant="inline" />
+                      <span className="text-sm font-medium">{signal.author ?? 'You'}</span>
                     </div>
 
-                    {editingId === comment.id && !isSignal ? (
+                    {editingId === signal.id && !isSignal ? (
                       <div className="mt-1.5">
-                        <CommentEditor
+                        <SignalEditor
                           value={editBody}
                           onChange={setEditBody}
                           onSubmit={submitEdit}
@@ -233,7 +229,7 @@ export function CommentsSection({ task }: CommentsSectionProps) {
                         />
                       </div>
                     ) : (
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{comment.body}</p>
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{signal.body}</p>
                     )}
                   </div>
 
@@ -242,17 +238,17 @@ export function CommentsSection({ task }: CommentsSectionProps) {
                       variant="ghost"
                       size="sm"
                       className="h-6 text-xs text-muted-foreground hover:text-foreground"
-                      onClick={() => startReply(comment.id)}>
+                      onClick={() => startReply(signal.id)}>
                       <Reply className="h-3 w-3 mr-1" />
                       Reply
                     </Button>
-                    {comment.created && (
-                      <span className="text-xs text-muted-foreground/70">{formatDate(comment.created)}</span>
+                    {signal.created && (
+                      <span className="text-xs text-muted-foreground/70">{formatDate(signal.created)}</span>
                     )}
                   </div>
                 </div>
 
-                {replyingToId === comment.id && (
+                {replyingToId === signal.id && (
                   <ReplyForm
                     value={replyBody}
                     onChange={setReplyBody}

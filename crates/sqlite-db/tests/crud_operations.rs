@@ -998,17 +998,14 @@ fn test_add_human_comment() {
         })
         .unwrap();
 
-    db.add_comment(task_id, None, None, None, "Use bcrypt".into())
+    db.add_signal(task_id, None, None, None, "Use bcrypt".into())
         .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
-    assert_eq!(task.comments.len(), 1);
-    assert_eq!(task.comments[0].body, "Use bcrypt");
-    assert_eq!(task.comments[0].author, "human");
-    assert_eq!(
-        task.comments[0].created,
-        Some("2026-01-01T00:00:00Z".into())
-    );
+    assert_eq!(task.signals.len(), 1);
+    assert_eq!(task.signals[0].body, "Use bcrypt");
+    assert_eq!(task.signals[0].author, "human");
+    assert_eq!(task.signals[0].created, Some("2026-01-01T00:00:00Z".into()));
 }
 
 #[test]
@@ -1024,7 +1021,7 @@ fn test_add_agent_comment() {
         })
         .unwrap();
 
-    db.add_comment(
+    db.add_signal(
         task_id,
         Some("backend".into()),
         Some(5),
@@ -1034,7 +1031,7 @@ fn test_add_agent_comment() {
     .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
-    assert_eq!(task.comments[0].author, "Backend");
+    assert_eq!(task.signals[0].author, "Backend");
 }
 
 #[test]
@@ -1050,7 +1047,7 @@ fn test_add_comment_empty_body_rejected() {
         })
         .unwrap();
 
-    let result = db.add_comment(task_id, None, None, None, "   ".into());
+    let result = db.add_signal(task_id, None, None, None, "   ".into());
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("cannot be empty"));
 }
@@ -1058,7 +1055,7 @@ fn test_add_comment_empty_body_rejected() {
 #[test]
 fn test_add_comment_nonexistent_task() {
     let db = create_test_db();
-    let result = db.add_comment(999, None, None, None, "Hello".into());
+    let result = db.add_signal(999, None, None, None, "Hello".into());
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("does not exist"));
 }
@@ -1076,17 +1073,17 @@ fn test_update_comment_by_id() {
         })
         .unwrap();
 
-    db.add_comment(task_id, None, None, None, "Original".into())
+    db.add_signal(task_id, None, None, None, "Original".into())
         .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
-    let comment_id = task.comments[0].id;
+    let comment_id = task.signals[0].id;
 
-    db.update_comment(task_id, comment_id, "Edited".into())
+    db.update_signal(task_id, comment_id, "Edited".into())
         .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
-    assert_eq!(task.comments[0].body, "Edited");
+    assert_eq!(task.signals[0].body, "Edited");
 }
 
 #[test]
@@ -1102,28 +1099,23 @@ fn test_delete_comment_by_id() {
         })
         .unwrap();
 
-    db.add_comment(task_id, None, None, None, "First".into())
+    db.add_signal(task_id, None, None, None, "First".into())
         .unwrap();
-    db.add_comment(task_id, None, None, None, "Second".into())
+    db.add_signal(task_id, None, None, None, "Second".into())
         .unwrap();
-    db.add_comment(task_id, None, None, None, "Third".into())
+    db.add_signal(task_id, None, None, None, "Third".into())
         .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
-    let second_id = task
-        .comments
-        .iter()
-        .find(|c| c.body == "Second")
-        .unwrap()
-        .id;
+    let second_id = task.signals.iter().find(|c| c.body == "Second").unwrap().id;
 
     // Delete middle comment by stable ID
-    db.delete_comment(task_id, second_id).unwrap();
+    db.delete_signal(task_id, second_id).unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
-    assert_eq!(task.comments.len(), 2);
-    assert_eq!(task.comments[0].body, "Third");
-    assert_eq!(task.comments[1].body, "First");
+    assert_eq!(task.signals.len(), 2);
+    assert_eq!(task.signals[0].body, "Third");
+    assert_eq!(task.signals[1].body, "First");
 }
 
 #[test]
@@ -1139,7 +1131,7 @@ fn test_update_task_preserves_comments() {
         })
         .unwrap();
 
-    db.add_comment(task_id, None, None, None, "Keep me".into())
+    db.add_signal(task_id, None, None, None, "Keep me".into())
         .unwrap();
 
     db.update_task(
@@ -1155,8 +1147,8 @@ fn test_update_task_preserves_comments() {
 
     let task = db.get_task_by_id(task_id).unwrap();
     assert_eq!(task.title, "Updated");
-    assert_eq!(task.comments.len(), 1);
-    assert_eq!(task.comments[0].body, "Keep me");
+    assert_eq!(task.signals.len(), 1);
+    assert_eq!(task.signals[0].body, "Keep me");
 }
 
 // === ENRICHED TASKS tests ===
@@ -1199,12 +1191,12 @@ fn test_enriched_tasks_comments_visible() {
         ..Default::default()
     })
     .unwrap();
-    db.add_comment(1, None, None, None, "Visible in enriched".into())
+    db.add_signal(1, None, None, None, "Visible in enriched".into())
         .unwrap();
 
     let enriched = db.get_tasks();
-    assert_eq!(enriched[0].comments.len(), 1);
-    assert_eq!(enriched[0].comments[0].body, "Visible in enriched");
+    assert_eq!(enriched[0].signals.len(), 1);
+    assert_eq!(enriched[0].signals[0].body, "Visible in enriched");
 }
 
 // === INFERRED STATUS tests ===
@@ -1361,7 +1353,7 @@ fn test_export_yaml_escapes_special_chars() {
             provenance: None,
         })
         .unwrap();
-    db.add_comment(
+    db.add_signal(
         task_id,
         None,
         None,

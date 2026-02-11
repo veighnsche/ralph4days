@@ -172,7 +172,7 @@ async fn smoke_embed_store_search_render() {
             provenance: None,
             pseudocode: None,
             enriched_at: None,
-            comments: vec![],
+            signals: vec![],
             feature_display_name: "Auth".to_owned(),
             feature_acronym: "AUTH".to_owned(),
             discipline_display_name: "Backend".to_owned(),

@@ -2,18 +2,18 @@ import { useState } from 'react'
 import { QUERY_KEYS } from '@/constants/cache'
 import { useInvokeMutation } from '@/hooks/api'
 
-export function useCommentMutations(taskId: number) {
+export function useSignalMutations(taskId: number) {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editBody, setEditBody] = useState('')
   const [replyingToId, setReplyingToId] = useState<number | null>(null)
   const [replyBody, setReplyBody] = useState('')
   const [replyPriority, setReplyPriority] = useState<string | null>(null)
 
-  const addCommentMutation = useInvokeMutation<{ taskId: number; body: string }>('add_task_comment', {
+  const addSignalMutation = useInvokeMutation<{ taskId: number; body: string }>('add_task_signal', {
     invalidateKeys: QUERY_KEYS.TASKS
   })
 
-  const editComment = useInvokeMutation<{ taskId: number; commentId: number; body: string }>('update_task_comment', {
+  const editSignal = useInvokeMutation<{ taskId: number; signalId: number; body: string }>('update_task_signal', {
     invalidateKeys: QUERY_KEYS.TASKS,
     onSuccess: () => {
       setEditingId(null)
@@ -21,16 +21,16 @@ export function useCommentMutations(taskId: number) {
     }
   })
 
-  const deleteComment = useInvokeMutation<{ taskId: number; commentId: number }>('delete_task_comment', {
+  const deleteSignal = useInvokeMutation<{ taskId: number; signalId: number }>('delete_task_signal', {
     invalidateKeys: QUERY_KEYS.TASKS
   })
 
-  const replyToCommentMutation = useInvokeMutation<{
+  const replyToSignalMutation = useInvokeMutation<{
     taskId: number
-    parentCommentId: number
+    parentSignalId: number
     priority: string | null
     body: string
-  }>('add_reply_to_comment', {
+  }>('add_reply_to_signal', {
     invalidateKeys: QUERY_KEYS.TASKS,
     onSuccess: () => {
       setReplyingToId(null)
@@ -39,18 +39,18 @@ export function useCommentMutations(taskId: number) {
     }
   })
 
-  const error = addCommentMutation.error ?? editComment.error ?? deleteComment.error ?? replyToCommentMutation.error
+  const error = addSignalMutation.error ?? editSignal.error ?? deleteSignal.error ?? replyToSignalMutation.error
   const resetError = () => {
-    addCommentMutation.reset()
-    editComment.reset()
-    deleteComment.reset()
-    replyToCommentMutation.reset()
+    addSignalMutation.reset()
+    editSignal.reset()
+    deleteSignal.reset()
+    replyToSignalMutation.reset()
   }
 
   return {
-    addComment: addCommentMutation,
-    startEdit: (commentId: number, body: string) => {
-      setEditingId(commentId)
+    addSignal: addSignalMutation,
+    startEdit: (signalId: number, body: string) => {
+      setEditingId(signalId)
       setEditBody(body)
     },
     cancelEdit: () => {
@@ -59,11 +59,11 @@ export function useCommentMutations(taskId: number) {
     },
     submitEdit: () => {
       if (editingId === null || !editBody.trim()) return
-      editComment.mutate({ taskId, commentId: editingId, body: editBody.trim() })
+      editSignal.mutate({ taskId, signalId: editingId, body: editBody.trim() })
     },
-    deleteComment: (commentId: number) => deleteComment.mutate({ taskId, commentId }),
-    startReply: (commentId: number) => {
-      setReplyingToId(commentId)
+    deleteSignal: (signalId: number) => deleteSignal.mutate({ taskId, signalId: signalId }),
+    startReply: (signalId: number) => {
+      setReplyingToId(signalId)
       setReplyBody('')
       setReplyPriority(null)
     },
@@ -74,9 +74,9 @@ export function useCommentMutations(taskId: number) {
     },
     submitReply: () => {
       if (replyingToId === null || !replyBody.trim()) return
-      replyToCommentMutation.mutate({
+      replyToSignalMutation.mutate({
         taskId,
-        parentCommentId: replyingToId,
+        parentSignalId: replyingToId,
         priority: replyPriority,
         body: replyBody.trim()
       })
@@ -90,10 +90,7 @@ export function useCommentMutations(taskId: number) {
     replyPriority,
     setReplyPriority,
     isPending:
-      addCommentMutation.isPending ||
-      editComment.isPending ||
-      deleteComment.isPending ||
-      replyToCommentMutation.isPending,
+      addSignalMutation.isPending || editSignal.isPending || deleteSignal.isPending || replyToSignalMutation.isPending,
     error,
     resetError
   }

@@ -149,13 +149,13 @@ CREATE TABLE task_output_artifacts (
 ) STRICT;
 
 -- Task Comments (flat, no JSON)
-CREATE TABLE task_comments (
+CREATE TABLE task_signals (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
   discipline_id INTEGER REFERENCES disciplines(id) ON DELETE SET NULL,
   session_id TEXT,
 
-  verb TEXT NOT NULL CHECK(verb IN ('comment','done','partial','stuck','ask','flag','learned','suggest','blocked')),
+  verb TEXT NOT NULL CHECK(verb IN ('signal','done','partial','stuck','ask','flag','learned','suggest','blocked')),
 
   -- Text fields (at least ONE must be populated)
   text TEXT,
@@ -252,12 +252,12 @@ CREATE INDEX idx_task_tags_task ON task_tags(task_id);
 CREATE INDEX idx_task_deps_task ON task_dependencies(task_id);
 CREATE INDEX idx_task_deps_depends ON task_dependencies(depends_on_task_id);
 
-CREATE INDEX idx_comments_task ON task_comments(task_id);
-CREATE INDEX idx_comments_discipline ON task_comments(discipline_id);
-CREATE INDEX idx_comments_session ON task_comments(session_id);
-CREATE INDEX idx_comments_verb ON task_comments(verb);
-CREATE INDEX idx_comments_task_verb ON task_comments(task_id, verb);
-CREATE INDEX idx_comments_feature ON task_comments(feature_id);
+CREATE INDEX idx_signals_task ON task_signals(task_id);
+CREATE INDEX idx_signals_discipline ON task_signals(discipline_id);
+CREATE INDEX idx_signals_session ON task_signals(session_id);
+CREATE INDEX idx_signals_verb ON task_signals(verb);
+CREATE INDEX idx_signals_task_verb ON task_signals(task_id, verb);
+CREATE INDEX idx_signals_feature ON task_signals(feature_id);
 
 CREATE INDEX idx_feature_comments_feature ON feature_comments(feature_id);
 CREATE INDEX idx_feature_comments_category ON feature_comments(category);

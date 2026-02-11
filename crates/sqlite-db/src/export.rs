@@ -156,9 +156,9 @@ impl SqliteDb {
                 if let Some(prov) = &t.provenance {
                     output.push_str(&format!("  provenance: \"{}\"\n", prov.as_str()));
                 }
-                if !t.comments.is_empty() {
+                if !t.signals.is_empty() {
                     output.push_str("  comments:\n");
-                    for c in &t.comments {
+                    for c in &t.signals {
                         output.push_str(&format!("  - author: \"{}\"\n", yaml_escape(&c.author)));
                         output.push_str(&format!("    body: \"{}\"\n", yaml_escape(&c.body)));
                         if let Some(created) = &c.created {

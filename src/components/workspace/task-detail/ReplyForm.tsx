@@ -1,5 +1,5 @@
-import { CommentEditor } from './CommentEditor'
 import { PrioritySelect } from './PrioritySelect'
+import { SignalEditor } from './SignalEditor'
 
 interface ReplyFormProps {
   value: string
@@ -14,7 +14,7 @@ export function ReplyForm({ value, onChange, onSubmit, onCancel, priority, onPri
   return (
     <div className="ml-12 space-y-2">
       <PrioritySelect value={priority} onChange={onPriorityChange} />
-      <CommentEditor
+      <SignalEditor
         value={value}
         onChange={onChange}
         onSubmit={onSubmit}

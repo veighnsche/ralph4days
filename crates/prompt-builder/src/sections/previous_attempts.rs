@@ -4,12 +4,12 @@ use crate::recipe::Section;
 fn build(ctx: &PromptContext) -> Option<String> {
     let task = ctx.target_task()?;
 
-    if task.comments.is_empty() {
+    if task.signals.is_empty() {
         return None;
     }
 
     let mut out = String::from("## Previous Attempts\n\n");
-    for comment in &task.comments {
+    for comment in &task.signals {
         let author = &comment.author;
         out.push_str(&format!(
             "### Attempt (by {author})\n\n{}\n\n",

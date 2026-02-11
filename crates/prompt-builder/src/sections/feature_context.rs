@@ -108,7 +108,7 @@ mod tests {
             provenance: None,
             pseudocode: None,
             enriched_at: None,
-            comments: vec![],
+            signals: vec![],
             feature_display_name: "Test".to_owned(),
             feature_acronym: "TEST".to_owned(),
             discipline_display_name: "Backend".to_owned(),
