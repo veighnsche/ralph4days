@@ -215,7 +215,7 @@ impl SqliteDb {
         let Ok(mut stmt) = self.conn.prepare(
             "SELECT tc.id, COALESCE(d.display_name, 'human') as author, \
              COALESCE(tc.text, tc.summary, tc.reason, tc.question, tc.what, tc.remaining, '') as body, \
-             tc.created, tc.session_id \
+             tc.created, tc.session_id, tc.verb \
              FROM task_signals tc \
              LEFT JOIN disciplines d ON tc.discipline_id = d.id \
              WHERE tc.task_id = ?1 \
@@ -231,7 +231,7 @@ impl SqliteDb {
                 body: row.get(2)?,
                 created: row.get(3)?,
                 session_id: row.get(4)?,
-                signal_verb: None,
+                signal_verb: row.get(5)?,
                 signal_payload: None,
                 signal_answered: None,
                 parent_signal_id: None,
