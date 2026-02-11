@@ -184,7 +184,7 @@ pub fn initialize_ralph_project(
         .ralph_err(codes::PROJECT_INIT, "Failed to create .ralph/db/ directory")?;
 
     let db_path = db_dir.join("ralph.db");
-    let db = SqliteDb::open(&db_path)?;
+    let db = SqliteDb::open(&db_path, None)?;
     seed_disciplines_for_stack(&db, stack, Some(&ralph_dir))?;
     db.initialize_metadata(
         project_title.clone(),
@@ -235,7 +235,7 @@ pub fn lock_project_validated(state: &AppState, path: String) -> Result<(), Stri
     }
 
     let db_path = canonical_path.join(".ralph").join("db").join("ralph.db");
-    let db = SqliteDb::open(&db_path)?;
+    let db = SqliteDb::open(&db_path, None)?;
 
     let mut db_guard = state.db.lock().err_str(codes::INTERNAL)?;
     *db_guard = Some(db);

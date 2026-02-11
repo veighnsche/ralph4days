@@ -38,7 +38,7 @@ async fn mock_ollama_embed(embedding: Vec<f32>) -> MockServer {
 
 #[tokio::test]
 async fn should_embed_new_comment() {
-    let db = sqlite_db::SqliteDb::open_in_memory().unwrap();
+    let db = sqlite_db::SqliteDb::open_in_memory(None).unwrap();
     db.create_feature(sqlite_db::FeatureInput {
         name: "auth".to_owned(),
         display_name: "Auth".to_owned(),
@@ -65,7 +65,7 @@ async fn should_embed_new_comment() {
 
 #[tokio::test]
 async fn should_embed_unchanged_comment() {
-    let db = sqlite_db::SqliteDb::open_in_memory().unwrap();
+    let db = sqlite_db::SqliteDb::open_in_memory(None).unwrap();
     db.create_feature(sqlite_db::FeatureInput {
         name: "auth".to_owned(),
         display_name: "Auth".to_owned(),
@@ -97,7 +97,7 @@ async fn should_embed_unchanged_comment() {
 
 #[tokio::test]
 async fn should_embed_changed_comment() {
-    let db = sqlite_db::SqliteDb::open_in_memory().unwrap();
+    let db = sqlite_db::SqliteDb::open_in_memory(None).unwrap();
     db.create_feature(sqlite_db::FeatureInput {
         name: "auth".to_owned(),
         display_name: "Auth".to_owned(),

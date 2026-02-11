@@ -103,7 +103,8 @@ impl AppState {
         let recipe = prompt_builder::recipes::get(prompt_type);
         let ctx = self.build_prompt_context(project_path, None, overrides, None)?;
 
-        let (scripts, config_json) = prompt_builder::mcp::generate(&ctx, &recipe.mcp_tools);
+        let (scripts, config_json) =
+            prompt_builder::mcp::generate(&ctx, recipe.mcp_mode, &recipe.mcp_tools);
 
         self.write_mcp_artifacts(&scripts, &config_json, format!("mcp-{mode}.json"))
     }
@@ -121,7 +122,8 @@ impl AppState {
         )?;
 
         let recipe = prompt_builder::recipes::get(prompt_builder::PromptType::TaskExecution);
-        let (scripts, config_json) = prompt_builder::mcp::generate(&ctx, &recipe.mcp_tools);
+        let (scripts, config_json) =
+            prompt_builder::mcp::generate(&ctx, recipe.mcp_mode, &recipe.mcp_tools);
 
         self.write_mcp_artifacts(&scripts, &config_json, format!("mcp-task-{task_id}.json"))
     }

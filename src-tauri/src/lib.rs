@@ -138,7 +138,6 @@ pub fn run() {
             commands::features::add_feature_comment,
             commands::features::update_feature_comment,
             commands::features::delete_feature_comment,
-            commands::features::add_feature_context_file,
             commands::features::create_discipline,
             commands::features::update_discipline,
             commands::features::delete_discipline,

@@ -1,4 +1,5 @@
 use crate::mcp::tools::McpTool;
+use crate::mcp::McpMode;
 use crate::recipe::Recipe;
 use crate::sections;
 
@@ -14,6 +15,7 @@ pub fn recipe() -> Recipe {
             sections::user_input(),
             sections::braindump_instructions(),
         ],
+        mcp_mode: McpMode::BashTools,
         mcp_tools: vec![
             McpTool::CreateFeature,
             McpTool::CreateDiscipline,

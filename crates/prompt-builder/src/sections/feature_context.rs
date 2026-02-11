@@ -81,9 +81,6 @@ mod tests {
             acronym: "TEST".to_owned(),
             description: description.map(ToOwned::to_owned),
             created: None,
-            knowledge_paths: vec![],
-            context_files: vec![],
-            dependencies: vec![],
             status: FeatureStatus::Active,
             comments: vec![],
         }
@@ -100,7 +97,6 @@ mod tests {
             priority: None,
             tags: vec![],
             depends_on: vec![],
-            blocked_by: None,
             created: None,
             updated: None,
             completed: None,

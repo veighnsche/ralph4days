@@ -5,12 +5,27 @@ use crate::context::PromptContext;
 use crate::output::McpScript;
 use tools::McpTool;
 
-/// Generate MCP bash script + config JSON from context and requested tools.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum McpMode {
+    /// Legacy bash-based CRUD tools
+    BashTools,
+    /// TypeScript signal server (8 verbs: done, partial, stuck, ask, flag, learned, suggest, blocked)
+    SignalServer,
+}
+
+/// Generate MCP config for the requested mode.
 ///
-/// Returns a list of scripts to write to disk and a JSON string for the
-/// `--mcp-config` flag. When `tools` is empty, returns no scripts and an
-/// empty JSON object.
-pub fn generate(ctx: &PromptContext, tools: &[McpTool]) -> (Vec<McpScript>, String) {
+/// Returns a list of scripts to write to disk (for BashTools) and a JSON string
+/// for the `--mcp-config` flag.
+pub fn generate(ctx: &PromptContext, mode: McpMode, tools: &[McpTool]) -> (Vec<McpScript>, String) {
+    match mode {
+        McpMode::BashTools => generate_bash_tools(ctx, tools),
+        McpMode::SignalServer => generate_signal_server(ctx),
+    }
+}
+
+/// Generate bash-based MCP tools (legacy CRUD operations).
+fn generate_bash_tools(ctx: &PromptContext, tools: &[McpTool]) -> (Vec<McpScript>, String) {
     if tools.is_empty() {
         return (vec![], "{}".to_owned());
     }
@@ -24,6 +39,69 @@ pub fn generate(ctx: &PromptContext, tools: &[McpTool]) -> (Vec<McpScript>, Stri
 
     let config = generate_config(ctx, &filename);
     (scripts, config)
+}
+
+/// Generate config for the TypeScript signal server.
+fn generate_signal_server(ctx: &PromptContext) -> (Vec<McpScript>, String) {
+    let task_id = ctx
+        .target_task_id
+        .expect("SignalServer mode requires target_task_id");
+    let session_id = uuid::Uuid::new_v4().to_string();
+
+    let server_path = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(std::path::Path::to_path_buf))
+        .and_then(|p| {
+            let candidate = p.join("../crates/prompt-builder/src/mcp/task_signals_server.ts");
+            if candidate.exists() {
+                Some(candidate)
+            } else {
+                None
+            }
+        })
+        .unwrap_or_else(|| {
+            std::path::PathBuf::from("crates/prompt-builder/src/mcp/task_signals_server.ts")
+        });
+
+    let escaped_path = json_escape(&server_path.to_string_lossy());
+    let escaped_db = json_escape(&ctx.db_path);
+
+    let mut servers = Vec::new();
+
+    servers.push(format!(
+        "\"ralph-signals\":{{\"command\":\"bun\",\"args\":[\"{escaped_path}\"],\"env\":{{\"RALPH_TASK_ID\":\"{task_id}\",\"RALPH_SESSION_ID\":\"{session_id}\",\"RALPH_DB_PATH\":\"{escaped_db}\"}}}}"
+    ));
+
+    if let Some(discipline) = ctx.target_task_discipline() {
+        for mcp in &discipline.mcp_servers {
+            let name = json_escape(&mcp.name);
+            let command = json_escape(&mcp.command);
+            let args: Vec<String> = mcp
+                .args
+                .iter()
+                .map(|a| format!("\"{}\"", json_escape(a)))
+                .collect();
+            let args_str = args.join(",");
+
+            let mut server =
+                format!("\"{name}\":{{\"command\":\"{command}\",\"args\":[{args_str}]");
+
+            if !mcp.env.is_empty() {
+                let env_entries: Vec<String> = mcp
+                    .env
+                    .iter()
+                    .map(|(k, v)| format!("\"{}\":\"{}\"", json_escape(k), json_escape(v)))
+                    .collect();
+                server.push_str(&format!(",\"env\":{{{}}}", env_entries.join(",")));
+            }
+
+            server.push('}');
+            servers.push(server);
+        }
+    }
+
+    let config = format!("{{\"mcpServers\":{{{}}}}}", servers.join(","));
+    (vec![], config)
 }
 
 /// Build the complete bash MCP server script.
@@ -225,7 +303,7 @@ mod tests {
     #[test]
     fn empty_tools_returns_empty() {
         let ctx = test_context();
-        let (scripts, config) = generate(&ctx, &[]);
+        let (scripts, config) = generate(&ctx, McpMode::BashTools, &[]);
         assert!(scripts.is_empty());
         assert_eq!(config, "{}");
     }
@@ -233,7 +311,7 @@ mod tests {
     #[test]
     fn single_tool_generates_script_and_config() {
         let ctx = test_context();
-        let (scripts, config) = generate(&ctx, &[McpTool::ListTasks]);
+        let (scripts, config) = generate(&ctx, McpMode::BashTools, &[McpTool::ListTasks]);
         assert_eq!(scripts.len(), 1);
         assert_eq!(scripts[0].filename, "ralph-mcp.sh");
         assert!(scripts[0].content.contains("#!/usr/bin/env bash"));
@@ -251,7 +329,7 @@ mod tests {
             McpTool::CreateTask,
             McpTool::SetTaskStatus,
         ];
-        let (scripts, _config) = generate(&ctx, &tools);
+        let (scripts, _config) = generate(&ctx, McpMode::BashTools, &tools);
         let content = &scripts[0].content;
         assert!(content.contains("create_feature"));
         assert!(content.contains("create_task"));
@@ -275,7 +353,6 @@ mod tests {
             priority: Some(sqlite_db::Priority::Medium),
             tags: vec![],
             depends_on: vec![],
-            blocked_by: None,
             created: None,
             updated: None,
             completed: None,
@@ -319,7 +396,7 @@ mod tests {
             image_prompt: None,
         }];
 
-        let (_scripts, config) = generate(&ctx, &[McpTool::SetTaskStatus]);
+        let (_scripts, config) = generate(&ctx, McpMode::BashTools, &[McpTool::SetTaskStatus]);
         assert!(config.contains("\"browser-tools\""));
         assert!(config.contains("npx"));
         assert!(config.contains("@anthropic/browser-tools"));

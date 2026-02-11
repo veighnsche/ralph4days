@@ -1,4 +1,5 @@
 use crate::mcp::tools::McpTool;
+use crate::mcp::McpMode;
 use crate::recipe::Recipe;
 use crate::sections;
 
@@ -14,6 +15,7 @@ pub fn recipe() -> Recipe {
             sections::state_files(),
             sections::opus_review_instructions(),
         ],
+        mcp_mode: McpMode::BashTools,
         mcp_tools: vec![
             McpTool::SetTaskStatus,
             McpTool::AppendLearning,

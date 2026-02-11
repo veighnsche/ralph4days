@@ -54,8 +54,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 1. You write code that breaks tests (A)
 2. Context window fills, you compact, or you move on to other work
 3. You write more code that might break tests (B)
-4. You encounter test failures
-5. You classify them as "pre-existing" without investigation
+4. You encounter test failures (A/B), You fix (B)
+5. You classify (A) as "pre-existing" without investigation
 6. You justify using `--no-verify` to "make progress"
 7. **You commit broken code**
 

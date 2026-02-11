@@ -32,7 +32,7 @@ fn config(ollama: &OllamaConfig) -> CommentEmbeddingConfig<'_> {
 #[tokio::test]
 #[ignore]
 async fn smoke_embed_store_search_render() {
-    let db = SqliteDb::open_in_memory().unwrap();
+    let db = SqliteDb::open_in_memory(None).unwrap();
     let ollama = ollama();
     let cfg = config(&ollama);
 

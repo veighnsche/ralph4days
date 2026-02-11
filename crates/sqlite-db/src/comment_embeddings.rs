@@ -45,7 +45,8 @@ impl SqliteDb {
             "SELECT ce.comment_id, ce.embedding, fc.category, fc.body, fc.summary, fc.reason
              FROM comment_embeddings ce
              JOIN feature_comments fc ON fc.id = ce.comment_id
-             WHERE fc.feature_name = ?1",
+             JOIN features f ON fc.feature_id = f.id
+             WHERE f.name = ?1",
         ) else {
             return vec![];
         };
@@ -197,15 +198,12 @@ mod tests {
 
     #[test]
     fn upsert_and_search() {
-        let db = SqliteDb::open_in_memory().unwrap();
+        let db = SqliteDb::open_in_memory(None).unwrap();
         db.create_feature(crate::FeatureInput {
             name: "auth".to_owned(),
             display_name: "Auth".to_owned(),
             acronym: "AUTH".to_owned(),
             description: None,
-            knowledge_paths: vec![],
-            context_files: vec![],
-            dependencies: vec![],
         })
         .unwrap();
 
@@ -241,15 +239,12 @@ mod tests {
 
     #[test]
     fn search_respects_min_score() {
-        let db = SqliteDb::open_in_memory().unwrap();
+        let db = SqliteDb::open_in_memory(None).unwrap();
         db.create_feature(crate::FeatureInput {
             name: "auth".to_owned(),
             display_name: "Auth".to_owned(),
             acronym: "AUTH".to_owned(),
             description: None,
-            knowledge_paths: vec![],
-            context_files: vec![],
-            dependencies: vec![],
         })
         .unwrap();
 
@@ -280,15 +275,12 @@ mod tests {
 
     #[test]
     fn cascade_delete_removes_embedding() {
-        let db = SqliteDb::open_in_memory().unwrap();
+        let db = SqliteDb::open_in_memory(None).unwrap();
         db.create_feature(crate::FeatureInput {
             name: "auth".to_owned(),
             display_name: "Auth".to_owned(),
             acronym: "AUTH".to_owned(),
             description: None,
-            knowledge_paths: vec![],
-            context_files: vec![],
-            dependencies: vec![],
         })
         .unwrap();
 
@@ -317,7 +309,7 @@ mod tests {
 
     #[test]
     fn delete_embedding_direct() {
-        let db = SqliteDb::open_in_memory().unwrap();
+        let db = SqliteDb::open_in_memory(None).unwrap();
         db.create_feature(crate::FeatureInput {
             name: "auth".to_owned(),
             display_name: "Auth".to_owned(),
@@ -350,7 +342,7 @@ mod tests {
 
     #[test]
     fn upsert_overwrites_embedding() {
-        let db = SqliteDb::open_in_memory().unwrap();
+        let db = SqliteDb::open_in_memory(None).unwrap();
         db.create_feature(crate::FeatureInput {
             name: "auth".to_owned(),
             display_name: "Auth".to_owned(),
@@ -390,7 +382,7 @@ mod tests {
 
     #[test]
     fn search_multiple_features_isolated() {
-        let db = SqliteDb::open_in_memory().unwrap();
+        let db = SqliteDb::open_in_memory(None).unwrap();
         for (name, display, acronym) in [("auth", "Auth", "AUTH"), ("billing", "Billing", "BILL")] {
             db.create_feature(crate::FeatureInput {
                 name: name.to_owned(),
@@ -453,7 +445,7 @@ mod tests {
 
     #[test]
     fn search_ordering_by_score() {
-        let db = SqliteDb::open_in_memory().unwrap();
+        let db = SqliteDb::open_in_memory(None).unwrap();
         db.create_feature(crate::FeatureInput {
             name: "auth".to_owned(),
             display_name: "Auth".to_owned(),

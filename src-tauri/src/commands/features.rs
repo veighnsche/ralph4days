@@ -153,9 +153,6 @@ pub struct FeatureData {
     pub acronym: String,
     pub description: Option<String>,
     pub created: Option<String>,
-    pub knowledge_paths: Vec<String>,
-    pub context_files: Vec<String>,
-    pub dependencies: Vec<String>,
     pub status: String,
     pub comments: Vec<FeatureCommentData>,
 }
@@ -187,9 +184,6 @@ pub fn get_features(state: State<'_, AppState>) -> Result<Vec<FeatureData>, Stri
             acronym: f.acronym.clone(),
             description: f.description.clone(),
             created: f.created.clone(),
-            knowledge_paths: f.knowledge_paths.clone(),
-            context_files: f.context_files.clone(),
-            dependencies: f.dependencies.clone(),
             status: f.status.as_str().to_owned(),
             comments: f.comments.iter().map(to_comment_data).collect(),
         })
@@ -202,9 +196,6 @@ pub struct CreateFeatureParams {
     pub display_name: String,
     pub acronym: String,
     pub description: Option<String>,
-    pub knowledge_paths: Option<Vec<String>>,
-    pub context_files: Option<Vec<String>>,
-    pub dependencies: Option<Vec<String>>,
 }
 
 #[tauri::command]
@@ -219,9 +210,6 @@ pub fn create_feature(
         display_name: params.display_name,
         acronym: params.acronym,
         description: params.description,
-        knowledge_paths: params.knowledge_paths.unwrap_or_default(),
-        context_files: params.context_files.unwrap_or_default(),
-        dependencies: params.dependencies.unwrap_or_default(),
     })
 }
 
@@ -231,9 +219,6 @@ pub struct UpdateFeatureParams {
     pub display_name: String,
     pub acronym: String,
     pub description: Option<String>,
-    pub knowledge_paths: Option<Vec<String>>,
-    pub context_files: Option<Vec<String>>,
-    pub dependencies: Option<Vec<String>>,
 }
 
 #[tauri::command]
@@ -247,9 +232,6 @@ pub fn update_feature(
         display_name: params.display_name,
         acronym: params.acronym,
         description: params.description,
-        knowledge_paths: params.knowledge_paths.unwrap_or_default(),
-        context_files: params.context_files.unwrap_or_default(),
-        dependencies: params.dependencies.unwrap_or_default(),
     })
 }
 
@@ -306,7 +288,7 @@ pub async fn add_feature_comment(
     let result =
         ralph_external::comment_embeddings::embed_text(&embed_config, &embedding_text).await?;
 
-    let db = sqlite_db::SqliteDb::open(&path)?;
+    let db = sqlite_db::SqliteDb::open(&path, None)?;
     db.upsert_comment_embedding(comment_id, &result.vector, &result.model, &result.hash)
 }
 
@@ -369,7 +351,7 @@ pub async fn update_feature_comment(
     let result =
         ralph_external::comment_embeddings::embed_text(&embed_config, &embedding_text).await?;
 
-    let db = sqlite_db::SqliteDb::open(&path)?;
+    let db = sqlite_db::SqliteDb::open(&path, None)?;
     db.upsert_comment_embedding(
         params.comment_id,
         &result.vector,
@@ -508,16 +490,6 @@ pub fn update_discipline(
         crops: None,
         image_prompt: None,
     })
-}
-
-#[tauri::command]
-pub fn add_feature_context_file(
-    state: State<'_, AppState>,
-    feature_name: String,
-    file_path: String,
-) -> Result<bool, String> {
-    let db = get_db(&state)?;
-    db.add_feature_context_file(&feature_name, &file_path, 100)
 }
 
 #[tauri::command]

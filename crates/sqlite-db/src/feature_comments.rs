@@ -1,6 +1,7 @@
 use crate::types::FeatureComment;
 use crate::SqliteDb;
 use ralph_errors::{codes, ralph_err, RalphResultExt};
+use rusqlite::OptionalExtension;
 use std::collections::HashMap;
 
 pub struct AddFeatureCommentInput {
@@ -23,33 +24,48 @@ impl SqliteDb {
             return ralph_err!(codes::COMMENT_OPS, "Comment category cannot be empty");
         }
 
-        let exists: bool = self
+        let feature_id: Option<i64> = self
             .conn
             .query_row(
-                "SELECT COUNT(*) > 0 FROM features WHERE name = ?1",
+                "SELECT id FROM features WHERE name = ?1",
                 [&input.feature_name],
                 |row| row.get(0),
             )
+            .optional()
             .ralph_err(codes::DB_READ, "Failed to check feature")?;
-        if !exists {
-            return ralph_err!(
+
+        let feature_id = feature_id.ok_or_else(|| {
+            format!(
+                "[R-{}] Feature '{}' does not exist",
                 codes::COMMENT_OPS,
-                "Feature '{}' does not exist",
                 input.feature_name
-            );
-        }
+            )
+        })?;
+
+        let discipline_id: Option<i64> = if let Some(ref disc) = input.discipline {
+            self.conn
+                .query_row(
+                    "SELECT id FROM disciplines WHERE name = ?1",
+                    [disc],
+                    |row| row.get(0),
+                )
+                .optional()
+                .ralph_err(codes::DB_READ, "Failed to check discipline")?
+        } else {
+            None
+        };
 
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
 
         self.conn
             .execute(
                 "INSERT INTO feature_comments \
-                 (feature_name, category, discipline, agent_task_id, body, summary, reason, source_iteration, created, updated) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
+                 (feature_id, category, discipline_id, agent_task_id, body, summary, reason, source_iteration, created) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
                 rusqlite::params![
-                    input.feature_name,
+                    feature_id,
                     input.category.trim(),
-                    input.discipline,
+                    discipline_id,
                     input.agent_task_id,
                     input.body.trim(),
                     input.summary,
@@ -75,14 +91,32 @@ impl SqliteDb {
             return ralph_err!(codes::COMMENT_OPS, "Comment body cannot be empty");
         }
 
+        let feature_id: Option<i64> = self
+            .conn
+            .query_row(
+                "SELECT id FROM features WHERE name = ?1",
+                [feature_name],
+                |row| row.get(0),
+            )
+            .optional()
+            .ralph_err(codes::DB_READ, "Failed to check feature")?;
+
+        let feature_id = feature_id.ok_or_else(|| {
+            format!(
+                "[R-{}] Feature '{}' does not exist",
+                codes::COMMENT_OPS,
+                feature_name
+            )
+        })?;
+
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
 
         let affected = self
             .conn
             .execute(
                 "UPDATE feature_comments SET body = ?1, summary = ?2, reason = ?3, updated = ?4 \
-                 WHERE id = ?5 AND feature_name = ?6",
-                rusqlite::params![body.trim(), summary, reason, now, comment_id, feature_name],
+                 WHERE id = ?5 AND feature_id = ?6",
+                rusqlite::params![body.trim(), summary, reason, now, comment_id, feature_id],
             )
             .ralph_err(codes::DB_WRITE, "Failed to update feature comment")?;
 
@@ -101,11 +135,29 @@ impl SqliteDb {
         feature_name: &str,
         comment_id: u32,
     ) -> Result<(), String> {
+        let feature_id: Option<i64> = self
+            .conn
+            .query_row(
+                "SELECT id FROM features WHERE name = ?1",
+                [feature_name],
+                |row| row.get(0),
+            )
+            .optional()
+            .ralph_err(codes::DB_READ, "Failed to check feature")?;
+
+        let feature_id = feature_id.ok_or_else(|| {
+            format!(
+                "[R-{}] Feature '{}' does not exist",
+                codes::COMMENT_OPS,
+                feature_name
+            )
+        })?;
+
         let affected = self
             .conn
             .execute(
-                "DELETE FROM feature_comments WHERE id = ?1 AND feature_name = ?2",
-                rusqlite::params![comment_id, feature_name],
+                "DELETE FROM feature_comments WHERE id = ?1 AND feature_id = ?2",
+                rusqlite::params![comment_id, feature_id],
             )
             .ralph_err(codes::DB_WRITE, "Failed to delete feature comment")?;
 
@@ -121,8 +173,11 @@ impl SqliteDb {
 
     pub(crate) fn get_all_comments_by_feature(&self) -> HashMap<String, Vec<FeatureComment>> {
         let Ok(mut stmt) = self.conn.prepare(
-            "SELECT id, feature_name, category, discipline, agent_task_id, body, summary, reason, source_iteration, created, updated \
-             FROM feature_comments ORDER BY feature_name, id DESC",
+            "SELECT fc.id, f.name, fc.category, d.name, fc.agent_task_id, fc.body, fc.summary, fc.reason, fc.source_iteration, fc.created, fc.updated \
+             FROM feature_comments fc \
+             JOIN features f ON fc.feature_id = f.id \
+             LEFT JOIN disciplines d ON fc.discipline_id = d.id \
+             ORDER BY f.name, fc.id DESC",
         ) else {
             return HashMap::new();
         };

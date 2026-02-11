@@ -3,6 +3,7 @@ use serde::Serialize;
 use crate::context::PromptContext;
 use crate::mcp;
 use crate::mcp::tools::McpTool;
+use crate::mcp::McpMode;
 use crate::output::PromptOutput;
 
 /// A named prompt section. Takes full context, returns None to skip.
@@ -11,10 +12,11 @@ pub struct Section {
     pub build: fn(&PromptContext) -> Option<String>,
 }
 
-/// A complete prompt recipe: which sections in which order + which MCP tools.
+/// A complete prompt recipe: which sections in which order + which MCP configuration.
 pub struct Recipe {
     pub name: &'static str,
     pub sections: Vec<Section>,
+    pub mcp_mode: McpMode,
     pub mcp_tools: Vec<McpTool>,
 }
 
@@ -94,7 +96,7 @@ pub fn execute_recipe(recipe: &Recipe, ctx: &PromptContext) -> PromptOutput {
         "Prompt sections built"
     );
 
-    let (mcp_scripts, mcp_config_json) = mcp::generate(ctx, &recipe.mcp_tools);
+    let (mcp_scripts, mcp_config_json) = mcp::generate(ctx, recipe.mcp_mode, &recipe.mcp_tools);
 
     tracing::info!(
         recipe_name = recipe.name,
@@ -147,6 +149,7 @@ mod tests {
                     build: dummy_section_c,
                 },
             ],
+            mcp_mode: McpMode::BashTools,
             mcp_tools: vec![],
         };
         let ctx = test_context();

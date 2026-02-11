@@ -1,0 +1,9 @@
+{
+  "name": "ralph-task-signals-mcp",
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "tsx": "^4.19.2"
+  }
+}

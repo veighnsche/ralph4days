@@ -1,4 +1,4 @@
-use crate::mcp::tools::McpTool;
+use crate::mcp::McpMode;
 use crate::recipe::Recipe;
 use crate::sections;
 
@@ -6,7 +6,6 @@ pub fn recipe() -> Recipe {
     Recipe {
         name: "task_execution",
         sections: vec![
-            // Order matters for recency bias — most important last
             sections::project_context(),
             sections::discipline_persona(),
             sections::feature_context(),
@@ -19,10 +18,7 @@ pub fn recipe() -> Recipe {
             sections::task_files(),
             sections::task_exec_instructions(),
         ],
-        mcp_tools: vec![
-            McpTool::SetTaskStatus,
-            McpTool::AppendLearning,
-            McpTool::AddContextFile,
-        ],
+        mcp_mode: McpMode::SignalServer,
+        mcp_tools: vec![],
     }
 }

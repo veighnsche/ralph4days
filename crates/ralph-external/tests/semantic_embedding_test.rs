@@ -141,7 +141,7 @@ async fn embed_all_comments(db: &SqliteDb, config: &CommentEmbeddingConfig<'_>) 
 #[tokio::test]
 #[ignore]
 async fn semantic_search_surfaces_relevant_auth_comments() {
-    let db = SqliteDb::open_in_memory().unwrap();
+    let db = SqliteDb::open_in_memory(None).unwrap();
     let ollama = default_ollama();
     let config = embed_config(&ollama);
 
@@ -175,7 +175,7 @@ async fn semantic_search_surfaces_relevant_auth_comments() {
 #[tokio::test]
 #[ignore]
 async fn semantic_search_isolates_features() {
-    let db = SqliteDb::open_in_memory().unwrap();
+    let db = SqliteDb::open_in_memory(None).unwrap();
     let ollama = default_ollama();
     let config = embed_config(&ollama);
 
@@ -213,7 +213,7 @@ async fn semantic_search_isolates_features() {
 #[tokio::test]
 #[ignore]
 async fn semantic_search_feeds_into_prompt_builder() {
-    let db = SqliteDb::open_in_memory().unwrap();
+    let db = SqliteDb::open_in_memory(None).unwrap();
     let ollama = default_ollama();
     let config = embed_config(&ollama);
 

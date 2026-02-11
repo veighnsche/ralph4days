@@ -1,4 +1,5 @@
 use crate::mcp::tools::McpTool;
+use crate::mcp::McpMode;
 use crate::recipe::Recipe;
 use crate::sections;
 
@@ -16,6 +17,7 @@ pub fn recipe() -> Recipe {
             sections::task_listing(),
             sections::enrichment_instructions(),
         ],
+        mcp_mode: McpMode::BashTools,
         mcp_tools: vec![
             McpTool::EnrichTask,
             McpTool::UpdateTask,
