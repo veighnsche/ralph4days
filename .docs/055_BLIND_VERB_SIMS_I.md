@@ -49,3 +49,39 @@ I implement option 2 (assign to dominant speaker) and add a confidence score. Bu
 **Result:** 4/4 friction points map to 8-verb set. Continue looping.
 
 ---
+
+## Simulation #22 (Ralph Loop Iteration 2)
+
+**Project:** Internal HR portal (Next.js/TypeScript)
+**Feature:** time-off-management
+**Discipline:** fullstack
+**Task:** Build the leave request workflow: employees submit requests, managers approve/deny, HR gets audit trail. Must enforce company policies (max 30 days/year, blackout dates).
+**Complication:** Task description contradicts codebase
+
+### Walkthrough
+
+I read the task. It says "enforce company policies" — max 30 days/year. I search the codebase for where policies are stored. I find a `policies.ts` file with hardcoded constants: `MAX_ANNUAL_LEAVE: 25`. **The task says 30, the code says 25. Which is correct?** I search for tickets or comments. Nothing.
+
+I check git history. The policy was set to 25 three months ago. The task was written last week. Either the policy changed and the task wasn't updated, or the task writer got the number wrong. **I have no way to know which.**
+
+I also search for blackout dates. The codebase doesn't have a blackout_dates table or configuration. **Do I create it? Should I assume blackout dates are managed elsewhere? The task says "enforce company policies" but doesn't specify where they come from.**
+
+I also realize: "max 30 days/year" is ambiguous. Is it calendar year or fiscal year? Renewable or use-it-or-lose-it? Can employees carry over unused days? **The task doesn't say, and I need to pick.**
+
+I decide: use the hardcoded 25 (trusting the code over the task), create a blackout_dates table (assuming it's needed), assume calendar year with no carryover. But **I'm making three assumptions, each of which could be wrong.**
+
+### Friction Points Extracted
+
+1. **ask** — Policy max: 25 or 30? Calendar or fiscal year? Carryover allowed?
+2. **flag** — Task description contradicts codebase (30 vs 25)
+3. **learned** — Chose to trust code over task; calendar year with no carryover
+
+### Validation
+
+- `ask` ✓ (multiple decisions needed)
+- `flag` ✓ (contradiction found)
+- `learned` ✓ (design assumptions recorded)
+
+**Result:** 3/3 friction points map to 8-verb set. Continue looping.
+
+---
