@@ -46,6 +46,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Two task creation paths: agent-structured (robot icon) vs human-explained (message icon)
 - **Dynamic MCP servers** — Ralph generates bash MCP servers on-the-fly, giving Claude access to `.ralph/db/` as tools/resources. Restarting Claude with new MCP config is core to "ralphing" (perfect prompt + perfect toolset for Haiku)
 
+## CRITICAL: MCP Signal Interface Is Frozen
+
+**The agent-facing MCP signal interface from `.docs/057_MCP_EXHAUST_PIPE_FINAL_DESIGN.md` is complete and MUST NOT be changed.** The 8 verbs (`done`, `partial`, `stuck`, `ask`, `flag`, `learned`, `suggest`, `blocked`) with their exact parameter schemas are the result of 83 simulations and extensive validation. This interface is frozen.
+
+**Implementation detail:** While the MCP interface is frozen, the internal storage mechanism can change. Currently signals may be stored in `task_signals` table OR encoded as formatted comments in `task_comments`. The MCP server acts as a translation layer — agents call clean typed tools, Ralph stores however it needs to.
+
+**Rule:** Never modify the MCP tool signatures, parameter names, or verb behavior described in doc 057. If storage changes, add a translation layer. The agent-facing API is sacred.
+
 ## CRITICAL: MCP dev_tauri Is for the User
 
 **`start_dev_tauri` hands the app to the user for visual inspection. NEVER call `stop_dev_tauri` after.** The only reason to stop is when you need to edit Rust code, Cargo.toml, or tauri.conf.json (Tauri hot-reloads and triggers rebuilds). After those edits, restart it. "Task complete" is NOT a reason to stop — leave it running so the user can inspect.
