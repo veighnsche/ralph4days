@@ -29,6 +29,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **No parallel implementations, feature flags, view toggles, or alternate modes.** When asked to "add a view" or "add a mode", interpret as: same data/logic/path, different presentation only. Consolidate or delete duplicates immediately. This prevents reward hacking and feature bloat.
 
+## CRITICAL: No Backwards Compatibility Wrappers
+
+**NEVER create wrapper functions for backwards compatibility. ALWAYS break the API and fix call sites.** When modifying a function signature, do NOT keep the old version alongside a `_with_foo` variant. Change the function, let the compiler scream, and fix every call site. Backwards compatibility wrappers are lazy technical debt that multiply maintenance burden.
+
+**Examples of FORBIDDEN patterns:**
+- `open(path)` + `open_with_clock(path, clock)` — NO. Make clock a parameter with a default.
+- `create_task(...)` + `create_task_with_priority(...)` — NO. Add priority parameter.
+- `build()` + `build_with_config()` — NO. Change the signature.
+
+**The correct approach:**
+1. Change the function signature
+2. Run `cargo check` or equivalent
+3. Fix every compiler error at call sites
+4. Commit once when all call sites are fixed
+
+**Why this matters:** Every wrapper function is 10+ lines of duplication. When the core logic changes, you must update N functions instead of 1. This wastes tokens, creates bugs, and makes the codebase unmaintainable.
+
 ## CRITICAL: Centralized Error Handling
 
 **All Rust error types flow through `crates/ralph-errors`.** Never define `RalphError`, error code constants, or error macros in any other crate. Every crate that returns `Result<T, String>` must depend on `ralph-errors` and use the `.ralph()` extension method (preferred) or `ralph_err!` / `ralph_map_err!` macros. Domain-specific error enums are allowed only when they don't use error codes and stay internal to their crate.
