@@ -53,7 +53,7 @@ fn initialize_project_for_fixture(
 
     // Create and initialize the SQLite database
     let db_path = db_dir.join("ralph.db");
-    let db = SqliteDb::open_with_clock(&db_path, fixed_clock())?;
+    let db = SqliteDb::open(&db_path, Some(fixed_clock()))?;
     for d in predefined_disciplines::get_disciplines_for_stack(2) {
         let skills_json = serde_json::to_string(&d.skills).unwrap_or_else(|_| "[]".to_owned());
 
@@ -135,7 +135,7 @@ fn fixed_clock() -> Box<dyn sqlite_db::Clock> {
 
 fn open_fixture_db(fixture_path: &Path) -> SqliteDb {
     let db_path = fixture_path.join(".undetect-ralph/db/ralph.db");
-    SqliteDb::open_with_clock(&db_path, fixed_clock()).unwrap()
+    SqliteDb::open(&db_path, Some(fixed_clock())).unwrap()
 }
 
 /// Generate 00-empty-project fixture (before initialization)
@@ -553,7 +553,6 @@ just dev-mock 04-desktop-dev
         display_name: "Bookmark CRUD".to_owned(),
         acronym: "BKMK".to_owned(),
         description: Some("Core bookmark create, read, update, delete operations".to_owned()),
-        ..Default::default()
     })
     .unwrap();
     db.create_feature(FeatureInput {
@@ -561,7 +560,6 @@ just dev-mock 04-desktop-dev
         display_name: "Collections".to_owned(),
         acronym: "COLL".to_owned(),
         description: Some("Organize bookmarks into named collections".to_owned()),
-        ..Default::default()
     })
     .unwrap();
     db.create_feature(FeatureInput {
@@ -569,7 +567,6 @@ just dev-mock 04-desktop-dev
         display_name: "Search".to_owned(),
         acronym: "SRCH".to_owned(),
         description: Some("Full-text search and filtering across bookmarks".to_owned()),
-        ..Default::default()
     })
     .unwrap();
     db.create_feature(FeatureInput {
@@ -577,7 +574,6 @@ just dev-mock 04-desktop-dev
         display_name: "Import Export".to_owned(),
         acronym: "IMEX".to_owned(),
         description: Some("Import from HTML, export to JSON".to_owned()),
-        ..Default::default()
     })
     .unwrap();
     db.create_feature(FeatureInput {
@@ -585,7 +581,6 @@ just dev-mock 04-desktop-dev
         display_name: "Settings".to_owned(),
         acronym: "STNG".to_owned(),
         description: Some("User preferences and theme configuration".to_owned()),
-        ..Default::default()
     })
     .unwrap();
 
@@ -1441,15 +1436,17 @@ just dev-mock 04-desktop-dev
         .unwrap();
     db.execute_raw("UPDATE tasks SET status = 'in_progress', updated = '2025-01-21' WHERE id = 9")
         .unwrap();
-    db.execute_raw("UPDATE tasks SET status = 'blocked', blocked_by = 'Waiting for search index (#13)' WHERE id = 14").unwrap();
-    db.execute_raw(
-        "UPDATE tasks SET status = 'blocked', blocked_by = 'Needs HTML parser (#16)' WHERE id = 17",
-    )
-    .unwrap();
+    db.execute_raw("UPDATE tasks SET status = 'blocked' WHERE id = 14")
+        .unwrap();
+    db.execute_raw("UPDATE tasks SET status = 'blocked' WHERE id = 17")
+        .unwrap();
     db.execute_raw("UPDATE tasks SET status = 'skipped' WHERE id = 19")
         .unwrap();
 
     // --- Task Signals (as structured comments) ---
+    // TODO: Reimplement signal examples with new canonical schema (discipline_id, verb, text fields)
+    // Commented out during Phase 2 schema migration
+    /*
     // Task 4 (in_progress, unit tests): 2 sessions with mixed verbs
     // Session 1: flag + learned + partial
     db.execute_raw(
@@ -1541,13 +1538,14 @@ just dev-mock 04-desktop-dev
         (21, 'sess-21-ref', 'frontend', 'blocked', '{\"on\":\"__DEPENDENCY kind — Blocked by missing code/API from another task. Example: Need backend API endpoint POST /export/stream for server-side export generation.\",\"kind\":\"dependency\",\"detail\":\"__Client-side export works for <1000 bookmarks but crashes tab with larger datasets. Need streaming response.\"}', '__BLOCKED (DEPENDENCY kind) — Waiting on another task/team.\n\n__kind: dependency\n\n__on: Need backend API endpoint POST /export/stream for server-side export generation.\n\n__detail: Client-side export works for <1000 bookmarks but crashes tab with larger datasets. Need streaming response.', '2025-01-22 14:36:00'),
         (21, 'sess-21-ref', 'frontend', 'blocked', '{\"on\":\"__ENVIRONMENT kind — Blocked by dev environment or tooling issue. Example: Bun v1.2+ required for File System Access API — CI still running Bun v1.0.15.\",\"kind\":\"environment\"}', '__BLOCKED (ENVIRONMENT kind) — Dev environment or tooling blocker.\n\n__kind: environment\n\n__on: Bun v1.2+ required for File System Access API — CI still running Bun v1.0.15.', '2025-01-22 14:38:00')"
     ).unwrap();
+    */
 
     println!(
         "\n✓ Created 04-desktop-dev fixture at: {}",
         fixture_path.display()
     );
     println!("  5 features, 21 tasks (4 done, 3 in_progress, 11 pending, 2 blocked, 1 skipped)");
-    println!("  37 signals across 10 sessions on 8 tasks (all 8 verbs represented)");
+    // println!("  37 signals across 10 sessions on 8 tasks (all 8 verbs represented)");
     println!("  → Task #21: MCP Signal Reference with ALL 8 VERBS + VARIANTS (15 signals)");
 }
 
