@@ -146,7 +146,7 @@ pub fn get_tasks(state: State<'_, AppState>) -> Result<Vec<sqlite_db::Task>, Str
 pub fn get_task_signals(
     state: State<'_, AppState>,
     task_id: u32,
-) -> Result<Vec<sqlite_db::TaskSignal>, String> {
+) -> Result<Vec<sqlite_db::TaskComment>, String> {
     let db = get_db(&state)?;
     db.get_task_signals(task_id)
 }
@@ -168,4 +168,16 @@ pub fn answer_ask(
 ) -> Result<(), String> {
     let db = get_db(&state)?;
     db.answer_ask(signal_id, answer)
+}
+
+#[tauri::command]
+pub fn add_reply_to_comment(
+    state: State<'_, AppState>,
+    task_id: u32,
+    parent_comment_id: u32,
+    priority: Option<String>,
+    body: String,
+) -> Result<(), String> {
+    let db = get_db(&state)?;
+    db.add_comment_with_parent(task_id, None, priority, body, Some(parent_comment_id))
 }

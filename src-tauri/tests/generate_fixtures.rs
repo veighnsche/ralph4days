@@ -1269,12 +1269,41 @@ just dev-mock 04-desktop-dev
         })
         .unwrap();
 
-    // Set provenance on all 20 tasks via raw SQL
+    // Task 21: MCP Verb Reference (ALL 8 SIGNALS IN ONE TASK)
+    let _id21 = db
+        .create_task(TaskInput {
+            feature: "bookmark-crud".to_owned(),
+            discipline: "frontend".to_owned(),
+            title: "🔬 MCP Signal Reference — All 8 Verbs".to_owned(),
+            description: Some(
+                "**DEV ONLY:** This task demonstrates all 8 MCP exhaust pipe verbs in a single timeline. Each signal showcases the full schema for that verb type. Use this as a visual reference for signal rendering.".to_owned(),
+            ),
+            status: None,
+            priority: Some(sqlite_db::Priority::Low),
+            tags: vec!["dev".to_owned(), "reference".to_owned(), "mcp-signals".to_owned()],
+            depends_on: vec![],
+            acceptance_criteria: Some(vec![
+                "All 8 MCP verbs represented in comment timeline".to_owned(),
+                "Each signal uses full schema for that verb".to_owned(),
+            ]),
+            context_files: vec![],
+            output_artifacts: vec![],
+            hints: Some("This is a fixture-only reference task. Delete before production.".to_owned()),
+            estimated_turns: None,
+            provenance: None,
+        })
+        .unwrap();
+
+    // Set provenance on all 21 tasks via raw SQL
     db.execute_raw("UPDATE tasks SET provenance = 'agent' WHERE id IN (1,3,4,5,6,8,9,10,12,13,14,15,16,17,18,20)")
         .unwrap();
-    db.execute_raw("UPDATE tasks SET provenance = 'human' WHERE id IN (2,7,11)")
+    db.execute_raw("UPDATE tasks SET provenance = 'human' WHERE id IN (2,7,11,21)")
         .unwrap();
     db.execute_raw("UPDATE tasks SET provenance = 'system' WHERE id = 19")
+        .unwrap();
+
+    // Mark task 21 as in_progress so signals are visible
+    db.execute_raw("UPDATE tasks SET status = 'in_progress', updated = '2025-01-22' WHERE id = 21")
         .unwrap();
 
     db.add_comment(
@@ -1425,18 +1454,18 @@ just dev-mock 04-desktop-dev
     // Session 1: flag + learned + partial
     db.execute_raw(
         "INSERT INTO task_comments (task_id, session_id, author, signal_verb, signal_payload, body, created) VALUES
-        (4, 'sess-4a-001', 'frontend', 'flag', '{\"what\":\"Empty URL string passes bookmark validation\",\"severity\":\"warning\",\"category\":\"bug\"}', '🚩 **Flag (warning):** Empty URL string passes bookmark validation\n\n**Category:** bug', '2025-01-20 10:05:00'),
-        (4, 'sess-4a-001', 'frontend', 'learned', '{\"text\":\"localStorage has a 5MB quota per origin in Chromium\",\"kind\":\"discovery\",\"scope\":\"feature\",\"rationale\":\"Needed to calculate max bookmarks before quota hit\"}', '💡 **Learned (discovery):** localStorage has a 5MB quota per origin in Chromium\n\n**Rationale:** Needed to calculate max bookmarks before quota hit\n\n**Scope:** feature', '2025-01-20 10:12:00'),
-        (4, 'sess-4a-001', 'frontend', 'partial', '{\"summary\":\"Wrote 12 of 18 planned test cases for CRUD operations\",\"remaining\":\"Need delete edge cases and bulk operations tests\"}', '⊙ **Partial:** Wrote 12 of 18 planned test cases for CRUD operations\n\n**Remaining:** Need delete edge cases and bulk operations tests', '2025-01-20 10:30:00')"
+        (4, 'sess-4a-001', 'quality', 'flag', '{\"what\":\"Empty URL string passes bookmark validation\",\"severity\":\"warning\",\"category\":\"bug\"}', '🚩 **Flag (warning):** Empty URL string passes bookmark validation\n\n**Category:** bug', '2025-01-20 10:05:00'),
+        (4, 'sess-4a-001', 'quality', 'learned', '{\"text\":\"localStorage has a 5MB quota per origin in Chromium\",\"kind\":\"discovery\",\"scope\":\"feature\",\"rationale\":\"Needed to calculate max bookmarks before quota hit\"}', '💡 **Learned (discovery):** localStorage has a 5MB quota per origin in Chromium\n\n**Rationale:** Needed to calculate max bookmarks before quota hit\n\n**Scope:** feature', '2025-01-20 10:12:00'),
+        (4, 'sess-4a-001', 'quality', 'partial', '{\"summary\":\"Wrote 12 of 18 planned test cases for CRUD operations\",\"remaining\":\"Need delete edge cases and bulk operations tests\"}', '⊙ **Partial:** Wrote 12 of 18 planned test cases for CRUD operations\n\n**Remaining:** Need delete edge cases and bulk operations tests', '2025-01-20 10:30:00')"
     ).unwrap();
 
     // Session 2: ask (blocking, unanswered) + flag + learned + stuck
     db.execute_raw(
         "INSERT INTO task_comments (task_id, session_id, author, signal_verb, signal_payload, body, created) VALUES
-        (4, 'sess-4b-002', 'frontend', 'ask', '{\"question\":\"Should empty URL strings be treated as validation errors or silently skipped?\",\"options\":[\"Reject with error\",\"Skip silently\",\"Auto-fill with placeholder URL\"],\"preferred\":\"Reject with error\",\"blocking\":true}', '❓ **Ask (blocking):** Should empty URL strings be treated as validation errors or silently skipped?\n\n**Preferred:** Reject with error\n\n**Options:**\n- Reject with error\n- Skip silently\n- Auto-fill with placeholder URL', '2025-01-20 14:00:00'),
-        (4, 'sess-4b-002', 'frontend', 'flag', '{\"what\":\"Unicode URLs cause double-encoding in localStorage keys\",\"severity\":\"blocking\",\"category\":\"bug\"}', '🚩 **Flag (blocking):** Unicode URLs cause double-encoding in localStorage keys\n\n**Category:** bug', '2025-01-20 14:15:00'),
-        (4, 'sess-4b-002', 'frontend', 'learned', '{\"text\":\"Vitest mocks of localStorage need explicit reset between tests or state leaks across suites\",\"kind\":\"convention\",\"scope\":\"task\"}', '💡 **Learned (convention):** Vitest mocks of localStorage need explicit reset between tests or state leaks across suites\n\n**Scope:** task', '2025-01-20 14:20:00'),
-        (4, 'sess-4b-002', 'frontend', 'stuck', '{\"reason\":\"Cannot proceed with delete tests until the empty URL validation question is answered — test assertions depend on the expected behavior\"}', '⚠ **Stuck:** Cannot proceed with delete tests until the empty URL validation question is answered — test assertions depend on the expected behavior', '2025-01-20 14:25:00')"
+        (4, 'sess-4b-002', 'quality', 'ask', '{\"question\":\"Should empty URL strings be treated as validation errors or silently skipped?\",\"options\":[\"Reject with error\",\"Skip silently\",\"Auto-fill with placeholder URL\"],\"preferred\":\"Reject with error\",\"blocking\":true}', '❓ **Ask (blocking):** Should empty URL strings be treated as validation errors or silently skipped?\n\n**Preferred:** Reject with error\n\n**Options:**\n- Reject with error\n- Skip silently\n- Auto-fill with placeholder URL', '2025-01-20 14:00:00'),
+        (4, 'sess-4b-002', 'quality', 'flag', '{\"what\":\"Unicode URLs cause double-encoding in localStorage keys\",\"severity\":\"blocking\",\"category\":\"bug\"}', '🚩 **Flag (blocking):** Unicode URLs cause double-encoding in localStorage keys\n\n**Category:** bug', '2025-01-20 14:15:00'),
+        (4, 'sess-4b-002', 'quality', 'learned', '{\"text\":\"Vitest mocks of localStorage need explicit reset between tests or state leaks across suites\",\"kind\":\"convention\",\"scope\":\"task\"}', '💡 **Learned (convention):** Vitest mocks of localStorage need explicit reset between tests or state leaks across suites\n\n**Scope:** task', '2025-01-20 14:20:00'),
+        (4, 'sess-4b-002', 'quality', 'stuck', '{\"reason\":\"Cannot proceed with delete tests until the empty URL validation question is answered — test assertions depend on the expected behavior\"}', '⚠ **Stuck:** Cannot proceed with delete tests until the empty URL validation question is answered — test assertions depend on the expected behavior', '2025-01-20 14:25:00')"
     ).unwrap();
 
     // Task 9 (in_progress, collection sidebar): 1 session with suggest + partial
@@ -1451,16 +1480,16 @@ just dev-mock 04-desktop-dev
     // Session 1: blocked + partial
     db.execute_raw(
         "INSERT INTO task_comments (task_id, session_id, author, signal_verb, signal_payload, body, created) VALUES
-        (3, 'sess-3a-001', 'frontend', 'blocked', '{\"on\":\"localStorage API not available in test environment\",\"kind\":\"environment\",\"detail\":\"Vitest runs in Node where localStorage is not defined. Need to configure jsdom or add a mock.\"}', '🚫 **Blocked (environment):** localStorage API not available in test environment\n\n**Detail:** Vitest runs in Node where localStorage is not defined. Need to configure jsdom or add a mock.', '2025-01-17 11:00:00'),
-        (3, 'sess-3a-001', 'frontend', 'partial', '{\"summary\":\"CRUD functions written but untestable without localStorage mock\",\"remaining\":\"Configure jsdom environment for tests, then verify all operations\"}', '⊙ **Partial:** CRUD functions written but untestable without localStorage mock\n\n**Remaining:** Configure jsdom environment for tests, then verify all operations', '2025-01-17 11:30:00')"
+        (3, 'sess-3a-001', 'backend', 'blocked', '{\"on\":\"localStorage API not available in test environment\",\"kind\":\"environment\",\"detail\":\"Vitest runs in Node where localStorage is not defined. Need to configure jsdom or add a mock.\"}', '🚫 **Blocked (environment):** localStorage API not available in test environment\n\n**Detail:** Vitest runs in Node where localStorage is not defined. Need to configure jsdom or add a mock.', '2025-01-17 11:00:00'),
+        (3, 'sess-3a-001', 'backend', 'partial', '{\"summary\":\"CRUD functions written but untestable without localStorage mock\",\"remaining\":\"Configure jsdom environment for tests, then verify all operations\"}', '⊙ **Partial:** CRUD functions written but untestable without localStorage mock\n\n**Remaining:** Configure jsdom environment for tests, then verify all operations', '2025-01-17 11:30:00')"
     ).unwrap();
 
     // Session 2: flag (info) + learned + done
     db.execute_raw(
         "INSERT INTO task_comments (task_id, session_id, author, signal_verb, signal_payload, body, created) VALUES
-        (3, 'sess-3b-002', 'frontend', 'flag', '{\"what\":\"localStorage.setItem can throw QuotaExceededError\",\"severity\":\"info\",\"category\":\"edge-case\"}', '🚩 **Flag (info):** localStorage.setItem can throw QuotaExceededError\n\n**Category:** edge-case', '2025-01-18 08:15:00'),
-        (3, 'sess-3b-002', 'frontend', 'learned', '{\"text\":\"Wrapping localStorage calls in try/catch with LRU eviction fallback handles quota gracefully\",\"kind\":\"pattern\",\"scope\":\"feature\",\"rationale\":\"Users with thousands of bookmarks will eventually hit the 5MB limit\"}', '💡 **Learned (pattern):** Wrapping localStorage calls in try/catch with LRU eviction fallback handles quota gracefully\n\n**Rationale:** Users with thousands of bookmarks will eventually hit the 5MB limit\n\n**Scope:** feature', '2025-01-18 08:30:00'),
-        (3, 'sess-3b-002', 'frontend', 'done', '{\"summary\":\"All CRUD operations implemented with localStorage persistence. Quota errors handled via LRU eviction. All 3 acceptance criteria pass.\"}', '✓ **Done:** All CRUD operations implemented with localStorage persistence. Quota errors handled via LRU eviction. All 3 acceptance criteria pass.', '2025-01-18 09:00:00')"
+        (3, 'sess-3b-002', 'backend', 'flag', '{\"what\":\"localStorage.setItem can throw QuotaExceededError\",\"severity\":\"info\",\"category\":\"edge-case\"}', '🚩 **Flag (info):** localStorage.setItem can throw QuotaExceededError\n\n**Category:** edge-case', '2025-01-18 08:15:00'),
+        (3, 'sess-3b-002', 'backend', 'learned', '{\"text\":\"Wrapping localStorage calls in try/catch with LRU eviction fallback handles quota gracefully\",\"kind\":\"pattern\",\"scope\":\"feature\",\"rationale\":\"Users with thousands of bookmarks will eventually hit the 5MB limit\"}', '💡 **Learned (pattern):** Wrapping localStorage calls in try/catch with LRU eviction fallback handles quota gracefully\n\n**Rationale:** Users with thousands of bookmarks will eventually hit the 5MB limit\n\n**Scope:** feature', '2025-01-18 08:30:00'),
+        (3, 'sess-3b-002', 'backend', 'done', '{\"summary\":\"All CRUD operations implemented with localStorage persistence. Quota errors handled via LRU eviction. All 3 acceptance criteria pass.\"}', '✓ **Done:** All CRUD operations implemented with localStorage persistence. Quota errors handled via LRU eviction. All 3 acceptance criteria pass.', '2025-01-18 09:00:00')"
     ).unwrap();
 
     // Task 14 (blocked, search bar): 1 session showing blocked
@@ -1479,26 +1508,47 @@ just dev-mock 04-desktop-dev
     // Task 8 (done, collection data model): 1 session with ask (answered) + done
     db.execute_raw(
         "INSERT INTO task_comments (task_id, session_id, author, signal_verb, signal_payload, signal_answered, body, created) VALUES
-        (8, 'sess-8a-001', 'frontend', 'ask', '{\"question\":\"Should collections support ordering of their bookmarks, or just store them as an unordered set?\",\"options\":[\"Ordered (array of IDs)\",\"Unordered (set of IDs)\"],\"preferred\":\"Ordered (array of IDs)\",\"blocking\":true}', 'Ordered (array of IDs)', '❓ **Ask (blocking):** Should collections support ordering of their bookmarks, or just store them as an unordered set?\n\n**Preferred:** Ordered (array of IDs)\n\n**Options:**\n- Ordered (array of IDs)\n- Unordered (set of IDs)\n\n**Answer:** Ordered (array of IDs)', '2025-01-15 10:00:00')"
+        (8, 'sess-8a-001', 'backend', 'ask', '{\"question\":\"Should collections support ordering of their bookmarks, or just store them as an unordered set?\",\"options\":[\"Ordered (array of IDs)\",\"Unordered (set of IDs)\"],\"preferred\":\"Ordered (array of IDs)\",\"blocking\":true}', 'Ordered (array of IDs)', '❓ **Ask (blocking):** Should collections support ordering of their bookmarks, or just store them as an unordered set?\n\n**Preferred:** Ordered (array of IDs)\n\n**Options:**\n- Ordered (array of IDs)\n- Unordered (set of IDs)\n\n**Answer:** Ordered (array of IDs)', '2025-01-15 10:00:00')"
     ).unwrap();
     db.execute_raw(
         "INSERT INTO task_comments (task_id, session_id, author, signal_verb, signal_payload, body, created) VALUES
-        (8, 'sess-8a-001', 'frontend', 'done', '{\"summary\":\"Collection schema defined with name, color, icon, and ordered bookmark ID array. Junction table supports many-to-many with position column.\"}', '✓ **Done:** Collection schema defined with name, color, icon, and ordered bookmark ID array. Junction table supports many-to-many with position column.', '2025-01-15 11:00:00')"
+        (8, 'sess-8a-001', 'backend', 'done', '{\"summary\":\"Collection schema defined with name, color, icon, and ordered bookmark ID array. Junction table supports many-to-many with position column.\"}', '✓ **Done:** Collection schema defined with name, color, icon, and ordered bookmark ID array. Junction table supports many-to-many with position column.', '2025-01-15 11:00:00')"
     ).unwrap();
 
     // Task 7 (pending, URL sanitization): 1 session with suggest that created a draft task
     db.execute_raw(
         "INSERT INTO task_comments (task_id, session_id, author, signal_verb, signal_payload, body, created) VALUES
-        (7, 'sess-7a-001', 'frontend', 'suggest', '{\"what\":\"Add CSP meta tag to index.html to prevent inline script injection\",\"kind\":\"improvement\",\"why\":\"Defense-in-depth — even if XSS bypasses input sanitization, CSP blocks execution\"}', '💭 **Suggest (improvement):** Add CSP meta tag to index.html to prevent inline script injection\n\n**Why:** Defense-in-depth — even if XSS bypasses input sanitization, CSP blocks execution', '2025-01-19 15:00:00'),
-        (7, 'sess-7a-001', 'frontend', 'flag', '{\"what\":\"data: URLs can embed arbitrary content including scripts\",\"severity\":\"blocking\",\"category\":\"security\"}', '🚩 **Flag (blocking):** data: URLs can embed arbitrary content including scripts\n\n**Category:** security', '2025-01-19 15:10:00')"
+        (7, 'sess-7a-001', 'security', 'suggest', '{\"what\":\"Add CSP meta tag to index.html to prevent inline script injection\",\"kind\":\"improvement\",\"why\":\"Defense-in-depth — even if XSS bypasses input sanitization, CSP blocks execution\"}', '💭 **Suggest (improvement):** Add CSP meta tag to index.html to prevent inline script injection\n\n**Why:** Defense-in-depth — even if XSS bypasses input sanitization, CSP blocks execution', '2025-01-19 15:00:00'),
+        (7, 'sess-7a-001', 'security', 'flag', '{\"what\":\"data: URLs can embed arbitrary content including scripts\",\"severity\":\"blocking\",\"category\":\"security\"}', '🚩 **Flag (blocking):** data: URLs can embed arbitrary content including scripts\n\n**Category:** security', '2025-01-19 15:10:00')"
+    ).unwrap();
+
+    // Task 21 (in_progress, MCP Signal Reference): ALL 8 VERBS + VARIANTS (15 total signals)
+    db.execute_raw(
+        "INSERT INTO task_comments (task_id, session_id, author, signal_verb, signal_payload, body, created) VALUES
+        (21, 'sess-21-ref', 'frontend', 'done', '{\"summary\":\"__Agent writes DONE summary when task is 100% complete. Example: Implemented CSV/JSON export with quota handling, all 3 acceptance criteria pass, tests green, PR merged.\"}', '__Agent writes DONE summary when task is 100% complete. Example: Implemented CSV/JSON export with quota handling, all 3 acceptance criteria pass, tests green, PR merged.', '2025-01-22 14:00:00'),
+        (21, 'sess-21-ref', 'frontend', 'partial', '{\"summary\":\"__Agent describes what WAS completed in this session. Example: Implemented CSV export format, added filename sanitization, wrote 12 of 18 unit tests.\",\"remaining\":\"__Agent describes what STILL needs to be done. Example: JSON export format, bulk export UI, remaining 6 edge-case tests.\"}', '__PARTIAL signals show incremental progress. Agent fills TWO fields: summary (what got done) + remaining (what is left).\n\n__summary: Implemented CSV export format, added filename sanitization, wrote 12 of 18 unit tests.\n\n__remaining: JSON export format, bulk export UI, remaining 6 edge-case tests.', '2025-01-22 14:05:00'),
+        (21, 'sess-21-ref', 'frontend', 'stuck', '{\"reason\":\"__Agent explains WHY they are stuck — technical blocker, missing info, ambiguous spec, conflicting requirements. Example: Cannot determine correct MIME type for .bookmark files — RFC 7231 spec is ambiguous and Chrome/Firefox behave differently.\"}', '__STUCK signals mean agent hit a wall and cannot proceed without help.\n\n__reason: Cannot determine correct MIME type for .bookmark files — RFC 7231 spec is ambiguous and Chrome/Firefox behave differently.', '2025-01-22 14:10:00'),
+        (21, 'sess-21-ref', 'frontend', 'ask', '{\"question\":\"__Agent poses a BLOCKING question that halts progress. Example: Should export filename include timestamp (bookmarks-2025-01-22.json) or use static name (bookmarks.json)?\",\"options\":[\"__Option 1: Add timestamp\",\"__Option 2: Static filename\",\"__Option 3: Let user choose via dialog\"],\"preferred\":\"__Option 1: Add timestamp\",\"blocking\":true}', '__ASK (BLOCKING variant) — Question that halts progress until answered.\n\n__question: Should export filename include timestamp (bookmarks-2025-01-22.json) or use static name (bookmarks.json)?\n\n__preferred: Option 1 (Add timestamp)\n\n__options:\n- Add timestamp (bookmarks-2025-01-22.json)\n- Static name (bookmarks.json)\n- Let user choose via dialog\n\n__blocking: true', '2025-01-22 14:15:00'),
+        (21, 'sess-21-ref', 'frontend', 'ask', '{\"question\":\"__Agent poses a NON-BLOCKING question for clarification/preference. Example: Should we use .csv or .tsv extension for tab-separated exports?\",\"options\":[\"__Use .csv (more common)\",\"__Use .tsv (more accurate)\"],\"preferred\":\"__Use .tsv (more accurate)\",\"blocking\":false}', '__ASK (NON-BLOCKING variant) — Clarification question that doesn''t halt work.\n\n__question: Should we use .csv or .tsv extension for tab-separated exports?\n\n__preferred: Use .tsv (more accurate)\n\n__options:\n- Use .csv (more common)\n- Use .tsv (more accurate)\n\n__blocking: false (can proceed with default)', '2025-01-22 14:17:00'),
+        (21, 'sess-21-ref', 'frontend', 'flag', '{\"what\":\"__BLOCKING severity — Critical bug that prevents core functionality. Example: Export button downloads empty 0-byte file when localStorage.getItem() returns null.\",\"severity\":\"blocking\",\"category\":\"bug\"}', '__FLAG (BLOCKING severity) — Critical issue that breaks core functionality.\n\n__severity: blocking\n__category: bug\n\n__what: Export button downloads empty 0-byte file when localStorage.getItem() returns null.', '2025-01-22 14:20:00'),
+        (21, 'sess-21-ref', 'frontend', 'flag', '{\"what\":\"__WARNING severity — Non-critical issue worth fixing but not urgent. Example: Export with 10k+ bookmarks takes 3+ seconds and freezes UI thread.\",\"severity\":\"warning\",\"category\":\"performance\"}', '__FLAG (WARNING severity) — Issue worth addressing but not critical.\n\n__severity: warning\n__category: performance\n\n__what: Export with 10k+ bookmarks takes 3+ seconds and freezes UI thread.', '2025-01-22 14:22:00'),
+        (21, 'sess-21-ref', 'frontend', 'flag', '{\"what\":\"__INFO severity — FYI observation or minor edge case. Example: Export filename gets truncated to 255 chars on older Windows filesystems.\",\"severity\":\"info\",\"category\":\"edge-case\"}', '__FLAG (INFO severity) — Minor observation or edge case for awareness.\n\n__severity: info\n__category: edge-case\n\n__what: Export filename gets truncated to 255 chars on older Windows filesystems.', '2025-01-22 14:24:00'),
+        (21, 'sess-21-ref', 'frontend', 'learned', '{\"text\":\"__GOTCHA kind — Non-obvious behavior that can trip you up. Example: Browser download APIs create Blob URLs that must be manually revoked via URL.revokeObjectURL() or they leak memory until page reload.\",\"kind\":\"gotcha\",\"scope\":\"feature\",\"rationale\":\"__Without cleanup, every export leaks ~50KB. User with 100 exports = 5MB leaked RAM.\"}', '__LEARNED (GOTCHA kind) — Non-obvious behavior worth documenting.\n\n__kind: gotcha\n__scope: feature\n\n__text: Browser download APIs create Blob URLs that must be manually revoked via URL.revokeObjectURL() or they leak memory until page reload.\n\n__rationale: Without cleanup, every export leaks ~50KB. User with 100 exports = 5MB leaked RAM.', '2025-01-22 14:26:00'),
+        (21, 'sess-21-ref', 'frontend', 'learned', '{\"text\":\"__PATTERN kind — Reusable approach or technique discovered. Example: Wrap all localStorage operations in try/catch with LRU eviction fallback — handles quota errors gracefully.\",\"kind\":\"pattern\",\"scope\":\"task\"}', '__LEARNED (PATTERN kind) — Reusable technique or approach.\n\n__kind: pattern\n__scope: task\n\n__text: Wrap all localStorage operations in try/catch with LRU eviction fallback — handles quota errors gracefully.', '2025-01-22 14:28:00'),
+        (21, 'sess-21-ref', 'frontend', 'learned', '{\"text\":\"__CONVENTION kind — Team standard or coding rule established. Example: All export filenames follow pattern: appname-entity-timestamp.ext (e.g., ralph-bookmarks-2025-01-22.json).\",\"kind\":\"convention\",\"scope\":\"feature\"}', '__LEARNED (CONVENTION kind) — Team standard or naming rule.\n\n__kind: convention\n__scope: feature\n\n__text: All export filenames follow pattern: appname-entity-timestamp.ext (e.g., ralph-bookmarks-2025-01-22.json).', '2025-01-22 14:30:00'),
+        (21, 'sess-21-ref', 'frontend', 'suggest', '{\"what\":\"__IMPROVEMENT kind — Enhancement to existing functionality. Example: Add Copy to Clipboard button next to Download — users want to paste bookmark JSON into Slack without saving a file.\",\"kind\":\"improvement\",\"why\":\"__40% of exports in analytics are followed by manual file-open-copy-paste. Direct clipboard = better UX.\"}', '__SUGGEST (IMPROVEMENT kind) — Enhancement to existing feature.\n\n__kind: improvement\n\n__what: Add Copy to Clipboard button next to Download — users want to paste bookmark JSON into Slack without saving a file.\n\n__why: 40% of exports in analytics are followed by manual file-open-copy-paste. Direct clipboard = better UX.', '2025-01-22 14:32:00'),
+        (21, 'sess-21-ref', 'frontend', 'suggest', '{\"what\":\"__NEW_TASK kind — Proposal for entirely new feature or task. Example: Add scheduled auto-export that backs up bookmarks to user''s chosen cloud storage every 24 hours.\",\"kind\":\"new_task\",\"why\":\"__Users in support threads frequently ask about backup/sync. Auto-export prevents data loss.\"}', '__SUGGEST (NEW_TASK kind) — Proposal for new feature.\n\n__kind: new_task\n\n__what: Add scheduled auto-export that backs up bookmarks to user''s chosen cloud storage every 24 hours.\n\n__why: Users in support threads frequently ask about backup/sync. Auto-export prevents data loss.', '2025-01-22 14:34:00'),
+        (21, 'sess-21-ref', 'frontend', 'blocked', '{\"on\":\"__DEPENDENCY kind — Blocked by missing code/API from another task. Example: Need backend API endpoint POST /export/stream for server-side export generation.\",\"kind\":\"dependency\",\"detail\":\"__Client-side export works for <1000 bookmarks but crashes tab with larger datasets. Need streaming response.\"}', '__BLOCKED (DEPENDENCY kind) — Waiting on another task/team.\n\n__kind: dependency\n\n__on: Need backend API endpoint POST /export/stream for server-side export generation.\n\n__detail: Client-side export works for <1000 bookmarks but crashes tab with larger datasets. Need streaming response.', '2025-01-22 14:36:00'),
+        (21, 'sess-21-ref', 'frontend', 'blocked', '{\"on\":\"__ENVIRONMENT kind — Blocked by dev environment or tooling issue. Example: Bun v1.2+ required for File System Access API — CI still running Bun v1.0.15.\",\"kind\":\"environment\"}', '__BLOCKED (ENVIRONMENT kind) — Dev environment or tooling blocker.\n\n__kind: environment\n\n__on: Bun v1.2+ required for File System Access API — CI still running Bun v1.0.15.', '2025-01-22 14:38:00')"
     ).unwrap();
 
     println!(
         "\n✓ Created 04-desktop-dev fixture at: {}",
         fixture_path.display()
     );
-    println!("  5 features, 20 tasks (4 done, 2 in_progress, 11 pending, 2 blocked, 1 skipped)");
-    println!("  22 signals across 9 sessions on 7 tasks (all 8 verbs represented)");
+    println!("  5 features, 21 tasks (4 done, 3 in_progress, 11 pending, 2 blocked, 1 skipped)");
+    println!("  37 signals across 10 sessions on 8 tasks (all 8 verbs represented)");
+    println!("  → Task #21: MCP Signal Reference with ALL 8 VERBS + VARIANTS (15 signals)");
 }
 
 /// Generate all fixtures
