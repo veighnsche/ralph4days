@@ -46,6 +46,42 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Why this matters:** Every wrapper function is 10+ lines of duplication. When the core logic changes, you must update N functions instead of 1. This wastes tokens, creates bugs, and makes the codebase unmaintainable.
 
+## CRITICAL: NEVER Skip Pre-Commit Hooks With Broken Tests
+
+**NEVER use `git commit --no-verify` or `git commit -n` to skip pre-commit hooks when tests are failing.** This is a catastrophic pattern that commits broken code to the repository.
+
+**The deadly pattern:**
+1. You write code that breaks tests (A)
+2. Context window fills, you compact, or you move on to other work
+3. You write more code that might break tests (B)
+4. You encounter test failures
+5. You classify them as "pre-existing" without investigation
+6. You justify using `--no-verify` to "make progress"
+7. **You commit broken code**
+
+**Why this is catastrophic:**
+- **Broken code in git history** — future developers (including you) will check out broken commits
+- **False assumptions** — tests you assume are "pre-existing" are often YOUR bugs
+- **Compounding errors** — broken code becomes the new baseline, hiding new breakage
+- **Lost time** — debugging becomes impossible when you don't know which commit broke what
+- **Token waste** — fixing the same bug multiple times because you didn't fix it properly the first time
+
+**The correct approach:**
+1. **See test failure → STOP**
+2. **Assume it's YOUR fault** until proven otherwise
+3. **Investigate the failure** — read the error, understand what broke
+4. **Fix the root cause** — don't skip it, don't work around it
+5. **Verify tests pass** — run the full test suite
+6. **THEN commit** — only when everything works
+
+**When `--no-verify` is acceptable:**
+- ❌ NEVER for failing tests
+- ✅ ONLY when explicitly instructed by the user
+- ✅ ONLY for skipping formatters/linters (not tests) when you know the code is correct
+- ✅ ONLY in emergency hotfix scenarios with explicit user approval
+
+**Rule:** If tests fail, you broke something. Fix it. No excuses.
+
 ## CRITICAL: Centralized Error Handling
 
 **All Rust error types flow through `crates/ralph-errors`.** Never define `RalphError`, error code constants, or error macros in any other crate. Every crate that returns `Result<T, String>` must depend on `ralph-errors` and use the `.ralph()` extension method (preferred) or `ralph_err!` / `ralph_map_err!` macros. Domain-specific error enums are allowed only when they don't use error codes and stay internal to their crate.
