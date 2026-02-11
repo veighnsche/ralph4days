@@ -23,7 +23,7 @@ fn create_test_db() -> SqliteDb {
             .unwrap()
             .and_utc(),
     ));
-    let db = SqliteDb::open_in_memory_with_clock(clock).unwrap();
+    let db = SqliteDb::open_in_memory(Some(clock)).unwrap();
     seed_test_disciplines(&db);
     db
 }
@@ -503,7 +503,6 @@ fn test_create_feature() {
         display_name: "Auth".into(),
         acronym: "AUTH".into(),
         description: Some("Auth feature".into()),
-        ..Default::default()
     })
     .unwrap();
     let features = db.get_features();
@@ -538,7 +537,6 @@ fn test_update_feature() {
         display_name: "Authentication".into(),
         acronym: "AUTH".into(),
         description: Some("Updated".into()),
-        ..Default::default()
     })
     .unwrap();
 
@@ -584,45 +582,6 @@ fn test_delete_feature_with_tasks_rejected() {
 }
 
 // === FEATURE fields tests ===
-
-#[test]
-fn test_create_feature_with_dependencies() {
-    let db = create_test_db();
-    db.create_feature(FeatureInput {
-        name: "auth".into(),
-        display_name: "Auth".into(),
-        acronym: "AUTH".into(),
-        description: Some("Authentication feature".into()),
-        dependencies: vec!["user-profile".into()],
-        ..Default::default()
-    })
-    .unwrap();
-
-    let features = db.get_features();
-    let f = features.iter().find(|f| f.name == "auth").unwrap();
-    assert_eq!(f.dependencies, vec!["user-profile"]);
-    assert!(f.comments.is_empty());
-    assert_eq!(f.status, sqlite_db::FeatureStatus::Active);
-}
-
-#[test]
-fn test_update_feature_dependencies() {
-    let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
-
-    db.update_feature(FeatureInput {
-        name: "auth".into(),
-        display_name: "Auth".into(),
-        acronym: "AUTH".into(),
-        dependencies: vec!["settings".into()],
-        ..Default::default()
-    })
-    .unwrap();
-
-    let features = db.get_features();
-    let f = features.iter().find(|f| f.name == "auth").unwrap();
-    assert_eq!(f.dependencies, vec!["settings"]);
-}
 
 #[test]
 fn test_update_feature_preserves_comments() {
@@ -884,72 +843,6 @@ fn test_multiple_features_comments_isolated() {
 
 // === CONTEXT FILE tests ===
 
-#[test]
-fn test_add_feature_context_file_basic() {
-    let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
-
-    let added = db
-        .add_feature_context_file("auth", "src/auth/mod.rs", 100)
-        .unwrap();
-    assert!(added);
-
-    let features = db.get_features();
-    let f = features.iter().find(|f| f.name == "auth").unwrap();
-    assert_eq!(f.context_files, vec!["src/auth/mod.rs"]);
-}
-
-#[test]
-fn test_add_feature_context_file_idempotent() {
-    let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
-
-    db.add_feature_context_file("auth", "src/auth/mod.rs", 100)
-        .unwrap();
-    let added = db
-        .add_feature_context_file("auth", "src/auth/mod.rs", 100)
-        .unwrap();
-    assert!(!added); // Already present
-
-    let features = db.get_features();
-    let f = features.iter().find(|f| f.name == "auth").unwrap();
-    assert_eq!(f.context_files.len(), 1); // Still 1
-}
-
-#[test]
-fn test_add_feature_context_file_cap() {
-    let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
-
-    // Fill to cap of 2
-    db.add_feature_context_file("auth", "a.rs", 2).unwrap();
-    db.add_feature_context_file("auth", "b.rs", 2).unwrap();
-
-    let result = db.add_feature_context_file("auth", "c.rs", 2);
-    assert!(result.is_err());
-    assert!(result.unwrap_err().contains("limit"));
-}
-
-#[test]
-fn test_add_feature_context_file_rejects_absolute_path() {
-    let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
-
-    let result = db.add_feature_context_file("auth", "/etc/passwd", 100);
-    assert!(result.is_err());
-    assert!(result.unwrap_err().contains("relative"));
-}
-
-#[test]
-fn test_add_feature_context_file_rejects_parent_traversal() {
-    let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
-
-    let result = db.add_feature_context_file("auth", "../secret.txt", 100);
-    assert!(result.is_err());
-    assert!(result.unwrap_err().contains(".."));
-}
-
 // === DISCIPLINE tests ===
 
 #[test]
@@ -1141,7 +1034,7 @@ fn test_add_agent_comment() {
     .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
-    assert_eq!(task.comments[0].author, "backend");
+    assert_eq!(task.comments[0].author, "Backend");
 }
 
 #[test]
@@ -1448,7 +1341,6 @@ fn test_export_yaml_escapes_special_chars() {
         display_name: "Test \"Feature\"".into(),
         acronym: "TSTF".into(),
         description: Some("A description with \"quotes\" and\nnewlines".into()),
-        ..Default::default()
     })
     .unwrap();
     let task_id = db

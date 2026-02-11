@@ -13,15 +13,7 @@ impl SqliteDb {
 
         crate::acronym::validate_acronym_format(&input.acronym)?;
 
-        let exists: bool = self
-            .conn
-            .query_row(
-                "SELECT COUNT(*) > 0 FROM features WHERE name = ?1",
-                [&input.name],
-                |row| row.get(0),
-            )
-            .ralph_err(codes::DB_READ, "Failed to check feature")?;
-        if exists {
+        if self.check_exists("features", "name", &input.name)? {
             return ralph_err!(
                 codes::FEATURE_OPS,
                 "Feature '{}' already exists",
@@ -29,15 +21,7 @@ impl SqliteDb {
             );
         }
 
-        let acronym_exists: bool = self
-            .conn
-            .query_row(
-                "SELECT COUNT(*) > 0 FROM features WHERE acronym = ?1",
-                [&input.acronym],
-                |row| row.get(0),
-            )
-            .ralph_err(codes::DB_READ, "Failed to check acronym")?;
-        if acronym_exists {
+        if self.check_exists("features", "acronym", &input.acronym)? {
             return ralph_err!(
                 codes::FEATURE_OPS,
                 "Acronym '{}' is already used by another feature",
@@ -46,24 +30,17 @@ impl SqliteDb {
         }
 
         let now = self.now().format("%Y-%m-%d").to_string();
-        let kp_json = serde_json::to_string(&input.knowledge_paths).unwrap_or_else(|_| "[]".into());
-        let cf_json = serde_json::to_string(&input.context_files).unwrap_or_else(|_| "[]".into());
-        let deps_json = serde_json::to_string(&input.dependencies).unwrap_or_else(|_| "[]".into());
 
         self.conn
             .execute(
-                "INSERT INTO features (name, display_name, acronym, description, created, \
-                 knowledge_paths, context_files, dependencies, status) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'active')",
+                "INSERT INTO features (name, display_name, acronym, description, created, status) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, 'active')",
                 rusqlite::params![
                     input.name,
                     input.display_name,
                     input.acronym,
                     input.description,
                     now,
-                    kp_json,
-                    cf_json,
-                    deps_json,
                 ],
             )
             .ralph_err(codes::DB_WRITE, "Failed to insert feature")?;
@@ -78,15 +55,7 @@ impl SqliteDb {
 
         crate::acronym::validate_acronym_format(&input.acronym)?;
 
-        let exists: bool = self
-            .conn
-            .query_row(
-                "SELECT COUNT(*) > 0 FROM features WHERE name = ?1",
-                [&input.name],
-                |row| row.get(0),
-            )
-            .ralph_err(codes::DB_READ, "Failed to check feature")?;
-        if !exists {
+        if !self.check_exists("features", "name", &input.name)? {
             return ralph_err!(
                 codes::FEATURE_OPS,
                 "Feature '{}' does not exist",
@@ -94,15 +63,13 @@ impl SqliteDb {
             );
         }
 
-        let acronym_conflict: bool = self
-            .conn
-            .query_row(
-                "SELECT COUNT(*) > 0 FROM features WHERE acronym = ?1 AND name != ?2",
-                rusqlite::params![input.acronym, input.name],
-                |row| row.get(0),
-            )
-            .ralph_err(codes::DB_READ, "Failed to check acronym")?;
-        if acronym_conflict {
+        if self.check_exists_excluding(
+            "features",
+            "acronym",
+            &input.acronym,
+            "name",
+            &input.name,
+        )? {
             return ralph_err!(
                 codes::FEATURE_OPS,
                 "Acronym '{}' is already used by another feature",
@@ -110,21 +77,13 @@ impl SqliteDb {
             );
         }
 
-        let kp_json = serde_json::to_string(&input.knowledge_paths).unwrap_or_else(|_| "[]".into());
-        let cf_json = serde_json::to_string(&input.context_files).unwrap_or_else(|_| "[]".into());
-        let deps_json = serde_json::to_string(&input.dependencies).unwrap_or_else(|_| "[]".into());
-
         self.conn
             .execute(
-                "UPDATE features SET display_name = ?1, acronym = ?2, description = ?3, \
-                 knowledge_paths = ?4, context_files = ?5, dependencies = ?6 WHERE name = ?7",
+                "UPDATE features SET display_name = ?1, acronym = ?2, description = ?3 WHERE name = ?4",
                 rusqlite::params![
                     input.display_name,
                     input.acronym,
                     input.description,
-                    kp_json,
-                    cf_json,
-                    deps_json,
                     input.name,
                 ],
             )
@@ -134,13 +93,15 @@ impl SqliteDb {
     }
 
     pub fn delete_feature(&self, name: String) -> Result<(), String> {
+        let feature_id = self.get_id_from_name("features", &name)?;
+
         let mut stmt = self
             .conn
-            .prepare("SELECT id, title FROM tasks WHERE feature = ?1")
+            .prepare("SELECT id, title FROM tasks WHERE feature_id = ?1")
             .ralph_err(codes::DB_READ, "Failed to prepare query")?;
 
         let tasks: Vec<(u32, String)> = stmt
-            .query_map([&name], |row| Ok((row.get(0)?, row.get(1)?)))
+            .query_map([feature_id], |row| Ok((row.get(0)?, row.get(1)?)))
             .ralph_err(codes::DB_READ, "Failed to query tasks")?
             .filter_map(std::result::Result::ok)
             .collect();
@@ -166,8 +127,7 @@ impl SqliteDb {
 
     pub fn get_features(&self) -> Vec<Feature> {
         let Ok(mut stmt) = self.conn.prepare(
-            "SELECT name, display_name, acronym, description, created, \
-             knowledge_paths, context_files, dependencies, status \
+            "SELECT name, display_name, acronym, description, created, status \
              FROM features ORDER BY name",
         ) else {
             return vec![];
@@ -176,10 +136,7 @@ impl SqliteDb {
         let mut comments_map = self.get_all_comments_by_feature();
 
         stmt.query_map([], |row| {
-            let kp_json: String = row.get(5)?;
-            let cf_json: String = row.get(6)?;
-            let deps_json: String = row.get(7)?;
-            let status_str: String = row.get(8)?;
+            let status_str: String = row.get(5)?;
             let name: String = row.get(0)?;
             Ok(Feature {
                 name,
@@ -187,9 +144,6 @@ impl SqliteDb {
                 acronym: row.get(2)?,
                 description: row.get(3)?,
                 created: row.get(4)?,
-                knowledge_paths: serde_json::from_str(&kp_json).unwrap_or_default(),
-                context_files: serde_json::from_str(&cf_json).unwrap_or_default(),
-                dependencies: serde_json::from_str(&deps_json).unwrap_or_default(),
                 status: FeatureStatus::parse(&status_str).unwrap_or(FeatureStatus::Active),
                 comments: vec![],
             })
@@ -205,53 +159,5 @@ impl SqliteDb {
                     .collect()
             },
         )
-    }
-
-    pub fn add_feature_context_file(
-        &self,
-        feature_name: &str,
-        file_path: &str,
-        max_files: usize,
-    ) -> Result<bool, String> {
-        if file_path.starts_with('/') || file_path.starts_with('\\') {
-            return ralph_err!(codes::FEATURE_OPS, "Context file path must be relative");
-        }
-        if file_path.contains("..") {
-            return ralph_err!(codes::FEATURE_OPS, "Context file path cannot contain '..'");
-        }
-
-        let cf_json: String = self
-            .conn
-            .query_row(
-                "SELECT context_files FROM features WHERE name = ?1",
-                [feature_name],
-                |row| row.get(0),
-            )
-            .ralph_err(codes::DB_READ, "Feature not found")?;
-
-        let mut files: Vec<String> = serde_json::from_str(&cf_json).unwrap_or_default();
-
-        if files.iter().any(|f| f == file_path) {
-            return Ok(false);
-        }
-
-        if files.len() >= max_files {
-            return ralph_err!(
-                codes::FEATURE_OPS,
-                "Context files limit ({max_files}) reached for feature '{feature_name}'"
-            );
-        }
-
-        files.push(file_path.to_owned());
-
-        let updated = serde_json::to_string(&files).ralph_err(codes::DB_WRITE, "JSON error")?;
-        self.conn
-            .execute(
-                "UPDATE features SET context_files = ?1 WHERE name = ?2",
-                rusqlite::params![updated, feature_name],
-            )
-            .ralph_err(codes::DB_WRITE, "Failed to update context_files")?;
-
-        Ok(true)
     }
 }

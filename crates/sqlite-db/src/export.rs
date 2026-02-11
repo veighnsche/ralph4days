@@ -48,18 +48,6 @@ impl SqliteDb {
                 if let Some(created) = &f.created {
                     output.push_str(&format!("  created: \"{created}\"\n"));
                 }
-                if !f.knowledge_paths.is_empty() {
-                    output.push_str("  knowledge_paths:\n");
-                    for kp in &f.knowledge_paths {
-                        output.push_str(&format!("  - \"{}\"\n", yaml_escape(kp)));
-                    }
-                }
-                if !f.context_files.is_empty() {
-                    output.push_str("  context_files:\n");
-                    for cf in &f.context_files {
-                        output.push_str(&format!("  - \"{}\"\n", yaml_escape(cf)));
-                    }
-                }
                 if !f.comments.is_empty() {
                     output.push_str("  comments:\n");
                     for c in &f.comments {
@@ -76,12 +64,6 @@ impl SqliteDb {
                         if let Some(created) = &c.created {
                             output.push_str(&format!("    created: \"{created}\"\n"));
                         }
-                    }
-                }
-                if !f.dependencies.is_empty() {
-                    output.push_str("  dependencies:\n");
-                    for dep in &f.dependencies {
-                        output.push_str(&format!("  - \"{}\"\n", yaml_escape(dep)));
                     }
                 }
             }
@@ -137,9 +119,6 @@ impl SqliteDb {
                     for dep in &t.depends_on {
                         output.push_str(&format!("  - {dep}\n"));
                     }
-                }
-                if let Some(blocked_by) = &t.blocked_by {
-                    output.push_str(&format!("  blocked_by: \"{}\"\n", yaml_escape(blocked_by)));
                 }
                 if let Some(created) = &t.created {
                     output.push_str(&format!("  created: \"{created}\"\n"));

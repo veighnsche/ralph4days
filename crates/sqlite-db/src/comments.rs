@@ -19,7 +19,7 @@ impl SqliteDb {
         &self,
         task_id: u32,
         discipline: Option<String>,
-        priority: Option<String>,
+        _priority: Option<String>,
         body: String,
         parent_comment_id: Option<u32>,
     ) -> Result<(), String> {
@@ -69,17 +69,15 @@ impl SqliteDb {
         }
 
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
-        let author = if parent_comment_id.is_some() {
-            "human".to_owned()
-        } else {
-            discipline.unwrap_or_else(|| "human".to_owned())
-        };
+
+        let discipline_id: Option<i64> =
+            discipline.and_then(|disc_name| self.get_id_from_name("disciplines", &disc_name).ok());
 
         self.conn
             .execute(
-                "INSERT INTO task_comments (task_id, author, body, created, parent_comment_id, priority) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                rusqlite::params![task_id, author, body, now, parent_comment_id, priority],
+                "INSERT INTO task_comments (task_id, discipline_id, verb, text, created) \
+                 VALUES (?1, ?2, 'comment', ?3, ?4)",
+                rusqlite::params![task_id, discipline_id, body, now],
             )
             .ralph_err(codes::DB_WRITE, "Failed to insert comment")?;
 
@@ -111,7 +109,7 @@ impl SqliteDb {
         let affected = self
             .conn
             .execute(
-                "UPDATE task_comments SET body = ?1 WHERE id = ?2 AND task_id = ?3",
+                "UPDATE task_comments SET text = ?1 WHERE id = ?2 AND task_id = ?3",
                 rusqlite::params![body, comment_id, task_id],
             )
             .ralph_err(codes::DB_WRITE, "Failed to update comment")?;
@@ -159,8 +157,13 @@ impl SqliteDb {
 
     pub(crate) fn get_comments_for_task(&self, task_id: u32) -> Vec<TaskComment> {
         let Ok(mut stmt) = self.conn.prepare(
-            "SELECT id, author, body, created, session_id, signal_verb, signal_payload, signal_answered, parent_comment_id, priority \
-             FROM task_comments WHERE task_id = ?1 AND signal_verb IS NULL ORDER BY id DESC",
+            "SELECT tc.id, COALESCE(d.display_name, 'human') as author, \
+             COALESCE(tc.text, tc.summary, tc.reason, tc.question, tc.what, tc.remaining, '') as body, \
+             tc.created, tc.session_id \
+             FROM task_comments tc \
+             LEFT JOIN disciplines d ON tc.discipline_id = d.id \
+             WHERE tc.task_id = ?1 AND tc.verb = 'comment' \
+             ORDER BY tc.id DESC",
         ) else {
             return vec![];
         };
@@ -172,11 +175,11 @@ impl SqliteDb {
                 body: row.get(2)?,
                 created: row.get(3)?,
                 session_id: row.get(4)?,
-                signal_verb: row.get(5)?,
-                signal_payload: row.get(6)?,
-                signal_answered: row.get(7)?,
-                parent_comment_id: row.get(8)?,
-                priority: row.get(9)?,
+                signal_verb: None,
+                signal_payload: None,
+                signal_answered: None,
+                parent_comment_id: None,
+                priority: None,
             })
         })
         .map_or_else(
@@ -187,9 +190,12 @@ impl SqliteDb {
 
     pub(crate) fn get_all_comments_by_task(&self) -> HashMap<u32, Vec<TaskComment>> {
         let Ok(mut stmt) = self.conn.prepare(
-            "SELECT tc.id, tc.task_id, COALESCE(d.display_name, tc.author) as author, tc.body, tc.created, tc.session_id, tc.signal_verb, tc.signal_payload, tc.signal_answered, tc.parent_comment_id, tc.priority \
+            "SELECT tc.id, tc.task_id, COALESCE(d.display_name, 'human') as author, \
+             COALESCE(tc.text, tc.summary, tc.reason, tc.question, tc.what, tc.remaining, '') as body, \
+             tc.created, tc.session_id \
              FROM task_comments tc \
-             LEFT JOIN disciplines d ON tc.author = d.name \
+             LEFT JOIN disciplines d ON tc.discipline_id = d.id \
+             WHERE tc.verb = 'comment' \
              ORDER BY tc.task_id, tc.id DESC",
         ) else {
             return HashMap::new();
@@ -206,11 +212,11 @@ impl SqliteDb {
                     body: row.get(3)?,
                     created: row.get(4)?,
                     session_id: row.get(5)?,
-                    signal_verb: row.get(6)?,
-                    signal_payload: row.get(7)?,
-                    signal_answered: row.get(8)?,
-                    parent_comment_id: row.get(9)?,
-                    priority: row.get(10)?,
+                    signal_verb: None,
+                    signal_payload: None,
+                    signal_answered: None,
+                    parent_comment_id: None,
+                    priority: None,
                 },
             ))
         }) else {
@@ -228,8 +234,13 @@ impl SqliteDb {
         let mut stmt = self
             .conn
             .prepare(
-                "SELECT id, author, body, created, session_id, signal_verb, signal_payload, signal_answered, parent_comment_id, priority \
-                 FROM task_comments WHERE task_id = ?1 AND signal_verb IS NOT NULL ORDER BY created ASC, id ASC",
+                "SELECT tc.id, COALESCE(d.display_name, 'system') as author, \
+                 COALESCE(tc.text, tc.summary, tc.reason, tc.question, tc.what, tc.remaining, '') as body, \
+                 tc.created, tc.session_id, tc.verb \
+                 FROM task_comments tc \
+                 LEFT JOIN disciplines d ON tc.discipline_id = d.id \
+                 WHERE tc.task_id = ?1 AND tc.verb != 'comment' \
+                 ORDER BY tc.created ASC, tc.id ASC",
             )
             .ralph_err(codes::DB_READ, "Failed to prepare signal query")?;
 
@@ -242,10 +253,10 @@ impl SqliteDb {
                     created: row.get(3)?,
                     session_id: row.get(4)?,
                     signal_verb: row.get(5)?,
-                    signal_payload: row.get(6)?,
-                    signal_answered: row.get(7)?,
-                    parent_comment_id: row.get(8)?,
-                    priority: row.get(9)?,
+                    signal_payload: None,
+                    signal_answered: None,
+                    parent_comment_id: None,
+                    priority: None,
                 })
             })
             .ralph_err(codes::DB_READ, "Failed to query signals")?;
@@ -263,8 +274,10 @@ impl SqliteDb {
 
         let placeholders: Vec<String> = task_ids.iter().map(|_| "?".to_owned()).collect();
         let sql = format!(
-            "SELECT task_id, signal_verb, signal_payload, signal_answered, session_id \
-             FROM task_comments WHERE task_id IN ({}) AND signal_verb IS NOT NULL ORDER BY task_id, created ASC",
+            "SELECT task_id, verb, \
+             COALESCE(text, summary, reason, question, what, remaining, '') as payload, \
+             answer, session_id \
+             FROM task_comments WHERE task_id IN ({}) AND verb != 'comment' ORDER BY task_id, created ASC",
             placeholders.join(",")
         );
 
@@ -364,7 +377,7 @@ impl SqliteDb {
         let affected = self
             .conn
             .execute(
-                "UPDATE task_comments SET signal_answered = ?1 WHERE id = ?2 AND signal_verb = 'ask'",
+                "UPDATE task_comments SET answer = ?1 WHERE id = ?2 AND verb = 'ask'",
                 rusqlite::params![answer, signal_id],
             )
             .ralph_err(codes::DB_WRITE, "Failed to answer ask signal")?;

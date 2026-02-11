@@ -149,8 +149,6 @@ pub struct Task {
     #[serde(default)]
     pub depends_on: Vec<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub blocked_by: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub updated: Option<String>,
@@ -263,12 +261,6 @@ pub struct Feature {
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub knowledge_paths: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub context_files: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub dependencies: Vec<String>,
     pub status: FeatureStatus,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub comments: Vec<FeatureComment>,
@@ -280,9 +272,6 @@ pub struct FeatureInput {
     pub display_name: String,
     pub acronym: String,
     pub description: Option<String>,
-    pub knowledge_paths: Vec<String>,
-    pub context_files: Vec<String>,
-    pub dependencies: Vec<String>,
 }
 
 #[derive(Debug, Clone)]

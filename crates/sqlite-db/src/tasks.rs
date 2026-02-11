@@ -25,48 +25,28 @@ impl SqliteDb {
             return ralph_err!(codes::TASK_VALIDATION, "Task title cannot be empty");
         }
 
-        let feature_exists: bool = self
-            .conn
-            .query_row(
-                "SELECT COUNT(*) > 0 FROM features WHERE name = ?1",
-                [&input.feature],
-                |row| row.get(0),
-            )
-            .ralph_err(codes::DB_READ, "Failed to check feature")?;
-        if !feature_exists {
-            return ralph_err!(
-                codes::TASK_VALIDATION,
-                "Feature '{}' does not exist. Create it first.",
-                input.feature
-            );
-        }
+        let feature_id = self
+            .get_id_from_name("features", &input.feature)
+            .map_err(|_| {
+                format!(
+                    "[R-{}] Feature '{}' does not exist. Create it first.",
+                    codes::TASK_VALIDATION,
+                    input.feature
+                )
+            })?;
 
-        let discipline_exists: bool = self
-            .conn
-            .query_row(
-                "SELECT COUNT(*) > 0 FROM disciplines WHERE name = ?1",
-                [&input.discipline],
-                |row| row.get(0),
-            )
-            .ralph_err(codes::DB_READ, "Failed to check discipline")?;
-        if !discipline_exists {
-            return ralph_err!(
-                codes::TASK_VALIDATION,
-                "Discipline '{}' does not exist. Create it first.",
-                input.discipline
-            );
-        }
+        let discipline_id = self
+            .get_id_from_name("disciplines", &input.discipline)
+            .map_err(|_| {
+                format!(
+                    "[R-{}] Discipline '{}' does not exist. Create it first.",
+                    codes::TASK_VALIDATION,
+                    input.discipline
+                )
+            })?;
 
         for dep_id in &input.depends_on {
-            let dep_exists: bool = self
-                .conn
-                .query_row(
-                    "SELECT COUNT(*) > 0 FROM tasks WHERE id = ?1",
-                    [dep_id],
-                    |row| row.get(0),
-                )
-                .ralph_err(codes::DB_READ, "Failed to check dependency")?;
-            if !dep_exists {
+            if !self.check_exists("tasks", "id", &dep_id.to_string())? {
                 return ralph_err!(
                     codes::TASK_VALIDATION,
                     "Dependency task {dep_id} does not exist"
@@ -74,45 +54,21 @@ impl SqliteDb {
             }
         }
 
-        let next_id: u32 = self
-            .conn
-            .query_row("SELECT COALESCE(MAX(id), 0) + 1 FROM tasks", [], |row| {
-                row.get(0)
-            })
-            .ralph_err(codes::DB_READ, "Failed to get next task ID")?;
-
         let now = self.now().format("%Y-%m-%d").to_string();
-        let tags_json = serde_json::to_string(&input.tags)
-            .ralph_err(codes::DB_WRITE, "Failed to serialize tags")?;
-        let depends_on_json = serde_json::to_string(&input.depends_on)
-            .ralph_err(codes::DB_WRITE, "Failed to serialize depends_on")?;
-        let ac_json = serde_json::to_string(&input.acceptance_criteria.unwrap_or_default())
-            .ralph_err(codes::DB_WRITE, "Failed to serialize acceptance_criteria")?;
-        let cf_json = serde_json::to_string(&input.context_files)
-            .ralph_err(codes::DB_WRITE, "Failed to serialize context_files")?;
-        let oa_json = serde_json::to_string(&input.output_artifacts)
-            .ralph_err(codes::DB_WRITE, "Failed to serialize output_artifacts")?;
 
         self.conn
             .execute(
-                "INSERT INTO tasks (id, feature, discipline, title, description, status, priority, \
-                 tags, depends_on, created, acceptance_criteria, context_files, output_artifacts, \
-                 hints, estimated_turns, provenance) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
+                "INSERT INTO tasks (feature_id, discipline_id, title, description, status, priority, \
+                 created, hints, estimated_turns, provenance) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
                 rusqlite::params![
-                    next_id,
-                    input.feature,
-                    input.discipline,
+                    feature_id,
+                    discipline_id,
                     input.title,
                     input.description,
                     input.status.unwrap_or(TaskStatus::Pending).as_str(),
                     input.priority.map(|p| p.as_str().to_owned()),
-                    tags_json,
-                    depends_on_json,
                     now,
-                    ac_json,
-                    cf_json,
-                    oa_json,
                     input.hints,
                     input.estimated_turns,
                     input.provenance.map(|p| p.as_str().to_owned()),
@@ -120,83 +76,91 @@ impl SqliteDb {
             )
             .ralph_err(codes::DB_WRITE, "Failed to insert task")?;
 
+        let task_id = self.conn.last_insert_rowid() as u32;
+
+        self.insert_string_list(
+            "task_tags",
+            "task_id",
+            i64::from(task_id),
+            "tag",
+            &input.tags,
+        )?;
+
+        for dep_id in &input.depends_on {
+            self.conn
+                .execute(
+                    "INSERT INTO task_dependencies (task_id, depends_on_task_id) VALUES (?1, ?2)",
+                    rusqlite::params![task_id, dep_id],
+                )
+                .ralph_err(codes::DB_WRITE, "Failed to insert dependency")?;
+        }
+
+        let ac = input.acceptance_criteria.unwrap_or_default();
+        for (idx, criterion) in ac.iter().enumerate() {
+            self.conn
+                .execute(
+                    "INSERT INTO task_acceptance_criteria (task_id, criterion, criterion_order) VALUES (?1, ?2, ?3)",
+                    rusqlite::params![task_id, criterion, i64::try_from(idx).unwrap_or(0)],
+                )
+                .ralph_err(codes::DB_WRITE, "Failed to insert acceptance criterion")?;
+        }
+
+        self.insert_string_list(
+            "task_context_files",
+            "task_id",
+            i64::from(task_id),
+            "file_path",
+            &input.context_files,
+        )?;
+
+        self.insert_string_list(
+            "task_output_artifacts",
+            "task_id",
+            i64::from(task_id),
+            "artifact_path",
+            &input.output_artifacts,
+        )?;
+
         tracing::info!(
-            task_id = next_id,
+            task_id = task_id,
             feature = %input.feature,
             discipline = %input.discipline,
             "Task created successfully"
         );
 
-        Ok(next_id)
+        Ok(task_id)
     }
 
     #[tracing::instrument(skip(self, update), fields(task_id = id))]
     pub fn update_task(&self, id: u32, update: TaskInput) -> Result<(), String> {
         tracing::debug!("Updating task");
-        if update.feature.trim().is_empty() {
-            return ralph_err!(codes::TASK_VALIDATION, "Feature name cannot be empty");
-        }
-        if update.discipline.trim().is_empty() {
-            return ralph_err!(codes::TASK_VALIDATION, "Discipline name cannot be empty");
-        }
-        if update.title.trim().is_empty() {
-            return ralph_err!(codes::TASK_VALIDATION, "Task title cannot be empty");
-        }
 
-        let exists: bool = self
-            .conn
-            .query_row(
-                "SELECT COUNT(*) > 0 FROM tasks WHERE id = ?1",
-                [id],
-                |row| row.get(0),
-            )
-            .ralph_err(codes::DB_READ, "Failed to check task")?;
-        if !exists {
+        if !self.check_exists("tasks", "id", &id.to_string())? {
             return ralph_err!(codes::TASK_OPS, "Task {id} does not exist");
         }
 
-        let feature_exists: bool = self
-            .conn
-            .query_row(
-                "SELECT COUNT(*) > 0 FROM features WHERE name = ?1",
-                [&update.feature],
-                |row| row.get(0),
-            )
-            .ralph_err(codes::DB_READ, "Failed to check feature")?;
-        if !feature_exists {
-            return ralph_err!(
-                codes::TASK_VALIDATION,
-                "Feature '{}' does not exist. Create it first.",
-                update.feature
-            );
-        }
+        let feature_id = self
+            .get_id_from_name("features", &update.feature)
+            .map_err(|_| {
+                format!(
+                    "[R-{}] Feature '{}' does not exist. Create it first.",
+                    codes::TASK_VALIDATION,
+                    update.feature
+                )
+            })?;
 
-        let discipline_exists: bool = self
-            .conn
-            .query_row(
-                "SELECT COUNT(*) > 0 FROM disciplines WHERE name = ?1",
-                [&update.discipline],
-                |row| row.get(0),
-            )
-            .ralph_err(codes::DB_READ, "Failed to check discipline")?;
-        if !discipline_exists {
-            return ralph_err!(
-                codes::TASK_VALIDATION,
-                "Discipline '{}' does not exist. Create it first.",
-                update.discipline
-            );
-        }
+        let discipline_id = self
+            .get_id_from_name("disciplines", &update.discipline)
+            .map_err(|_| {
+                format!(
+                    "[R-{}] Discipline '{}' does not exist. Create it first.",
+                    codes::TASK_VALIDATION,
+                    update.discipline
+                )
+            })?;
 
         for dep_id in &update.depends_on {
-            let dep_exists: bool = self
-                .conn
-                .query_row(
-                    "SELECT COUNT(*) > 0 FROM tasks WHERE id = ?1",
-                    [dep_id],
-                    |row| row.get(0),
-                )
-                .ralph_err(codes::DB_READ, "Failed to check dependency")?;
-            if !dep_exists {
+            if !self.check_exists("tasks", "id", &dep_id.to_string())? {
                 return ralph_err!(
                     codes::TASK_VALIDATION,
                     "Dependency task {dep_id} does not exist"
@@ -218,42 +182,80 @@ impl SqliteDb {
         }
 
         let now = self.now().format("%Y-%m-%d").to_string();
-        let tags_json = serde_json::to_string(&update.tags)
-            .ralph_err(codes::DB_WRITE, "Failed to serialize tags")?;
-        let depends_on_json = serde_json::to_string(&update.depends_on)
-            .ralph_err(codes::DB_WRITE, "Failed to serialize depends_on")?;
-        let ac_json = serde_json::to_string(&update.acceptance_criteria.unwrap_or_default())
-            .ralph_err(codes::DB_WRITE, "Failed to serialize acceptance_criteria")?;
-        let cf_json = serde_json::to_string(&update.context_files)
-            .ralph_err(codes::DB_WRITE, "Failed to serialize context_files")?;
-        let oa_json = serde_json::to_string(&update.output_artifacts)
-            .ralph_err(codes::DB_WRITE, "Failed to serialize output_artifacts")?;
 
         self.conn
             .execute(
-                "UPDATE tasks SET feature = ?1, discipline = ?2, title = ?3, description = ?4, \
-                 priority = ?5, tags = ?6, depends_on = ?7, updated = ?8, \
-                 acceptance_criteria = ?9, context_files = ?10, output_artifacts = ?11, \
-                 hints = ?12, estimated_turns = ?13 \
-                 WHERE id = ?14",
+                "UPDATE tasks SET feature_id = ?1, discipline_id = ?2, title = ?3, description = ?4, \
+                 priority = ?5, updated = ?6, hints = ?7, estimated_turns = ?8 \
+                 WHERE id = ?9",
                 rusqlite::params![
-                    update.feature,
-                    update.discipline,
+                    feature_id,
+                    discipline_id,
                     update.title,
                     update.description,
                     update.priority.map(|p| p.as_str().to_owned()),
-                    tags_json,
-                    depends_on_json,
                     now,
-                    ac_json,
-                    cf_json,
-                    oa_json,
                     update.hints,
                     update.estimated_turns,
                     id,
                 ],
             )
             .ralph_err(codes::DB_WRITE, "Failed to update task")?;
+
+        self.conn
+            .execute("DELETE FROM task_tags WHERE task_id = ?1", [id])
+            .ralph_err(codes::DB_WRITE, "Failed to delete old tags")?;
+        self.insert_string_list("task_tags", "task_id", i64::from(id), "tag", &update.tags)?;
+
+        self.conn
+            .execute("DELETE FROM task_dependencies WHERE task_id = ?1", [id])
+            .ralph_err(codes::DB_WRITE, "Failed to delete old dependencies")?;
+        for dep_id in &update.depends_on {
+            self.conn
+                .execute(
+                    "INSERT INTO task_dependencies (task_id, depends_on_task_id) VALUES (?1, ?2)",
+                    rusqlite::params![id, dep_id],
+                )
+                .ralph_err(codes::DB_WRITE, "Failed to insert dependency")?;
+        }
+
+        self.conn
+            .execute(
+                "DELETE FROM task_acceptance_criteria WHERE task_id = ?1",
+                [id],
+            )
+            .ralph_err(codes::DB_WRITE, "Failed to delete old acceptance criteria")?;
+        let ac = update.acceptance_criteria.unwrap_or_default();
+        for (idx, criterion) in ac.iter().enumerate() {
+            self.conn
+                .execute(
+                    "INSERT INTO task_acceptance_criteria (task_id, criterion, criterion_order) VALUES (?1, ?2, ?3)",
+                    rusqlite::params![id, criterion, i64::try_from(idx).unwrap_or(0)],
+                )
+                .ralph_err(codes::DB_WRITE, "Failed to insert acceptance criterion")?;
+        }
+
+        self.conn
+            .execute("DELETE FROM task_context_files WHERE task_id = ?1", [id])
+            .ralph_err(codes::DB_WRITE, "Failed to delete old context files")?;
+        self.insert_string_list(
+            "task_context_files",
+            "task_id",
+            i64::from(id),
+            "file_path",
+            &update.context_files,
+        )?;
+
+        self.conn
+            .execute("DELETE FROM task_output_artifacts WHERE task_id = ?1", [id])
+            .ralph_err(codes::DB_WRITE, "Failed to delete old output artifacts")?;
+        self.insert_string_list(
+            "task_output_artifacts",
+            "task_id",
+            i64::from(id),
+            "artifact_path",
+            &update.output_artifacts,
+        )?;
 
         Ok(())
     }
@@ -334,27 +336,14 @@ impl SqliteDb {
     pub fn delete_task(&self, id: u32) -> Result<(), String> {
         let mut stmt = self
             .conn
-            .prepare("SELECT id, depends_on FROM tasks")
+            .prepare("SELECT task_id FROM task_dependencies WHERE depends_on_task_id = ?1 LIMIT 1")
             .ralph_err(codes::DB_READ, "Failed to prepare query")?;
 
-        let rows = stmt
-            .query_map([], |row| {
-                let task_id: u32 = row.get(0)?;
-                let deps_json: String = row.get(1)?;
-                Ok((task_id, deps_json))
-            })
-            .ralph_err(codes::DB_READ, "Failed to query tasks")?;
-
-        for row in rows {
-            let (task_id, deps_json) = row.ralph_err(codes::DB_READ, "Failed to read row")?;
-            let deps: Vec<u32> = serde_json::from_str(&deps_json)
-                .ralph_err(codes::DB_READ, "Failed to parse depends_on JSON")?;
-            if deps.contains(&id) {
-                return ralph_err!(
-                    codes::TASK_OPS,
-                    "Cannot delete task {id}: task {task_id} depends on it"
-                );
-            }
+        if let Ok(task_id) = stmt.query_row([id], |row| row.get::<_, u32>(0)) {
+            return ralph_err!(
+                codes::TASK_OPS,
+                "Cannot delete task {id}: task {task_id} depends on it"
+            );
         }
 
         let affected = self
@@ -373,25 +362,35 @@ impl SqliteDb {
         let mut stmt = self
             .conn
             .prepare(
-                "SELECT t.id, t.feature, t.discipline, t.title, t.description, t.status, \
-                 t.priority, t.tags, t.depends_on, t.blocked_by, t.created, t.updated, \
-                 t.completed, t.acceptance_criteria, t.context_files, t.output_artifacts, \
-                 t.hints, t.estimated_turns, t.provenance, t.pseudocode, t.enriched_at, \
-                 COALESCE(f.display_name, t.feature), \
-                 COALESCE(f.acronym, t.feature), \
-                 COALESCE(d.display_name, t.discipline), \
-                 COALESCE(d.acronym, t.discipline), \
-                 COALESCE(d.icon, 'Circle'), \
-                 COALESCE(d.color, '#94a3b8') \
+                "SELECT t.id, t.feature_id, t.discipline_id, t.title, t.description, t.status, \
+                 t.priority, t.created, t.updated, t.completed, t.hints, t.estimated_turns, \
+                 t.provenance, t.pseudocode, t.enriched_at, \
+                 f.name, f.display_name, f.acronym, \
+                 d.name, d.display_name, d.acronym, d.icon, d.color \
                  FROM tasks t \
-                 LEFT JOIN features f ON t.feature = f.name \
-                 LEFT JOIN disciplines d ON t.discipline = d.name \
+                 JOIN features f ON t.feature_id = f.id \
+                 JOIN disciplines d ON t.discipline_id = d.id \
                  WHERE t.id = ?1",
             )
             .ok()?;
 
         let mut task = stmt.query_row([id], |row| Ok(self.row_to_task(row))).ok()?;
 
+        task.tags = self.read_string_list("task_tags", "task_id", i64::from(task.id), "tag");
+        task.depends_on = self.read_task_dependencies(task.id);
+        task.acceptance_criteria = self.read_acceptance_criteria(task.id);
+        task.context_files = self.read_string_list(
+            "task_context_files",
+            "task_id",
+            i64::from(task.id),
+            "file_path",
+        );
+        task.output_artifacts = self.read_string_list(
+            "task_output_artifacts",
+            "task_id",
+            i64::from(task.id),
+            "artifact_path",
+        );
         task.comments = self.get_comments_for_task(task.id);
 
         Some(task)
@@ -399,30 +398,42 @@ impl SqliteDb {
 
     pub fn get_tasks(&self) -> Vec<Task> {
         let Ok(mut stmt) = self.conn.prepare(
-            "SELECT t.id, t.feature, t.discipline, t.title, t.description, t.status, \
-             t.priority, t.tags, t.depends_on, t.blocked_by, t.created, t.updated, \
-             t.completed, t.acceptance_criteria, t.context_files, t.output_artifacts, \
-             t.hints, t.estimated_turns, t.provenance, t.pseudocode, t.enriched_at, \
-             COALESCE(f.display_name, t.feature), \
-             COALESCE(f.acronym, t.feature), \
-             COALESCE(d.display_name, t.discipline), \
-             COALESCE(d.acronym, t.discipline), \
-             COALESCE(d.icon, 'Circle'), \
-             COALESCE(d.color, '#94a3b8') \
+            "SELECT t.id, t.feature_id, t.discipline_id, t.title, t.description, t.status, \
+             t.priority, t.created, t.updated, t.completed, t.hints, t.estimated_turns, \
+             t.provenance, t.pseudocode, t.enriched_at, \
+             f.name, f.display_name, f.acronym, \
+             d.name, d.display_name, d.acronym, d.icon, d.color \
              FROM tasks t \
-             LEFT JOIN features f ON t.feature = f.name \
-             LEFT JOIN disciplines d ON t.discipline = d.name \
+             JOIN features f ON t.feature_id = f.id \
+             JOIN disciplines d ON t.discipline_id = d.id \
              ORDER BY t.id",
         ) else {
             return vec![];
         };
 
-        let tasks: Vec<Task> = stmt
-            .query_map([], |row| Ok(self.row_to_task(row)))
-            .map_or_else(
-                |_| vec![],
-                |rows| rows.filter_map(std::result::Result::ok).collect(),
+        let Ok(rows) = stmt.query_map([], |row| Ok(self.row_to_task(row))) else {
+            return vec![];
+        };
+
+        let mut tasks: Vec<Task> = rows.filter_map(std::result::Result::ok).collect();
+
+        for task in &mut tasks {
+            task.tags = self.read_string_list("task_tags", "task_id", i64::from(task.id), "tag");
+            task.depends_on = self.read_task_dependencies(task.id);
+            task.acceptance_criteria = self.read_acceptance_criteria(task.id);
+            task.context_files = self.read_string_list(
+                "task_context_files",
+                "task_id",
+                i64::from(task.id),
+                "file_path",
             );
+            task.output_artifacts = self.read_string_list(
+                "task_output_artifacts",
+                "task_id",
+                i64::from(task.id),
+                "artifact_path",
+            );
+        }
 
         let comment_map = self.get_all_comments_by_task();
 
@@ -439,67 +450,83 @@ impl SqliteDb {
     fn row_to_task(&self, row: &rusqlite::Row) -> Task {
         let status_str: String = row.get(5).unwrap_or_else(|_| "pending".to_owned());
         let priority_str: Option<String> = row.get(6).ok();
-        let tags_json: String = row.get(7).unwrap_or_else(|_| "[]".to_owned());
-        let deps_json: String = row.get(8).unwrap_or_else(|_| "[]".to_owned());
-        let ac_json: String = row.get(13).unwrap_or_else(|_| "[]".to_owned());
-        let cf_json: String = row.get(14).unwrap_or_else(|_| "[]".to_owned());
-        let oa_json: String = row.get(15).unwrap_or_else(|_| "[]".to_owned());
-        let provenance_str: Option<String> = row.get(18).ok();
+        let provenance_str: Option<String> = row.get(12).ok();
 
         Task {
             id: row.get(0).unwrap_or(0),
-            feature: row.get(1).unwrap_or_default(),
-            discipline: row.get(2).unwrap_or_default(),
+            feature: row.get(15).unwrap_or_default(),
+            discipline: row.get(18).unwrap_or_default(),
             title: row.get(3).unwrap_or_default(),
             description: row.get(4).unwrap_or_default(),
             status: TaskStatus::parse(&status_str).unwrap_or(TaskStatus::Pending),
             priority: priority_str.and_then(|s| Priority::parse(&s)),
-            tags: serde_json::from_str(&tags_json).unwrap_or_default(),
-            depends_on: serde_json::from_str(&deps_json).unwrap_or_default(),
-            blocked_by: row.get(9).unwrap_or_default(),
-            created: row.get(10).unwrap_or_default(),
-            updated: row.get(11).ok(),
-            completed: row.get(12).ok(),
-            acceptance_criteria: serde_json::from_str(&ac_json).unwrap_or_default(),
-            context_files: serde_json::from_str(&cf_json).unwrap_or_default(),
-            output_artifacts: serde_json::from_str(&oa_json).unwrap_or_default(),
-            hints: row.get(16).ok(),
-            estimated_turns: row.get(17).ok(),
+            tags: vec![],
+            depends_on: vec![],
+            created: row.get(7).unwrap_or_default(),
+            updated: row.get(8).ok(),
+            completed: row.get(9).ok(),
+            acceptance_criteria: vec![],
+            context_files: vec![],
+            output_artifacts: vec![],
+            hints: row.get(10).ok(),
+            estimated_turns: row.get(11).ok(),
             provenance: provenance_str.and_then(|s| TaskProvenance::parse(&s)),
-            pseudocode: row.get(19).ok(),
-            enriched_at: row.get(20).ok(),
+            pseudocode: row.get(13).ok(),
+            enriched_at: row.get(14).ok(),
             comments: vec![],
-            feature_display_name: row.get(21).unwrap_or_default(),
-            feature_acronym: row.get(22).unwrap_or_default(),
-            discipline_display_name: row.get(23).unwrap_or_default(),
-            discipline_acronym: row.get(24).unwrap_or_default(),
-            discipline_icon: row.get(25).unwrap_or_else(|_| "Circle".to_owned()),
-            discipline_color: row.get(26).unwrap_or_else(|_| "#94a3b8".to_owned()),
+            feature_display_name: row.get(16).unwrap_or_default(),
+            feature_acronym: row.get(17).unwrap_or_default(),
+            discipline_display_name: row.get(19).unwrap_or_default(),
+            discipline_acronym: row.get(20).unwrap_or_default(),
+            discipline_icon: row.get(21).unwrap_or_else(|_| "Circle".to_owned()),
+            discipline_color: row.get(22).unwrap_or_else(|_| "#94a3b8".to_owned()),
         }
+    }
+
+    fn read_task_dependencies(&self, task_id: u32) -> Vec<u32> {
+        let Ok(mut stmt) = self.conn.prepare(
+            "SELECT depends_on_task_id FROM task_dependencies WHERE task_id = ? ORDER BY id",
+        ) else {
+            return vec![];
+        };
+
+        let Ok(rows) = stmt.query_map([task_id], |row| row.get::<_, u32>(0)) else {
+            return vec![];
+        };
+
+        rows.filter_map(std::result::Result::ok).collect()
+    }
+
+    fn read_acceptance_criteria(&self, task_id: u32) -> Vec<String> {
+        let Ok(mut stmt) = self.conn.prepare(
+            "SELECT criterion FROM task_acceptance_criteria WHERE task_id = ? ORDER BY criterion_order",
+        ) else {
+            return vec![];
+        };
+
+        let Ok(rows) = stmt.query_map([task_id], |row| row.get::<_, String>(0)) else {
+            return vec![];
+        };
+
+        rows.filter_map(std::result::Result::ok).collect()
     }
 
     fn has_circular_dependency(&self, task_id: u32, dep_id: u32) -> Result<bool, String> {
         let mut stmt = self
             .conn
-            .prepare("SELECT id, depends_on FROM tasks")
+            .prepare("SELECT task_id, depends_on_task_id FROM task_dependencies")
             .ralph_err(codes::DB_READ, "Failed to prepare query")?;
 
-        let deps_map: std::collections::HashMap<u32, Vec<u32>> = stmt
-            .query_map([], |row| {
-                let id: u32 = row.get(0)?;
-                let deps_json: String = row.get(1)?;
-                let deps: Vec<u32> = serde_json::from_str(&deps_json).map_err(|e| {
-                    rusqlite::Error::FromSqlConversionFailure(
-                        1,
-                        rusqlite::types::Type::Text,
-                        Box::new(e),
-                    )
-                })?;
-                Ok((id, deps))
-            })
-            .ralph_err(codes::DB_READ, "Failed to query")?
-            .filter_map(std::result::Result::ok)
-            .collect();
+        let mut deps_map: std::collections::HashMap<u32, Vec<u32>> =
+            std::collections::HashMap::new();
+        let Ok(rows) = stmt.query_map([], |row| Ok((row.get::<_, u32>(0)?, row.get::<_, u32>(1)?)))
+        else {
+            return Ok(false);
+        };
+
+        for row in rows.filter_map(std::result::Result::ok) {
+            deps_map.entry(row.0).or_default().push(row.1);
+        }
 
         let mut visited = HashSet::new();
         let mut stack = vec![dep_id];

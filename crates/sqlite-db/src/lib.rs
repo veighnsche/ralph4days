@@ -5,6 +5,7 @@ mod disciplines;
 mod export;
 mod feature_comments;
 mod features;
+mod helpers;
 mod metadata;
 mod recipe_configs;
 mod tasks;
@@ -49,7 +50,7 @@ pub struct SqliteDb {
 }
 
 impl SqliteDb {
-    pub fn open(path: &Path) -> Result<Self, String> {
+    pub fn open(path: &Path, clock: Option<Box<dyn Clock>>) -> Result<Self, String> {
         let mut conn =
             Connection::open(path).ralph_err(codes::DB_OPEN, "Failed to open database")?;
 
@@ -60,14 +61,7 @@ impl SqliteDb {
         )
         .ralph_err(codes::DB_OPEN, "Failed to set PRAGMAs")?;
 
-        let migrations = Migrations::new(vec![
-            M::up(include_str!("migrations/001_initial.sql")),
-            M::up(include_str!("migrations/002_feature_comments.sql")),
-            M::up(include_str!("migrations/003_comment_embeddings.sql")),
-            M::up(include_str!("migrations/004_add_comment_summary.sql")),
-            M::up(include_str!("migrations/005_drop_comment_author.sql")),
-            M::up(include_str!("migrations/006_nested_comments_priority.sql")),
-        ]);
+        let migrations = Migrations::new(vec![M::up(include_str!("migrations/001_initial.sql"))]);
 
         migrations
             .to_latest(&mut conn)
@@ -75,35 +69,8 @@ impl SqliteDb {
 
         Ok(Self {
             conn,
-            clock: Box::new(RealClock),
+            clock: clock.unwrap_or_else(|| Box::new(RealClock)),
         })
-    }
-
-    pub fn open_with_clock(path: &Path, clock: Box<dyn Clock>) -> Result<Self, String> {
-        let mut conn =
-            Connection::open(path).ralph_err(codes::DB_OPEN, "Failed to open database")?;
-
-        conn.execute_batch(
-            "PRAGMA journal_mode = WAL;
-             PRAGMA synchronous = NORMAL;
-             PRAGMA foreign_keys = ON;",
-        )
-        .ralph_err(codes::DB_OPEN, "Failed to set PRAGMAs")?;
-
-        let migrations = Migrations::new(vec![
-            M::up(include_str!("migrations/001_initial.sql")),
-            M::up(include_str!("migrations/002_feature_comments.sql")),
-            M::up(include_str!("migrations/003_comment_embeddings.sql")),
-            M::up(include_str!("migrations/004_add_comment_summary.sql")),
-            M::up(include_str!("migrations/005_drop_comment_author.sql")),
-            M::up(include_str!("migrations/006_nested_comments_priority.sql")),
-        ]);
-
-        migrations
-            .to_latest(&mut conn)
-            .ralph_err(codes::DB_OPEN, "Failed to run migrations")?;
-
-        Ok(Self { conn, clock })
     }
 
     pub(crate) fn now(&self) -> chrono::DateTime<chrono::Utc> {
@@ -116,30 +83,22 @@ impl SqliteDb {
             .ralph_err(codes::DB_WRITE, "Raw SQL failed")
     }
 
-    pub fn open_in_memory() -> Result<Self, String> {
-        Self::open_in_memory_with_clock(Box::new(RealClock))
-    }
-
-    pub fn open_in_memory_with_clock(clock: Box<dyn Clock>) -> Result<Self, String> {
+    pub fn open_in_memory(clock: Option<Box<dyn Clock>>) -> Result<Self, String> {
         let mut conn = Connection::open_in_memory()
             .ralph_err(codes::DB_OPEN, "Failed to open in-memory database")?;
 
         conn.execute_batch("PRAGMA foreign_keys = ON;")
             .ralph_err(codes::DB_OPEN, "Failed to set PRAGMAs")?;
 
-        let migrations = Migrations::new(vec![
-            M::up(include_str!("migrations/001_initial.sql")),
-            M::up(include_str!("migrations/002_feature_comments.sql")),
-            M::up(include_str!("migrations/003_comment_embeddings.sql")),
-            M::up(include_str!("migrations/004_add_comment_summary.sql")),
-            M::up(include_str!("migrations/005_drop_comment_author.sql")),
-            M::up(include_str!("migrations/006_nested_comments_priority.sql")),
-        ]);
+        let migrations = Migrations::new(vec![M::up(include_str!("migrations/001_initial.sql"))]);
 
         migrations
             .to_latest(&mut conn)
             .ralph_err(codes::DB_OPEN, "Failed to run migrations")?;
 
-        Ok(Self { conn, clock })
+        Ok(Self {
+            conn,
+            clock: clock.unwrap_or_else(|| Box::new(RealClock)),
+        })
     }
 }
