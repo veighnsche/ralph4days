@@ -1,8 +1,9 @@
 import { AlertCircle, ChevronDown } from 'lucide-react'
-import { Fragment, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { ItemGroup, ItemSeparator } from '@/components/ui/item'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { useSignalSummaries } from '@/hooks/tasks'
 import type { DisciplineCropsData, Task } from '@/types/generated'
 import { PlaylistItem } from './PlaylistItem'
 
@@ -22,6 +23,9 @@ function countUnresolvedDeps(task: Task, statusById: Map<number, string>): numbe
 
 export function PlaylistView({ tasks, cropsStore, onTaskClick }: PlaylistViewProps) {
   const [issuesOpen, setIssuesOpen] = useState(true)
+
+  const taskIds = useMemo(() => tasks.map(t => t.id), [tasks])
+  const { summaries } = useSignalSummaries(taskIds)
 
   const statusById = new Map(tasks.map(t => [t.id, t.status]))
 
@@ -76,6 +80,7 @@ export function PlaylistView({ tasks, cropsStore, onTaskClick }: PlaylistViewPro
                       task={task}
                       crops={cropsStore.get(task.discipline)}
                       unresolvedDeps={countUnresolvedDeps(task, statusById)}
+                      signalSummary={summaries[task.id]}
                       onClick={() => onTaskClick(task)}
                     />
                     {index < blockedSkipped.length - 1 && <ItemSeparator />}
@@ -93,6 +98,7 @@ export function PlaylistView({ tasks, cropsStore, onTaskClick }: PlaylistViewPro
                 task={task}
                 crops={cropsStore.get(task.discipline)}
                 unresolvedDeps={countUnresolvedDeps(task, statusById)}
+                signalSummary={summaries[task.id]}
                 onClick={() => onTaskClick(task)}
               />
               <ItemSeparator />
@@ -105,6 +111,7 @@ export function PlaylistView({ tasks, cropsStore, onTaskClick }: PlaylistViewPro
                 task={task}
                 crops={cropsStore.get(task.discipline)}
                 unresolvedDeps={countUnresolvedDeps(task, statusById)}
+                signalSummary={summaries[task.id]}
                 isNowPlaying
                 onClick={() => onTaskClick(task)}
               />
@@ -118,6 +125,7 @@ export function PlaylistView({ tasks, cropsStore, onTaskClick }: PlaylistViewPro
                 task={task}
                 crops={cropsStore.get(task.discipline)}
                 unresolvedDeps={countUnresolvedDeps(task, statusById)}
+                signalSummary={summaries[task.id]}
                 onClick={() => onTaskClick(task)}
               />
               {index < pending.length - 1 && <ItemSeparator />}

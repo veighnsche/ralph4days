@@ -1,14 +1,17 @@
-import { Bot, Cog, Play, User } from 'lucide-react'
+import { Bot, Check, Cog, Play, Radio, User } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { QUERY_KEYS } from '@/constants/cache'
 import { INFERRED_STATUS_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from '@/constants/prd'
+import { type SignalVerb, VERB_CONFIG } from '@/constants/signals'
+import { useInvokeMutation } from '@/hooks/api'
 import { formatDate } from '@/lib/formatDate'
 import { resolveIcon } from '@/lib/iconRegistry'
 import type { InferredTaskStatus } from '@/lib/taskStatus'
 import { shouldShowInferredStatus } from '@/lib/taskStatus'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
-import type { Task } from '@/types/generated'
+import type { Task, TaskSignal } from '@/types/generated'
 import { PropertyRow } from '../PropertyRow'
 import { TerminalTabContent } from '../TerminalTabContent'
 
@@ -18,12 +21,52 @@ const PROVENANCE_CONFIG = {
   system: { label: 'System', icon: Cog }
 } as const
 
-export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStatus: InferredTaskStatus }) {
+function buildSignalSummaryText(signals: TaskSignal[]): string | null {
+  if (signals.length === 0) return null
+  const counts: Record<string, number> = {}
+  const pendingAsks = signals.filter(s => s.verb === 'ask' && !s.answered).length
+  for (const s of signals) {
+    if (s.verb === 'flag') counts.flags = (counts.flags ?? 0) + 1
+    if (s.verb === 'learned') counts.learned = (counts.learned ?? 0) + 1
+  }
+  const parts: string[] = []
+  if (counts.flags) parts.push(`${counts.flags} flag${counts.flags > 1 ? 's' : ''}`)
+  if (pendingAsks) parts.push(`${pendingAsks} ask pending`)
+  if (counts.learned) parts.push(`${counts.learned} learned`)
+  return parts.length > 0 ? parts.join(' · ') : null
+}
+
+function getLastClosingVerb(signals: TaskSignal[]): SignalVerb | null {
+  for (let i = signals.length - 1; i >= 0; i--) {
+    const verb = signals[i].verb
+    if (verb === 'done' || verb === 'partial' || verb === 'stuck') return verb as SignalVerb
+  }
+  return null
+}
+
+export function TaskSidebar({
+  task,
+  inferredStatus,
+  signals = []
+}: {
+  task: Task
+  inferredStatus: InferredTaskStatus
+  signals?: TaskSignal[]
+}) {
   const statusConfig = STATUS_CONFIG[task.status]
   const StatusIcon = statusConfig.icon
   const priorityConfig = task.priority ? PRIORITY_CONFIG[task.priority] : null
   const DisciplineIcon = resolveIcon(task.disciplineIcon)
   const openTab = useWorkspaceStore(state => state.openTab)
+  const isDraftAgent = task.status === 'draft' && task.provenance === 'agent'
+
+  const approveMutation = useInvokeMutation<{ id: number; status: string }>('set_task_status', {
+    invalidateKeys: QUERY_KEYS.TASKS
+  })
+
+  const handleApprove = () => {
+    approveMutation.mutate({ id: task.id, status: 'pending' })
+  }
 
   const handleExecute = () => {
     openTab({
@@ -95,11 +138,55 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
         </div>
       </PropertyRow>
 
-      <div className="pt-2 pb-1">
+      {signals.length > 0 &&
+        (() => {
+          const sessions = new Set(signals.map(s => s.sessionId))
+          const summaryText = buildSignalSummaryText(signals)
+          const lastClosing = getLastClosingVerb(signals)
+          const lastClosingConfig = lastClosing ? VERB_CONFIG[lastClosing] : null
+          const LastClosingIcon = lastClosingConfig?.icon
+
+          return (
+            <>
+              <PropertyRow label="Sessions">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1.5">
+                    <Radio className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-sm">{sessions.size}</span>
+                    {lastClosingConfig && LastClosingIcon && (
+                      <>
+                        <span className="text-xs text-muted-foreground">·</span>
+                        <LastClosingIcon className="h-3 w-3" style={{ color: lastClosingConfig.color }} />
+                        <span className="text-xs" style={{ color: lastClosingConfig.color }}>
+                          {lastClosingConfig.label}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  {summaryText && <span className="text-xs text-muted-foreground pl-4.5">{summaryText}</span>}
+                </div>
+              </PropertyRow>
+              <Separator bleed="md" className="my-2" />
+            </>
+          )
+        })()}
+
+      <div className="pt-2 pb-1 space-y-1.5">
         <Button onClick={handleExecute} size="sm" className="w-full h-8" disabled={task.status === 'done'}>
           <Play className="h-3.5 w-3.5 mr-1.5" />
           Execute Task
         </Button>
+        {isDraftAgent && (
+          <Button
+            onClick={handleApprove}
+            variant="outline"
+            size="sm"
+            className="w-full h-8"
+            disabled={approveMutation.isPending}>
+            <Check className="h-3.5 w-3.5 mr-1.5" />
+            {approveMutation.isPending ? 'Approving...' : 'Approve Task'}
+          </Button>
+        )}
       </div>
 
       <PropertyRow label="Priority">

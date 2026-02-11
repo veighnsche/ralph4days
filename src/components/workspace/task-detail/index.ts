@@ -1,4 +1,7 @@
+export { ActivitySection } from './ActivitySection'
 export { CommentEditor } from './CommentEditor'
 export { CommentsSection } from './CommentsSection'
+export { SessionGroup } from './SessionGroup'
+export { SignalCard } from './SignalCard'
 export { TaskCardContent } from './TaskCardContent'
 export { TaskSidebar } from './TaskSidebar'

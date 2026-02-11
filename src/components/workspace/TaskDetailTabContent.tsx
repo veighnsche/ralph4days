@@ -2,13 +2,13 @@ import { CheckCircle2 } from 'lucide-react'
 import { CroppedImage } from '@/components/ui/cropped-image'
 import { STATUS_CONFIG } from '@/constants/prd'
 import { useDisciplines } from '@/hooks/disciplines'
-import { usePRDData } from '@/hooks/tasks'
+import { usePRDData, useTaskSignals } from '@/hooks/tasks'
 import { useTabMeta } from '@/hooks/workspace'
 import { computeInferredStatus } from '@/lib/taskStatus'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { Task } from '@/types/generated'
 import { DetailPageLayout } from './DetailPageLayout'
-import { CommentsSection } from './task-detail/CommentsSection'
+import { ActivitySection } from './task-detail/ActivitySection'
 import { TaskCardContent } from './task-detail/TaskCardContent'
 import { TaskSidebar } from './task-detail/TaskSidebar'
 
@@ -19,6 +19,7 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
   const { tasks } = usePRDData()
   const task = (entityId != null ? tasks?.find(t => t.id === entityId) : undefined) ?? snapshotTask
   const { disciplines } = useDisciplines()
+  const { signals, answerAsk, isAnswering } = useTaskSignals(task?.id ?? 0)
 
   useTabMeta(tab.id, task?.title ?? 'Task Detail', CheckCircle2)
 
@@ -51,8 +52,8 @@ export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
         )
       }
       mainContent={<TaskCardContent task={task} />}
-      sidebar={<TaskSidebar task={task} inferredStatus={computeInferredStatus(task, tasks ?? [])} />}>
-      <CommentsSection task={task} />
+      sidebar={<TaskSidebar task={task} inferredStatus={computeInferredStatus(task, tasks ?? [])} signals={signals} />}>
+      <ActivitySection task={task} signals={signals} onAnswerAsk={answerAsk} isAnswering={isAnswering} />
     </DetailPageLayout>
   )
 }

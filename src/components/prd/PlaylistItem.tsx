@@ -1,11 +1,12 @@
-import { Bot, Cog, GitBranch, ListChecks, MessageSquare, User } from 'lucide-react'
+import { Bot, CircleHelp, Cog, Flag, GitBranch, ListChecks, MessageSquare, User } from 'lucide-react'
 import { memo } from 'react'
 import { PriorityIcon, PriorityRadial } from '@/components/shared'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { INFERRED_STATUS_CONFIG, STATUS_CONFIG } from '@/constants/prd'
-import type { DisciplineCropsData, Task } from '@/types/generated'
+import { FLAG_SEVERITY_CONFIG, type FlagSeverity } from '@/constants/signals'
+import type { DisciplineCropsData, Task, TaskSignalSummary } from '@/types/generated'
 import { DisciplineHeadshot } from './DisciplineHeadshot'
 import { DisciplineLabel } from './DisciplineLabel'
 
@@ -14,20 +15,62 @@ interface PlaylistItemProps {
   crops?: DisciplineCropsData
   unresolvedDeps?: number
   isNowPlaying?: boolean
+  signalSummary?: TaskSignalSummary
   onClick: () => void
 }
 
 const PROVENANCE_ICONS = { agent: Bot, human: User, system: Cog } as const
 
-function PlaylistItemIndicators({ task, unresolvedDeps }: { task: Task; unresolvedDeps: number }) {
+function SignalIndicators({ summary }: { summary: TaskSignalSummary }) {
+  const hasPendingAsks = summary.pendingAsks > 0
+  const hasFlags = summary.flagCount > 0
+  if (!(hasPendingAsks || hasFlags)) return null
+
+  const flagColor = summary.maxFlagSeverity
+    ? (FLAG_SEVERITY_CONFIG[summary.maxFlagSeverity as FlagSeverity]?.color ?? 'var(--priority-medium)')
+    : 'var(--priority-medium)'
+
+  return (
+    <>
+      {hasPendingAsks && (
+        <div className="flex items-center gap-1" style={{ color: 'var(--secondary)' }}>
+          <CircleHelp className="h-3 w-3" />
+          <span className="text-xs">{summary.pendingAsks}</span>
+        </div>
+      )}
+      {hasFlags && (
+        <div className="flex items-center gap-1" style={{ color: flagColor }}>
+          <Flag className="h-3 w-3" />
+          <span className="text-xs">{summary.flagCount}</span>
+        </div>
+      )}
+    </>
+  )
+}
+
+function PlaylistItemIndicators({
+  task,
+  unresolvedDeps,
+  signalSummary
+}: {
+  task: Task
+  unresolvedDeps: number
+  signalSummary?: TaskSignalSummary
+}) {
   const totalDeps = task.dependsOn?.length ?? 0
+  const hasSignals = signalSummary && (signalSummary.pendingAsks > 0 || signalSummary.flagCount > 0)
   const hasAny =
-    (task.comments?.length ?? 0) > 0 || totalDeps > 0 || (task.acceptanceCriteria?.length ?? 0) > 0 || task.priority
+    (task.comments?.length ?? 0) > 0 ||
+    totalDeps > 0 ||
+    (task.acceptanceCriteria?.length ?? 0) > 0 ||
+    task.priority ||
+    hasSignals
 
   if (!hasAny) return null
 
   return (
     <div className="flex items-center gap-2 text-muted-foreground">
+      {signalSummary && <SignalIndicators summary={signalSummary} />}
       {task.comments && task.comments.length > 0 && (
         <div className="flex items-center gap-1">
           <MessageSquare className="h-3 w-3" />
@@ -72,6 +115,7 @@ export const PlaylistItem = memo(function PlaylistItem({
   crops,
   unresolvedDeps = 0,
   isNowPlaying = false,
+  signalSummary,
   onClick
 }: PlaylistItemProps) {
   const statusConfig = STATUS_CONFIG[task.status]
@@ -117,7 +161,7 @@ export const PlaylistItem = memo(function PlaylistItem({
 
       {/* Col 3: Indicators + Tags */}
       <div className="flex flex-col items-end justify-between self-stretch relative z-10">
-        <PlaylistItemIndicators task={task} unresolvedDeps={unresolvedDeps} />
+        <PlaylistItemIndicators task={task} unresolvedDeps={unresolvedDeps} signalSummary={signalSummary} />
         {task.tags && task.tags.length > 0 && (
           <div className="flex flex-wrap justify-end gap-1">
             {task.tags.map(tag => (
