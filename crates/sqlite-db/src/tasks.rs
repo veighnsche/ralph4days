@@ -294,6 +294,72 @@ impl SqliteDb {
         Ok(())
     }
 
+    /// Set task status with custom timestamp
+    ///
+    /// **For test fixture generation only.** Production code should use `set_task_status()`.
+    pub fn set_task_status_with_date(
+        &self,
+        id: u32,
+        status: TaskStatus,
+        date: &str,
+    ) -> Result<(), String> {
+        let exists: bool = self
+            .conn
+            .query_row(
+                "SELECT COUNT(*) > 0 FROM tasks WHERE id = ?1",
+                [id],
+                |row| row.get(0),
+            )
+            .ralph_err(codes::DB_READ, "Failed to check task")?;
+        if !exists {
+            return ralph_err!(codes::TASK_OPS, "Task {id} does not exist");
+        }
+
+        if status == TaskStatus::Done {
+            self.conn
+                .execute(
+                    "UPDATE tasks SET status = ?1, completed = ?2, updated = ?3 WHERE id = ?4",
+                    rusqlite::params![status.as_str(), date, date, id],
+                )
+                .ralph_err(codes::DB_WRITE, "Failed to update task status")?;
+        } else {
+            self.conn
+                .execute(
+                    "UPDATE tasks SET status = ?1, updated = ?2 WHERE id = ?3",
+                    rusqlite::params![status.as_str(), date, id],
+                )
+                .ralph_err(codes::DB_WRITE, "Failed to update task status")?;
+        }
+
+        Ok(())
+    }
+
+    /// Set task provenance
+    ///
+    /// **For test fixture generation only.** Production tasks set provenance at creation.
+    pub fn set_task_provenance(&self, id: u32, provenance: TaskProvenance) -> Result<(), String> {
+        let exists: bool = self
+            .conn
+            .query_row(
+                "SELECT COUNT(*) > 0 FROM tasks WHERE id = ?1",
+                [id],
+                |row| row.get(0),
+            )
+            .ralph_err(codes::DB_READ, "Failed to check task")?;
+        if !exists {
+            return ralph_err!(codes::TASK_OPS, "Task {id} does not exist");
+        }
+
+        self.conn
+            .execute(
+                "UPDATE tasks SET provenance = ?1 WHERE id = ?2",
+                rusqlite::params![provenance.as_str(), id],
+            )
+            .ralph_err(codes::DB_WRITE, "Failed to update task provenance")?;
+
+        Ok(())
+    }
+
     pub fn enrich_task(
         &self,
         id: u32,

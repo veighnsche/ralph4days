@@ -6,7 +6,9 @@
 //! Fixtures use .undetect-ralph/ (not .ralph/) so they're not detected as Ralph projects.
 //! The mock workflow (just dev-mock) renames .undetect-ralph/ to .ralph/ when copying.
 
-use sqlite_db::{AddFeatureCommentInput, FeatureInput, FixedClock, SqliteDb};
+use sqlite_db::{
+    AddFeatureCommentInput, FeatureInput, FixedClock, SqliteDb, TaskProvenance, TaskStatus,
+};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -1289,16 +1291,17 @@ just dev-mock 04-desktop-dev
         })
         .unwrap();
 
-    // Set provenance on all 21 tasks via raw SQL
-    db.execute_raw("UPDATE tasks SET provenance = 'agent' WHERE id IN (1,3,4,5,6,8,9,10,12,13,14,15,16,17,18,20)")
-        .unwrap();
-    db.execute_raw("UPDATE tasks SET provenance = 'human' WHERE id IN (2,7,11,21)")
-        .unwrap();
-    db.execute_raw("UPDATE tasks SET provenance = 'system' WHERE id = 19")
-        .unwrap();
+    // Set provenance on all 21 tasks
+    for id in [1, 3, 4, 5, 6, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 20] {
+        db.set_task_provenance(id, TaskProvenance::Agent).unwrap();
+    }
+    for id in [2, 7, 11, 21] {
+        db.set_task_provenance(id, TaskProvenance::Human).unwrap();
+    }
+    db.set_task_provenance(19, TaskProvenance::System).unwrap();
 
     // Mark task 21 as in_progress so signals are visible
-    db.execute_raw("UPDATE tasks SET status = 'in_progress', updated = '2025-01-22' WHERE id = 21")
+    db.set_task_status_with_date(21, TaskStatus::InProgress, "2025-01-22")
         .unwrap();
 
     db.add_comment(
@@ -1422,26 +1425,23 @@ just dev-mock 04-desktop-dev
     )
     .unwrap();
 
-    // Set varied statuses via raw SQL (fixture-only, not public API)
+    // Set varied statuses with historical dates (fixture-only)
     // Tasks 1,2,3,8 = done; Tasks 4,9 = in_progress; Tasks 14,17 = blocked; Task 19 = skipped
-    db.execute_raw("UPDATE tasks SET status = 'done', completed = '2025-01-14' WHERE id = 1")
+    db.set_task_status_with_date(1, TaskStatus::Done, "2025-01-14")
         .unwrap();
-    db.execute_raw("UPDATE tasks SET status = 'done', completed = '2025-01-16' WHERE id = 2")
+    db.set_task_status_with_date(2, TaskStatus::Done, "2025-01-16")
         .unwrap();
-    db.execute_raw("UPDATE tasks SET status = 'done', completed = '2025-01-18' WHERE id = 3")
+    db.set_task_status_with_date(3, TaskStatus::Done, "2025-01-18")
         .unwrap();
-    db.execute_raw("UPDATE tasks SET status = 'in_progress', updated = '2025-01-20' WHERE id = 4")
+    db.set_task_status_with_date(4, TaskStatus::InProgress, "2025-01-20")
         .unwrap();
-    db.execute_raw("UPDATE tasks SET status = 'done', completed = '2025-01-15' WHERE id = 8")
+    db.set_task_status_with_date(8, TaskStatus::Done, "2025-01-15")
         .unwrap();
-    db.execute_raw("UPDATE tasks SET status = 'in_progress', updated = '2025-01-21' WHERE id = 9")
+    db.set_task_status_with_date(9, TaskStatus::InProgress, "2025-01-21")
         .unwrap();
-    db.execute_raw("UPDATE tasks SET status = 'blocked' WHERE id = 14")
-        .unwrap();
-    db.execute_raw("UPDATE tasks SET status = 'blocked' WHERE id = 17")
-        .unwrap();
-    db.execute_raw("UPDATE tasks SET status = 'skipped' WHERE id = 19")
-        .unwrap();
+    db.set_task_status(14, TaskStatus::Blocked).unwrap();
+    db.set_task_status(17, TaskStatus::Blocked).unwrap();
+    db.set_task_status(19, TaskStatus::Skipped).unwrap();
 
     // --- Task Signals (as structured comments) ---
     // TODO: Reimplement signal examples with new canonical schema (discipline_id, verb, text fields)
