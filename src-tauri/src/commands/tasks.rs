@@ -141,3 +141,31 @@ pub fn get_tasks(state: State<'_, AppState>) -> Result<Vec<sqlite_db::Task>, Str
     let db = get_db(&state)?;
     Ok(db.get_tasks())
 }
+
+#[tauri::command]
+pub fn get_task_signals(
+    state: State<'_, AppState>,
+    task_id: u32,
+) -> Result<Vec<sqlite_db::TaskSignal>, String> {
+    let db = get_db(&state)?;
+    db.get_task_signals(task_id)
+}
+
+#[tauri::command]
+pub fn get_signal_summaries(
+    state: State<'_, AppState>,
+    task_ids: Vec<u32>,
+) -> Result<std::collections::HashMap<u32, sqlite_db::TaskSignalSummary>, String> {
+    let db = get_db(&state)?;
+    db.get_signal_summaries(&task_ids)
+}
+
+#[tauri::command]
+pub fn answer_ask(
+    state: State<'_, AppState>,
+    signal_id: u32,
+    answer: String,
+) -> Result<(), String> {
+    let db = get_db(&state)?;
+    db.answer_ask(signal_id, answer)
+}
