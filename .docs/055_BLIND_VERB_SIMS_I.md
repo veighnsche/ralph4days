@@ -85,3 +85,46 @@ I decide: use the hardcoded 25 (trusting the code over the task), create a black
 **Result:** 3/3 friction points map to 8-verb set. Continue looping.
 
 ---
+
+## Simulation #23 (Ralph Loop Iteration 3)
+
+**Project:** Podcast hosting platform (Django/Python)
+**Feature:** listener-analytics
+**Discipline:** data
+**Task:** Build analytics dashboard showing listener demographics, episode performance (plays, downloads, completion rate), and subscriber churn prediction. Query data warehouse, cache results.
+**Complication:** Race condition in data freshness
+
+### Walkthrough
+
+I start by reading the analytics requirements. I need to build endpoints that query listener data, aggregate by demographics, calculate completion rates. I find a `listeners` table and an `episode_plays` table. Good.
+
+But I realize: **the task says "completion rate" but I don't see a `playback_progress` table or any way to know if someone finished an episode.** I search for how playback is tracked. I find a `player_sessions` table that has `started_at` and `ended_at` timestamps. **Does `ended_at` mean they finished listening, or just closed the app?** There's no way to know if someone actually listened to the full episode.
+
+I also see the data warehouse comment. **Should I query the live database or a separate data warehouse?** The task says "query data warehouse, cache results" but there's no data warehouse connection in the codebase. Do I:
+1. Create the DW connection
+2. Assume it exists and mock it
+3. Just query the live database
+
+The task says DW, so I assume it exists. But **if it doesn't, my code will fail at runtime.**
+
+I also realize: **if I cache results, how fresh is acceptable?** The task doesn't specify. Listener data changes in real-time. If I cache for 1 hour, the dashboard shows old data. If I cache for 1 minute, I'm hitting the warehouse constantly. **Where's the tradeoff documented?**
+
+I implement it with a 15-minute cache (arbitrary choice) and add a "last updated" timestamp. I query the dashboard with `SELECT ... FROM listeners` assuming a DW exists. But **I'm making two assumptions: DW exists, and 15-minute freshness is acceptable.**
+
+### Friction Points Extracted
+
+1. **ask** — How is episode completion tracked? DW exists? What cache TTL?
+2. **flag** — Playback completion metric undefined
+3. **learned** — Chose 15-minute cache arbitrarily; needs validation
+4. **blocked** — Data warehouse connection doesn't exist in codebase
+
+### Validation
+
+- `ask` ✓ (decisions needed)
+- `flag` ✓ (undefined metric)
+- `learned` ✓ (design assumption)
+- `blocked` ✓ (external resource missing)
+
+**Result:** 4/4 friction points map to 8-verb set. Continue looping.
+
+---
