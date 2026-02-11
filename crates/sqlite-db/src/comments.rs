@@ -187,8 +187,10 @@ impl SqliteDb {
 
     pub(crate) fn get_all_comments_by_task(&self) -> HashMap<u32, Vec<TaskComment>> {
         let Ok(mut stmt) = self.conn.prepare(
-            "SELECT id, task_id, author, body, created, session_id, signal_verb, signal_payload, signal_answered, parent_comment_id, priority \
-             FROM task_comments ORDER BY task_id, id DESC",
+            "SELECT tc.id, tc.task_id, COALESCE(d.display_name, tc.author) as author, tc.body, tc.created, tc.session_id, tc.signal_verb, tc.signal_payload, tc.signal_answered, tc.parent_comment_id, tc.priority \
+             FROM task_comments tc \
+             LEFT JOIN disciplines d ON tc.author = d.name \
+             ORDER BY tc.task_id, tc.id DESC",
         ) else {
             return HashMap::new();
         };

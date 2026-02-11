@@ -1,5 +1,4 @@
 import { CommentAvatar, DisciplineRadial, NumberedIdDisplay } from '@/components/shared'
-import { useDisciplines } from '@/hooks/disciplines'
 import { formatDate } from '@/lib/formatDate'
 import type { TaskComment } from '@/types/generated'
 
@@ -8,8 +7,6 @@ interface ReplyCardProps {
 }
 
 export function ReplyCard({ reply }: ReplyCardProps) {
-  const { disciplines } = useDisciplines()
-
   return (
     <div className="ml-12 group/reply flex gap-2.5 relative overflow-hidden rounded-md px-2 py-1.5 pb-6 border-l-2 border-border/50">
       <DisciplineRadial discipline={reply.author} />
@@ -17,9 +14,7 @@ export function ReplyCard({ reply }: ReplyCardProps) {
       <div className="flex-1 min-w-0 space-y-2 pr-24">
         <div className="flex items-baseline gap-2">
           <NumberedIdDisplay id={reply.id} variant="inline" />
-          <span className="text-sm font-medium">
-            {reply.author ? (disciplines.find(d => d.name === reply.author)?.displayName ?? reply.author) : 'You'}
-          </span>
+          <span className="text-sm font-medium">{reply.author ?? 'You'}</span>
           {reply.priority && reply.priority !== 'none' && (
             <span className="text-xs text-muted-foreground uppercase">{reply.priority}</span>
           )}
