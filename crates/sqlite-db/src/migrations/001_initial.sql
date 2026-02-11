@@ -66,11 +66,9 @@ CREATE TABLE task_comments (
   task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
   session_id TEXT,
   author TEXT NOT NULL,
-
   signal_verb TEXT CHECK(signal_verb IN ('done','partial','stuck','ask','flag','learned','suggest','blocked') OR signal_verb IS NULL),
   signal_payload TEXT,
   signal_answered TEXT,
-
   body TEXT NOT NULL,
   created TEXT NOT NULL DEFAULT (datetime('now'))
 ) STRICT;
