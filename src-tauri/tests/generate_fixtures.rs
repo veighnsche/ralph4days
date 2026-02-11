@@ -1420,11 +1420,85 @@ just dev-mock 04-desktop-dev
     db.execute_raw("UPDATE tasks SET status = 'skipped' WHERE id = 19")
         .unwrap();
 
+    // --- Task Signals (as structured comments) ---
+    // Task 4 (in_progress, unit tests): 2 sessions with mixed verbs
+    // Session 1: flag + learned + partial
+    db.execute_raw(
+        "INSERT INTO task_comments (task_id, session_id, author, signal_verb, signal_payload, body, created) VALUES
+        (4, 'sess-4a-001', 'frontend', 'flag', '{\"what\":\"Empty URL string passes bookmark validation\",\"severity\":\"warning\",\"category\":\"bug\"}', '🚩 **Flag (warning):** Empty URL string passes bookmark validation\n\n**Category:** bug', '2025-01-20 10:05:00'),
+        (4, 'sess-4a-001', 'frontend', 'learned', '{\"text\":\"localStorage has a 5MB quota per origin in Chromium\",\"kind\":\"discovery\",\"scope\":\"feature\",\"rationale\":\"Needed to calculate max bookmarks before quota hit\"}', '💡 **Learned (discovery):** localStorage has a 5MB quota per origin in Chromium\n\n**Rationale:** Needed to calculate max bookmarks before quota hit\n\n**Scope:** feature', '2025-01-20 10:12:00'),
+        (4, 'sess-4a-001', 'frontend', 'partial', '{\"summary\":\"Wrote 12 of 18 planned test cases for CRUD operations\",\"remaining\":\"Need delete edge cases and bulk operations tests\"}', '⊙ **Partial:** Wrote 12 of 18 planned test cases for CRUD operations\n\n**Remaining:** Need delete edge cases and bulk operations tests', '2025-01-20 10:30:00')"
+    ).unwrap();
+
+    // Session 2: ask (blocking, unanswered) + flag + learned + stuck
+    db.execute_raw(
+        "INSERT INTO task_comments (task_id, session_id, author, signal_verb, signal_payload, body, created) VALUES
+        (4, 'sess-4b-002', 'frontend', 'ask', '{\"question\":\"Should empty URL strings be treated as validation errors or silently skipped?\",\"options\":[\"Reject with error\",\"Skip silently\",\"Auto-fill with placeholder URL\"],\"preferred\":\"Reject with error\",\"blocking\":true}', '❓ **Ask (blocking):** Should empty URL strings be treated as validation errors or silently skipped?\n\n**Preferred:** Reject with error\n\n**Options:**\n- Reject with error\n- Skip silently\n- Auto-fill with placeholder URL', '2025-01-20 14:00:00'),
+        (4, 'sess-4b-002', 'frontend', 'flag', '{\"what\":\"Unicode URLs cause double-encoding in localStorage keys\",\"severity\":\"blocking\",\"category\":\"bug\"}', '🚩 **Flag (blocking):** Unicode URLs cause double-encoding in localStorage keys\n\n**Category:** bug', '2025-01-20 14:15:00'),
+        (4, 'sess-4b-002', 'frontend', 'learned', '{\"text\":\"Vitest mocks of localStorage need explicit reset between tests or state leaks across suites\",\"kind\":\"convention\",\"scope\":\"task\"}', '💡 **Learned (convention):** Vitest mocks of localStorage need explicit reset between tests or state leaks across suites\n\n**Scope:** task', '2025-01-20 14:20:00'),
+        (4, 'sess-4b-002', 'frontend', 'stuck', '{\"reason\":\"Cannot proceed with delete tests until the empty URL validation question is answered — test assertions depend on the expected behavior\"}', '⚠ **Stuck:** Cannot proceed with delete tests until the empty URL validation question is answered — test assertions depend on the expected behavior', '2025-01-20 14:25:00')"
+    ).unwrap();
+
+    // Task 9 (in_progress, collection sidebar): 1 session with suggest + partial
+    db.execute_raw(
+        "INSERT INTO task_comments (task_id, session_id, author, signal_verb, signal_payload, body, created) VALUES
+        (9, 'sess-9a-001', 'frontend', 'suggest', '{\"what\":\"Add keyboard shortcut (Cmd+B) to toggle sidebar\",\"kind\":\"new_task\",\"why\":\"Power users expect sidebar toggle shortcuts in desktop apps\"}', '💭 **Suggest (new_task):** Add keyboard shortcut (Cmd+B) to toggle sidebar\n\n**Why:** Power users expect sidebar toggle shortcuts in desktop apps', '2025-01-21 09:10:00'),
+        (9, 'sess-9a-001', 'frontend', 'learned', '{\"text\":\"Virtual scroll in sidebar needs a fixed height container — percentage heights do not work with ResizeObserver\",\"kind\":\"gotcha\",\"scope\":\"task\"}', '💡 **Learned (gotcha):** Virtual scroll in sidebar needs a fixed height container — percentage heights do not work with ResizeObserver\n\n**Scope:** task', '2025-01-21 09:20:00'),
+        (9, 'sess-9a-001', 'frontend', 'partial', '{\"summary\":\"Sidebar renders collection list with counts. Collapse/expand works.\",\"remaining\":\"Mobile responsive behavior and virtual scroll for 50+ collections\"}', '⊙ **Partial:** Sidebar renders collection list with counts. Collapse/expand works.\n\n**Remaining:** Mobile responsive behavior and virtual scroll for 50+ collections', '2025-01-21 09:45:00')"
+    ).unwrap();
+
+    // Task 3 (done, bookmark storage): 2 sessions showing progression to done
+    // Session 1: blocked + partial
+    db.execute_raw(
+        "INSERT INTO task_comments (task_id, session_id, author, signal_verb, signal_payload, body, created) VALUES
+        (3, 'sess-3a-001', 'frontend', 'blocked', '{\"on\":\"localStorage API not available in test environment\",\"kind\":\"environment\",\"detail\":\"Vitest runs in Node where localStorage is not defined. Need to configure jsdom or add a mock.\"}', '🚫 **Blocked (environment):** localStorage API not available in test environment\n\n**Detail:** Vitest runs in Node where localStorage is not defined. Need to configure jsdom or add a mock.', '2025-01-17 11:00:00'),
+        (3, 'sess-3a-001', 'frontend', 'partial', '{\"summary\":\"CRUD functions written but untestable without localStorage mock\",\"remaining\":\"Configure jsdom environment for tests, then verify all operations\"}', '⊙ **Partial:** CRUD functions written but untestable without localStorage mock\n\n**Remaining:** Configure jsdom environment for tests, then verify all operations', '2025-01-17 11:30:00')"
+    ).unwrap();
+
+    // Session 2: flag (info) + learned + done
+    db.execute_raw(
+        "INSERT INTO task_comments (task_id, session_id, author, signal_verb, signal_payload, body, created) VALUES
+        (3, 'sess-3b-002', 'frontend', 'flag', '{\"what\":\"localStorage.setItem can throw QuotaExceededError\",\"severity\":\"info\",\"category\":\"edge-case\"}', '🚩 **Flag (info):** localStorage.setItem can throw QuotaExceededError\n\n**Category:** edge-case', '2025-01-18 08:15:00'),
+        (3, 'sess-3b-002', 'frontend', 'learned', '{\"text\":\"Wrapping localStorage calls in try/catch with LRU eviction fallback handles quota gracefully\",\"kind\":\"pattern\",\"scope\":\"feature\",\"rationale\":\"Users with thousands of bookmarks will eventually hit the 5MB limit\"}', '💡 **Learned (pattern):** Wrapping localStorage calls in try/catch with LRU eviction fallback handles quota gracefully\n\n**Rationale:** Users with thousands of bookmarks will eventually hit the 5MB limit\n\n**Scope:** feature', '2025-01-18 08:30:00'),
+        (3, 'sess-3b-002', 'frontend', 'done', '{\"summary\":\"All CRUD operations implemented with localStorage persistence. Quota errors handled via LRU eviction. All 3 acceptance criteria pass.\"}', '✓ **Done:** All CRUD operations implemented with localStorage persistence. Quota errors handled via LRU eviction. All 3 acceptance criteria pass.', '2025-01-18 09:00:00')"
+    ).unwrap();
+
+    // Task 14 (blocked, search bar): 1 session showing blocked
+    db.execute_raw(
+        "INSERT INTO task_comments (task_id, session_id, author, signal_verb, signal_payload, body, created) VALUES
+        (14, 'sess-14a-001', 'frontend', 'blocked', '{\"on\":\"Full-text search index (task #13) not implemented yet\",\"kind\":\"dependency\",\"detail\":\"Cannot build autocomplete without a search backend to query against\"}', '🚫 **Blocked (dependency):** Full-text search index (task #13) not implemented yet\n\n**Detail:** Cannot build autocomplete without a search backend to query against', '2025-01-22 10:00:00')"
+    ).unwrap();
+
+    // Task 1 (done, bookmark card layout): 1 session, clean done
+    db.execute_raw(
+        "INSERT INTO task_comments (task_id, session_id, author, signal_verb, signal_payload, body, created) VALUES
+        (1, 'sess-1a-001', 'frontend', 'learned', '{\"text\":\"Favicon URLs frequently 404 — must use fallback globe icon\",\"kind\":\"gotcha\",\"scope\":\"feature\"}', '💡 **Learned (gotcha):** Favicon URLs frequently 404 — must use fallback globe icon\n\n**Scope:** feature', '2025-01-14 08:20:00'),
+        (1, 'sess-1a-001', 'frontend', 'done', '{\"summary\":\"Bookmark card component with favicon, title, truncated URL, and hover action buttons. Uses 3-column grid on desktop.\"}', '✓ **Done:** Bookmark card component with favicon, title, truncated URL, and hover action buttons. Uses 3-column grid on desktop.', '2025-01-14 09:00:00')"
+    ).unwrap();
+
+    // Task 8 (done, collection data model): 1 session with ask (answered) + done
+    db.execute_raw(
+        "INSERT INTO task_comments (task_id, session_id, author, signal_verb, signal_payload, signal_answered, body, created) VALUES
+        (8, 'sess-8a-001', 'frontend', 'ask', '{\"question\":\"Should collections support ordering of their bookmarks, or just store them as an unordered set?\",\"options\":[\"Ordered (array of IDs)\",\"Unordered (set of IDs)\"],\"preferred\":\"Ordered (array of IDs)\",\"blocking\":true}', 'Ordered (array of IDs)', '❓ **Ask (blocking):** Should collections support ordering of their bookmarks, or just store them as an unordered set?\n\n**Preferred:** Ordered (array of IDs)\n\n**Options:**\n- Ordered (array of IDs)\n- Unordered (set of IDs)\n\n**Answer:** Ordered (array of IDs)', '2025-01-15 10:00:00')"
+    ).unwrap();
+    db.execute_raw(
+        "INSERT INTO task_comments (task_id, session_id, author, signal_verb, signal_payload, body, created) VALUES
+        (8, 'sess-8a-001', 'frontend', 'done', '{\"summary\":\"Collection schema defined with name, color, icon, and ordered bookmark ID array. Junction table supports many-to-many with position column.\"}', '✓ **Done:** Collection schema defined with name, color, icon, and ordered bookmark ID array. Junction table supports many-to-many with position column.', '2025-01-15 11:00:00')"
+    ).unwrap();
+
+    // Task 7 (pending, URL sanitization): 1 session with suggest that created a draft task
+    db.execute_raw(
+        "INSERT INTO task_comments (task_id, session_id, author, signal_verb, signal_payload, body, created) VALUES
+        (7, 'sess-7a-001', 'frontend', 'suggest', '{\"what\":\"Add CSP meta tag to index.html to prevent inline script injection\",\"kind\":\"improvement\",\"why\":\"Defense-in-depth — even if XSS bypasses input sanitization, CSP blocks execution\"}', '💭 **Suggest (improvement):** Add CSP meta tag to index.html to prevent inline script injection\n\n**Why:** Defense-in-depth — even if XSS bypasses input sanitization, CSP blocks execution', '2025-01-19 15:00:00'),
+        (7, 'sess-7a-001', 'frontend', 'flag', '{\"what\":\"data: URLs can embed arbitrary content including scripts\",\"severity\":\"blocking\",\"category\":\"security\"}', '🚩 **Flag (blocking):** data: URLs can embed arbitrary content including scripts\n\n**Category:** security', '2025-01-19 15:10:00')"
+    ).unwrap();
+
     println!(
         "\n✓ Created 04-desktop-dev fixture at: {}",
         fixture_path.display()
     );
     println!("  5 features, 20 tasks (4 done, 2 in_progress, 11 pending, 2 blocked, 1 skipped)");
+    println!("  22 signals across 9 sessions on 7 tasks (all 8 verbs represented)");
 }
 
 /// Generate all fixtures
