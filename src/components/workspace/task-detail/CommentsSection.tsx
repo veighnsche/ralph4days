@@ -14,6 +14,7 @@ import {
 import { useState } from 'react'
 import { CommentAvatar, DisciplineRadial, InlineError, NumberedIdDisplay } from '@/components/shared'
 import { Button } from '@/components/ui/button'
+import { useDisciplines } from '@/hooks/disciplines'
 import { useCommentMutations } from '@/hooks/tasks'
 import { formatDate } from '@/lib/formatDate'
 import type { Task, TaskComment } from '@/types/generated'
@@ -79,6 +80,7 @@ interface CommentsSectionProps {
 export function CommentsSection({ task }: CommentsSectionProps) {
   const allComments = task.comments ?? []
   const [commentInput, setCommentInput] = useState('')
+  const { disciplines } = useDisciplines()
 
   const topLevel: TaskComment[] = []
   const repliesByParent = new Map<number, TaskComment[]>()
@@ -226,7 +228,11 @@ export function CommentsSection({ task }: CommentsSectionProps) {
                   <div className="flex-1 min-w-0 space-y-2.5">
                     <div className="flex items-baseline gap-2">
                       <NumberedIdDisplay id={comment.id} variant="inline" />
-                      <span className="text-sm font-medium">{comment.author ?? 'You'}</span>
+                      <span className="text-sm font-medium">
+                        {comment.author
+                          ? (disciplines.find(d => d.name === comment.author)?.displayName ?? comment.author)
+                          : 'You'}
+                      </span>
                     </div>
 
                     {signalPayload && comment.signal_verb && (
