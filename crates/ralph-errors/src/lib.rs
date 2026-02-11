@@ -19,7 +19,7 @@ impl RalphError {
         match self.code {
             1000..=1299 => "PROJECT",
             2000..=2299 => "DATABASE",
-            3000..=3299 => "TASK",
+            3000..=3399 => "TASK",
             4000..=4199 => "FEATURE",
             5000..=5099 => "LOOP_ENGINE",
             7000..=7099 => "TERMINAL",
@@ -133,6 +133,7 @@ pub mod codes {
     pub const TASK_VALIDATION: u16 = 3000;
     pub const TASK_OPS: u16 = 3100;
     pub const COMMENT_OPS: u16 = 3200;
+    pub const SIGNAL_OPS: u16 = 3300;
     pub const FEATURE_OPS: u16 = 4000;
     pub const DISCIPLINE_OPS: u16 = 4100;
     pub const LOOP_ENGINE: u16 = 5000;
