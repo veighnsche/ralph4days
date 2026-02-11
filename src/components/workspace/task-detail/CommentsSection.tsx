@@ -20,7 +20,6 @@ import type { Task, TaskComment } from '@/types/generated'
 import { CommentEditor } from './CommentEditor'
 import { ReplyCard } from './ReplyCard'
 import { ReplyForm } from './ReplyForm'
-import { SignalPayloadDisplay } from './SignalPayloadDisplay'
 
 const VERB_CONFIG: Record<
   string,
@@ -160,17 +159,10 @@ export function CommentsSection({ task }: CommentsSectionProps) {
             const isSignal = comment.signal_verb != null
             const replies = repliesByParent.get(comment.id) || []
 
-            let signalPayload: Record<string, unknown> | null = null
             let signalConfig = null
             let SignalIcon = null
 
-            if (isSignal && comment.signal_payload) {
-              try {
-                signalPayload = JSON.parse(comment.signal_payload)
-              } catch {
-                // Fall back to plain rendering if JSON is invalid
-              }
-
+            if (isSignal) {
               const verb = comment.signal_verb!
               signalConfig = VERB_CONFIG[verb] || {
                 icon: MessageCircle,
@@ -229,25 +221,20 @@ export function CommentsSection({ task }: CommentsSectionProps) {
                       <span className="text-sm font-medium">{comment.author ?? 'You'}</span>
                     </div>
 
-                    {signalPayload && comment.signal_verb && (
-                      <SignalPayloadDisplay verb={comment.signal_verb} payload={signalPayload} />
+                    {editingId === comment.id && !isSignal ? (
+                      <div className="mt-1.5">
+                        <CommentEditor
+                          value={editBody}
+                          onChange={setEditBody}
+                          onSubmit={submitEdit}
+                          onCancel={cancelEdit}
+                          submitLabel="Save"
+                          autoFocus
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{comment.body}</p>
                     )}
-
-                    {!isSignal &&
-                      (editingId === comment.id ? (
-                        <div className="mt-1.5">
-                          <CommentEditor
-                            value={editBody}
-                            onChange={setEditBody}
-                            onSubmit={submitEdit}
-                            onCancel={cancelEdit}
-                            submitLabel="Save"
-                            autoFocus
-                          />
-                        </div>
-                      ) : (
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{comment.body}</p>
-                      ))}
                   </div>
 
                   <div className="absolute bottom-1.5 left-0 right-0 flex items-center justify-between px-3">
