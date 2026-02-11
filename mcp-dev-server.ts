@@ -4,7 +4,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { spawn, type Subprocess } from "bun";
+import { spawn, type Subprocess, type ServerWebSocket } from "bun";
 import { readdirSync, readFileSync, writeFileSync, existsSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { execSync } from "node:child_process";
@@ -17,6 +17,57 @@ const KWIN_SCRIPT_PATH = "/tmp/kwin-activate-ralph.js";
 const KWIN_SCRIPT_NAME = "mcp-activate-ralph";
 
 let devProcess: Subprocess | null = null;
+
+// --- WebSocket bridge for DOM interaction ---
+let bridgeSocket: ServerWebSocket<unknown> | null = null;
+let commandId = 0;
+const pending = new Map<string, { resolve: (v: string) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> }>();
+
+Bun.serve({
+  port: 9223,
+  fetch(req, server) {
+    if (server.upgrade(req)) return undefined;
+    return new Response("dev-tauri bridge", { status: 200 });
+  },
+  websocket: {
+    open(ws) {
+      bridgeSocket = ws;
+    },
+    close() {
+      bridgeSocket = null;
+    },
+    message(_ws, msg) {
+      try {
+        const data = JSON.parse(String(msg));
+        const entry = pending.get(data.id);
+        if (!entry) return;
+        pending.delete(data.id);
+        clearTimeout(entry.timer);
+        if (data.type === "error") {
+          entry.reject(new Error(data.message));
+        } else {
+          entry.resolve(typeof data.value === "string" ? data.value : JSON.stringify(data.value));
+        }
+      } catch {}
+    },
+  },
+});
+
+function sendBridgeCommand(type: string, params: Record<string, unknown>, timeoutMs = 5000): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!bridgeSocket) {
+      reject(new Error("Dev bridge not connected. Is the app running in dev mode?"));
+      return;
+    }
+    const id = String(++commandId);
+    const timer = setTimeout(() => {
+      pending.delete(id);
+      reject(new Error(`Bridge command timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+    pending.set(id, { resolve, reject, timer });
+    bridgeSocket.send(JSON.stringify({ id, type, ...params }));
+  });
+}
 
 function getMockProjects(): string[] {
   return readdirSync(MOCK_DIR, { withFileTypes: true })
@@ -130,6 +181,85 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         description:
           "Take a screenshot of the running Ralph Tauri window. Focuses the window via KWin scripting, captures it with Spectacle, and returns the image. Use this to visually verify UI changes after starting dev_tauri.",
         inputSchema: { type: "object" as const, properties: {} },
+      },
+      {
+        name: "eval_dev_tauri",
+        description:
+          "Execute arbitrary JavaScript in the running Tauri webview and return the result. Uses a WebSocket bridge to the frontend. The code is evaluated as an expression first, falling back to statement execution.",
+        inputSchema: {
+          type: "object" as const,
+          properties: {
+            code: {
+              type: "string" as const,
+              description: "JavaScript code to evaluate in the webview DOM context.",
+            },
+          },
+          required: ["code"],
+        },
+      },
+      {
+        name: "click_dev_tauri",
+        description:
+          "Click an element in the running Tauri webview. Find by CSS selector or by visible text content. Returns a description of the clicked element.",
+        inputSchema: {
+          type: "object" as const,
+          properties: {
+            selector: {
+              type: "string" as const,
+              description: "CSS selector for the element to click.",
+            },
+            text: {
+              type: "string" as const,
+              description: "Visible text content to search for. Finds the deepest matching element.",
+            },
+          },
+        },
+      },
+      {
+        name: "type_dev_tauri",
+        description:
+          "Type text into an input or textarea in the running Tauri webview. Clears existing value first by default. Dispatches input and change events for React compatibility.",
+        inputSchema: {
+          type: "object" as const,
+          properties: {
+            selector: {
+              type: "string" as const,
+              description: "CSS selector for the input/textarea element.",
+            },
+            text: {
+              type: "string" as const,
+              description: "Text to type into the element.",
+            },
+            clear: {
+              type: "boolean" as const,
+              description: "Whether to clear existing value first. Defaults to true.",
+            },
+          },
+          required: ["selector", "text"],
+        },
+      },
+      {
+        name: "scroll_dev_tauri",
+        description:
+          "Scroll an element or the page in the running Tauri webview. Can scroll by delta pixels or jump to top/bottom. Returns the new scrollTop position.",
+        inputSchema: {
+          type: "object" as const,
+          properties: {
+            selector: {
+              type: "string" as const,
+              description: "CSS selector for the scrollable element. Defaults to document root.",
+            },
+            deltaY: {
+              type: "number" as const,
+              description: "Pixels to scroll vertically. Positive = down, negative = up. Default: 300.",
+            },
+            to: {
+              type: "string" as const,
+              enum: ["top", "bottom"],
+              description: 'Jump to "top" or "bottom" of the scrollable area.',
+            },
+          },
+        },
       },
     ],
   };
@@ -381,6 +511,65 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: `Screenshot failed: ${err instanceof Error ? err.message : String(err)}`,
             },
           ],
+          isError: true,
+        };
+      }
+    }
+
+    case "eval_dev_tauri": {
+      try {
+        const result = await sendBridgeCommand("eval", { code: args?.code as string });
+        return { content: [{ type: "text" as const, text: result }] };
+      } catch (err) {
+        return {
+          content: [{ type: "text" as const, text: err instanceof Error ? err.message : String(err) }],
+          isError: true,
+        };
+      }
+    }
+
+    case "click_dev_tauri": {
+      try {
+        const result = await sendBridgeCommand("click", {
+          selector: args?.selector as string | undefined,
+          text: args?.text as string | undefined,
+        });
+        return { content: [{ type: "text" as const, text: result }] };
+      } catch (err) {
+        return {
+          content: [{ type: "text" as const, text: err instanceof Error ? err.message : String(err) }],
+          isError: true,
+        };
+      }
+    }
+
+    case "type_dev_tauri": {
+      try {
+        const result = await sendBridgeCommand("type", {
+          selector: args?.selector as string,
+          text: args?.text as string,
+          clear: args?.clear as boolean | undefined,
+        });
+        return { content: [{ type: "text" as const, text: result }] };
+      } catch (err) {
+        return {
+          content: [{ type: "text" as const, text: err instanceof Error ? err.message : String(err) }],
+          isError: true,
+        };
+      }
+    }
+
+    case "scroll_dev_tauri": {
+      try {
+        const result = await sendBridgeCommand("scroll", {
+          selector: args?.selector as string | undefined,
+          deltaY: args?.deltaY as number | undefined,
+          to: args?.to as string | undefined,
+        });
+        return { content: [{ type: "text" as const, text: result }] };
+      } catch (err) {
+        return {
+          content: [{ type: "text" as const, text: err instanceof Error ? err.message : String(err) }],
           isError: true,
         };
       }

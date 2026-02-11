@@ -3,6 +3,10 @@ import ReactDOM from 'react-dom/client'
 import { ThemeProvider } from '@/lib/theme-provider'
 import App from './App'
 
+if (import.meta.env.DEV) {
+  import('./lib/dev-bridge')
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
