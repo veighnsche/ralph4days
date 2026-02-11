@@ -218,7 +218,7 @@ impl SqliteDb {
              tc.created, tc.session_id \
              FROM task_signals tc \
              LEFT JOIN disciplines d ON tc.discipline_id = d.id \
-             WHERE tc.task_id = ?1 AND tc.verb = 'signal' \
+             WHERE tc.task_id = ?1 \
              ORDER BY tc.id DESC",
         ) else {
             return vec![];
@@ -247,7 +247,7 @@ impl SqliteDb {
     pub(crate) fn get_all_signals_by_task(&self) -> HashMap<u32, Vec<TaskSignal>> {
         let Ok(mut stmt) = self
             .conn
-            .prepare("SELECT DISTINCT task_id FROM task_signals WHERE verb = 'signal'")
+            .prepare("SELECT DISTINCT task_id FROM task_signals")
         else {
             return HashMap::new();
         };
