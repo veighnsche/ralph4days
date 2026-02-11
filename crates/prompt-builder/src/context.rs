@@ -33,6 +33,7 @@ pub struct PromptContext {
     pub project_path: String,
     pub db_path: String,
     pub script_dir: String,
+    pub api_server_port: Option<u16>,
 
     // Prompt-specific input
     pub user_input: Option<String>,
@@ -93,6 +94,7 @@ pub fn test_context() -> PromptContext {
         project_path: "/tmp/test-project".to_owned(),
         db_path: "/tmp/test-project/.ralph/db/ralph.db".to_owned(),
         script_dir: "/tmp/ralph-mcp".to_owned(),
+        api_server_port: None,
         user_input: None,
         target_task_id: None,
         target_feature: None,

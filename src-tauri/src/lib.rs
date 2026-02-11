@@ -1,3 +1,4 @@
+mod api_server;
 mod commands;
 mod recent_projects;
 mod terminal;
@@ -49,6 +50,22 @@ pub fn run() {
         .plugin(tauri_plugin_cli::init())
         .manage(AppState::default())
         .setup(|app| {
+            // Start API server for MCP signal communication
+            let app_handle = app.handle().clone();
+            let state: tauri::State<AppState> = app.state();
+
+            tauri::async_runtime::block_on(async {
+                match api_server::start_api_server(app_handle).await {
+                    Ok(port) => {
+                        *state.api_server_port.lock().unwrap() = Some(port);
+                        tracing::info!("API server started on port {}", port);
+                    }
+                    Err(e) => {
+                        tracing::error!("Failed to start API server: {}", e);
+                    }
+                }
+            });
+
             // WHY: tao#1046 / tauri#11856 — on Wayland, a window created with
             // visible(false) then shown via .show() has a stale CSD input region,
             // making decoration buttons unclickable. Both windows are created here

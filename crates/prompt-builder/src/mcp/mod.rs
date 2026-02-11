@@ -68,8 +68,21 @@ fn generate_signal_server(ctx: &PromptContext) -> (Vec<McpScript>, String) {
 
     let mut servers = Vec::new();
 
+    let env_vars = ctx.api_server_port.map_or_else(
+        || {
+            format!(
+                "\"RALPH_TASK_ID\":\"{task_id}\",\"RALPH_SESSION_ID\":\"{session_id}\",\"RALPH_DB_PATH\":\"{escaped_db}\""
+            )
+        },
+        |port| {
+            format!(
+                "\"RALPH_TASK_ID\":\"{task_id}\",\"RALPH_SESSION_ID\":\"{session_id}\",\"RALPH_DB_PATH\":\"{escaped_db}\",\"RALPH_API_PORT\":\"{port}\""
+            )
+        },
+    );
+
     servers.push(format!(
-        "\"ralph-signals\":{{\"command\":\"bun\",\"args\":[\"{escaped_path}\"],\"env\":{{\"RALPH_TASK_ID\":\"{task_id}\",\"RALPH_SESSION_ID\":\"{session_id}\",\"RALPH_DB_PATH\":\"{escaped_db}\"}}}}"
+        "\"ralph-signals\":{{\"command\":\"bun\",\"args\":[\"{escaped_path}\"],\"env\":{{{env_vars}}}}}"
     ));
 
     if let Some(discipline) = ctx.target_task_discipline() {

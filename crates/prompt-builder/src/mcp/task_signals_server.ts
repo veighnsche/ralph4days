@@ -2,70 +2,83 @@
 /**
  * Ralph Task Signals MCP Server
  *
- * A dumb INSERT pipe for task signals. Reads env vars, exposes 8 verbs as MCP tools,
- * and writes to task_signals table. Zero intelligence — all post-processing is Ralph's job.
+ * MCP server that forwards signal tool calls to the Ralph API server.
+ * The API server handles SQLite writes and emits Tauri events for real-time frontend updates.
  *
  * Environment variables (required):
  *   RALPH_TASK_ID - Current task ID
  *   RALPH_SESSION_ID - Current session ID
- *   RALPH_DB_PATH - Path to ralph.db SQLite file
+ *   RALPH_API_PORT - Port of the Ralph API server
  */
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
-import { Database } from 'bun:sqlite';
+import { Server } from '@modelcontextprotocol/sdk/server/index.js'
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js'
 
-const TASK_ID = process.env.RALPH_TASK_ID;
-const SESSION_ID = process.env.RALPH_SESSION_ID;
-const DB_PATH = process.env.RALPH_DB_PATH;
+const taskId = process.env.RALPH_TASK_ID
+const sessionId = process.env.RALPH_SESSION_ID
+const apiPort = process.env.RALPH_API_PORT
+const dbPath = process.env.RALPH_DB_PATH
 
-if (!TASK_ID || !SESSION_ID || !DB_PATH) {
-  console.error('ERROR: Missing required environment variables');
-  console.error('Required: RALPH_TASK_ID, RALPH_SESSION_ID, RALPH_DB_PATH');
-  process.exit(1);
+if (!(taskId && sessionId && apiPort && dbPath)) {
+  console.error('ERROR: Missing required environment variables')
+  console.error('Required: RALPH_TASK_ID, RALPH_SESSION_ID, RALPH_API_PORT, RALPH_DB_PATH')
+  process.exit(1)
 }
 
-const db = new Database(DB_PATH);
+const TASK_ID: string = taskId
+const SESSION_ID: string = sessionId
+const API_PORT: string = apiPort
+const DB_PATH: string = dbPath
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS task_signals (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    task_id INTEGER NOT NULL,
-    session_id TEXT NOT NULL,
-    verb TEXT NOT NULL CHECK(verb IN ('done','partial','stuck','ask','flag','learned','suggest','blocked')),
-    payload TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (task_id) REFERENCES tasks(id)
-  );
-  CREATE INDEX IF NOT EXISTS idx_task_signals_task ON task_signals(task_id);
-  CREATE INDEX IF NOT EXISTS idx_task_signals_session ON task_signals(session_id);
-  CREATE INDEX IF NOT EXISTS idx_task_signals_verb ON task_signals(verb);
-`);
+const API_URL = `http://127.0.0.1:${API_PORT}`
 
-const insertSignal = db.prepare(
-  'INSERT INTO task_signals (task_id, session_id, verb, payload) VALUES (?, ?, ?, ?)'
-);
+// Set the database path in the API server
+await fetch(`${API_URL}/api/set-db-path`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ db_path: DB_PATH })
+}).catch(err => {
+  console.error('Failed to set database path in API server:', err)
+  process.exit(1)
+})
 
-function signal(verb: string, payload: Record<string, unknown>): string {
-  insertSignal.run(TASK_ID, SESSION_ID, verb, JSON.stringify(payload));
-  return `Signal recorded: ${verb}`;
+async function signal(verb: string, payload: Record<string, unknown>): Promise<string> {
+  try {
+    const response = await fetch(`${API_URL}/api/task-signal`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        task_id: Number.parseInt(TASK_ID, 10),
+        session_id: SESSION_ID,
+        verb,
+        payload
+      })
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || `HTTP ${response.status}`)
+    }
+
+    return `Signal recorded: ${verb}`
+  } catch (error) {
+    console.error(`Failed to send ${verb} signal:`, error)
+    throw error
+  }
 }
 
 const server = new Server(
   {
     name: 'ralph-task-signals',
-    version: '0.1.0',
+    version: '0.1.0'
   },
   {
     capabilities: {
-      tools: {},
-    },
+      tools: {}
+    }
   }
-);
+)
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
@@ -77,11 +90,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           summary: {
             type: 'string',
-            description: 'What was accomplished. Include key decisions and outcomes.',
-          },
+            description: 'What was accomplished. Include key decisions and outcomes.'
+          }
         },
-        required: ['summary'],
-      },
+        required: ['summary']
+      }
     },
     {
       name: 'partial',
@@ -91,15 +104,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           summary: {
             type: 'string',
-            description: 'What was accomplished so far.',
+            description: 'What was accomplished so far.'
           },
           remaining: {
             type: 'string',
-            description: 'What still needs to be done and why you stopped. Be specific.',
-          },
+            description: 'What still needs to be done and why you stopped. Be specific.'
+          }
         },
-        required: ['summary', 'remaining'],
-      },
+        required: ['summary', 'remaining']
+      }
     },
     {
       name: 'stuck',
@@ -109,11 +122,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           reason: {
             type: 'string',
-            description: "Why you're stuck. Be specific about what's blocking your ability to work.",
-          },
+            description: "Why you're stuck. Be specific about what's blocking your ability to work."
+          }
         },
-        required: ['reason'],
-      },
+        required: ['reason']
+      }
     },
     {
       name: 'ask',
@@ -123,24 +136,25 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           question: {
             type: 'string',
-            description: 'The specific question you need answered.',
+            description: 'The specific question you need answered.'
           },
           options: {
             type: 'array',
             items: { type: 'string' },
-            description: "If you've identified possible answers, list them.",
+            description: "If you've identified possible answers, list them."
           },
           preferred: {
             type: 'string',
-            description: 'If you have a recommendation, state it.',
+            description: 'If you have a recommendation, state it.'
           },
           blocking: {
             type: 'boolean',
-            description: 'True if you cannot proceed without the answer. False if nice-to-know but you can continue with your best judgment.',
-          },
+            description:
+              'True if you cannot proceed without the answer. False if nice-to-know but you can continue with your best judgment.'
+          }
         },
-        required: ['question', 'blocking'],
-      },
+        required: ['question', 'blocking']
+      }
     },
     {
       name: 'flag',
@@ -150,21 +164,31 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           what: {
             type: 'string',
-            description: 'Clear description of the problem.',
+            description: 'Clear description of the problem.'
           },
           severity: {
             type: 'string',
             enum: ['info', 'warning', 'blocking'],
-            description: "info (FYI, no action needed now), warning (should be addressed, doesn't block this task), blocking (this task can't be fully completed because of this)",
+            description:
+              "info (FYI, no action needed now), warning (should be addressed, doesn't block this task), blocking (this task can't be fully completed because of this)"
           },
           category: {
             type: 'string',
-            enum: ['bug', 'stale', 'contradiction', 'ambiguity', 'overlap', 'performance', 'security', 'incomplete_prior'],
-            description: 'Problem category for human reviewer.',
-          },
+            enum: [
+              'bug',
+              'stale',
+              'contradiction',
+              'ambiguity',
+              'overlap',
+              'performance',
+              'security',
+              'incomplete_prior'
+            ],
+            description: 'Problem category for human reviewer.'
+          }
         },
-        required: ['what', 'severity', 'category'],
-      },
+        required: ['what', 'severity', 'category']
+      }
     },
     {
       name: 'learned',
@@ -174,25 +198,28 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           text: {
             type: 'string',
-            description: 'The knowledge to record. Should be specific enough that a different developer on a different task would benefit from it.',
+            description:
+              'The knowledge to record. Should be specific enough that a different developer on a different task would benefit from it.'
           },
           kind: {
             type: 'string',
             enum: ['discovery', 'decision', 'convention'],
-            description: 'discovery (factual finding about the codebase), decision (judgment call with rationale), convention (project pattern to follow)',
+            description:
+              'discovery (factual finding about the codebase), decision (judgment call with rationale), convention (project pattern to follow)'
           },
           rationale: {
             type: 'string',
-            description: 'For decisions: why you chose this approach and what alternatives you rejected.',
+            description: 'For decisions: why you chose this approach and what alternatives you rejected.'
           },
           scope: {
             type: 'string',
             enum: ['project', 'feature', 'task'],
-            description: 'project (always relevant), feature (relevant to same feature\'s tasks), task (only relevant if this task is re-attempted). Default: feature.',
-          },
+            description:
+              "project (always relevant), feature (relevant to same feature's tasks), task (only relevant if this task is re-attempted). Default: feature."
+          }
         },
-        required: ['text', 'kind'],
-      },
+        required: ['text', 'kind']
+      }
     },
     {
       name: 'suggest',
@@ -202,75 +229,77 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           what: {
             type: 'string',
-            description: 'What should be done.',
+            description: 'What should be done.'
           },
           kind: {
             type: 'string',
             enum: ['new_task', 'split', 'refactor', 'alternative', 'deprecate'],
-            description: 'Type of suggestion.',
+            description: 'Type of suggestion.'
           },
           why: {
             type: 'string',
-            description: 'Why this is needed.',
+            description: 'Why this is needed.'
           },
           feature: {
             type: 'string',
-            description: 'Which feature this relates to (for new_task suggestions).',
-          },
+            description: 'Which feature this relates to (for new_task suggestions).'
+          }
         },
-        required: ['what', 'kind', 'why'],
-      },
+        required: ['what', 'kind', 'why']
+      }
     },
     {
       name: 'blocked',
-      description: 'Report that you cannot complete part of your task because something outside your control is missing or broken',
+      description:
+        'Report that you cannot complete part of your task because something outside your control is missing or broken',
       inputSchema: {
         type: 'object',
         properties: {
           on: {
             type: 'string',
-            description: 'What is blocking you.',
+            description: 'What is blocking you.'
           },
           kind: {
             type: 'string',
             enum: ['upstream_task', 'external'],
-            description: "upstream_task (dependency on another task that's incomplete) or external (credentials, services, human decisions, infrastructure)",
+            description:
+              "upstream_task (dependency on another task that's incomplete) or external (credentials, services, human decisions, infrastructure)"
           },
           detail: {
             type: 'string',
-            description: 'Additional context about the blocker.',
-          },
+            description: 'Additional context about the blocker.'
+          }
         },
-        required: ['on', 'kind'],
-      },
-    },
-  ],
-}));
+        required: ['on', 'kind']
+      }
+    }
+  ]
+}))
 
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const { name, arguments: args } = request.params;
+server.setRequestHandler(CallToolRequestSchema, async request => {
+  const { name, arguments: args } = request.params
 
   try {
-    const result = signal(name, args as Record<string, unknown>);
+    const result = await signal(name, args as Record<string, unknown>)
     return {
-      content: [{ type: 'text', text: result }],
-    };
+      content: [{ type: 'text', text: result }]
+    }
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = error instanceof Error ? error.message : String(error)
     return {
       content: [{ type: 'text', text: `Error: ${message}` }],
-      isError: true,
-    };
+      isError: true
+    }
   }
-});
+})
 
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error('Ralph Task Signals MCP Server running');
+  const transport = new StdioServerTransport()
+  await server.connect(transport)
+  console.error('Ralph Task Signals MCP Server running')
 }
 
-main().catch((error) => {
-  console.error('Fatal error:', error);
-  process.exit(1);
-});
+main().catch(error => {
+  console.error('Fatal error:', error)
+  process.exit(1)
+})

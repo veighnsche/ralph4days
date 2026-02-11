@@ -12,6 +12,168 @@ use sqlite_db::{
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// Direct SQL signal writer for fixture generation
+struct SignalWriter<'a> {
+    db: &'a SqliteDb,
+    task_id: u32,
+    session_id: String,
+}
+
+impl<'a> SignalWriter<'a> {
+    fn new(db: &'a SqliteDb, task_id: u32, session_id: &str) -> Self {
+        Self {
+            db,
+            task_id,
+            session_id: session_id.to_owned(),
+        }
+    }
+
+    fn now() -> String {
+        chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
+    }
+
+    fn done(&self, summary: &str) -> Result<(), String> {
+        let now = Self::now();
+        self.db.execute_raw(&format!(
+            "INSERT INTO task_comments (task_id, session_id, verb, summary, created) \
+             VALUES ({}, '{}', 'done', '{}', '{}')",
+            self.task_id,
+            self.session_id,
+            summary.replace('\'', "''"),
+            now
+        ))
+    }
+
+    fn partial(&self, summary: &str, remaining: &str) -> Result<(), String> {
+        let now = Self::now();
+        self.db.execute_raw(&format!(
+            "INSERT INTO task_comments (task_id, session_id, verb, summary, remaining, created) \
+             VALUES ({}, '{}', 'partial', '{}', '{}', '{}')",
+            self.task_id,
+            self.session_id,
+            summary.replace('\'', "''"),
+            remaining.replace('\'', "''"),
+            now
+        ))
+    }
+
+    fn stuck(&self, reason: &str) -> Result<(), String> {
+        let now = Self::now();
+        self.db.execute_raw(&format!(
+            "INSERT INTO task_comments (task_id, session_id, verb, reason, created) \
+             VALUES ({}, '{}', 'stuck', '{}', '{}')",
+            self.task_id,
+            self.session_id,
+            reason.replace('\'', "''"),
+            now
+        ))
+    }
+
+    fn ask(
+        &self,
+        question: &str,
+        options: Option<Vec<String>>,
+        preferred: Option<String>,
+        blocking: bool,
+    ) -> Result<(), String> {
+        let now = Self::now();
+        let options_str = options.map_or_else(
+            || "NULL".to_owned(),
+            |opts| format!("'{}'", opts.join("\n").replace('\'', "''")),
+        );
+        let preferred_str = preferred.map_or_else(
+            || "NULL".to_owned(),
+            |p| format!("'{}'", p.replace('\'', "''")),
+        );
+
+        self.db.execute_raw(&format!(
+            "INSERT INTO task_comments (task_id, session_id, verb, question, options, preferred, blocking, created) \
+             VALUES ({}, '{}', 'ask', '{}', {}, {}, {}, '{}')",
+            self.task_id,
+            self.session_id,
+            question.replace('\'', "''"),
+            options_str,
+            preferred_str,
+            i32::from(blocking),
+            now
+        ))
+    }
+
+    fn flag(&self, what: &str, severity: &str, category: &str) -> Result<(), String> {
+        let now = Self::now();
+        self.db.execute_raw(&format!(
+            "INSERT INTO task_comments (task_id, session_id, verb, what, severity, category, created) \
+             VALUES ({}, '{}', 'flag', '{}', '{}', '{}', '{}')",
+            self.task_id,
+            self.session_id,
+            what.replace('\'', "''"),
+            severity,
+            category,
+            now
+        ))
+    }
+
+    fn learned(
+        &self,
+        text: &str,
+        kind: &str,
+        scope: Option<&str>,
+        rationale: Option<&str>,
+    ) -> Result<(), String> {
+        let now = Self::now();
+        let scope_str = scope.unwrap_or("feature");
+        let rationale_str = rationale.map_or_else(
+            || "NULL".to_owned(),
+            |r| format!("'{}'", r.replace('\'', "''")),
+        );
+
+        self.db.execute_raw(&format!(
+            "INSERT INTO task_comments (task_id, session_id, verb, text, kind, scope, rationale, created) \
+             VALUES ({}, '{}', 'learned', '{}', '{}', '{}', {}, '{}')",
+            self.task_id,
+            self.session_id,
+            text.replace('\'', "''"),
+            kind,
+            scope_str,
+            rationale_str,
+            now
+        ))
+    }
+
+    fn suggest(&self, what: &str, kind: &str, why: &str) -> Result<(), String> {
+        let now = Self::now();
+        self.db.execute_raw(&format!(
+            "INSERT INTO task_comments (task_id, session_id, verb, what, kind, why, created) \
+             VALUES ({}, '{}', 'suggest', '{}', '{}', '{}', '{}')",
+            self.task_id,
+            self.session_id,
+            what.replace('\'', "''"),
+            kind,
+            why.replace('\'', "''"),
+            now
+        ))
+    }
+
+    fn blocked(&self, on: &str, kind: &str, detail: Option<&str>) -> Result<(), String> {
+        let now = Self::now();
+        let detail_str = detail.map_or_else(
+            || "NULL".to_owned(),
+            |d| format!("'{}'", d.replace('\'', "''")),
+        );
+
+        self.db.execute_raw(&format!(
+            "INSERT INTO task_comments (task_id, session_id, verb, \"on\", kind, detail, created) \
+             VALUES ({}, '{}', 'blocked', '{}', '{}', {}, '{}')",
+            self.task_id,
+            self.session_id,
+            on.replace('\'', "''"),
+            kind,
+            detail_str,
+            now
+        ))
+    }
+}
+
 /// Helper to initialize a project (creates .undetect-ralph/ for fixtures)
 fn initialize_project_for_fixture(
     path: PathBuf,
@@ -1443,9 +1605,128 @@ just dev-mock 04-desktop-dev
     db.set_task_status(17, TaskStatus::Blocked).unwrap();
     db.set_task_status(19, TaskStatus::Skipped).unwrap();
 
-    // --- Task Signals (as structured comments) ---
-    // TODO: Reimplement signal examples with new canonical schema (discipline_id, verb, text fields)
-    // Commented out during Phase 2 schema migration
+    // --- Task Comments with Signal Verbs ---
+    // Task 21: MCP Signal Reference - ALL 8 VERBS + VARIANTS (15 examples)
+    // Signals written directly via SignalWriter for fixtures
+
+    let signal_writer = SignalWriter::new(&db, 21, "sess-21-ref");
+
+    // 1. DONE verb - closing signal
+    signal_writer.done(
+        "Implemented CSV/JSON export with quota handling, all 3 acceptance criteria pass, tests green, PR merged."
+    ).unwrap();
+
+    // 2. PARTIAL verb - closing signal with summary + remaining
+    signal_writer.partial(
+        "Implemented CSV export format, added filename sanitization, wrote 12 of 18 unit tests.",
+        "JSON export format, bulk export UI, remaining 6 edge-case tests."
+    ).unwrap();
+
+    // 3. STUCK verb - closing signal with reason
+    signal_writer.stuck(
+        "Cannot determine correct MIME type for .bookmark files — RFC 7231 spec is ambiguous and Chrome/Firefox behave differently."
+    ).unwrap();
+
+    // 4. ASK verb (BLOCKING variant) - question with options
+    signal_writer.ask(
+        "Should export filename include timestamp (bookmarks-2025-01-22.json) or use static name (bookmarks.json)?",
+        Some(vec![
+            "Add timestamp".to_owned(),
+            "Static filename".to_owned(),
+            "Let user choose via dialog".to_owned(),
+        ]),
+        Some("Add timestamp".to_owned()),
+        true
+    ).unwrap();
+
+    // 5. ASK verb (NON-BLOCKING variant)
+    signal_writer
+        .ask(
+            "Should we use .csv or .tsv extension for tab-separated exports?",
+            Some(vec![
+                "Use .csv (more common)".to_owned(),
+                "Use .tsv (more accurate)".to_owned(),
+            ]),
+            Some("Use .tsv (more accurate)".to_owned()),
+            false,
+        )
+        .unwrap();
+
+    // 6-8. FLAG verb (3 severity variants: blocking, warning, info)
+    signal_writer
+        .flag(
+            "Export button downloads empty 0-byte file when localStorage.getItem() returns null.",
+            "blocking",
+            "bug",
+        )
+        .unwrap();
+
+    signal_writer
+        .flag(
+            "Export with 10k+ bookmarks takes 3+ seconds and freezes UI thread.",
+            "warning",
+            "performance",
+        )
+        .unwrap();
+
+    signal_writer
+        .flag(
+            "Export filename gets truncated to 255 chars on older Windows filesystems.",
+            "info",
+            "ambiguity",
+        )
+        .unwrap();
+
+    // 9-11. LEARNED verb (3 kind variants: discovery/gotcha, decision/pattern, convention)
+    signal_writer.learned(
+        "Browser download APIs create Blob URLs that must be manually revoked via URL.revokeObjectURL() or they leak memory until page reload.",
+        "gotcha",
+        Some("feature"),
+        Some("Without cleanup, every export leaks ~50KB. User with 100 exports = 5MB leaked RAM.")
+    ).unwrap();
+
+    signal_writer.learned(
+        "Wrap all localStorage operations in try/catch with LRU eviction fallback — handles quota errors gracefully.",
+        "pattern",
+        Some("task"),
+        None
+    ).unwrap();
+
+    signal_writer.learned(
+        "All export filenames follow pattern: appname-entity-timestamp.ext (e.g., ralph-bookmarks-2025-01-22.json).",
+        "convention",
+        Some("feature"),
+        None
+    ).unwrap();
+
+    // 12-13. SUGGEST verb (2 kind variants: improvement, new_task)
+    signal_writer.suggest(
+        "Add Copy to Clipboard button next to Download — users want to paste bookmark JSON into Slack without saving a file.",
+        "improvement",
+        "40% of exports in analytics are followed by manual file-open-copy-paste. Direct clipboard = better UX."
+    ).unwrap();
+
+    signal_writer.suggest(
+        "Add scheduled auto-export that backs up bookmarks to user's chosen cloud storage every 24 hours.",
+        "new_task",
+        "Users in support threads frequently ask about backup/sync. Auto-export prevents data loss."
+    ).unwrap();
+
+    // 14-15. BLOCKED verb (2 kind variants: dependency, external/environment)
+    signal_writer.blocked(
+        "Need backend API endpoint POST /export/stream for server-side export generation.",
+        "upstream_task",
+        Some("Client-side export works for <1000 bookmarks but crashes tab with larger datasets. Need streaming response.")
+    ).unwrap();
+
+    signal_writer
+        .blocked(
+            "Bun v1.2+ required for File System Access API — CI still running Bun v1.0.15.",
+            "external",
+            None,
+        )
+        .unwrap();
+
     /*
     // Task 4 (in_progress, unit tests): 2 sessions with mixed verbs
     // Session 1: flag + learned + partial
@@ -1545,7 +1826,7 @@ just dev-mock 04-desktop-dev
         fixture_path.display()
     );
     println!("  5 features, 21 tasks (4 done, 3 in_progress, 11 pending, 2 blocked, 1 skipped)");
-    // println!("  37 signals across 10 sessions on 8 tasks (all 8 verbs represented)");
+    println!("  15 comment examples on task 21 showing all 8 verbs with variants");
     println!("  → Task #21: MCP Signal Reference with ALL 8 VERBS + VARIANTS (15 signals)");
 }
 

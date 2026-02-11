@@ -14,6 +14,7 @@ pub struct AppState {
     pub pty_manager: PTYManager,
     pub(super) mcp_dir: PathBuf,
     pub xdg: XdgDirs,
+    pub api_server_port: Mutex<Option<u16>>,
 }
 
 impl Default for AppState {
@@ -25,6 +26,7 @@ impl Default for AppState {
             pty_manager: PTYManager::new(),
             mcp_dir: std::env::temp_dir().join(format!("ralph-mcp-{}", std::process::id())),
             xdg: XdgDirs::resolve().expect("Failed to resolve XDG directories"),
+            api_server_port: Mutex::new(None),
         }
     }
 }
@@ -59,6 +61,8 @@ impl AppState {
             snap_guard.clone()
         };
 
+        let api_port = *self.api_server_port.lock().err_str(codes::INTERNAL)?;
+
         Ok(PromptContext {
             features: db.get_features(),
             tasks: db.get_tasks(),
@@ -71,6 +75,7 @@ impl AppState {
             project_path: project_path.to_string_lossy().to_string(),
             db_path: db_path.to_string_lossy().to_string(),
             script_dir: self.mcp_dir.to_string_lossy().to_string(),
+            api_server_port: api_port,
             user_input,
             target_task_id,
             target_feature: None,

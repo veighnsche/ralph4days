@@ -38,6 +38,9 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "fmt"]
 ts-rs = { workspace = true }
 ralph-macros = { workspace = true }
 image = { version = "0.25.6", default-features = false, features = ["png", "jpeg"] }
+axum = "0.8"
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors"] }
 
 [lints]
 workspace = true
