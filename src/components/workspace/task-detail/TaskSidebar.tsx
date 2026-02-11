@@ -11,7 +11,7 @@ import { resolveIcon } from '@/lib/iconRegistry'
 import type { InferredTaskStatus } from '@/lib/taskStatus'
 import { shouldShowInferredStatus } from '@/lib/taskStatus'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
-import type { Task, TaskSignal } from '@/types/generated'
+import type { Task, TaskComment } from '@/types/generated'
 import { PropertyRow } from '../PropertyRow'
 import { TerminalTabContent } from '../TerminalTabContent'
 
@@ -21,13 +21,13 @@ const PROVENANCE_CONFIG = {
   system: { label: 'System', icon: Cog }
 } as const
 
-function buildSignalSummaryText(signals: TaskSignal[]): string | null {
+function buildSignalSummaryText(signals: TaskComment[]): string | null {
   if (signals.length === 0) return null
   const counts: Record<string, number> = {}
-  const pendingAsks = signals.filter(s => s.verb === 'ask' && !s.answered).length
+  const pendingAsks = signals.filter(s => s.signal_verb === 'ask' && !s.signal_answered).length
   for (const s of signals) {
-    if (s.verb === 'flag') counts.flags = (counts.flags ?? 0) + 1
-    if (s.verb === 'learned') counts.learned = (counts.learned ?? 0) + 1
+    if (s.signal_verb === 'flag') counts.flags = (counts.flags ?? 0) + 1
+    if (s.signal_verb === 'learned') counts.learned = (counts.learned ?? 0) + 1
   }
   const parts: string[] = []
   if (counts.flags) parts.push(`${counts.flags} flag${counts.flags > 1 ? 's' : ''}`)
@@ -36,23 +36,16 @@ function buildSignalSummaryText(signals: TaskSignal[]): string | null {
   return parts.length > 0 ? parts.join(' · ') : null
 }
 
-function getLastClosingVerb(signals: TaskSignal[]): SignalVerb | null {
+function getLastClosingVerb(signals: TaskComment[]): SignalVerb | null {
   for (let i = signals.length - 1; i >= 0; i--) {
-    const verb = signals[i].verb
+    const verb = signals[i].signal_verb
     if (verb === 'done' || verb === 'partial' || verb === 'stuck') return verb as SignalVerb
   }
   return null
 }
 
-export function TaskSidebar({
-  task,
-  inferredStatus,
-  signals = []
-}: {
-  task: Task
-  inferredStatus: InferredTaskStatus
-  signals?: TaskSignal[]
-}) {
+export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStatus: InferredTaskStatus }) {
+  const signals = (task.comments ?? []).filter(c => c.signal_verb != null)
   const statusConfig = STATUS_CONFIG[task.status]
   const StatusIcon = statusConfig.icon
   const priorityConfig = task.priority ? PRIORITY_CONFIG[task.priority] : null
@@ -140,7 +133,7 @@ export function TaskSidebar({
 
       {signals.length > 0 &&
         (() => {
-          const sessions = new Set(signals.map(s => s.sessionId))
+          const sessions = new Set(signals.map(s => s.session_id))
           const summaryText = buildSignalSummaryText(signals)
           const lastClosing = getLastClosingVerb(signals)
           const lastClosingConfig = lastClosing ? VERB_CONFIG[lastClosing] : null
