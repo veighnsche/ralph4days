@@ -7,7 +7,6 @@ mod feature_comments;
 mod features;
 mod metadata;
 mod recipe_configs;
-mod signals;
 mod tasks;
 pub mod types;
 
@@ -18,7 +17,7 @@ pub use recipe_configs::{RecipeConfigData, RecipeConfigInput, SectionSettingsDat
 pub use types::{
     Discipline, DisciplineInput, Feature, FeatureComment, FeatureInput, FeatureStatus,
     McpServerConfig, Priority, ProjectMetadata, Task, TaskComment, TaskInput, TaskProvenance,
-    TaskSignal, TaskSignalSummary, TaskStatus,
+    TaskSignalSummary, TaskStatus,
 };
 
 use ralph_errors::{codes, RalphResultExt};
@@ -67,6 +66,7 @@ impl SqliteDb {
             M::up(include_str!("migrations/003_comment_embeddings.sql")),
             M::up(include_str!("migrations/004_add_comment_summary.sql")),
             M::up(include_str!("migrations/005_drop_comment_author.sql")),
+            M::up(include_str!("migrations/006_nested_comments_priority.sql")),
         ]);
 
         migrations
@@ -96,6 +96,7 @@ impl SqliteDb {
             M::up(include_str!("migrations/003_comment_embeddings.sql")),
             M::up(include_str!("migrations/004_add_comment_summary.sql")),
             M::up(include_str!("migrations/005_drop_comment_author.sql")),
+            M::up(include_str!("migrations/006_nested_comments_priority.sql")),
         ]);
 
         migrations
@@ -132,6 +133,7 @@ impl SqliteDb {
             M::up(include_str!("migrations/003_comment_embeddings.sql")),
             M::up(include_str!("migrations/004_add_comment_summary.sql")),
             M::up(include_str!("migrations/005_drop_comment_author.sql")),
+            M::up(include_str!("migrations/006_nested_comments_priority.sql")),
         ]);
 
         migrations

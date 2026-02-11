@@ -129,6 +129,7 @@ pub fn run() {
             commands::tasks::get_task_signals,
             commands::tasks::get_signal_summaries,
             commands::tasks::answer_ask,
+            commands::tasks::add_reply_to_comment,
             commands::features::get_disciplines_config,
             commands::features::get_features,
             commands::features::create_feature,
