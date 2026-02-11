@@ -46,6 +46,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Why this matters:** Every wrapper function is 10+ lines of duplication. When the core logic changes, you must update N functions instead of 1. This wastes tokens, creates bugs, and makes the codebase unmaintainable.
 
+## CRITICAL: Extend Existing Functions, Don't Swing to Extremes
+
+**When you need slightly different behavior, EXTEND what exists. Don't create wrappers, don't drop to raw code.** The answer is almost always "add an optional parameter."
+
+**The toxic pattern:**
+1. User: "This function is too rigid"
+2. You create an over-abstraction (wrapper class, helper struct) — technical debt
+3. User: "This is wrong"
+4. You swing to opposite extreme (raw SQL, manual code) — MORE technical debt
+5. After 3 iterations, you finally do the obvious: add a parameter to existing function
+
+**The correct approach:**
+1. FIRST: Can I add an optional parameter to the existing function?
+2. SECOND: Can I add a default parameter value?
+3. LAST RESORT: Create new code only when extension is impossible
+
+**Examples:**
+- Need to specify discipline for signal insert? Add `discipline_name: Option<&str>` parameter to existing `insert_done_signal()`
+- Need custom timeout? Add `timeout: Option<Duration>` parameter with default
+- Need alternate format? Add `format: OutputFormat` enum parameter
+
+**FORBIDDEN responses:**
+- ❌ "Let me create a SignalWriter wrapper" — NO, extend the function
+- ❌ "Let me use direct SQL inserts" — NO, extend the function
+- ❌ "Let me create a builder pattern" — NO, just add parameters
+
+**Why this matters:** Every swing to an extreme wastes thousands of tokens. The simple solution (add parameter) takes 10 tokens. The wrapper/raw-code detour takes 10,000 tokens to eventually arrive at the same place.
+
 ## CRITICAL: NEVER Skip Pre-Commit Hooks With Broken Tests
 
 **NEVER use `git commit --no-verify` or `git commit -n` to skip pre-commit hooks when tests are failing.** This is a catastrophic pattern that commits broken code to the repository.
