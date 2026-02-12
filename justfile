@@ -17,7 +17,7 @@ default:
 
 # Start development server (frontend + backend hot reload)
 dev:
-    bun tauri dev
+    WEBKIT_DISABLE_DMABUF_RENDERER=1 bun tauri dev
 
 # Start frontend dev server only
 dev-frontend:
@@ -72,7 +72,7 @@ dev-mock FIXTURE:
         fi
     fi
 
-    bun tauri dev -- -- --project "$PROJECT_DIR"
+    WEBKIT_DISABLE_DMABUF_RENDERER=1 bun tauri dev -- -- --project "$PROJECT_DIR"
 
 # Run cargo check (fast compilation check)
 check:
