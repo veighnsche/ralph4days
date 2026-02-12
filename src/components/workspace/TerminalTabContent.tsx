@@ -2,6 +2,7 @@ import type { Terminal as XTerm } from '@xterm/xterm'
 import { TerminalSquare } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { InlineError } from '@/components/shared'
+import type { PermissionLevel } from '@/hooks/preferences'
 import { useTabMeta } from '@/hooks/workspace'
 import { Terminal, useTerminalSession } from '@/lib/terminal'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
@@ -17,7 +18,8 @@ export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
   const agent = tab.data?.agent ?? 'claude'
   const model = tab.data?.model
   const effort = tab.data?.effort
-  const launchCommand = buildLaunchCommand(agent, model, effort)
+  const permissionLevel = (tab.data?.permissionLevel as PermissionLevel | undefined) ?? 'balanced'
+  const launchCommand = buildLaunchCommand(agent, model, effort, permissionLevel)
 
   const session = useTerminalSession(
     {
@@ -28,6 +30,7 @@ export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
       model: tab.data?.model,
       effort: tab.data?.effort,
       thinking: tab.data?.thinking,
+      permissionLevel,
       humanSession: {
         kind,
         agent,
@@ -83,11 +86,33 @@ export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
   )
 }
 
-function buildLaunchCommand(agent: string, model?: string, effort?: 'low' | 'medium' | 'high') {
+function buildLaunchCommand(
+  agent: string,
+  model?: string,
+  effort?: 'low' | 'medium' | 'high',
+  permissionLevel: PermissionLevel = 'balanced'
+) {
   if (agent === 'codex') {
-    return model != null ? `codex --model ${model}` : 'codex'
+    const modelArg = model != null ? ` --model ${model}` : ''
+    const permissionArg =
+      permissionLevel === 'safe'
+        ? ' --sandbox workspace-write --ask-for-approval untrusted'
+        : permissionLevel === 'balanced'
+          ? ' --sandbox workspace-write --ask-for-approval on-request'
+          : permissionLevel === 'auto'
+            ? ' --full-auto'
+            : ' --dangerously-bypass-approvals-and-sandbox'
+    return `codex${modelArg}${permissionArg}`
   }
   const modelArg = model != null ? ` --model ${model}` : ''
   const effortArg = effort != null ? ` --effort ${effort}` : ''
-  return `claude${modelArg}${effortArg}`
+  const permissionArg =
+    permissionLevel === 'safe'
+      ? ' --permission-mode default'
+      : permissionLevel === 'balanced'
+        ? ' --permission-mode delegate'
+        : permissionLevel === 'auto'
+          ? ' --permission-mode dontAsk'
+          : ' --permission-mode bypassPermissions'
+  return `claude${modelArg}${effortArg}${permissionArg}`
 }

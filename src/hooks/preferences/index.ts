@@ -1,2 +1,2 @@
-export type { Agent, Effort, Model } from './useAgentSessionLaunchPreferences'
+export type { Agent, Effort, Model, PermissionLevel } from './useAgentSessionLaunchPreferences'
 export { useAgentSessionLaunchPreferences } from './useAgentSessionLaunchPreferences'

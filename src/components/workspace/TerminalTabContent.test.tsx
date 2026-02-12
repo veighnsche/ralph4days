@@ -124,6 +124,8 @@ describe('TerminalTabContent', () => {
     }
     expect(config.agent).toBe('codex')
     expect(config.humanSession?.agent).toBe('codex')
-    expect(config.humanSession?.launchCommand).toBe('codex --model gpt-5-codex')
+    expect(config.humanSession?.launchCommand).toBe(
+      'codex --model gpt-5-codex --sandbox workspace-write --ask-for-approval on-request'
+    )
   })
 })

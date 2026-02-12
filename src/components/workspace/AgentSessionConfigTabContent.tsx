@@ -1,15 +1,16 @@
 import { Bot } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { InlineError } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { FormDescription, FormHeader, FormTitle } from '@/components/ui/form-header'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { SelectableCard } from '@/components/ui/selectable-card'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
-import { type Agent, type Effort, useAgentSessionLaunchPreferences } from '@/hooks/preferences'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { type Agent, type Effort, type PermissionLevel, useAgentSessionLaunchPreferences } from '@/hooks/preferences'
 import { useTabMeta } from '@/hooks/workspace'
-import { cn } from '@/lib/utils'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import { TerminalTabContent } from './TerminalTabContent'
@@ -36,14 +37,19 @@ export function AgentSessionConfigTabContent({ tab }: { tab: WorkspaceTab }) {
     setModel: saveModel,
     setEffort: saveEffort,
     setThinking: saveThinking,
+    setPermissionLevel: savePermissionLevel,
     getDefaultModel,
-    effort: preferredEffort
+    effort: preferredEffort,
+    permissionLevel: preferredPermissionLevel
   } = useAgentSessionLaunchPreferences()
 
   const [agent, setAgent] = useState<Agent>((tab.data?.agent as Agent | undefined) ?? 'claude')
   const [model, setModel] = useState(tab.data?.model ?? getDefaultModel(agent))
   const [effort, setEffort] = useState<Effort>((tab.data?.effort as Effort | undefined) ?? preferredEffort)
   const [thinking, setThinking] = useState(tab.data?.thinking ?? false)
+  const [permissionLevel, setPermissionLevel] = useState<PermissionLevel>(
+    (tab.data?.permissionLevel as PermissionLevel | undefined) ?? preferredPermissionLevel
+  )
   const models = tab.data?.formTreeByAgent?.[agent] ?? []
   const loadingModels = (tab.data?.formTreeLoading ?? false) && models.length === 0
   const error = tab.data?.formTreeError ?? null
@@ -65,6 +71,10 @@ export function AgentSessionConfigTabContent({ tab }: { tab: WorkspaceTab }) {
   const handleEffortSelect = (value: Effort) => {
     setEffort(value)
     saveEffort(value)
+  }
+  const handlePermissionLevelSelect = (value: PermissionLevel) => {
+    setPermissionLevel(value)
+    savePermissionLevel(value)
   }
 
   useEffect(() => {
@@ -90,18 +100,15 @@ export function AgentSessionConfigTabContent({ tab }: { tab: WorkspaceTab }) {
     }
   }, [effort, model, models, saveEffort, saveModel])
 
-  const selectedModelOption = models.find(m => m.name === model)
-  const selectedEffortOptions = selectedModelOption?.effortOptions ?? []
-  const showEffortSelector = selectedEffortOptions.length > 0
-
   const handleRun = () => {
     const agentLabel = agent === 'codex' ? 'Codex' : 'Claude'
+    const selectedModelDisplay = models.find(nextModel => nextModel.name === model)?.display || model
     openTab({
       type: 'terminal',
       component: TerminalTabContent,
-      title: `${agentLabel} (${model})`,
+      title: `${agentLabel} (${selectedModelDisplay})`,
       closeable: true,
-      data: { agent, model, effort, thinking }
+      data: { agent, model, effort, thinking, permissionLevel }
     })
     closeTab(tab.id)
   }
@@ -121,18 +128,14 @@ export function AgentSessionConfigTabContent({ tab }: { tab: WorkspaceTab }) {
             <FieldLabel>Agent Provider</FieldLabel>
             <div className="flex items-center justify-start gap-3" role="radiogroup" aria-label="Agent provider">
               {(['claude', 'codex'] as const).map(agentOption => (
-                <button
+                <SelectableCard
                   key={agentOption}
-                  type="button"
+                  selected={agent === agentOption}
+                  radius="lg"
                   role="radio"
                   aria-checked={agent === agentOption}
                   onClick={() => handleAgentSelect(agentOption)}
-                  className={cn(
-                    'relative aspect-[5/7] w-40 shrink-0 overflow-hidden rounded-lg border px-3 py-2 text-left text-sm font-medium transition-colors duration-100 cursor-pointer',
-                    agent === agentOption
-                      ? 'border-primary bg-primary/5 shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.2)]'
-                      : 'hover:bg-accent'
-                  )}>
+                  className="aspect-[5/7] w-40 shrink-0 overflow-hidden px-3 py-2 text-left text-sm font-medium">
                   <span className="absolute -left-10 -top-10 inline-flex min-w-28 items-center justify-center">
                     {agentOption === 'codex' ? (
                       <span
@@ -160,69 +163,71 @@ export function AgentSessionConfigTabContent({ tab }: { tab: WorkspaceTab }) {
                   <span className="absolute bottom-3 left-1/2 -translate-x-1/2 text-center">
                     {AGENT_PROVIDER_META[agentOption].label}
                   </span>
-                </button>
+                </SelectableCard>
               ))}
             </div>
-            <FieldDescription>Model options update based on provider.</FieldDescription>
           </Field>
 
           <Field>
             <FieldLabel>Model</FieldLabel>
-            <div className="flex flex-col gap-1" role="radiogroup" aria-label="Model">
-              {models.map(modelOption => (
-                <button
-                  key={modelOption.name}
-                  type="button"
-                  role="radio"
-                  aria-checked={model === modelOption.name}
-                  onClick={() => handleModelSelect(modelOption.name)}
-                  disabled={loadingModels}
-                  className={cn(
-                    'flex flex-col items-start gap-0.5 rounded-md border px-3 py-2 text-left text-sm font-medium transition-colors duration-100 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50',
-                    model === modelOption.name ? 'border-primary bg-primary/5' : 'hover:bg-accent'
-                  )}>
-                  <span>{modelOption.name}</span>
-                  <span className="text-xs font-normal text-muted-foreground">{modelOption.description}</span>
-                  {modelOption.sessionModel && modelOption.sessionModel !== modelOption.name && (
-                    <span className="text-[11px] font-normal text-muted-foreground/90">
-                      Runs as: {modelOption.sessionModel}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1" role="radiogroup" aria-label="Model">
+                {models.map(modelOption => {
+                  const isSelected = model === modelOption.name
+                  const effortOptions = modelOption.effortOptions ?? []
+                  const showInlineEffort = effortOptions.length > 0
 
-          <Field orientation="horizontal">
-            <div className="flex-1">
-              <FieldLabel>Extended Thinking</FieldLabel>
-              <FieldDescription>Enable deeper planning when supported by the provider.</FieldDescription>
-            </div>
-            <Switch checked={thinking} onCheckedChange={handleThinkingChange} />
-          </Field>
-
-          {showEffortSelector && (
-            <Field>
-              <FieldLabel>Effort</FieldLabel>
-              <div className="flex flex-col gap-1" role="radiogroup" aria-label="Effort">
-                {selectedEffortOptions.map(effortOption => (
-                  <button
-                    key={effortOption}
-                    type="button"
-                    role="radio"
-                    aria-checked={effort === effortOption}
-                    onClick={() => handleEffortSelect(effortOption as Effort)}
-                    className={cn(
-                      'flex items-center rounded-md border px-3 py-2 text-left text-sm font-medium transition-colors duration-100 cursor-pointer',
-                      effort === effortOption ? 'border-primary bg-primary/5' : 'hover:bg-accent'
-                    )}>
-                    {effortOption}
-                  </button>
-                ))}
+                  return (
+                    <Fragment key={modelOption.name}>
+                      <SelectableCard
+                        selected={isSelected}
+                        role="radio"
+                        aria-checked={isSelected}
+                        onClick={() => handleModelSelect(modelOption.name)}
+                        disabled={loadingModels}
+                        className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-sm font-medium">
+                        <span>{modelOption.display || modelOption.name}</span>
+                        <span className="text-xs font-normal text-muted-foreground">{modelOption.description}</span>
+                        {modelOption.sessionModel && modelOption.sessionModel !== modelOption.name && (
+                          <span className="text-[11px] font-normal text-muted-foreground/90">
+                            Runs as: {modelOption.sessionModel}
+                          </span>
+                        )}
+                      </SelectableCard>
+                      {showInlineEffort && (
+                        <ToggleGroup
+                          type="single"
+                          value={isSelected ? effort : ''}
+                          onValueChange={value => {
+                            if (value === '') return
+                            if (!isSelected) handleModelSelect(modelOption.name)
+                            handleEffortSelect(value as Effort)
+                          }}
+                          variant="outline"
+                          className="w-full"
+                          aria-label="Effort">
+                          {effortOptions.map(effortOption => (
+                            <ToggleGroupItem key={effortOption} value={effortOption} className="flex-1 capitalize">
+                              {effortOption}
+                            </ToggleGroupItem>
+                          ))}
+                        </ToggleGroup>
+                      )}
+                    </Fragment>
+                  )
+                })}
               </div>
-              <FieldDescription>Maps to `claude --effort &lt;level&gt;`.</FieldDescription>
-            </Field>
-          )}
+              <div>
+                <Field orientation="horizontal">
+                  <div className="flex-1">
+                    <FieldLabel>Extended Thinking</FieldLabel>
+                    <FieldDescription>Enable deeper planning when supported by the provider.</FieldDescription>
+                  </div>
+                  <Switch checked={thinking} onCheckedChange={handleThinkingChange} />
+                </Field>
+              </div>
+            </div>
+          </Field>
         </div>
       </ScrollArea>
       <Separator />
@@ -232,6 +237,20 @@ export function AgentSessionConfigTabContent({ tab }: { tab: WorkspaceTab }) {
         </div>
       )}
       <div className="px-3 py-1.5 flex justify-end gap-2">
+        <ToggleGroup
+          type="single"
+          value={permissionLevel}
+          onValueChange={value => {
+            if (value === '') return
+            handlePermissionLevelSelect(value as PermissionLevel)
+          }}
+          variant="outline"
+          aria-label="Permission Level">
+          <ToggleGroupItem value="safe">Safe</ToggleGroupItem>
+          <ToggleGroupItem value="balanced">Balanced</ToggleGroupItem>
+          <ToggleGroupItem value="auto">Auto</ToggleGroupItem>
+          <ToggleGroupItem value="full_auto">Full Auto</ToggleGroupItem>
+        </ToggleGroup>
         <Button type="button" onClick={handleRun} disabled={loadingModels || !model || models.length === 0}>
           Run
         </Button>

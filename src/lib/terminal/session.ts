@@ -18,6 +18,7 @@ export interface TerminalSessionConfig {
   model?: string | null
   effort?: 'low' | 'medium' | 'high' | null
   thinking?: boolean | null
+  permissionLevel?: 'safe' | 'balanced' | 'auto' | 'full_auto' | null
   enabled?: boolean
   humanSession?: {
     kind: string
@@ -138,7 +139,8 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
         taskId: config.taskId,
         agent: config.humanSession.agent ?? 'claude',
         model: config.model ?? undefined,
-        effort: (config.humanSession.agent ?? 'claude') === 'claude' ? (config.effort ?? undefined) : undefined,
+        effort: config.effort ?? undefined,
+        ...(config.permissionLevel != null ? { permissionLevel: config.permissionLevel } : {}),
         launchCommand: config.humanSession.launchCommand ?? undefined,
         postStartPreamble: config.humanSession.postStartPreamble ?? undefined,
         initPrompt: config.humanSession.initPrompt ?? undefined,
@@ -156,7 +158,8 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
         taskId: config.taskId,
         agent: config.agent ?? 'claude',
         model: config.model ?? undefined,
-        effort: (config.agent ?? 'claude') === 'claude' ? (config.effort ?? undefined) : undefined,
+        effort: config.effort ?? undefined,
+        ...(config.permissionLevel != null ? { permissionLevel: config.permissionLevel } : {}),
         thinking: config.thinking ?? undefined
       })
         .then(() => {
@@ -170,7 +173,8 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
         agent: config.agent ?? 'claude',
         mcpMode: config.mcpMode || 'interactive',
         model: config.model ?? undefined,
-        effort: (config.agent ?? 'claude') === 'claude' ? (config.effort ?? undefined) : undefined,
+        effort: config.effort ?? undefined,
+        ...(config.permissionLevel != null ? { permissionLevel: config.permissionLevel } : {}),
         thinking: config.thinking ?? undefined
       })
         .then(() => {
@@ -187,6 +191,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     config.model,
     config.effort,
     config.thinking,
+    config.permissionLevel,
     config.humanSession?.kind,
     config.humanSession?.agent,
     config.humanSession?.launchCommand,

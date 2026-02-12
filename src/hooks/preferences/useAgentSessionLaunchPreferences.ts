@@ -5,6 +5,7 @@ const VALID_AGENTS = ['claude', 'codex'] as const
 export type Agent = (typeof VALID_AGENTS)[number]
 export type Model = string
 export type Effort = 'low' | 'medium' | 'high'
+export type PermissionLevel = 'safe' | 'balanced' | 'auto' | 'full_auto'
 
 const DEFAULT_MODELS_BY_AGENT: Record<Agent, string> = {
   claude: 'claude-sonnet-4',
@@ -20,10 +21,12 @@ type AgentSessionLaunchPreferencesStore = {
   model: Model
   effort: Effort
   thinking: boolean
+  permissionLevel: PermissionLevel
   setAgent: (value: Agent) => void
   setModel: (value: Model) => void
   setEffort: (value: Effort) => void
   setThinking: (value: boolean) => void
+  setPermissionLevel: (value: PermissionLevel) => void
   getDefaultModel: (agent: Agent) => Model
 }
 
@@ -34,6 +37,7 @@ export const useAgentSessionLaunchPreferences = create<AgentSessionLaunchPrefere
       model: getDefaultModel('claude'),
       effort: 'medium',
       thinking: false,
+      permissionLevel: 'balanced',
       setAgent: value => set({ agent: value }),
       setModel: value => {
         if (!value.trim()) return
@@ -41,6 +45,7 @@ export const useAgentSessionLaunchPreferences = create<AgentSessionLaunchPrefere
       },
       setEffort: value => set({ effort: value }),
       setThinking: value => set({ thinking: value }),
+      setPermissionLevel: value => set({ permissionLevel: value }),
       getDefaultModel
     }),
     {
@@ -50,7 +55,8 @@ export const useAgentSessionLaunchPreferences = create<AgentSessionLaunchPrefere
         agent: state.agent,
         model: state.model,
         effort: state.effort,
-        thinking: state.thinking
+        thinking: state.thinking,
+        permissionLevel: state.permissionLevel
       })
     }
   )

@@ -1,25 +1,37 @@
 import { ChevronDown, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { type Agent, type Effort, type Model, useAgentSessionLaunchPreferences } from '@/hooks/preferences'
+import {
+  type Agent,
+  type Effort,
+  type Model,
+  type PermissionLevel,
+  useAgentSessionLaunchPreferences
+} from '@/hooks/preferences'
 import { cn } from '@/lib/utils'
 
 export type { Model } from '@/hooks/preferences'
 
 interface AgentSessionLaunchButtonProps {
-  onNewTab: (agent: Agent, model: Model, effort: Effort, thinking: boolean) => void
-  onOpenRunForm: (agent: Agent, model: Model, effort: Effort, thinking: boolean) => void
+  onNewTab: (agent: Agent, model: Model, effort: Effort, thinking: boolean, permissionLevel: PermissionLevel) => void
+  onOpenRunForm: (
+    agent: Agent,
+    model: Model,
+    effort: Effort,
+    thinking: boolean,
+    permissionLevel: PermissionLevel
+  ) => void
 }
 
 export function AgentSessionLaunchButton({ onNewTab, onOpenRunForm }: AgentSessionLaunchButtonProps) {
-  const { agent, model, effort, thinking } = useAgentSessionLaunchPreferences()
+  const { agent, model, effort, thinking, permissionLevel } = useAgentSessionLaunchPreferences()
 
   const handleNewTab = () => {
-    onNewTab(agent, model, effort, thinking)
+    onNewTab(agent, model, effort, thinking, permissionLevel)
   }
 
   const handleOpenRunForm = () => {
-    onOpenRunForm(agent, model, effort, thinking)
+    onOpenRunForm(agent, model, effort, thinking, permissionLevel)
   }
 
   return (
@@ -52,6 +64,9 @@ export function AgentSessionLaunchButton({ onNewTab, onOpenRunForm }: AgentSessi
               </div>
               <div>
                 <span className="font-semibold">Thinking:</span> {thinking ? 'On' : 'Off'}
+              </div>
+              <div>
+                <span className="font-semibold">Permission:</span> {permissionLevel}
               </div>
             </div>
           </TooltipContent>

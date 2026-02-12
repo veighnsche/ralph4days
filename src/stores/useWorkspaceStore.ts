@@ -31,6 +31,7 @@ export interface WorkspaceTab {
     model?: string // For terminal tabs (haiku, sonnet, opus)
     effort?: 'low' | 'medium' | 'high' // Model capability: optional effort level
     thinking?: boolean // For terminal tabs (extended thinking)
+    permissionLevel?: 'safe' | 'balanced' | 'auto' | 'full_auto' // Canonical launch permission level
     taskId?: number // For task execution terminals
     initPrompt?: string // Optional prompt captured at session start
     formTreeByAgent?: Record<string, TerminalBridgeModelOption[]>

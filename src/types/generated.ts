@@ -225,6 +225,7 @@ export type TerminalBridgeListModelFormTreeResult = { providers: TerminalBridgeL
 export type TerminalBridgeListModelsResult = { agent: string; models: TerminalBridgeModelOption[] }
 export type TerminalBridgeModelOption = {
   name: string
+  display: string
   description: string
   sessionModel?: string
   effortOptions: string[]
@@ -238,6 +239,7 @@ export type TerminalBridgeStartHumanSessionArgs = {
   agent?: string
   model?: string
   effort?: string
+  permissionLevel?: string
   launchCommand?: string
   postStartPreamble?: string
   initPrompt?: string
@@ -251,6 +253,7 @@ export type TerminalBridgeStartSessionArgs = {
   mcpMode?: string
   model?: string
   effort?: string
+  permissionLevel?: string
   thinking?: boolean
   postStartPreamble?: string
 }
@@ -260,6 +263,7 @@ export type TerminalBridgeStartTaskSessionArgs = {
   agent?: string
   model?: string
   effort?: string
+  permissionLevel?: string
   thinking?: boolean
   postStartPreamble?: string
 }

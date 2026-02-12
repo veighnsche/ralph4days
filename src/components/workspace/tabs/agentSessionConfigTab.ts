@@ -1,5 +1,5 @@
 import { AgentSessionConfigTabContent } from '@/components/workspace/AgentSessionConfigTabContent'
-import type { Agent, Effort } from '@/hooks/preferences'
+import type { Agent, Effort, PermissionLevel } from '@/hooks/preferences'
 import { terminalBridgeListModelFormTree } from '@/lib/terminal/terminalBridgeClient'
 import { useWorkspaceStore, type WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { TerminalBridgeModelOption } from '@/types/generated'
@@ -9,6 +9,7 @@ export type AgentSessionConfigTabInput = {
   model: string
   effort: Effort
   thinking: boolean
+  permissionLevel: PermissionLevel
 }
 
 async function loadFormTrees(tabId: string) {
@@ -54,6 +55,7 @@ export function createAgentSessionConfigTab(input: AgentSessionConfigTabInput): 
       model: input.model,
       effort: input.effort,
       thinking: input.thinking,
+      permissionLevel: input.permissionLevel,
       formTreeByAgent: {},
       formTreeLoading: true,
       formTreeError: null
