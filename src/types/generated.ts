@@ -54,6 +54,9 @@ export type FeatureData = {
   displayName: string
   acronym: string
   description?: string
+  contextFiles: string[]
+  knowledgePaths: string[]
+  dependencies: string[]
   created?: string
   status: string
   comments: FeatureCommentData[]
@@ -139,10 +142,27 @@ export type TaskSignal = {
   created?: string
   session_id?: string
   signal_verb?: string
-  signal_payload?: string
   signal_answered?: string
   parent_signal_id?: number
   priority?: string
+  summary?: string
+  remaining?: string
+  reason?: string
+  question?: string
+  what?: string
+  on?: string
+  blocking?: boolean
+  severity?: string
+  category?: string
+  kind?: string
+  scope?: string
+  preferred?: string
+  options?: string[]
+  rationale?: string
+  why?: string
+  detail?: string
+  text?: string
+  answer?: string
 }
 export type TaskStatus = 'draft' | 'pending' | 'in_progress' | 'done' | 'blocked' | 'skipped'
 export type Task = {
@@ -155,6 +175,7 @@ export type Task = {
   priority?: Priority
   tags: string[]
   dependsOn: number[]
+  blockedBy?: string
   created?: string
   updated?: string
   completed?: string
