@@ -111,13 +111,45 @@ pub struct TaskSignal {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub signal_verb: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub signal_payload: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub signal_answered: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub parent_signal_id: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub priority: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub remaining: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub question: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub what: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub on: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub blocking: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub severity: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scope: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub preferred: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub options: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rationale: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub why: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub detail: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub answer: Option<String>,
 }
 
 #[ipc_type]

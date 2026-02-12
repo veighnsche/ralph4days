@@ -14,7 +14,7 @@
 //!
 //! ## IMPORTANT: Extraction happens AFTER stagnation check (F28)
 //!
-//! The loop engine flow MUST be:
+//! The task execution engine flow MUST be:
 //! 1. Pre-iteration hash
 //! 2. Run Claude iteration
 //! 3. Post-iteration hash → stagnation check
@@ -144,7 +144,7 @@ pub struct ExtractionResult {
 }
 
 impl ExtractionResult {
-    /// Convert to an IterationRecord with context from the loop engine.
+    /// Convert to an IterationRecord with context from the task execution engine.
     ///
     /// # Examples
     ///

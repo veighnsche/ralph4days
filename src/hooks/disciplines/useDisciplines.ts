@@ -40,14 +40,3 @@ export function useDisciplines() {
     error: error ? String(error) : null
   }
 }
-
-export function useDisciplinesRaw() {
-  const { data, error } = useInvoke<DisciplineConfigWire[]>('get_disciplines_config', undefined, {
-    staleTime: 5 * 60 * 1000
-  })
-
-  return {
-    disciplines: data ?? [],
-    error: error ? String(error) : null
-  }
-}

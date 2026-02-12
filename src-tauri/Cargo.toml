@@ -1,7 +1,7 @@
 [package]
 name = "ralph4days"
 version = "0.1.0"
-description = "Ralph Loop Desktop Application - Autonomous multi-agent build system"
+description = "Ralph4days Desktop Application - Parallel task execution orchestration system"
 authors = ["vince"]
 edition = "2021"
 rust-version = "1.75"
@@ -66,4 +66,3 @@ inherits = "release"
 lto = false
 codegen-units = 16
 strip = false
-

@@ -61,7 +61,7 @@
 //! - **SQLite is the source of truth.** Embeddings are stored alongside comments.
 //! - **Prevent compounding mistakes.** If iteration 3 hit an error, iteration 4 must know.
 //! - **Observations, not rules.** Learnings are framed as "verify before relying" to prevent
-//!   feedback loop amplification (failure class F10).
+//!   feedback-cycle amplification (failure class F10).
 //!
 //! ## Quick Start
 //!

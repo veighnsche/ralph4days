@@ -273,32 +273,29 @@ pub fn get_recent_projects(
 }
 
 #[tauri::command]
-pub fn start_loop() -> Result<(), String> {
+pub fn start_execution_sequence() -> Result<(), String> {
     ralph_err!(codes::LOOP_ENGINE, "Not implemented")
 }
 
 #[tauri::command]
-pub fn pause_loop() -> Result<(), String> {
+pub fn pause_execution_sequence() -> Result<(), String> {
     ralph_err!(codes::LOOP_ENGINE, "Not implemented")
 }
 
 #[tauri::command]
-pub fn resume_loop() -> Result<(), String> {
+pub fn resume_execution_sequence() -> Result<(), String> {
     ralph_err!(codes::LOOP_ENGINE, "Not implemented")
 }
 
 #[tauri::command]
-pub fn stop_loop() -> Result<(), String> {
+pub fn stop_execution_sequence() -> Result<(), String> {
     ralph_err!(codes::LOOP_ENGINE, "Not implemented")
 }
 
 #[tauri::command]
-pub fn get_loop_state() -> Result<(), String> {
+pub fn get_execution_sequence_state() -> Result<(), String> {
     ralph_err!(codes::LOOP_ENGINE, "Not implemented")
 }
-
-// TODO: Rename these commands to reflect sequential task execution rather than "loop"
-// Commands: start_execution, pause_execution, resume_execution, stop_execution, get_execution_state
 
 #[tauri::command]
 pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProject>, String> {

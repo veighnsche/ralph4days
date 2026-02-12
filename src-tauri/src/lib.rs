@@ -120,11 +120,11 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            commands::project::start_loop,
-            commands::project::pause_loop,
-            commands::project::resume_loop,
-            commands::project::stop_loop,
-            commands::project::get_loop_state,
+            commands::project::start_execution_sequence,
+            commands::project::pause_execution_sequence,
+            commands::project::resume_execution_sequence,
+            commands::project::stop_execution_sequence,
+            commands::project::get_execution_sequence_state,
             commands::project::scan_for_ralph_projects,
             commands::project::get_current_dir,
             commands::project::validate_project_path,
@@ -143,7 +143,6 @@ pub fn run() {
             commands::tasks::update_task_comment,
             commands::tasks::delete_task_comment,
             commands::tasks::get_tasks,
-            commands::tasks::get_task_signals,
             commands::tasks::get_signal_summaries,
             commands::tasks::answer_ask,
             commands::tasks::add_reply_to_comment,

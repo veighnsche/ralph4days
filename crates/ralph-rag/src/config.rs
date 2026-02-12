@@ -102,7 +102,7 @@ impl Default for RagConfig {
     }
 }
 
-/// Status of the RAG system (checked once at loop start).
+/// Status of the RAG system (checked once at execution start).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RagStatus {
     /// Whether RAG is operational (Ollama available with embedding model).

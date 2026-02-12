@@ -18,7 +18,7 @@
   },
   "plugins": {
     "cli": {
-      "description": "Ralph Loop - Autonomous multi-agent build system",
+      "description": "Ralph4days - Parallel task execution orchestration system",
       "args": [
         {
           "name": "project",
@@ -40,7 +40,7 @@
     ],
     "category": "Development",
     "shortDescription": "Autonomous multi-agent build system",
-    "longDescription": "Ralph4days runs Claude Haiku in a loop to complete tasks from a PRD, with periodic Opus reviews for quality control.",
+    "longDescription": "Ralph4days orchestrates parallel task execution sequences over a PRD-backed task graph, including task-level Claude execution and review workflows.",
     "linux": {
       "appimage": {
         "bundleMediaFramework": false

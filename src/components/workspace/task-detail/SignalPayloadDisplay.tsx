@@ -1,23 +1,32 @@
+import { AlertCircle } from 'lucide-react'
+import type { TaskSignal } from '@/types/generated'
+
 interface SignalPayloadDisplayProps {
-  verb: string
-  payload: Record<string, unknown>
+  signal: TaskSignal
 }
 
-export function SignalPayloadDisplay({ verb, payload }: SignalPayloadDisplayProps) {
-  const summary = typeof payload.summary === 'string' ? payload.summary : null
-  const remaining = typeof payload.remaining === 'string' ? payload.remaining : null
-  const reason = typeof payload.reason === 'string' ? payload.reason : null
-  const question = typeof payload.question === 'string' ? payload.question : null
-  const blocking = typeof payload.blocking === 'boolean' ? payload.blocking : null
-  const what = typeof payload.what === 'string' ? payload.what : null
-  const severity = typeof payload.severity === 'string' ? payload.severity : null
-  const category = typeof payload.category === 'string' ? payload.category : null
-  const text = typeof payload.text === 'string' ? payload.text : null
-  const kind = typeof payload.kind === 'string' ? payload.kind : null
-  const rationale = typeof payload.rationale === 'string' ? payload.rationale : null
-  const scope = typeof payload.scope === 'string' ? payload.scope : null
-  const why = typeof payload.why === 'string' ? payload.why : null
-  const on = typeof payload.on === 'string' ? payload.on : null
+export function SignalPayloadDisplay({ signal }: SignalPayloadDisplayProps) {
+  const verb = signal.signal_verb
+  if (!verb) return null
+
+  const {
+    summary,
+    remaining,
+    reason,
+    question,
+    blocking,
+    what,
+    severity,
+    category,
+    text,
+    kind,
+    rationale,
+    scope,
+    why,
+    on,
+    options,
+    preferred
+  } = signal
 
   return (
     <>
@@ -61,12 +70,26 @@ export function SignalPayloadDisplay({ verb, payload }: SignalPayloadDisplayProp
               Question
             </div>
             {blocking && (
-              <span className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-500">
-                ⚠ Blocking
-              </span>
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-destructive/10 text-destructive text-xs font-medium">
+                <AlertCircle className="h-3 w-3" />
+                Blocking
+              </div>
             )}
           </div>
           <p className="text-sm leading-relaxed text-foreground">{question}</p>
+          {options && options.length > 0 && (
+            <div className="space-y-1">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Options</span>
+              <ul className="list-disc list-inside space-y-0.5">
+                {options.map((opt, i) => (
+                  <li key={i} className="text-sm text-foreground/90">
+                    {opt}
+                    {preferred === opt && <span className="ml-1.5 text-xs text-muted-foreground">(recommended)</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 

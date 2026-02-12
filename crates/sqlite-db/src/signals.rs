@@ -65,6 +65,19 @@ pub struct BlockedSignalInput {
 }
 
 impl SqliteDb {
+    fn resolve_discipline_id(&self, discipline_name: Option<&str>, task_id: u32) -> Option<u32> {
+        let _ = task_id;
+        discipline_name.and_then(|name| {
+            self.conn
+                .query_row(
+                    "SELECT id FROM disciplines WHERE name = ?1",
+                    [name],
+                    |row| row.get(0),
+                )
+                .ok()
+        })
+    }
+
     pub fn add_signal(
         &self,
         task_id: u32,
@@ -215,7 +228,10 @@ impl SqliteDb {
         let Ok(mut stmt) = self.conn.prepare(
             "SELECT tc.id, COALESCE(d.display_name, 'human') as author, \
              COALESCE(tc.text, tc.summary, tc.reason, tc.question, tc.what, tc.remaining, '') as body, \
-             tc.created, tc.session_id, tc.verb \
+             tc.created, tc.session_id, tc.verb, \
+             tc.summary, tc.remaining, tc.reason, tc.question, tc.what, tc.\"on\", \
+             tc.blocking, tc.severity, tc.category, tc.kind, tc.scope, \
+             tc.preferred, tc.options, tc.rationale, tc.why, tc.detail, tc.text, tc.answer \
              FROM task_signals tc \
              LEFT JOIN disciplines d ON tc.discipline_id = d.id \
              WHERE tc.task_id = ?1 \
@@ -225,6 +241,9 @@ impl SqliteDb {
         };
 
         stmt.query_map([task_id], |row| {
+            let blocking_int: Option<i32> = row.get(12)?;
+            let options_str: Option<String> = row.get(18)?;
+
             Ok(TaskSignal {
                 id: row.get(0)?,
                 author: row.get(1)?,
@@ -232,10 +251,26 @@ impl SqliteDb {
                 created: row.get(3)?,
                 session_id: row.get(4)?,
                 signal_verb: row.get(5)?,
-                signal_payload: None,
-                signal_answered: None,
                 parent_signal_id: None,
                 priority: None,
+                summary: row.get(6)?,
+                remaining: row.get(7)?,
+                reason: row.get(8)?,
+                question: row.get(9)?,
+                what: row.get(10)?,
+                on: row.get(11)?,
+                blocking: blocking_int.map(|b| b != 0),
+                severity: row.get(13)?,
+                category: row.get(14)?,
+                kind: row.get(15)?,
+                scope: row.get(16)?,
+                preferred: row.get(17)?,
+                options: options_str.map(|s| s.lines().map(str::to_owned).collect()),
+                rationale: row.get(19)?,
+                why: row.get(20)?,
+                detail: row.get(21)?,
+                text: row.get(22)?,
+                answer: row.get(23)?,
             })
         })
         .map_or_else(
@@ -268,40 +303,6 @@ impl SqliteDb {
         map
     }
 
-    pub fn get_task_signals(&self, task_id: u32) -> Result<Vec<TaskSignal>, String> {
-        let mut stmt = self
-            .conn
-            .prepare(
-                "SELECT tc.id, COALESCE(d.display_name, 'system') as author, \
-                 COALESCE(tc.text, tc.summary, tc.reason, tc.question, tc.what, tc.remaining, '') as body, \
-                 tc.created, tc.session_id, tc.verb \
-                 FROM task_signals tc \
-                 LEFT JOIN disciplines d ON tc.discipline_id = d.id \
-                 WHERE tc.task_id = ?1 AND tc.verb != 'signal' \
-                 ORDER BY tc.created ASC, tc.id ASC",
-            )
-            .ralph_err(codes::DB_READ, "Failed to prepare MCP signal query")?;
-
-        let rows = stmt
-            .query_map([task_id], |row| {
-                Ok(TaskSignal {
-                    id: row.get(0)?,
-                    author: row.get(1)?,
-                    body: row.get(2)?,
-                    created: row.get(3)?,
-                    session_id: row.get(4)?,
-                    signal_verb: row.get(5)?,
-                    signal_payload: None,
-                    signal_answered: None,
-                    parent_signal_id: None,
-                    priority: None,
-                })
-            })
-            .ralph_err(codes::DB_READ, "Failed to query MCP signals")?;
-
-        Ok(rows.filter_map(std::result::Result::ok).collect())
-    }
-
     pub fn get_signal_summaries(
         &self,
         task_ids: &[u32],
@@ -312,9 +313,7 @@ impl SqliteDb {
 
         let placeholders: Vec<String> = task_ids.iter().map(|_| "?".to_owned()).collect();
         let sql = format!(
-            "SELECT task_id, verb, \
-             COALESCE(text, summary, reason, question, what, remaining, '') as payload, \
-             answer, session_id \
+            "SELECT task_id, verb, blocking, severity, answer, session_id \
              FROM task_signals WHERE task_id IN ({}) AND verb != 'signal' ORDER BY task_id, created ASC",
             placeholders.join(",")
         );
@@ -336,9 +335,10 @@ impl SqliteDb {
                 Ok((
                     row.get::<_, u32>(0)?,
                     row.get::<_, String>(1)?,
-                    row.get::<_, String>(2)?,
+                    row.get::<_, Option<i32>>(2)?,
                     row.get::<_, Option<String>>(3)?,
-                    row.get::<_, String>(4)?,
+                    row.get::<_, Option<String>>(4)?,
+                    row.get::<_, String>(5)?,
                 ))
             })
             .ralph_err(codes::DB_READ, "Failed to query signal summaries")?;
@@ -347,7 +347,7 @@ impl SqliteDb {
         let mut sessions_per_task: HashMap<u32, std::collections::HashSet<String>> = HashMap::new();
 
         for row in rows.flatten() {
-            let (task_id, verb, payload, answered, session_id) = row;
+            let (task_id, verb, blocking, severity, answered, session_id) = row;
             let summary = map.entry(task_id).or_insert_with(|| TaskSignalSummary {
                 pending_asks: 0,
                 flag_count: 0,
@@ -364,27 +364,17 @@ impl SqliteDb {
 
             match verb.as_str() {
                 "ask" => {
-                    if answered.is_none() {
-                        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&payload) {
-                            if parsed
-                                .get("blocking")
-                                .and_then(serde_json::Value::as_bool)
-                                .unwrap_or(false)
-                            {
-                                summary.pending_asks += 1;
-                            }
-                        }
+                    if answered.is_none() && blocking.is_some_and(|b| b != 0) {
+                        summary.pending_asks += 1;
                     }
                 }
                 "flag" => {
                     summary.flag_count += 1;
-                    if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&payload) {
-                        if let Some(sev) = parsed.get("severity").and_then(|v| v.as_str()) {
-                            let current_rank = severity_rank(summary.max_flag_severity.as_deref());
-                            let new_rank = severity_rank(Some(sev));
-                            if new_rank > current_rank {
-                                summary.max_flag_severity = Some(sev.to_owned());
-                            }
+                    if let Some(sev) = severity {
+                        let current_rank = severity_rank(summary.max_flag_severity.as_deref());
+                        let new_rank = severity_rank(Some(&sev));
+                        if new_rank > current_rank {
+                            summary.max_flag_severity = Some(sev);
                         }
                     }
                 }
@@ -439,24 +429,7 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "Summary cannot be empty");
         }
 
-        let discipline_id: Option<u32> = if let Some(name) = discipline_name {
-            self.conn
-                .query_row(
-                    "SELECT id FROM disciplines WHERE name = ?1",
-                    [name],
-                    |row| row.get(0),
-                )
-                .ok()
-        } else {
-            self.conn
-                .query_row(
-                    "SELECT discipline_id FROM tasks WHERE id = ?1",
-                    [input.task_id],
-                    |row| row.get(0),
-                )
-                .ok()
-        };
-
+        let discipline_id = self.resolve_discipline_id(discipline_name, input.task_id);
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
@@ -487,24 +460,7 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "Remaining cannot be empty");
         }
 
-        let discipline_id: Option<u32> = if let Some(name) = discipline_name {
-            self.conn
-                .query_row(
-                    "SELECT id FROM disciplines WHERE name = ?1",
-                    [name],
-                    |row| row.get(0),
-                )
-                .ok()
-        } else {
-            self.conn
-                .query_row(
-                    "SELECT discipline_id FROM tasks WHERE id = ?1",
-                    [input.task_id],
-                    |row| row.get(0),
-                )
-                .ok()
-        };
-
+        let discipline_id = self.resolve_discipline_id(discipline_name, input.task_id);
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
@@ -533,24 +489,7 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "Reason cannot be empty");
         }
 
-        let discipline_id: Option<u32> = if let Some(name) = discipline_name {
-            self.conn
-                .query_row(
-                    "SELECT id FROM disciplines WHERE name = ?1",
-                    [name],
-                    |row| row.get(0),
-                )
-                .ok()
-        } else {
-            self.conn
-                .query_row(
-                    "SELECT discipline_id FROM tasks WHERE id = ?1",
-                    [input.task_id],
-                    |row| row.get(0),
-                )
-                .ok()
-        };
-
+        let discipline_id = self.resolve_discipline_id(discipline_name, input.task_id);
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
@@ -578,24 +517,7 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "Question cannot be empty");
         }
 
-        let discipline_id: Option<u32> = if let Some(name) = discipline_name {
-            self.conn
-                .query_row(
-                    "SELECT id FROM disciplines WHERE name = ?1",
-                    [name],
-                    |row| row.get(0),
-                )
-                .ok()
-        } else {
-            self.conn
-                .query_row(
-                    "SELECT discipline_id FROM tasks WHERE id = ?1",
-                    [input.task_id],
-                    |row| row.get(0),
-                )
-                .ok()
-        };
-
+        let discipline_id = self.resolve_discipline_id(discipline_name, input.task_id);
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         let options = input.options.map(|opts| opts.join("\n"));
 
@@ -628,24 +550,7 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "What cannot be empty");
         }
 
-        let discipline_id: Option<u32> = if let Some(name) = discipline_name {
-            self.conn
-                .query_row(
-                    "SELECT id FROM disciplines WHERE name = ?1",
-                    [name],
-                    |row| row.get(0),
-                )
-                .ok()
-        } else {
-            self.conn
-                .query_row(
-                    "SELECT discipline_id FROM tasks WHERE id = ?1",
-                    [input.task_id],
-                    |row| row.get(0),
-                )
-                .ok()
-        };
-
+        let discipline_id = self.resolve_discipline_id(discipline_name, input.task_id);
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
@@ -675,24 +580,7 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "Text cannot be empty");
         }
 
-        let discipline_id: Option<u32> = if let Some(name) = discipline_name {
-            self.conn
-                .query_row(
-                    "SELECT id FROM disciplines WHERE name = ?1",
-                    [name],
-                    |row| row.get(0),
-                )
-                .ok()
-        } else {
-            self.conn
-                .query_row(
-                    "SELECT discipline_id FROM tasks WHERE id = ?1",
-                    [input.task_id],
-                    |row| row.get(0),
-                )
-                .ok()
-        };
-
+        let discipline_id = self.resolve_discipline_id(discipline_name, input.task_id);
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
@@ -726,24 +614,7 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "Why cannot be empty");
         }
 
-        let discipline_id: Option<u32> = if let Some(name) = discipline_name {
-            self.conn
-                .query_row(
-                    "SELECT id FROM disciplines WHERE name = ?1",
-                    [name],
-                    |row| row.get(0),
-                )
-                .ok()
-        } else {
-            self.conn
-                .query_row(
-                    "SELECT discipline_id FROM tasks WHERE id = ?1",
-                    [input.task_id],
-                    |row| row.get(0),
-                )
-                .ok()
-        };
-
+        let discipline_id = self.resolve_discipline_id(discipline_name, input.task_id);
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
@@ -773,24 +644,7 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "On cannot be empty");
         }
 
-        let discipline_id: Option<u32> = if let Some(name) = discipline_name {
-            self.conn
-                .query_row(
-                    "SELECT id FROM disciplines WHERE name = ?1",
-                    [name],
-                    |row| row.get(0),
-                )
-                .ok()
-        } else {
-            self.conn
-                .query_row(
-                    "SELECT discipline_id FROM tasks WHERE id = ?1",
-                    [input.task_id],
-                    |row| row.get(0),
-                )
-                .ok()
-        };
-
+        let discipline_id = self.resolve_discipline_id(discipline_name, input.task_id);
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(

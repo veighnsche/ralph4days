@@ -16,6 +16,26 @@ pub struct AddFeatureCommentInput {
 }
 
 impl SqliteDb {
+    fn resolve_feature_id(&self, feature_name: &str) -> Result<i64, String> {
+        let feature_id: Option<i64> = self
+            .conn
+            .query_row(
+                "SELECT id FROM features WHERE name = ?1",
+                [feature_name],
+                |row| row.get(0),
+            )
+            .optional()
+            .ralph_err(codes::DB_READ, "Failed to check feature")?;
+
+        feature_id.ok_or_else(|| {
+            format!(
+                "[R-{}] Feature '{}' does not exist",
+                codes::FEATURE_OPS,
+                feature_name
+            )
+        })
+    }
+
     pub fn add_feature_comment(&self, input: AddFeatureCommentInput) -> Result<(), String> {
         if input.body.trim().is_empty() {
             return ralph_err!(codes::FEATURE_OPS, "Comment body cannot be empty");
@@ -24,23 +44,7 @@ impl SqliteDb {
             return ralph_err!(codes::FEATURE_OPS, "Comment category cannot be empty");
         }
 
-        let feature_id: Option<i64> = self
-            .conn
-            .query_row(
-                "SELECT id FROM features WHERE name = ?1",
-                [&input.feature_name],
-                |row| row.get(0),
-            )
-            .optional()
-            .ralph_err(codes::DB_READ, "Failed to check feature")?;
-
-        let feature_id = feature_id.ok_or_else(|| {
-            format!(
-                "[R-{}] Feature '{}' does not exist",
-                codes::FEATURE_OPS,
-                input.feature_name
-            )
-        })?;
+        let feature_id = self.resolve_feature_id(&input.feature_name)?;
 
         let discipline_id: Option<i64> = if let Some(ref disc) = input.discipline {
             self.conn
@@ -91,23 +95,7 @@ impl SqliteDb {
             return ralph_err!(codes::FEATURE_OPS, "Comment body cannot be empty");
         }
 
-        let feature_id: Option<i64> = self
-            .conn
-            .query_row(
-                "SELECT id FROM features WHERE name = ?1",
-                [feature_name],
-                |row| row.get(0),
-            )
-            .optional()
-            .ralph_err(codes::DB_READ, "Failed to check feature")?;
-
-        let feature_id = feature_id.ok_or_else(|| {
-            format!(
-                "[R-{}] Feature '{}' does not exist",
-                codes::FEATURE_OPS,
-                feature_name
-            )
-        })?;
+        let feature_id = self.resolve_feature_id(feature_name)?;
 
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
 
@@ -135,23 +123,7 @@ impl SqliteDb {
         feature_name: &str,
         comment_id: u32,
     ) -> Result<(), String> {
-        let feature_id: Option<i64> = self
-            .conn
-            .query_row(
-                "SELECT id FROM features WHERE name = ?1",
-                [feature_name],
-                |row| row.get(0),
-            )
-            .optional()
-            .ralph_err(codes::DB_READ, "Failed to check feature")?;
-
-        let feature_id = feature_id.ok_or_else(|| {
-            format!(
-                "[R-{}] Feature '{}' does not exist",
-                codes::FEATURE_OPS,
-                feature_name
-            )
-        })?;
+        let feature_id = self.resolve_feature_id(feature_name)?;
 
         let affected = self
             .conn

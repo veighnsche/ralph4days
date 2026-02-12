@@ -1,7 +1,7 @@
 //! Core data structures representing what happened in each iteration.
 //!
 //! An `IterationRecord` is the fundamental unit of feature memory. It captures
-//! everything an agent did (or failed to do) in a single loop iteration.
+//! everything an agent did (or failed to do) in a single execution iteration.
 //!
 //! ## Who writes these?
 //! Ralph's `MemoryExtractor` (not yet built) parses Claude's stream-json output
@@ -15,7 +15,7 @@
 
 use serde::{Deserialize, Serialize};
 
-/// The complete record of what happened in one loop iteration, scoped to one feature.
+/// The complete record of what happened in one execution iteration, scoped to one feature.
 ///
 /// One iteration = one Claude CLI invocation = one task attempted.
 /// This is the source-of-truth record that gets written to JSONL and embedded for search.
@@ -25,7 +25,7 @@ use serde::{Deserialize, Serialize};
 /// produces ~100-200KB of journal data. This is trivially small.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IterationRecord {
-    /// Which iteration number in the loop (1-indexed, monotonically increasing).
+    /// Which iteration number in the execution sequence (1-indexed, monotonically increasing).
     pub iteration_number: u32,
 
     /// The task ID that was targeted in this iteration.

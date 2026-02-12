@@ -4,6 +4,16 @@ use ralph_errors::{codes, ralph_err, RalphResultExt};
 use std::collections::HashSet;
 
 impl SqliteDb {
+    fn delete_task_related_rows(&self, table: &str, task_id: u32) -> Result<(), String> {
+        self.conn
+            .execute(
+                &format!("DELETE FROM {table} WHERE task_id = ?1"),
+                [task_id],
+            )
+            .ralph_err(codes::DB_WRITE, &format!("Failed to delete from {table}"))?;
+        Ok(())
+    }
+
     #[tracing::instrument(skip(self, input), fields(
         feature = %input.feature,
         discipline = %input.discipline,
@@ -202,14 +212,10 @@ impl SqliteDb {
             )
             .ralph_err(codes::DB_WRITE, "Failed to update task")?;
 
-        self.conn
-            .execute("DELETE FROM task_tags WHERE task_id = ?1", [id])
-            .ralph_err(codes::DB_WRITE, "Failed to delete old tags")?;
+        self.delete_task_related_rows("task_tags", id)?;
         self.insert_string_list("task_tags", "task_id", i64::from(id), "tag", &update.tags)?;
 
-        self.conn
-            .execute("DELETE FROM task_dependencies WHERE task_id = ?1", [id])
-            .ralph_err(codes::DB_WRITE, "Failed to delete old dependencies")?;
+        self.delete_task_related_rows("task_dependencies", id)?;
         for dep_id in &update.depends_on {
             self.conn
                 .execute(
@@ -219,12 +225,7 @@ impl SqliteDb {
                 .ralph_err(codes::DB_WRITE, "Failed to insert dependency")?;
         }
 
-        self.conn
-            .execute(
-                "DELETE FROM task_acceptance_criteria WHERE task_id = ?1",
-                [id],
-            )
-            .ralph_err(codes::DB_WRITE, "Failed to delete old acceptance criteria")?;
+        self.delete_task_related_rows("task_acceptance_criteria", id)?;
         let ac = update.acceptance_criteria.unwrap_or_default();
         for (idx, criterion) in ac.iter().enumerate() {
             self.conn
@@ -235,9 +236,7 @@ impl SqliteDb {
                 .ralph_err(codes::DB_WRITE, "Failed to insert acceptance criterion")?;
         }
 
-        self.conn
-            .execute("DELETE FROM task_context_files WHERE task_id = ?1", [id])
-            .ralph_err(codes::DB_WRITE, "Failed to delete old context files")?;
+        self.delete_task_related_rows("task_context_files", id)?;
         self.insert_string_list(
             "task_context_files",
             "task_id",
@@ -246,9 +245,7 @@ impl SqliteDb {
             &update.context_files,
         )?;
 
-        self.conn
-            .execute("DELETE FROM task_output_artifacts WHERE task_id = ?1", [id])
-            .ralph_err(codes::DB_WRITE, "Failed to delete old output artifacts")?;
+        self.delete_task_related_rows("task_output_artifacts", id)?;
         self.insert_string_list(
             "task_output_artifacts",
             "task_id",
@@ -261,15 +258,7 @@ impl SqliteDb {
     }
 
     pub fn set_task_status(&self, id: u32, status: TaskStatus) -> Result<(), String> {
-        let exists: bool = self
-            .conn
-            .query_row(
-                "SELECT COUNT(*) > 0 FROM tasks WHERE id = ?1",
-                [id],
-                |row| row.get(0),
-            )
-            .ralph_err(codes::DB_READ, "Failed to check task")?;
-        if !exists {
+        if !self.check_exists("tasks", "id", &id.to_string())? {
             return ralph_err!(codes::TASK_OPS, "Task {id} does not exist");
         }
 
@@ -303,15 +292,7 @@ impl SqliteDb {
         status: TaskStatus,
         date: &str,
     ) -> Result<(), String> {
-        let exists: bool = self
-            .conn
-            .query_row(
-                "SELECT COUNT(*) > 0 FROM tasks WHERE id = ?1",
-                [id],
-                |row| row.get(0),
-            )
-            .ralph_err(codes::DB_READ, "Failed to check task")?;
-        if !exists {
+        if !self.check_exists("tasks", "id", &id.to_string())? {
             return ralph_err!(codes::TASK_OPS, "Task {id} does not exist");
         }
 
@@ -338,15 +319,7 @@ impl SqliteDb {
     ///
     /// **For test fixture generation only.** Production tasks set provenance at creation.
     pub fn set_task_provenance(&self, id: u32, provenance: TaskProvenance) -> Result<(), String> {
-        let exists: bool = self
-            .conn
-            .query_row(
-                "SELECT COUNT(*) > 0 FROM tasks WHERE id = ?1",
-                [id],
-                |row| row.get(0),
-            )
-            .ralph_err(codes::DB_READ, "Failed to check task")?;
-        if !exists {
+        if !self.check_exists("tasks", "id", &id.to_string())? {
             return ralph_err!(codes::TASK_OPS, "Task {id} does not exist");
         }
 

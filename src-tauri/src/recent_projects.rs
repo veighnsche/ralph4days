@@ -52,18 +52,26 @@ pub fn add(xdg: &XdgDirs, path: String, name: String) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn test_xdg() -> XdgDirs {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or_default();
+        let base = std::env::temp_dir().join(format!("ralph4days-recent-projects-{nanos}"));
+        XdgDirs::from_base(&base)
+    }
 
     #[test]
     fn load_returns_empty_when_no_file() {
-        let xdg = XdgDirs::resolve().unwrap();
-        // Real XDG data dir won't have our file in a fresh env, but may exist.
-        // Just verify it doesn't panic.
+        let xdg = test_xdg();
         let _ = load(&xdg);
     }
 
     #[test]
     fn add_and_load_round_trip() {
-        let xdg = XdgDirs::resolve().unwrap();
+        let xdg = test_xdg();
         xdg.ensure_data().unwrap();
 
         let file = xdg.data().join(FILENAME);
@@ -90,6 +98,10 @@ mod tests {
             std::fs::write(&file, original).unwrap();
         } else {
             let _ = std::fs::remove_file(&file);
+        }
+
+        if let Some(parent) = xdg.data().parent().and_then(|p| p.parent()) {
+            let _ = std::fs::remove_dir_all(parent);
         }
     }
 }

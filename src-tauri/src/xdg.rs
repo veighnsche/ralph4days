@@ -77,6 +77,16 @@ impl XdgDirs {
             .ralph_err(codes::FILESYSTEM, "Failed to create XDG state directory")?;
         Ok(&self.state)
     }
+
+    #[cfg(test)]
+    pub fn from_base(base: &Path) -> Self {
+        Self {
+            data: base.join("data").join(APP_NAME),
+            config: base.join("config").join(APP_NAME),
+            cache: base.join("cache").join(APP_NAME),
+            state: base.join("state").join(APP_NAME),
+        }
+    }
 }
 
 #[cfg(test)]

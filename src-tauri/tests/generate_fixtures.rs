@@ -248,7 +248,7 @@ ralph --project mock/01-desktop-blank
 
 ## Expected Behavior
 
-- Loop starts with no tasks (clean slate)
+- Execution sequence starts with no tasks (clean slate)
 - AI agents will create tasks and features as needed
 - Disciplines provide Desktop stack defaults (Frontend, Backend, Data, etc.)
 - Ready for AI-driven development workflow
@@ -362,9 +362,9 @@ fn generate_fixture_03_desktop_tasks() {
 
     let readme = "# Desktop Tasks
 
-**Purpose**: Desktop stack project with features and tasks (ready for loop)
+**Purpose**: Desktop stack project with features and tasks (ready for execution sequence)
 
-This fixture shows a complete project ready for Ralph Loop to execute.
+This fixture shows a complete project ready for Ralph task execution to run.
 It has features defined and tasks created, all using Desktop stack disciplines.
 
 ## Usage
@@ -391,7 +391,7 @@ just dev-mock 03-desktop-tasks
 
 ## Use Cases
 
-- Test Ralph Loop execution
+- Test task execution sequencing
 - Monkey testing with real task data
 - Verify task dependency handling
 - Test multi-feature projects

@@ -143,15 +143,6 @@ pub fn get_tasks(state: State<'_, AppState>) -> Result<Vec<sqlite_db::Task>, Str
 }
 
 #[tauri::command]
-pub fn get_task_signals(
-    state: State<'_, AppState>,
-    task_id: u32,
-) -> Result<Vec<sqlite_db::TaskSignal>, String> {
-    let db = get_db(&state)?;
-    db.get_task_signals(task_id)
-}
-
-#[tauri::command]
 pub fn get_signal_summaries(
     state: State<'_, AppState>,
     task_ids: Vec<u32>,
