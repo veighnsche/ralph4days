@@ -33,6 +33,7 @@ pub struct SessionConfig {
     pub model: Option<String>,
     pub effort: Option<String>,
     pub thinking: Option<bool>,
+    pub permission_level: Option<String>,
     pub init_settings: SessionInitSettings,
     pub post_start_preamble: Option<String>,
 }
@@ -98,6 +99,7 @@ mod tests {
             model: None,
             effort: None,
             thinking: None,
+            permission_level: None,
             init_settings: SessionInitSettings::default(),
             post_start_preamble: None,
         };
@@ -123,6 +125,7 @@ mod tests {
             model: None,
             effort: None,
             thinking: Some(true),
+            permission_level: None,
             init_settings: SessionInitSettings::default(),
             post_start_preamble: None,
         };
@@ -140,6 +143,7 @@ mod tests {
             model: None,
             effort: None,
             thinking: Some(false),
+            permission_level: None,
             init_settings: SessionInitSettings::default(),
             post_start_preamble: None,
         };
@@ -157,6 +161,7 @@ mod tests {
             model: Some("claude-opus-4".to_owned()),
             effort: None,
             thinking: Some(true),
+            permission_level: None,
             init_settings: SessionInitSettings::default(),
             post_start_preamble: None,
         };
@@ -176,6 +181,7 @@ mod tests {
             model: Some("haiku".to_owned()),
             effort: None,
             thinking: Some(true),
+            permission_level: None,
             init_settings: SessionInitSettings::default(),
             post_start_preamble: None,
         };

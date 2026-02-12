@@ -14,5 +14,6 @@ pub use session::{SessionConfig, SessionInitSettings};
 mod contract;
 mod events;
 mod manager;
+mod mappers;
 pub(crate) mod providers;
 mod session;

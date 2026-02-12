@@ -10,6 +10,7 @@ pub struct TerminalBridgeStartSessionArgs {
     pub mcp_mode: Option<String>,
     pub model: Option<String>,
     pub effort: Option<String>,
+    pub permission_level: Option<String>,
     pub thinking: Option<bool>,
     pub post_start_preamble: Option<String>,
 }
@@ -23,6 +24,7 @@ pub struct TerminalBridgeStartTaskSessionArgs {
     pub agent: Option<String>,
     pub model: Option<String>,
     pub effort: Option<String>,
+    pub permission_level: Option<String>,
     pub thinking: Option<bool>,
     pub post_start_preamble: Option<String>,
 }
@@ -32,6 +34,7 @@ pub struct TerminalBridgeStartTaskSessionArgs {
 #[serde(rename_all = "camelCase")]
 pub struct TerminalBridgeModelOption {
     pub name: String,
+    pub display: String,
     pub description: String,
     pub session_model: Option<String>,
     pub effort_options: Vec<String>,
@@ -94,6 +97,7 @@ pub struct TerminalBridgeStartHumanSessionArgs {
     pub agent: Option<String>,
     pub model: Option<String>,
     pub effort: Option<String>,
+    pub permission_level: Option<String>,
     pub launch_command: Option<String>,
     pub post_start_preamble: Option<String>,
     pub init_prompt: Option<String>,

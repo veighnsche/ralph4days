@@ -7,6 +7,25 @@ use super::{AgentProvider, SessionConfig, AGENT_CODEX};
 #[derive(Debug, Default)]
 pub struct CodexAdapter;
 
+fn apply_permission_level(cmd: &mut CommandBuilder, permission_level: Option<&str>) {
+    match permission_level.map(str::trim) {
+        Some("safe") => cmd.args([
+            "--sandbox",
+            "workspace-write",
+            "--ask-for-approval",
+            "untrusted",
+        ]),
+        Some("auto") => cmd.arg("--full-auto"),
+        Some("full_auto") => cmd.arg("--dangerously-bypass-approvals-and-sandbox"),
+        _ => cmd.args([
+            "--sandbox",
+            "workspace-write",
+            "--ask-for-approval",
+            "on-request",
+        ]),
+    }
+}
+
 impl AgentProvider for CodexAdapter {
     fn id(&self) -> &'static str {
         AGENT_CODEX
@@ -31,6 +50,7 @@ impl AgentProvider for CodexAdapter {
     ) -> CommandBuilder {
         let mut cmd = CommandBuilder::new("codex");
         cmd.cwd(working_dir);
+        apply_permission_level(&mut cmd, config.permission_level.as_deref());
 
         if let Some(model) = &config.model {
             cmd.args(["--model", model]);

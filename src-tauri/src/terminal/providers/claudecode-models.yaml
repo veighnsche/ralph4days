@@ -1,10 +1,13 @@
 # Manually maintained model catalog for Claude Code provider.
 # Update this file intentionally when model availability changes.
 models:
-  - name: opus-4.6
+  - name: opus
+    display: Opus 4.6
     description: Most capable for complex work.
     effort_options: [low, medium, high]
-  - name: sonnet-4.5
+  - name: sonnet
+    display: Sonnet 4.5
     description: Best for everyday tasks
-  - name: haiku-4.5
+  - name: haiku
+    display: Haiku 4.5
     description: Fastest for quick answers

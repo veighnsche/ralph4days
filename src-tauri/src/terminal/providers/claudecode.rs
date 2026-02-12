@@ -7,6 +7,15 @@ use super::{build_settings_json, AgentProvider, SessionConfig, AGENT_CLAUDE};
 #[derive(Debug, Default)]
 pub struct ClaudeCodeAdapter;
 
+fn resolve_permission_mode(permission_level: Option<&str>) -> &'static str {
+    match permission_level.map(str::trim) {
+        Some("safe") => "default",
+        Some("auto") => "dontAsk",
+        Some("full_auto") => "bypassPermissions",
+        _ => "delegate",
+    }
+}
+
 impl AgentProvider for ClaudeCodeAdapter {
     fn id(&self) -> &'static str {
         AGENT_CLAUDE
@@ -25,7 +34,10 @@ impl AgentProvider for ClaudeCodeAdapter {
         let mut cmd = CommandBuilder::new("claude");
         cmd.cwd(working_dir);
 
-        cmd.args(["--permission-mode", "bypassPermissions"]);
+        cmd.args([
+            "--permission-mode",
+            resolve_permission_mode(config.permission_level.as_deref()),
+        ]);
         cmd.arg("--verbose");
         cmd.arg("--no-chrome");
 

@@ -161,26 +161,23 @@ mod tests {
     #[test]
     fn validates_effort_from_model_capability() {
         let effort =
-            resolve_session_effort_for_agent(Some("claude"), Some("opus-4.6"), Some("high".into()))
+            resolve_session_effort_for_agent(Some("claude"), Some("opus"), Some("high".into()))
                 .expect("effort should resolve");
         assert_eq!(effort.as_deref(), Some("high"));
     }
 
     #[test]
     fn rejects_effort_when_model_has_no_effort_capability() {
-        let err = resolve_session_effort_for_agent(
-            Some("claude"),
-            Some("sonnet-4.5"),
-            Some("medium".into()),
-        )
-        .unwrap_err();
+        let err =
+            resolve_session_effort_for_agent(Some("claude"), Some("sonnet"), Some("medium".into()))
+                .unwrap_err();
         assert!(err.contains("not supported"));
     }
 
     #[test]
     fn rejects_invalid_effort_level_for_supported_model() {
         let err =
-            resolve_session_effort_for_agent(Some("claude"), Some("opus-4.6"), Some("max".into()))
+            resolve_session_effort_for_agent(Some("claude"), Some("opus"), Some("max".into()))
                 .unwrap_err();
         assert!(err.contains("Invalid effort"));
     }

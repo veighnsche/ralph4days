@@ -67,6 +67,7 @@ fn build_session_config(
     selected_model: Option<String>,
     effort: Option<String>,
     thinking: Option<bool>,
+    permission_level: Option<String>,
     post_start_preamble: Option<String>,
 ) -> Result<SessionConfig, String> {
     let runtime_model = resolve_session_model_for_agent(agent.as_deref(), selected_model.clone());
@@ -84,6 +85,7 @@ fn build_session_config(
         model: runtime_model,
         effort: runtime_effort,
         thinking,
+        permission_level,
         init_settings: SessionInitSettings::default(),
         post_start_preamble: resolved_preamble,
     })
@@ -109,6 +111,7 @@ fn start_session_impl(
         args.model,
         args.effort,
         args.thinking,
+        args.permission_level,
         args.post_start_preamble,
     )?;
 
@@ -136,6 +139,7 @@ fn start_task_session_impl(
         args.model,
         args.effort,
         args.thinking,
+        args.permission_level,
         args.post_start_preamble,
     )?;
 
@@ -207,6 +211,7 @@ fn resolve_session_post_start_preamble(
         model,
         effort,
         thinking,
+        permission_level: None,
         init_settings: SessionInitSettings::default(),
         post_start_preamble: None,
     };
@@ -223,6 +228,7 @@ pub fn terminal_bridge_start_session(
     mcp_mode: Option<String>,
     model: Option<String>,
     effort: Option<String>,
+    permission_level: Option<String>,
     thinking: Option<bool>,
     post_start_preamble: Option<String>,
 ) -> Result<(), String> {
@@ -235,6 +241,7 @@ pub fn terminal_bridge_start_session(
             mcp_mode,
             model,
             effort,
+            permission_level,
             thinking,
             post_start_preamble,
         },
@@ -288,6 +295,7 @@ pub fn terminal_bridge_start_task_session(
     agent: Option<String>,
     model: Option<String>,
     effort: Option<String>,
+    permission_level: Option<String>,
     thinking: Option<bool>,
     post_start_preamble: Option<String>,
 ) -> Result<(), String> {
@@ -300,6 +308,7 @@ pub fn terminal_bridge_start_task_session(
             agent,
             model,
             effort,
+            permission_level,
             thinking,
             post_start_preamble,
         },
@@ -329,6 +338,7 @@ pub fn terminal_bridge_start_human_session(
     agent: Option<String>,
     model: Option<String>,
     effort: Option<String>,
+    permission_level: Option<String>,
     launch_command: Option<String>,
     post_start_preamble: Option<String>,
     init_prompt: Option<String>,
@@ -352,6 +362,7 @@ pub fn terminal_bridge_start_human_session(
         agent,
         model,
         effort,
+        permission_level,
         launch_command,
         post_start_preamble,
         init_prompt,
@@ -405,6 +416,7 @@ pub fn terminal_bridge_start_human_session(
                 agent: args.agent.clone(),
                 model: args.model.clone(),
                 effort: args.effort.clone(),
+                permission_level: args.permission_level.clone(),
                 thinking: args.thinking,
                 post_start_preamble: args.post_start_preamble.clone(),
             },
@@ -419,6 +431,7 @@ pub fn terminal_bridge_start_human_session(
                 mcp_mode: args.mcp_mode.clone(),
                 model: args.model.clone(),
                 effort: args.effort.clone(),
+                permission_level: args.permission_level.clone(),
                 thinking: args.thinking,
                 post_start_preamble: args.post_start_preamble.clone(),
             },
@@ -462,12 +475,7 @@ fn list_models_for_agent(agent: &str) -> TerminalBridgeListModelsResult {
     let provider = resolve_agent_provider(Some(agent));
     let models = list_model_entries_for_agent(Some(agent))
         .into_iter()
-        .map(|m| TerminalBridgeModelOption {
-            name: m.name,
-            description: m.description,
-            session_model: m.session_model,
-            effort_options: m.effort_options,
-        })
+        .map(TerminalBridgeModelOption::from)
         .collect();
     TerminalBridgeListModelsResult {
         agent: provider.id().to_owned(),

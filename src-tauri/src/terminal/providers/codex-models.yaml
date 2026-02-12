@@ -2,12 +2,17 @@
 # Update this file intentionally when model availability changes.
 models:
   - name: gpt-5.3-codex
+    display: GPT 5.3 Codex
     description: Latest frontier agentic coding model.
   - name: gpt-5.2-codex
+    display: GPT 5.2 Codex
     description: Frontier agentic coding model.
   - name: gpt-5.1-codex-max
+    display: GPT 5.1 Codex MAX
     description: Codex-optimized flagship for deep and fast reasoning.
   - name: gpt-5.2
+    display: GPT 5.2
     description: Latest frontier model with improvements across knowledge, reasoning and coding.
   - name: gpt-5.1-codex-mini
+    display: GPT 5.1 codex MINI
     description: Optimized for codex. Cheaper, faster, but less capable.
