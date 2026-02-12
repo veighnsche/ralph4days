@@ -6,9 +6,11 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct TerminalBridgeStartSessionArgs {
     pub session_id: String,
+    pub agent: Option<String>,
     pub mcp_mode: Option<String>,
     pub model: Option<String>,
     pub thinking: Option<bool>,
+    pub post_start_preamble: Option<String>,
 }
 
 #[ipc_type]
@@ -17,8 +19,18 @@ pub struct TerminalBridgeStartSessionArgs {
 pub struct TerminalBridgeStartTaskSessionArgs {
     pub session_id: String,
     pub task_id: u32,
+    pub agent: Option<String>,
     pub model: Option<String>,
     pub thinking: Option<bool>,
+    pub post_start_preamble: Option<String>,
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TerminalBridgeListModelsResult {
+    pub agent: String,
+    pub models: Vec<String>,
 }
 
 #[ipc_type]

@@ -1,5 +1,5 @@
 use base64::{engine::general_purpose::STANDARD, Engine};
-use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+use portable_pty::{native_pty_system, PtySize};
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -9,7 +9,8 @@ use tauri::{AppHandle, Emitter};
 use super::events::{
     PtyClosedEvent, PtyOutputEvent, TERMINAL_BRIDGE_CLOSED_EVENT, TERMINAL_BRIDGE_OUTPUT_EVENT,
 };
-use super::session::{build_settings_json, PTYSession, SessionConfig};
+use super::providers::resolve_agent_provider;
+use super::session::{PTYSession, SessionConfig};
 
 use ralph_errors::{codes, RalphResultExt, ToStringErr};
 
@@ -50,6 +51,7 @@ impl PTYManager {
     ) -> Result<(), String> {
         tracing::info!(
             working_dir = %working_dir.display(),
+            agent = ?config.agent,
             model = ?config.model,
             has_mcp = mcp_config.is_some(),
             "Creating PTY session"
@@ -80,36 +82,25 @@ impl PTYManager {
 
         tracing::debug!("PTY opened successfully");
 
-        let mut cmd = CommandBuilder::new("claude");
-        cmd.cwd(working_dir);
-
-        cmd.args(["--permission-mode", "bypassPermissions"]);
-        cmd.arg("--verbose");
-        cmd.arg("--no-chrome");
-
-        if let Some(model) = &config.model {
-            cmd.args(["--model", model]);
-        }
-
-        let settings_json = build_settings_json(&config);
-        cmd.args(["--settings", &settings_json]);
-
-        if let Some(mcp_config) = mcp_config {
-            cmd.args(["--mcp-config", &mcp_config.to_string_lossy()]);
-        }
+        let provider = resolve_agent_provider(config.agent.as_deref());
+        let cmd = provider.build_command(working_dir, mcp_config.as_deref(), &config);
 
         tracing::debug!(
             working_dir = %working_dir.display(),
+            agent = provider.id(),
             model = ?config.model,
-            "Spawning Claude CLI subprocess"
+            "Spawning agent subprocess"
         );
 
         let child = pair
             .slave
             .spawn_command(cmd)
-            .ralph_err(codes::TERMINAL, "Failed to spawn claude")?;
+            .ralph_err(codes::TERMINAL, "Failed to spawn agent subprocess")?;
 
-        tracing::info!("Claude CLI subprocess spawned successfully");
+        tracing::info!(
+            agent = provider.id(),
+            "Agent subprocess spawned successfully"
+        );
 
         let child = Arc::new(Mutex::new(child));
 
@@ -145,7 +136,7 @@ impl PTYManager {
                     Ok(n) => {
                         total_bytes += n as u64;
                         tracing::trace!(session_id = %sid, bytes = n, total_bytes, "PTY output");
-                        tracing::trace!(
+                        tracing::debug!(
                             session_id = %sid,
                             bytes = n,
                             preview = %preview_text(&buf[..n], 220),
@@ -195,6 +186,23 @@ impl PTYManager {
             _reader_handle: Some(reader_handle),
         };
 
+        if let Some(preamble) = &config.post_start_preamble {
+            tracing::debug!(
+                session_id = %session_id,
+                line_count = preamble.lines().filter(|line| !line.trim().is_empty()).count(),
+                "Applying post-start preamble"
+            );
+            let mut guard = session.writer.lock().err_str(codes::INTERNAL)?;
+            for line in preamble.lines().filter(|line| !line.trim().is_empty()) {
+                guard
+                    .write_all(line.as_bytes())
+                    .ralph_err(codes::TERMINAL, "Failed to write preamble line to PTY")?;
+                guard
+                    .write_all(b"\r")
+                    .ralph_err(codes::TERMINAL, "Failed to send preamble line terminator")?;
+            }
+        }
+
         self.sessions
             .lock()
             .err_str(codes::INTERNAL)?
@@ -207,7 +215,7 @@ impl PTYManager {
 
     #[tracing::instrument(skip(self, data), fields(session_id, bytes = data.len()))]
     pub fn send_input(&self, session_id: &str, data: &[u8]) -> Result<(), String> {
-        tracing::trace!(
+        tracing::debug!(
             session_id,
             bytes = data.len(),
             preview = %preview_text(data, 140),

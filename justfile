@@ -162,6 +162,14 @@ release-linux:
 
 # === Utilities ===
 
+# Temporary: best-effort model discovery for Codex CLI
+get-codex-models:
+    cargo run --manifest-path src-tauri/Cargo.toml --bin provider-models -- codex
+
+# Temporary: best-effort model discovery for Claude CLI
+get-claude-models:
+    cargo run --manifest-path src-tauri/Cargo.toml --bin provider-models -- claude
+
 # Install Playwright browsers
 playwright-install:
     bunx playwright install --with-deps

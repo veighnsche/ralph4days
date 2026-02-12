@@ -1,9 +1,13 @@
 use super::state::{AppState, CommandContext, ProjectSessionService};
+use crate::terminal::providers::{
+    list_models_for_agent, resolve_agent_provider, resolve_post_start_preamble,
+};
 use crate::terminal::{
-    PtyOutputEvent, SessionConfig, TerminalBridgeEmitSystemMessageArgs, TerminalBridgeResizeArgs,
-    TerminalBridgeSendInputArgs, TerminalBridgeStartHumanSessionArgs,
-    TerminalBridgeStartHumanSessionResult, TerminalBridgeStartSessionArgs,
-    TerminalBridgeStartTaskSessionArgs, TerminalBridgeTerminateArgs, TERMINAL_BRIDGE_OUTPUT_EVENT,
+    PtyOutputEvent, SessionConfig, SessionInitSettings, TerminalBridgeEmitSystemMessageArgs,
+    TerminalBridgeListModelsResult, TerminalBridgeResizeArgs, TerminalBridgeSendInputArgs,
+    TerminalBridgeStartHumanSessionArgs, TerminalBridgeStartHumanSessionResult,
+    TerminalBridgeStartSessionArgs, TerminalBridgeStartTaskSessionArgs,
+    TerminalBridgeTerminateArgs, TERMINAL_BRIDGE_OUTPUT_EVENT,
 };
 use base64::{engine::general_purpose::STANDARD, Engine};
 use std::path::PathBuf;
@@ -63,6 +67,7 @@ fn start_session_impl(
 ) -> Result<(), String> {
     tracing::debug!(
         session_id = %args.session_id,
+        agent = ?args.agent,
         mcp_mode = ?args.mcp_mode,
         model = ?args.model,
         thinking = ?args.thinking,
@@ -70,9 +75,18 @@ fn start_session_impl(
     );
     let (project_path, mcp_config) =
         resolve_start_session_context(state, args.mcp_mode.as_deref())?;
+    let resolved_preamble = resolve_session_post_start_preamble(
+        args.agent.as_deref(),
+        args.model.clone(),
+        args.thinking,
+        args.post_start_preamble,
+    );
     let config = SessionConfig {
+        agent: args.agent,
         model: args.model,
         thinking: args.thinking,
+        init_settings: SessionInitSettings::default(),
+        post_start_preamble: resolved_preamble,
     };
 
     state
@@ -88,14 +102,24 @@ fn start_task_session_impl(
     tracing::debug!(
         session_id = %args.session_id,
         task_id = args.task_id,
+        agent = ?args.agent,
         model = ?args.model,
         thinking = ?args.thinking,
         "terminal_bridge_start_task_session"
     );
     let (project_path, mcp_config) = resolve_start_task_session_context(state, args.task_id)?;
+    let resolved_preamble = resolve_session_post_start_preamble(
+        args.agent.as_deref(),
+        args.model.clone(),
+        args.thinking,
+        args.post_start_preamble,
+    );
     let config = SessionConfig {
+        agent: args.agent,
         model: args.model,
         thinking: args.thinking,
+        init_settings: SessionInitSettings::default(),
+        post_start_preamble: resolved_preamble,
     };
 
     state.pty_manager.create_session(
@@ -108,7 +132,7 @@ fn start_task_session_impl(
 }
 
 fn send_input_impl(state: &AppState, args: TerminalBridgeSendInputArgs) -> Result<(), String> {
-    tracing::trace!(
+    tracing::debug!(
         session_id = %args.session_id,
         byte_count = args.data.len(),
         text = %String::from_utf8_lossy(&args.data).escape_debug().to_string(),
@@ -154,23 +178,44 @@ fn generate_agent_session_id() -> String {
     format!("agent-session-{millis}-{counter}")
 }
 
+fn resolve_session_post_start_preamble(
+    agent: Option<&str>,
+    model: Option<String>,
+    thinking: Option<bool>,
+    user_preamble: Option<String>,
+) -> Option<String> {
+    let config = SessionConfig {
+        agent: agent.map(str::to_owned),
+        model,
+        thinking,
+        init_settings: SessionInitSettings::default(),
+        post_start_preamble: None,
+    };
+    resolve_post_start_preamble(agent, &config, user_preamble)
+}
+
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn terminal_bridge_start_session(
     app: AppHandle,
     state: State<'_, AppState>,
     session_id: String,
+    agent: Option<String>,
     mcp_mode: Option<String>,
     model: Option<String>,
     thinking: Option<bool>,
+    post_start_preamble: Option<String>,
 ) -> Result<(), String> {
     start_session_impl(
         app,
         state.inner(),
         TerminalBridgeStartSessionArgs {
             session_id,
+            agent,
             mcp_mode,
             model,
             thinking,
+            post_start_preamble,
         },
     )
 }
@@ -213,13 +258,16 @@ pub fn terminal_bridge_terminate(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn terminal_bridge_start_task_session(
     app: AppHandle,
     state: State<'_, AppState>,
     session_id: String,
     task_id: u32,
+    agent: Option<String>,
     model: Option<String>,
     thinking: Option<bool>,
+    post_start_preamble: Option<String>,
 ) -> Result<(), String> {
     start_task_session_impl(
         app,
@@ -227,8 +275,10 @@ pub fn terminal_bridge_start_task_session(
         TerminalBridgeStartTaskSessionArgs {
             session_id,
             task_id,
+            agent,
             model,
             thinking,
+            post_start_preamble,
         },
     )
 }
@@ -284,6 +334,13 @@ pub fn terminal_bridge_start_human_session(
         thinking,
     };
 
+    let resolved_post_start_preamble = resolve_session_post_start_preamble(
+        args.agent.as_deref(),
+        args.model.clone(),
+        args.thinking,
+        args.post_start_preamble.clone(),
+    );
+
     let agent_session_id = generate_agent_session_id();
     tracing::debug!(
         terminal_session_id = %args.terminal_session_id,
@@ -301,7 +358,7 @@ pub fn terminal_bridge_start_human_session(
             agent: args.agent.clone(),
             model: args.model.clone(),
             launch_command: args.launch_command.clone(),
-            post_start_preamble: args.post_start_preamble.clone(),
+            post_start_preamble: resolved_post_start_preamble.clone(),
             init_prompt: args.init_prompt.clone(),
         })?;
 
@@ -319,8 +376,10 @@ pub fn terminal_bridge_start_human_session(
             TerminalBridgeStartTaskSessionArgs {
                 session_id: args.terminal_session_id.clone(),
                 task_id,
+                agent: args.agent.clone(),
                 model: args.model.clone(),
                 thinking: args.thinking,
+                post_start_preamble: args.post_start_preamble.clone(),
             },
         )
     } else {
@@ -329,9 +388,11 @@ pub fn terminal_bridge_start_human_session(
             state.inner(),
             TerminalBridgeStartSessionArgs {
                 session_id: args.terminal_session_id.clone(),
+                agent: args.agent.clone(),
                 mcp_mode: args.mcp_mode.clone(),
                 model: args.model.clone(),
                 thinking: args.thinking,
+                post_start_preamble: args.post_start_preamble.clone(),
             },
         )
     };
@@ -367,6 +428,16 @@ pub fn terminal_bridge_start_human_session(
         agent_session_id,
         agent_session_number,
     })
+}
+
+#[tauri::command]
+pub fn terminal_bridge_list_models(agent: Option<String>) -> TerminalBridgeListModelsResult {
+    let provider = resolve_agent_provider(agent.as_deref());
+    let models = list_models_for_agent(agent.as_deref());
+    TerminalBridgeListModelsResult {
+        agent: provider.id().to_owned(),
+        models,
+    }
 }
 
 #[cfg(test)]

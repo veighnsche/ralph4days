@@ -1,0 +1,13 @@
+# Manually maintained model catalog for Codex provider.
+# Update this file intentionally when model availability changes.
+models:
+  - name: gpt-5.3-codex
+    description: Latest frontier agentic coding model.
+  - name: gpt-5.2-codex
+    description: Frontier agentic coding model.
+  - name: gpt-5.1-codex-max
+    description: Codex-optimized flagship for deep and fast reasoning.
+  - name: gpt-5.2
+    description: Latest frontier model with improvements across knowledge, reasoning and coding.
+  - name: gpt-5.1-codex-mini
+    description: Optimized for codex. Cheaper, faster, but less capable.

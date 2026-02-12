@@ -27,6 +27,14 @@ fn init_tracing() {
         .init();
 }
 
+pub fn list_provider_models(agent: Option<&str>) -> Vec<String> {
+    terminal::providers::list_models_for_agent(agent)
+}
+
+pub fn list_provider_model_entries(agent: Option<&str>) -> Vec<terminal::providers::ModelEntry> {
+    terminal::providers::list_model_entries_for_agent(agent)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let _start = std::time::Instant::now();
@@ -181,6 +189,7 @@ pub fn run() {
             commands::terminal_bridge::terminal_bridge_terminate,
             commands::terminal_bridge::terminal_bridge_emit_system_message,
             commands::terminal_bridge::terminal_bridge_start_human_session,
+            commands::terminal_bridge::terminal_bridge_list_models,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

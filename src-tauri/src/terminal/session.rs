@@ -2,25 +2,76 @@ use portable_pty::MasterPty;
 use std::io::Write;
 use std::sync::{Arc, Mutex};
 
-#[derive(Debug)]
-pub struct SessionConfig {
-    pub model: Option<String>,
-    pub thinking: Option<bool>,
+#[derive(Debug, Clone)]
+pub struct SessionInitSettings {
+    pub prompt_suggestion_enabled: bool,
+    pub terminal_progress_bar_enabled: bool,
+    pub respect_gitignore: bool,
+    pub spinner_tips_enabled: bool,
+    pub prefers_reduced_motion: bool,
+    pub output_style: String,
+    pub auto_updates_channel: String,
 }
 
-pub(crate) fn build_settings_json(config: &SessionConfig) -> String {
+impl Default for SessionInitSettings {
+    fn default() -> Self {
+        Self {
+            prompt_suggestion_enabled: false,
+            terminal_progress_bar_enabled: false,
+            respect_gitignore: false,
+            spinner_tips_enabled: false,
+            prefers_reduced_motion: true,
+            output_style: "default".to_owned(),
+            auto_updates_channel: "latest".to_owned(),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct SessionConfig {
+    pub agent: Option<String>,
+    pub model: Option<String>,
+    pub thinking: Option<bool>,
+    pub init_settings: SessionInitSettings,
+    pub post_start_preamble: Option<String>,
+}
+
+pub(crate) fn build_settings_json(
+    init_settings: &SessionInitSettings,
+    thinking: Option<bool>,
+) -> String {
     let mut settings = serde_json::Map::new();
 
-    // Always enforced by Ralph
-    settings.insert("promptSuggestionEnabled".into(), false.into());
-    settings.insert("terminalProgressBarEnabled".into(), false.into());
-    settings.insert("respectGitignore".into(), false.into());
-    settings.insert("spinnerTipsEnabled".into(), false.into());
-    settings.insert("prefersReducedMotion".into(), true.into());
-    settings.insert("outputStyle".into(), "default".into());
-    settings.insert("autoUpdatesChannel".into(), "latest".into());
+    settings.insert(
+        "promptSuggestionEnabled".into(),
+        init_settings.prompt_suggestion_enabled.into(),
+    );
+    settings.insert(
+        "terminalProgressBarEnabled".into(),
+        init_settings.terminal_progress_bar_enabled.into(),
+    );
+    settings.insert(
+        "respectGitignore".into(),
+        init_settings.respect_gitignore.into(),
+    );
+    settings.insert(
+        "spinnerTipsEnabled".into(),
+        init_settings.spinner_tips_enabled.into(),
+    );
+    settings.insert(
+        "prefersReducedMotion".into(),
+        init_settings.prefers_reduced_motion.into(),
+    );
+    settings.insert(
+        "outputStyle".into(),
+        init_settings.output_style.clone().into(),
+    );
+    settings.insert(
+        "autoUpdatesChannel".into(),
+        init_settings.auto_updates_channel.clone().into(),
+    );
 
-    if let Some(thinking) = config.thinking {
+    if let Some(thinking) = thinking {
         settings.insert("alwaysThinkingEnabled".into(), thinking.into());
     }
 
@@ -42,11 +93,14 @@ mod tests {
     #[test]
     fn test_build_settings_json_default_config() {
         let config = SessionConfig {
+            agent: None,
             model: None,
             thinking: None,
+            init_settings: SessionInitSettings::default(),
+            post_start_preamble: None,
         };
 
-        let json = build_settings_json(&config);
+        let json = build_settings_json(&config.init_settings, config.thinking);
         let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
 
         assert_eq!(parsed["promptSuggestionEnabled"], false);
@@ -63,11 +117,14 @@ mod tests {
     #[test]
     fn test_build_settings_json_with_thinking_enabled() {
         let config = SessionConfig {
+            agent: None,
             model: None,
             thinking: Some(true),
+            init_settings: SessionInitSettings::default(),
+            post_start_preamble: None,
         };
 
-        let json = build_settings_json(&config);
+        let json = build_settings_json(&config.init_settings, config.thinking);
         let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
 
         assert_eq!(parsed["alwaysThinkingEnabled"], true);
@@ -76,11 +133,14 @@ mod tests {
     #[test]
     fn test_build_settings_json_with_thinking_disabled() {
         let config = SessionConfig {
+            agent: None,
             model: None,
             thinking: Some(false),
+            init_settings: SessionInitSettings::default(),
+            post_start_preamble: None,
         };
 
-        let json = build_settings_json(&config);
+        let json = build_settings_json(&config.init_settings, config.thinking);
         let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
 
         assert_eq!(parsed["alwaysThinkingEnabled"], false);
@@ -89,11 +149,14 @@ mod tests {
     #[test]
     fn test_build_settings_json_with_model() {
         let config = SessionConfig {
+            agent: None,
             model: Some("claude-opus-4".to_owned()),
             thinking: Some(true),
+            init_settings: SessionInitSettings::default(),
+            post_start_preamble: None,
         };
 
-        let json = build_settings_json(&config);
+        let json = build_settings_json(&config.init_settings, config.thinking);
         let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
 
         // Model is NOT in settings JSON (it's a CLI flag)
@@ -104,11 +167,14 @@ mod tests {
     #[test]
     fn test_build_settings_json_output_is_valid_json() {
         let config = SessionConfig {
+            agent: None,
             model: Some("haiku".to_owned()),
             thinking: Some(true),
+            init_settings: SessionInitSettings::default(),
+            post_start_preamble: None,
         };
 
-        let json = build_settings_json(&config);
+        let json = build_settings_json(&config.init_settings, config.thinking);
 
         let result = serde_json::from_str::<serde_json::Value>(&json);
         assert!(result.is_ok());
