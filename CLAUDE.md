@@ -178,7 +178,7 @@ Use `just --list` for all commands. Key ones: `just dev`, `just test`, `just bui
 
 **Single test**: `cargo test -p sqlite-db test_name` (Rust), `bun vitest run src/path/to/file.test.ts` (frontend). Use `just types` to regenerate TypeScript types from Rust (ts-rs) after changing shared structs.
 
-**Testing workflow**: `just reset-mock` creates gitignored `mock/` from `fixtures/` (renames `.undetect-ralph/` to `.ralph/`). Use `just dev-mock <project>` or `ralph --project mock/<project>` for testing. Fixtures stay clean, mock is disposable.
+**Testing workflow**: `just reset-mock` creates disposable mock data from `fixtures/` in `/tmp/ralph4days-mock` by default (renames `.undetect-ralph/` to `.ralph/`). Override location with `RALPH_MOCK_DIR`. Use `just dev-mock <project>` or `ralph --project /tmp/ralph4days-mock/<project>` for testing. Fixtures stay clean, mock is disposable.
 
 ## Architecture
 

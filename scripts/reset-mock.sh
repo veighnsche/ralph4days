@@ -2,14 +2,14 @@
 set -euo pipefail
 
 # Global reset script for Ralph test data
-# Copies fixtures to mock/ and makes them detectable as Ralph projects
+# Copies fixtures to an external mock directory and makes them detectable as Ralph projects
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 FIXTURES_DIR="$PROJECT_ROOT/fixtures"
-MOCK_DIR="$PROJECT_ROOT/mock"
+MOCK_DIR="${RALPH_MOCK_DIR:-/tmp/ralph4days-mock}"
 
-echo "🧹 Cleaning mock directory..."
+echo "🧹 Cleaning mock directory at $MOCK_DIR..."
 rm -rf "$MOCK_DIR"
 mkdir -p "$MOCK_DIR"
 

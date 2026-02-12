@@ -7,7 +7,7 @@ This repository is a Tauri desktop app with a React frontend and Rust backend wo
 - `src-tauri/`: Tauri entrypoint and command/terminal backends.
 - `crates/`: shared Rust crates (`sqlite-db`, `prompt-builder`, `ralph-errors`, `ralph-rag`, `ralph-external`, etc.).
 - `e2e/`: Playwright end-to-end, visual, and monkey tests.
-- `fixtures/`: read-only sample projects; `mock/` is disposable test data copied from fixtures.
+- `fixtures/`: read-only sample projects; disposable mock data is copied outside the repo (default: `/tmp/ralph4days-mock`).
 - `docs/` and `.docs/`: implementation notes and design records.
 
 ## Build, Test, and Development Commands

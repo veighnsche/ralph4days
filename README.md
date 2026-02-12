@@ -93,6 +93,8 @@ just dev
 # run with mock fixture
 just reset-mock
 just dev-mock 03
+# optional override for location (default: /tmp/ralph4days-mock)
+RALPH_MOCK_DIR=/path/outside/repo just reset-mock
 
 # checks
 just check
@@ -123,8 +125,8 @@ src/                 React frontend
 src-tauri/           Tauri app + Rust backend commands
 crates/              Workspace crates (sqlite-db, prompt-builder, etc.)
 fixtures/            Read-only fixture projects
-mock/                Disposable local copies of fixtures
 .docs/               Internal docs and code-truth inventories
+mock data            Disposable fixture copies in /tmp/ralph4days-mock (or $RALPH_MOCK_DIR)
 justfile             Task runner commands
 ```
 

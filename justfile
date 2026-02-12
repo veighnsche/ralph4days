@@ -3,6 +3,7 @@
 # Install just: cargo install just
 
 set shell := ["bash", "-cu"]
+mock_dir := env_var_or_default('RALPH_MOCK_DIR', '/tmp/ralph4days-mock')
 
 # Generate a discipline portrait: just gen-image 02 00 [--test|--half] [--ratio W H|--ratio-portrait] [--mp N]
 gen-image STACK DISCIPLINE *FLAGS:
@@ -33,18 +34,27 @@ build-storybook:
 # Start development server with a mock project (skips project picker)
 dev-mock FIXTURE:
     #!/usr/bin/env bash
-    # Check if mock directory exists at all
-    if [ ! -d "mock" ]; then
-        echo "Mock directory not found. Creating from fixtures..."
+    MOCK_DIR="{{mock_dir}}"
+
+    # Ensure mock directory exists and has at least one mock project
+    if [ ! -d "$MOCK_DIR" ]; then
+        echo "Mock directory not found at $MOCK_DIR. Creating from fixtures..."
         just reset-mock
+    else
+        shopt -s nullglob
+        existing_projects=("$MOCK_DIR"/*/)
+        if [ ${#existing_projects[@]} -eq 0 ]; then
+            echo "No mock projects found in $MOCK_DIR. Creating from fixtures..."
+            just reset-mock
+        fi
     fi
 
     # Try exact match first
-    if [ -d "mock/{{FIXTURE}}" ]; then
-        PROJECT_DIR="mock/{{FIXTURE}}"
+    if [ -d "$MOCK_DIR/{{FIXTURE}}" ]; then
+        PROJECT_DIR="$MOCK_DIR/{{FIXTURE}}"
     else
         # Try prefix match (e.g., "01" matches "01-desktop-blank")
-        MATCHES=(mock/{{FIXTURE}}*/)
+        MATCHES=("$MOCK_DIR"/{{FIXTURE}}*/)
         if [ ${#MATCHES[@]} -eq 1 ] && [ -d "${MATCHES[0]}" ]; then
             PROJECT_DIR="${MATCHES[0]}"
             echo "✓ Found: $(basename "$PROJECT_DIR")"
@@ -57,12 +67,12 @@ dev-mock FIXTURE:
         else
             echo "❌ No mock project found matching '{{FIXTURE}}'"
             echo "Available projects:"
-            ls -1 mock/
+            ls -1 "$MOCK_DIR"
             exit 1
         fi
     fi
 
-    bun tauri dev -- -- --project {{justfile_directory()}}/"$PROJECT_DIR"
+    bun tauri dev -- -- --project "$PROJECT_DIR"
 
 # Run cargo check (fast compilation check)
 check:
@@ -201,7 +211,7 @@ types-check:
 
 # === Mock Test Data ===
 
-# Reset mock directory from fixtures (copies fixtures → mock, makes .ralph visible)
+# Reset mock directory from fixtures (copies fixtures → $RALPH_MOCK_DIR or /tmp/ralph4days-mock, makes .ralph visible)
 reset-mock:
     @bash scripts/reset-mock.sh
 
@@ -215,12 +225,19 @@ refresh-tauri-fixtures-mock:
 # List available mock projects
 list-mock:
     #!/usr/bin/env bash
-    if [ ! -d "mock" ]; then
-        echo "No mock directory found. Run 'just reset-mock' first."
+    MOCK_DIR="{{mock_dir}}"
+    if [ ! -d "$MOCK_DIR" ]; then
+        echo "No mock directory found at $MOCK_DIR. Run 'just reset-mock' first."
         exit 1
     fi
-    echo "Available mock projects:"
-    for f in mock/*/; do
+    shopt -s nullglob
+    projects=("$MOCK_DIR"/*/)
+    if [ ${#projects[@]} -eq 0 ]; then
+        echo "No mock projects found in $MOCK_DIR. Run 'just reset-mock' first."
+        exit 1
+    fi
+    echo "Available mock projects in $MOCK_DIR:"
+    for f in "${projects[@]}"; do
         name=$(basename "$f")
         db="${f}.ralph/db/ralph.db"
         if [ -f "$db" ]; then
@@ -234,7 +251,7 @@ list-mock:
 
 # === Fixtures (Read-only reference data) ===
 
-# List available fixtures (note: use mock/ for testing)
+# List available fixtures (note: use external mock dir for testing)
 list-fixtures:
     #!/usr/bin/env bash
     echo "Available fixtures (read-only, use 'just reset-mock' for testing):"
