@@ -32,6 +32,9 @@ impl AgentProvider for ClaudeCodeAdapter {
         if let Some(model) = &config.model {
             cmd.args(["--model", model]);
         }
+        if let Some(effort) = &config.effort {
+            cmd.args(["--effort", effort]);
+        }
 
         let settings_json = build_settings_json(&config.init_settings, config.thinking);
         cmd.args(["--settings", &settings_json]);

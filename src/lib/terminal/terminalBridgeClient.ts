@@ -47,6 +47,7 @@ export type TerminalBridgeStartHumanSessionArgs = {
   taskId?: number
   agent?: string
   model?: string
+  effort?: 'low' | 'medium' | 'high'
   launchCommand?: string
   postStartPreamble?: string
   initPrompt?: string
@@ -85,6 +86,7 @@ export async function terminalBridgeStartHumanSession(
     taskId: params.taskId ?? null,
     agent: params.agent ?? null,
     model: params.model ?? null,
+    effort: params.effort ?? null,
     launchCommand: params.launchCommand ?? null,
     postStartPreamble: params.postStartPreamble ?? null,
     initPrompt: params.initPrompt ?? null,

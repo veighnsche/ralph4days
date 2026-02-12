@@ -9,6 +9,7 @@ pub struct TerminalBridgeStartSessionArgs {
     pub agent: Option<String>,
     pub mcp_mode: Option<String>,
     pub model: Option<String>,
+    pub effort: Option<String>,
     pub thinking: Option<bool>,
     pub post_start_preamble: Option<String>,
 }
@@ -21,6 +22,7 @@ pub struct TerminalBridgeStartTaskSessionArgs {
     pub task_id: u32,
     pub agent: Option<String>,
     pub model: Option<String>,
+    pub effort: Option<String>,
     pub thinking: Option<bool>,
     pub post_start_preamble: Option<String>,
 }
@@ -28,9 +30,19 @@ pub struct TerminalBridgeStartTaskSessionArgs {
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct TerminalBridgeModelOption {
+    pub name: String,
+    pub description: String,
+    pub session_model: Option<String>,
+    pub effort_options: Vec<String>,
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TerminalBridgeListModelsResult {
     pub agent: String,
-    pub models: Vec<String>,
+    pub models: Vec<TerminalBridgeModelOption>,
 }
 
 #[ipc_type]
@@ -74,6 +86,7 @@ pub struct TerminalBridgeStartHumanSessionArgs {
     pub task_id: Option<u32>,
     pub agent: Option<String>,
     pub model: Option<String>,
+    pub effort: Option<String>,
     pub launch_command: Option<String>,
     pub post_start_preamble: Option<String>,
     pub init_prompt: Option<String>,

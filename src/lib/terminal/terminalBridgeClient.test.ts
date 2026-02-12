@@ -91,11 +91,31 @@ describe('terminalBridgeClient', () => {
   })
 
   it('maps model-list command', async () => {
-    mockInvoke.mockResolvedValue({ agent: 'claude', models: ['claude-opus-4'] })
+    mockInvoke.mockResolvedValue({
+      agent: 'claude',
+      models: [
+        {
+          name: 'opus-4.6 (High)',
+          description: 'Most capable for complex work with high effort',
+          sessionModel: 'opus-4.6',
+          effortOptions: ['low', 'medium', 'high']
+        }
+      ]
+    })
     const result = await terminalBridgeListModels('claude')
 
     expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_list_models', { agent: 'claude' })
-    expect(result).toEqual({ agent: 'claude', models: ['claude-opus-4'] })
+    expect(result).toEqual({
+      agent: 'claude',
+      models: [
+        {
+          name: 'opus-4.6 (High)',
+          description: 'Most capable for complex work with high effort',
+          sessionModel: 'opus-4.6',
+          effortOptions: ['low', 'medium', 'high']
+        }
+      ]
+    })
   })
 
   it('filters output events by session id', async () => {

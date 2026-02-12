@@ -32,6 +32,49 @@ pub fn list_model_entries_for_agent(agent: Option<&str>) -> Vec<ModelEntry> {
     }
 }
 
+pub fn resolve_session_model_for_agent(
+    agent: Option<&str>,
+    model: Option<String>,
+) -> Option<String> {
+    let selected = model?;
+    let trimmed = selected.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let resolved = match normalize_agent(agent).as_deref() {
+        Some(AGENT_CODEX) => model_catalog::resolve_codex_session_model(trimmed),
+        _ => model_catalog::resolve_claudecode_session_model(trimmed),
+    };
+    Some(resolved)
+}
+
+pub fn resolve_session_effort_for_agent(
+    agent: Option<&str>,
+    model: Option<&str>,
+    effort: Option<String>,
+) -> Result<Option<String>, String> {
+    let Some(selected) = effort else {
+        return Ok(None);
+    };
+    let normalized = selected.trim().to_ascii_lowercase();
+    if normalized.is_empty() {
+        return Ok(None);
+    }
+    if let Some(AGENT_CODEX) = normalize_agent(agent).as_deref() {
+        Err("Effort is only supported for Claude sessions".to_owned())
+    } else {
+        if model.unwrap_or_default() != "opus-4.6" {
+            return Err("Effort is only supported for model 'opus-4.6'".to_owned());
+        }
+        match normalized.as_str() {
+            "low" | "medium" | "high" => Ok(Some(normalized)),
+            _ => Err(format!(
+                "Invalid effort '{normalized}'. Expected one of: low, medium, high"
+            )),
+        }
+    }
+}
+
 pub fn merge_post_start_preamble(
     user_preamble: Option<String>,
     provider_preamble: Option<String>,

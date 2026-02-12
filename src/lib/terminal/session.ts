@@ -16,6 +16,7 @@ export interface TerminalSessionConfig {
   mcpMode?: string
   taskId?: number
   model?: string | null
+  effort?: 'low' | 'medium' | 'high' | null
   thinking?: boolean | null
   enabled?: boolean
   humanSession?: {
@@ -137,6 +138,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
         taskId: config.taskId,
         agent: config.humanSession.agent ?? 'claude',
         model: config.model ?? undefined,
+        effort: (config.humanSession.agent ?? 'claude') === 'claude' ? (config.effort ?? undefined) : undefined,
         launchCommand: config.humanSession.launchCommand ?? undefined,
         postStartPreamble: config.humanSession.postStartPreamble ?? undefined,
         initPrompt: config.humanSession.initPrompt ?? undefined,
@@ -154,6 +156,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
         taskId: config.taskId,
         agent: config.agent ?? 'claude',
         model: config.model ?? undefined,
+        effort: (config.agent ?? 'claude') === 'claude' ? (config.effort ?? undefined) : undefined,
         thinking: config.thinking ?? undefined
       })
         .then(() => {
@@ -167,6 +170,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
         agent: config.agent ?? 'claude',
         mcpMode: config.mcpMode || 'interactive',
         model: config.model ?? undefined,
+        effort: (config.agent ?? 'claude') === 'claude' ? (config.effort ?? undefined) : undefined,
         thinking: config.thinking ?? undefined
       })
         .then(() => {
@@ -181,6 +185,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     config.taskId,
     config.agent,
     config.model,
+    config.effort,
     config.thinking,
     config.humanSession?.kind,
     config.humanSession?.agent,
