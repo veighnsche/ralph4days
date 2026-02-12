@@ -1,6 +1,13 @@
-import { invoke } from '@tauri-apps/api/core'
-import { listen } from '@tauri-apps/api/event'
 import { useEffect, useRef } from 'react'
+import {
+  terminalBridgeListenSessionClosed,
+  terminalBridgeListenSessionOutput,
+  terminalBridgeResize,
+  terminalBridgeSendInput,
+  terminalBridgeStartSession,
+  terminalBridgeStartTaskSession,
+  terminalBridgeTerminate
+} from './terminalBridgeClient'
 
 export interface TerminalSessionConfig {
   sessionId: string
@@ -19,38 +26,60 @@ export interface TerminalSessionHandlers {
 export function useTerminalSession(config: TerminalSessionConfig, handlers: TerminalSessionHandlers) {
   const isReadyRef = useRef(false)
   const outputBufferRef = useRef<Uint8Array[]>([])
+  const pendingInputRef = useRef<string[]>([])
   const sessionStartedRef = useRef(false)
   const handlersRef = useRef(handlers)
   handlersRef.current = handlers
 
+  const flushPendingInput = () => {
+    if (!sessionStartedRef.current || pendingInputRef.current.length === 0) return
+
+    const pending = [...pendingInputRef.current]
+    pendingInputRef.current = []
+
+    for (const data of pending) {
+      terminalBridgeSendInput(config.sessionId, data).catch(err => handlersRef.current.onError?.(String(err)))
+    }
+  }
+
   useEffect(() => {
     if (config.taskId !== undefined) {
-      invoke('create_pty_session_for_task', {
+      terminalBridgeStartTaskSession({
         sessionId: config.sessionId,
         taskId: config.taskId,
         model: config.model || null,
         thinking: config.thinking ?? null
-      }).catch(err => handlersRef.current.onError?.(String(err)))
+      })
+        .then(() => {
+          sessionStartedRef.current = true
+          flushPendingInput()
+        })
+        .catch(err => handlersRef.current.onError?.(String(err)))
     } else {
-      invoke('create_pty_session', {
+      terminalBridgeStartSession({
         sessionId: config.sessionId,
         mcpMode: config.mcpMode || 'interactive',
         model: config.model || null,
         thinking: config.thinking ?? null
-      }).catch(err => handlersRef.current.onError?.(String(err)))
+      })
+        .then(() => {
+          sessionStartedRef.current = true
+          flushPendingInput()
+        })
+        .catch(err => handlersRef.current.onError?.(String(err)))
     }
 
     return () => {
-      invoke('terminate_pty_session', { sessionId: config.sessionId }).catch(() => {})
+      terminalBridgeTerminate(config.sessionId).catch(() => {})
     }
   }, [config.sessionId, config.mcpMode, config.taskId, config.model, config.thinking])
 
   useEffect(() => {
-    const unlisten = listen<{ session_id: string; data: string }>('ralph://pty_output', event => {
-      if (event.payload.session_id !== config.sessionId) return
+    const unlisten = terminalBridgeListenSessionOutput(config.sessionId, payload => {
       sessionStartedRef.current = true
+      flushPendingInput()
 
-      const binary = atob(event.payload.data)
+      const binary = atob(payload.data)
       const bytes = new Uint8Array(binary.length)
       for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
       if (isReadyRef.current) {
@@ -66,10 +95,9 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
   }, [config.sessionId])
 
   useEffect(() => {
-    const unlisten = listen<{ session_id: string; exit_code: number }>('ralph://pty_closed', event => {
-      if (event.payload.session_id === config.sessionId && sessionStartedRef.current) {
-        handlersRef.current.onClosed?.(event.payload.exit_code)
-      }
+    const unlisten = terminalBridgeListenSessionClosed(config.sessionId, payload => {
+      if (!sessionStartedRef.current) return
+      handlersRef.current.onClosed?.(payload.exit_code)
     })
 
     return () => {
@@ -86,19 +114,16 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
   }
 
   const sendInput = (data: string) => {
-    const bytes = Array.from(new TextEncoder().encode(data))
-    invoke('send_terminal_input', {
-      sessionId: config.sessionId,
-      data: bytes
-    }).catch(err => handlersRef.current.onError?.(String(err)))
+    if (!sessionStartedRef.current) {
+      pendingInputRef.current.push(data)
+      return
+    }
+
+    terminalBridgeSendInput(config.sessionId, data).catch(err => handlersRef.current.onError?.(String(err)))
   }
 
   const resize = (cols: number, rows: number) => {
-    invoke('resize_pty', {
-      sessionId: config.sessionId,
-      cols,
-      rows
-    }).catch(() => {})
+    terminalBridgeResize(config.sessionId, cols, rows).catch(() => {})
   }
 
   return { markReady, sendInput, resize }

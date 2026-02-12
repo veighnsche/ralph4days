@@ -1,5 +1,6 @@
-//! Terminal subsystem - PTY session management for interactive Claude Code sessions
+//! Terminal bridge subsystem - PTY-backed session transport for interactive agent sessions
 
+pub use events::{PtyOutputEvent, TERMINAL_BRIDGE_OUTPUT_EVENT};
 pub use manager::PTYManager;
 pub use session::SessionConfig;
 

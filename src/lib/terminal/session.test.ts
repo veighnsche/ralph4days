@@ -43,7 +43,7 @@ describe('useTerminalSession', () => {
     renderHook(() => useTerminalSession(defaultConfig, defaultHandlers))
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith('create_pty_session', {
+      expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_start_session', {
         sessionId: 'test-session',
         mcpMode: 'interactive',
         model: 'haiku',
@@ -58,7 +58,7 @@ describe('useTerminalSession', () => {
     unmount()
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith('terminate_pty_session', {
+      expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_terminate', {
         sessionId: 'test-session'
       })
     })
@@ -84,7 +84,7 @@ describe('useTerminalSession', () => {
     renderHook(() => useTerminalSession(defaultConfig, defaultHandlers))
 
     await waitFor(() => {
-      expect(mockListen).toHaveBeenCalledWith('ralph://pty_output', expect.any(Function))
+      expect(mockListen).toHaveBeenCalledWith('terminal_bridge.output', expect.any(Function))
     })
   })
 
@@ -92,7 +92,7 @@ describe('useTerminalSession', () => {
     renderHook(() => useTerminalSession(defaultConfig, defaultHandlers))
 
     await waitFor(() => {
-      expect(mockListen).toHaveBeenCalledWith('ralph://pty_closed', expect.any(Function))
+      expect(mockListen).toHaveBeenCalledWith('terminal_bridge.closed', expect.any(Function))
     })
   })
 
@@ -105,7 +105,7 @@ describe('useTerminalSession', () => {
     let outputCallback: ((event: { payload: { session_id: string; data: string } }) => void) | undefined
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
-      if (eventName === 'ralph://pty_output') {
+      if (eventName === 'terminal_bridge.output') {
         outputCallback = callback as typeof outputCallback
       }
       return Promise.resolve(mockUnlisten)
@@ -131,7 +131,7 @@ describe('useTerminalSession', () => {
     let outputCallback: ((event: { payload: { session_id: string; data: string } }) => void) | undefined
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
-      if (eventName === 'ralph://pty_output') {
+      if (eventName === 'terminal_bridge.output') {
         outputCallback = callback as typeof outputCallback
       }
       return Promise.resolve(mockUnlisten)
@@ -161,7 +161,7 @@ describe('useTerminalSession', () => {
     result.current.sendInput('ls -la\n')
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith('send_terminal_input', {
+      expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_send_input', {
         sessionId: 'test-session',
         data: [108, 115, 32, 45, 108, 97, 10] // "ls -la\n" as bytes
       })
@@ -176,7 +176,7 @@ describe('useTerminalSession', () => {
     result.current.resize(120, 40)
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith('resize_pty', {
+      expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_resize', {
         sessionId: 'test-session',
         cols: 120,
         rows: 40
@@ -193,7 +193,7 @@ describe('useTerminalSession', () => {
     let outputCallback: ((event: { payload: { session_id: string; data: string } }) => void) | undefined
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
-      if (eventName === 'ralph://pty_output') {
+      if (eventName === 'terminal_bridge.output') {
         outputCallback = callback as typeof outputCallback
       }
       return Promise.resolve(mockUnlisten)
@@ -222,10 +222,10 @@ describe('useTerminalSession', () => {
     let outputCallback: ((event: { payload: { session_id: string; data: string } }) => void) | undefined
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
-      if (eventName === 'ralph://pty_closed') {
+      if (eventName === 'terminal_bridge.closed') {
         closedCallback = callback as typeof closedCallback
       }
-      if (eventName === 'ralph://pty_output') {
+      if (eventName === 'terminal_bridge.output') {
         outputCallback = callback as typeof outputCallback
       }
       return Promise.resolve(mockUnlisten)
@@ -259,7 +259,7 @@ describe('useTerminalSession', () => {
     renderHook(() => useTerminalSession(config, defaultHandlers))
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith('create_pty_session', {
+      expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_start_session', {
         sessionId: 'test',
         mcpMode: 'interactive',
         model: null,

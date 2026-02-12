@@ -1,5 +1,8 @@
 use serde::Serialize;
 
+pub const TERMINAL_BRIDGE_OUTPUT_EVENT: &str = "terminal_bridge.output";
+pub const TERMINAL_BRIDGE_CLOSED_EVENT: &str = "terminal_bridge.closed";
+
 #[derive(Clone, Serialize)]
 pub struct PtyOutputEvent {
     pub session_id: String,

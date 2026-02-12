@@ -6,7 +6,9 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter};
 
-use super::events::{PtyClosedEvent, PtyOutputEvent};
+use super::events::{
+    PtyClosedEvent, PtyOutputEvent, TERMINAL_BRIDGE_CLOSED_EVENT, TERMINAL_BRIDGE_OUTPUT_EVENT,
+};
 use super::session::{build_settings_json, PTYSession, SessionConfig};
 
 use ralph_errors::{codes, RalphResultExt, ToStringErr};
@@ -135,7 +137,7 @@ impl PTYManager {
                         total_bytes += n as u64;
                         tracing::trace!(session_id = %sid, bytes = n, total_bytes, "PTY output");
                         let _ = app_clone.emit(
-                            "ralph://pty_output",
+                            TERMINAL_BRIDGE_OUTPUT_EVENT,
                             PtyOutputEvent {
                                 session_id: sid.clone(),
                                 data: STANDARD.encode(&buf[..n]),
@@ -159,7 +161,7 @@ impl PTYManager {
             );
 
             let _ = app_clone.emit(
-                "ralph://pty_closed",
+                TERMINAL_BRIDGE_CLOSED_EVENT,
                 PtyClosedEvent {
                     session_id: sid.clone(),
                     exit_code,
@@ -193,7 +195,10 @@ impl PTYManager {
         let writer = {
             let sessions = self.sessions.lock().err_str(codes::INTERNAL)?;
             let session = sessions.get(session_id).ok_or_else(|| {
-                ralph_errors::err_string(codes::TERMINAL, format!("No PTY session: {session_id}"))
+                ralph_errors::err_string(
+                    codes::TERMINAL,
+                    format!("No terminal bridge session: {session_id}"),
+                )
             })?;
             Arc::clone(&session.writer)
         };
@@ -210,7 +215,10 @@ impl PTYManager {
     pub fn resize(&self, session_id: &str, cols: u16, rows: u16) -> Result<(), String> {
         let sessions = self.sessions.lock().err_str(codes::INTERNAL)?;
         let session = sessions.get(session_id).ok_or_else(|| {
-            ralph_errors::err_string(codes::TERMINAL, format!("No PTY session: {session_id}"))
+            ralph_errors::err_string(
+                codes::TERMINAL,
+                format!("No terminal bridge session: {session_id}"),
+            )
         })?;
         session
             .master
@@ -264,5 +272,25 @@ mod tests {
         let manager = PTYManager::default();
         let sessions = manager.sessions.lock().unwrap();
         assert_eq!(sessions.len(), 0);
+    }
+
+    #[test]
+    fn test_send_input_fails_for_missing_session() {
+        let manager = PTYManager::new();
+        let err = manager.send_input("missing-session", b"hello").unwrap_err();
+        assert!(err.contains("No terminal bridge session: missing-session"));
+    }
+
+    #[test]
+    fn test_resize_fails_for_missing_session() {
+        let manager = PTYManager::new();
+        let err = manager.resize("missing-session", 80, 24).unwrap_err();
+        assert!(err.contains("No terminal bridge session: missing-session"));
+    }
+
+    #[test]
+    fn test_terminate_missing_session_is_ok() {
+        let manager = PTYManager::new();
+        assert!(manager.terminate("missing-session").is_ok());
     }
 }

@@ -4,6 +4,7 @@ import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import { TerminalTabContent } from './TerminalTabContent'
 
 vi.mock('@/lib/terminal', () => ({
+  terminalBridgeEmitSystemMessage: vi.fn().mockResolvedValue(undefined),
   Terminal: ({ onReady }: { onReady?: (terminal: unknown) => void }) => {
     if (onReady) {
       setTimeout(() => {
@@ -24,6 +25,10 @@ vi.mock('@/lib/terminal', () => ({
     sendInput: vi.fn(),
     resize: vi.fn()
   })
+}))
+
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: vi.fn().mockResolvedValue(undefined)
 }))
 
 vi.mock('@/hooks/workspace/useTabMeta', () => ({
