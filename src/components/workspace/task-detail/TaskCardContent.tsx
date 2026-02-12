@@ -15,7 +15,7 @@ export function TaskCardContent({ task }: { task: Task }) {
         <h1 className="text-xl font-semibold leading-tight">{task.title}</h1>
       </div>
 
-      {task.blockedBy && (
+      {task.status === 'blocked' && task.hints && (
         <div
           className="flex items-start gap-3 rounded-md px-3 py-2.5 text-sm"
           style={{
@@ -25,7 +25,7 @@ export function TaskCardContent({ task }: { task: Task }) {
           <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
           <div>
             <span className="font-medium">Blocked — </span>
-            {task.blockedBy}
+            {task.hints}
           </div>
         </div>
       )}

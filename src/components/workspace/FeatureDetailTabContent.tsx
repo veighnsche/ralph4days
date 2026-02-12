@@ -1,4 +1,4 @@
-import { FileCode, Puzzle } from 'lucide-react'
+import { Puzzle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -46,38 +46,6 @@ function FeatureContent({ feature, onEdit }: { feature: FeatureData; onEdit: () 
       <div key="description" className="px-6 space-y-2">
         <h2 className="text-sm font-medium text-muted-foreground">Description</h2>
         <p className="text-sm leading-relaxed whitespace-pre-wrap">{feature.description}</p>
-      </div>
-    )
-  }
-
-  if (feature.contextFiles.length > 0 || feature.knowledgePaths.length > 0) {
-    sections.push(
-      <div key="files" className="px-6 space-y-2">
-        <h2 className="text-sm font-medium text-muted-foreground">Files</h2>
-        <div className="space-y-1.5">
-          {feature.contextFiles.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-xs text-muted-foreground">Context:</span>
-              {feature.contextFiles.map(file => (
-                <Badge key={file} variant="outline" className="text-xs font-mono px-2 py-0.5 h-5 gap-1">
-                  <FileCode className="h-3 w-3 text-muted-foreground" />
-                  {file}
-                </Badge>
-              ))}
-            </div>
-          )}
-          {feature.knowledgePaths.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-xs text-muted-foreground">Knowledge:</span>
-              {feature.knowledgePaths.map(path => (
-                <Badge key={path} variant="outline" className="text-xs font-mono px-2 py-0.5 h-5 gap-1">
-                  <FileCode className="h-3 w-3 text-muted-foreground" />
-                  {path}
-                </Badge>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     )
   }
@@ -148,36 +116,6 @@ function FeatureSidebar({
           <Separator bleed="md" />
           <PropertyRow label="Comments">
             <span className="text-sm">{feature.comments.length}</span>
-          </PropertyRow>
-        </>
-      )}
-      {feature.dependencies.length > 0 && (
-        <>
-          <Separator bleed="md" />
-          <PropertyRow label="Dependencies">
-            <div className="flex flex-wrap gap-1">
-              {feature.dependencies.map(dep => (
-                <Badge key={dep} variant="secondary" className="text-xs px-1.5 py-0 h-5">
-                  {dep}
-                </Badge>
-              ))}
-            </div>
-          </PropertyRow>
-        </>
-      )}
-      {feature.contextFiles.length > 0 && (
-        <>
-          <Separator bleed="md" />
-          <PropertyRow label="Context Files">
-            <span className="text-sm">{feature.contextFiles.length}</span>
-          </PropertyRow>
-        </>
-      )}
-      {feature.knowledgePaths.length > 0 && (
-        <>
-          <Separator bleed="md" />
-          <PropertyRow label="Knowledge Paths">
-            <span className="text-sm">{feature.knowledgePaths.length}</span>
           </PropertyRow>
         </>
       )}

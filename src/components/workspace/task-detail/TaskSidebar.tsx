@@ -24,7 +24,7 @@ const PROVENANCE_CONFIG = {
 function buildSignalSummaryText(signals: TaskSignal[]): string | null {
   if (signals.length === 0) return null
   const counts: Record<string, number> = {}
-  const pendingAsks = signals.filter(s => s.signal_verb === 'ask' && !s.signal_answered).length
+  const pendingAsks = signals.filter(s => s.signal_verb === 'ask' && !s.answer).length
   for (const s of signals) {
     if (s.signal_verb === 'flag') counts.flags = (counts.flags ?? 0) + 1
     if (s.signal_verb === 'learned') counts.learned = (counts.learned ?? 0) + 1
