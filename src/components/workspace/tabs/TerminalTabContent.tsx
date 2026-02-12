@@ -5,7 +5,7 @@ import { InlineError } from '@/components/shared'
 import type { Agent, AgentSessionLaunchConfig, Effort, PermissionLevel } from '@/hooks/preferences'
 import { useTabMeta } from '@/hooks/workspace'
 import { Terminal, useTerminalSession } from '@/lib/terminal'
-import { NOOP_TAB_LIFECYCLE, type WorkspaceTab } from '@/stores/useWorkspaceStore'
+import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 
 // WHY: Claude Code welcome screen is left-aligned in PTY (upstream issue #5430)
 // See: https://github.com/anthropics/claude-code/issues/5430
@@ -164,10 +164,8 @@ export function createTerminalTab(input: TerminalTabParams = {}): Omit<Workspace
   const title = input.title ?? `${agentLabel(input.agent)} (${input.model ?? 'default'})`
   return {
     type: 'terminal',
-    component: TerminalTabContent,
     title,
     closeable: true,
-    lifecycle: NOOP_TAB_LIFECYCLE,
     params: {
       agent: input.agent,
       model: input.model,

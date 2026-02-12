@@ -18,7 +18,7 @@ import {
 } from '@/hooks/preferences'
 import { useTabMeta } from '@/hooks/workspace'
 import { terminalBridgeListModelFormTree } from '@/lib/terminal/terminalBridgeClient'
-import { NOOP_TAB_LIFECYCLE, useWorkspaceStore, type WorkspaceTab } from '@/stores/useWorkspaceStore'
+import { useWorkspaceStore, type WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { TerminalBridgeModelOption } from '@/types/generated'
 import { createTerminalTab } from './TerminalTabContent'
 
@@ -340,10 +340,8 @@ function parseAgentSessionConfigTabParams(params: unknown): AgentSessionConfigTa
 export function createAgentSessionConfigTab(input: AgentSessionConfigTabParams): Omit<WorkspaceTab, 'id'> {
   return {
     type: 'agent-session-config',
-    component: AgentSessionConfigTabContent,
     title: 'Start Agent Session',
     closeable: true,
-    lifecycle: NOOP_TAB_LIFECYCLE,
     params: {
       agent: input.agent,
       model: input.model,

@@ -8,7 +8,7 @@ import { useInvoke } from '@/hooks/api'
 import { useStackMetadata } from '@/hooks/disciplines'
 import { useTabMeta } from '@/hooks/workspace'
 import { resolveIcon } from '@/lib/iconRegistry'
-import { NOOP_TAB_LIFECYCLE, type WorkspaceTab } from '@/stores/useWorkspaceStore'
+import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { DisciplineConfig } from '@/types/generated'
 import { DetailPageLayout } from '../DetailPageLayout'
 import { PropertyRow } from '../PropertyRow'
@@ -178,11 +178,9 @@ function parseDisciplineDetailTabParams(params: unknown): DisciplineDetailTabPar
 export function createDisciplineDetailTab(discipline: DisciplineDetailTabInput): Omit<WorkspaceTab, 'id'> {
   return {
     type: 'discipline-detail',
-    component: DisciplineDetailTabContent,
     title: discipline.displayName,
     key: discipline.name,
     closeable: true,
-    lifecycle: NOOP_TAB_LIFECYCLE,
     params: {
       entityId: discipline.name
     } satisfies DisciplineDetailTabParams

@@ -7,13 +7,14 @@ import { CroppedImage } from '@/components/ui/cropped-image'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
+import { createDisciplineDetailTab } from '@/components/workspace/tabs'
 import { useDisciplineStats, useStackMetadata } from '@/hooks/disciplines'
-import { useWorkspaceActions } from '@/hooks/workspace'
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
 export function DisciplinesPage() {
   const { disciplines, statsMap, progress, isLoading: disciplinesLoading } = useDisciplineStats()
   const { stacks, isLoading: stacksLoading } = useStackMetadata()
-  const { openDisciplineDetailTab } = useWorkspaceActions()
+  const openTab = useWorkspaceStore(s => s.openTab)
 
   const isLoading = disciplinesLoading || stacksLoading
 
@@ -113,7 +114,7 @@ export function DisciplinesPage() {
                       '--disc-color': discipline.color
                     } as React.CSSProperties
                   }
-                  onClick={() => openDisciplineDetailTab(discipline)}>
+                  onClick={() => openTab(createDisciplineDetailTab(discipline))}>
                   <div
                     className="h-full rounded-lg border-2 bg-card overflow-hidden cursor-pointer transition-shadow duration-200 hover:shadow-[0_0_12px_var(--disc-color)]"
                     style={{ borderColor: discipline.color }}>

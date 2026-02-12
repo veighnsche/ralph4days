@@ -5,7 +5,7 @@ import { useDisciplines } from '@/hooks/disciplines'
 import { usePRDData } from '@/hooks/tasks'
 import { useTabMeta } from '@/hooks/workspace'
 import { computeInferredStatus } from '@/lib/taskStatus'
-import { NOOP_TAB_LIFECYCLE, type WorkspaceTab } from '@/stores/useWorkspaceStore'
+import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { Task } from '@/types/generated'
 import { DetailPageLayout } from '../DetailPageLayout'
 import { CommentsSection } from '../task-detail'
@@ -40,11 +40,9 @@ function parseTaskDetailTabParams(params: unknown): TaskDetailTabParams {
 export function createTaskDetailTab(task: Task): Omit<WorkspaceTab, 'id'> {
   return {
     type: 'task-detail',
-    component: TaskDetailTabContent,
     title: task.title,
     key: String(task.id),
     closeable: true,
-    lifecycle: NOOP_TAB_LIFECYCLE,
     params: {
       entityId: task.id,
       entity: task

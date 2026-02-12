@@ -1,16 +1,23 @@
 import { useEffect, useRef } from 'react'
+import type { AgentSessionLaunchConfig } from '@/components/agent-session-launch'
 import { AgentSessionLaunchButton } from '@/components/agent-session-launch'
 import { ErrorBoundary } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { WorkspaceTabProvider } from '@/components/workspace/tabs'
-import { useBrowserTabsActions, useWorkspaceActions } from '@/hooks/workspace'
+import {
+  createAgentSessionConfigTab,
+  createTerminalTab,
+  getTabComponent,
+  getTabLifecycle,
+  WorkspaceTabProvider
+} from '@/components/workspace/tabs'
+import { useBrowserTabsActions } from '@/hooks/workspace'
 import { useWorkspaceStore, type WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { BrowserTab } from './BrowserTabs'
 import { BrowserTabs } from './BrowserTabs'
 
 function runLifecycle(tab: WorkspaceTab, hook: 'onMount' | 'onUnmount' | 'onActivate' | 'onDeactivate') {
   try {
-    tab.lifecycle?.[hook]?.(tab)
+    getTabLifecycle(tab.type)[hook]?.(tab)
   } catch (error) {
     console.error(`[workspace] tab lifecycle ${hook} failed`, error)
   }
@@ -19,8 +26,8 @@ function runLifecycle(tab: WorkspaceTab, hook: 'onMount' | 'onUnmount' | 'onActi
 export function WorkspacePanel() {
   const tabs = useWorkspaceStore(s => s.tabs)
   const activeTabId = useWorkspaceStore(s => s.activeTabId)
+  const openTab = useWorkspaceStore(s => s.openTab)
   const tabActions = useBrowserTabsActions()
-  const { openAgentSessionConfigTab, openTerminalFromLaunchConfig } = useWorkspaceActions()
   const previousTabsRef = useRef<Map<string, WorkspaceTab>>(new Map())
   const previousActiveTabIdRef = useRef<string>('')
 
@@ -55,6 +62,14 @@ export function WorkspacePanel() {
     previousActiveTabIdRef.current = activeTabId
   }, [activeTabId, tabs])
 
+  const handleNewTab = (config: AgentSessionLaunchConfig) => {
+    openTab(createTerminalTab(config))
+  }
+
+  const handleOpenRunForm = (config: AgentSessionLaunchConfig) => {
+    openTab(createAgentSessionConfigTab(config))
+  }
+
   const browserTabs: BrowserTab[] = tabs.map(t => ({
     id: t.id,
     title: t.title,
@@ -62,9 +77,7 @@ export function WorkspacePanel() {
     closeable: t.closeable
   }))
 
-  const newTabButton = (
-    <AgentSessionLaunchButton onNewTab={openTerminalFromLaunchConfig} onOpenRunForm={openAgentSessionConfigTab} />
-  )
+  const newTabButton = <AgentSessionLaunchButton onNewTab={handleNewTab} onOpenRunForm={handleOpenRunForm} />
 
   return (
     <div className="flex h-full flex-col">
@@ -74,15 +87,18 @@ export function WorkspacePanel() {
         {tabs.length === 0 ? (
           <EmptyWorkspace />
         ) : (
-          tabs.map(tab => (
-            <div key={tab.id} className={tab.id === activeTabId ? 'absolute inset-0' : 'absolute inset-0 hidden'}>
-              <ErrorBoundary>
-                <WorkspaceTabProvider tab={tab}>
-                  <tab.component tab={tab} />
-                </WorkspaceTabProvider>
-              </ErrorBoundary>
-            </div>
-          ))
+          tabs.map(tab => {
+            const TabComponent = getTabComponent(tab.type)
+            return (
+              <div key={tab.id} className={tab.id === activeTabId ? 'absolute inset-0' : 'absolute inset-0 hidden'}>
+                <ErrorBoundary>
+                  <WorkspaceTabProvider tab={tab}>
+                    <TabComponent tab={tab} />
+                  </WorkspaceTabProvider>
+                </ErrorBoundary>
+              </div>
+            )
+          })
         )}
       </div>
     </div>
@@ -90,7 +106,7 @@ export function WorkspacePanel() {
 }
 
 function EmptyWorkspace() {
-  const { openDefaultTerminalTab } = useWorkspaceActions()
+  const openTab = useWorkspaceStore(s => s.openTab)
 
   return (
     <div className="h-full flex items-center justify-center">
@@ -100,7 +116,11 @@ function EmptyWorkspace() {
           <p>Click the + button above to create a new terminal</p>
           <p>or select an item from the left to open a tab</p>
         </div>
-        <Button variant="link" size="sm" onClick={openDefaultTerminalTab} className="text-xs">
+        <Button
+          variant="link"
+          size="sm"
+          onClick={() => openTab(createTerminalTab({ title: 'Terminal 1' }))}
+          className="text-xs">
           Create terminal tab
         </Button>
       </div>

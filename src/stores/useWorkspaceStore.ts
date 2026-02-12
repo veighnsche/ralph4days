@@ -1,25 +1,15 @@
 import type { LucideIcon } from 'lucide-react'
-import type { ComponentType } from 'react'
 import { create } from 'zustand'
 import { MAX_TABS } from '@/constants/workspace'
 
-export type TabType = 'terminal' | 'agent-session-config' | 'task-detail' | 'feature-detail' | 'discipline-detail'
-
-export interface WorkspaceTabLifecycle {
-  onMount?: (tab: WorkspaceTab) => void
-  onUnmount?: (tab: WorkspaceTab) => void
-  onActivate?: (tab: WorkspaceTab) => void
-  onDeactivate?: (tab: WorkspaceTab) => void
-}
+export type TabType = string
 
 export interface WorkspaceTab {
   id: string
   type: TabType
-  component: ComponentType<{ tab: WorkspaceTab }>
   title: string
   icon?: LucideIcon
   closeable: boolean
-  lifecycle: WorkspaceTabLifecycle
   key?: string
   params?: unknown
 }
@@ -27,11 +17,8 @@ export interface WorkspaceTab {
 interface WorkspaceStore {
   tabs: WorkspaceTab[]
   activeTabId: string
-  openTab: (tab: Omit<WorkspaceTab, 'id' | 'lifecycle'> & { id?: string; lifecycle?: WorkspaceTabLifecycle }) => string
-  openTabAfter: (
-    afterTabId: string,
-    tab: Omit<WorkspaceTab, 'id' | 'lifecycle'> & { id?: string; lifecycle?: WorkspaceTabLifecycle }
-  ) => string
+  openTab: (tab: Omit<WorkspaceTab, 'id'> & { id?: string }) => string
+  openTabAfter: (afterTabId: string, tab: Omit<WorkspaceTab, 'id'> & { id?: string }) => string
   closeTab: (tabId: string) => void
   switchTab: (tabId: string) => void
   closeAllExcept: (tabId: string) => void
@@ -42,16 +29,7 @@ interface WorkspaceStore {
   setTabMeta: (tabId: string, meta: { title?: string; icon?: LucideIcon }) => void
 }
 
-export const NOOP_TAB_LIFECYCLE: WorkspaceTabLifecycle = {
-  onMount: () => {},
-  onUnmount: () => {},
-  onActivate: () => {},
-  onDeactivate: () => {}
-}
-
-function generateTabId(
-  tab: Omit<WorkspaceTab, 'id' | 'lifecycle'> & { id?: string; lifecycle?: WorkspaceTabLifecycle }
-): string {
+function generateTabId(tab: Omit<WorkspaceTab, 'id'> & { id?: string }): string {
   if (tab.id) return tab.id
   if (tab.key) return `${tab.type}-${tab.key}`
   return `${tab.type}-${Date.now()}`
@@ -71,7 +49,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
       return id
     }
 
-    const tab: WorkspaceTab = { ...tabInput, id, lifecycle: tabInput.lifecycle ?? NOOP_TAB_LIFECYCLE }
+    const tab: WorkspaceTab = { ...tabInput, id }
 
     let nextTabs = [...tabs, tab]
     while (nextTabs.length > MAX_TABS) {
@@ -99,7 +77,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
       return get().openTab(tabInput)
     }
 
-    const tab: WorkspaceTab = { ...tabInput, id, lifecycle: tabInput.lifecycle ?? NOOP_TAB_LIFECYCLE }
+    const tab: WorkspaceTab = { ...tabInput, id }
     let nextTabs = [...tabs.slice(0, afterIndex + 1), tab, ...tabs.slice(afterIndex + 1)]
 
     while (nextTabs.length > MAX_TABS) {

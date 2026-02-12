@@ -15,12 +15,13 @@ import {
 } from '@/components/ui/item'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
+import { createFeatureDetailTab } from '@/components/workspace/tabs'
 import { useFeatureStats } from '@/hooks/features'
-import { useWorkspaceActions } from '@/hooks/workspace'
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
 export function FeaturesPage() {
   const { features, statsMap, progress, isLoading, error } = useFeatureStats()
-  const { openFeatureDetailTab } = useWorkspaceActions()
+  const openTab = useWorkspaceStore(s => s.openTab)
 
   if (isLoading) {
     return (
@@ -123,8 +124,8 @@ export function FeaturesPage() {
                     className="cursor-pointer hover:bg-muted/50"
                     role="button"
                     tabIndex={0}
-                    onClick={() => openFeatureDetailTab(feature)}
-                    onKeyDown={e => e.key === 'Enter' && openFeatureDetailTab(feature)}>
+                    onClick={() => openTab(createFeatureDetailTab(feature))}
+                    onKeyDown={e => e.key === 'Enter' && openTab(createFeatureDetailTab(feature))}>
                     <ItemContent>
                       <ItemTitle>
                         {feature.displayName}

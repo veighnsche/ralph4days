@@ -13,5 +13,6 @@ export {
   type DisciplineDetailTabParams
 } from './DisciplineDetailTabContent'
 export { createFeatureDetailTab, type FeatureDetailTabParams } from './FeatureDetailTabContent'
+export { getTabComponent, getTabLifecycle, type WorkspaceTabLifecycle } from './registry'
 export { createTaskDetailTab, type TaskDetailTabParams } from './TaskDetailTabContent'
 export { createTerminalTab, type TerminalTabParams } from './TerminalTabContent'

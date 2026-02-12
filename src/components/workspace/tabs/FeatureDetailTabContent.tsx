@@ -6,7 +6,7 @@ import { useInvoke } from '@/hooks/api'
 import { useFeatureStats } from '@/hooks/features'
 import { useTabMeta } from '@/hooks/workspace'
 import { formatDate } from '@/lib/formatDate'
-import { NOOP_TAB_LIFECYCLE, type WorkspaceTab } from '@/stores/useWorkspaceStore'
+import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { FeatureData } from '@/types/generated'
 import { DetailPageLayout } from '../DetailPageLayout'
 import { FeatureCommentsSection } from '../feature-detail/FeatureCommentsSection'
@@ -135,11 +135,9 @@ function parseFeatureDetailTabParams(params: unknown): FeatureDetailTabParams {
 export function createFeatureDetailTab(feature: FeatureData): Omit<WorkspaceTab, 'id'> {
   return {
     type: 'feature-detail',
-    component: FeatureDetailTabContent,
     title: feature.displayName,
     key: feature.name,
     closeable: true,
-    lifecycle: NOOP_TAB_LIFECYCLE,
     params: {
       entityId: feature.name
     } satisfies FeatureDetailTabParams
