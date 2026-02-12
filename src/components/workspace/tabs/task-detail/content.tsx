@@ -10,6 +10,11 @@ import { DetailPageLayout } from '../../DetailPageLayout'
 import { CommentsSection } from '../../task-detail'
 import { TaskCardContent } from '../../task-detail/TaskCardContent'
 import { TaskSidebar } from '../../task-detail/TaskSidebar'
+import {
+  TASK_DETAIL_TAB_EMPTY_MESSAGE,
+  TASK_DETAIL_TAB_FALLBACK_EYELINE_PERCENT,
+  TASK_DETAIL_TAB_FALLBACK_TITLE
+} from './constants'
 import type { TaskDetailTabParams } from './schema'
 
 export function TaskDetailTabContent({ tab, params }: { tab: WorkspaceTab; params: TaskDetailTabParams }) {
@@ -19,12 +24,12 @@ export function TaskDetailTabContent({ tab, params }: { tab: WorkspaceTab; param
   const task = (entityId != null ? tasks?.find(t => t.id === entityId) : undefined) ?? snapshotTask
   const { disciplines } = useDisciplines()
 
-  useTabMeta(tab.id, task?.title ?? 'Task Detail', CheckCircle2)
+  useTabMeta(tab.id, task?.title ?? TASK_DETAIL_TAB_FALLBACK_TITLE, CheckCircle2)
 
   if (!task) {
     return (
       <div className="h-full flex items-center justify-center text-muted-foreground">
-        <span>Task not found</span>
+        <span>{TASK_DETAIL_TAB_EMPTY_MESSAGE}</span>
       </div>
     )
   }
@@ -33,7 +38,9 @@ export function TaskDetailTabContent({ tab, params }: { tab: WorkspaceTab; param
   const disc = disciplines.find(d => d.name === task.discipline)
   const stripCrop = disc?.imagePath ? disc?.crops?.strip : undefined
   const faceCrop = disc?.crops?.face
-  const eyelinePercent = faceCrop ? Math.round((faceCrop.y + faceCrop.h / 2) * 100) : 30
+  const eyelinePercent = faceCrop
+    ? Math.round((faceCrop.y + faceCrop.h / 2) * 100)
+    : TASK_DETAIL_TAB_FALLBACK_EYELINE_PERCENT
 
   return (
     <DetailPageLayout

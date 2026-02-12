@@ -1,3 +1,4 @@
+export { TERMINAL_AGENT_LABELS, TERMINAL_TAB_DEFAULT_TITLE } from './constants'
 export { TerminalTabContent } from './content'
 export {
   createDefaultTerminalTab,

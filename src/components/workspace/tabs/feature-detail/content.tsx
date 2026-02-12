@@ -11,6 +11,12 @@ import type { FeatureData } from '@/types/generated'
 import { DetailPageLayout } from '../../DetailPageLayout'
 import { FeatureCommentsSection } from '../../feature-detail/FeatureCommentsSection'
 import { PropertyRow } from '../../PropertyRow'
+import {
+  FEATURE_DETAIL_EMPTY_DETAILS_MESSAGE,
+  FEATURE_DETAIL_EMPTY_STATE_DESCRIPTION,
+  FEATURE_DETAIL_EMPTY_STATE_TITLE,
+  FEATURE_DETAIL_TAB_FALLBACK_TITLE
+} from './constants'
 import type { FeatureDetailTabParams } from './schema'
 
 function FeatureContent({ feature }: { feature: FeatureData }) {
@@ -50,7 +56,7 @@ function FeatureContent({ feature }: { feature: FeatureData }) {
       <div className="space-y-6">
         {sections}
         {sections.length <= 1 && (
-          <p className="px-6 text-sm text-muted-foreground">No details available for this feature.</p>
+          <p className="px-6 text-sm text-muted-foreground">{FEATURE_DETAIL_EMPTY_DETAILS_MESSAGE}</p>
         )}
       </div>
     )
@@ -137,7 +143,7 @@ export function FeatureDetailTabContent({ tab, params }: { tab: WorkspaceTab; pa
   }
   const featureProgress = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0
 
-  useTabMeta(tab.id, feature?.displayName ?? 'Feature', Puzzle)
+  useTabMeta(tab.id, feature?.displayName ?? FEATURE_DETAIL_TAB_FALLBACK_TITLE, Puzzle)
 
   if (isLoading) {
     return (
@@ -154,8 +160,8 @@ export function FeatureDetailTabContent({ tab, params }: { tab: WorkspaceTab; pa
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
           <Puzzle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-lg font-semibold mb-2">Feature not found</h2>
-          <p className="text-sm text-muted-foreground">The requested feature could not be loaded</p>
+          <h2 className="text-lg font-semibold mb-2">{FEATURE_DETAIL_EMPTY_STATE_TITLE}</h2>
+          <p className="text-sm text-muted-foreground">{FEATURE_DETAIL_EMPTY_STATE_DESCRIPTION}</p>
         </div>
       </div>
     )

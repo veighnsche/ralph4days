@@ -1,0 +1,3 @@
+export const TASK_DETAIL_TAB_EMPTY_MESSAGE = 'Task not found'
+export const TASK_DETAIL_TAB_FALLBACK_TITLE = 'Task Detail'
+export const TASK_DETAIL_TAB_FALLBACK_EYELINE_PERCENT = 30

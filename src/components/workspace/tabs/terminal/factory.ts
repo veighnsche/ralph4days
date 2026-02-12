@@ -1,9 +1,10 @@
 import type { AgentSessionLaunchConfig } from '@/components/agent-session-launch'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
+import { TERMINAL_AGENT_LABELS, TERMINAL_TAB_DEFAULT_TITLE } from './constants'
 import type { TerminalTabInput } from './schema'
 
 function agentLabel(agent: string | undefined): string {
-  return agent === 'codex' ? 'Codex' : 'Claude'
+  return agent === 'codex' ? TERMINAL_AGENT_LABELS.codex : TERMINAL_AGENT_LABELS.claude
 }
 
 export function createTerminalTab(input: TerminalTabInput = {}): Omit<WorkspaceTab, 'id'> {
@@ -24,7 +25,7 @@ export function createTerminalTab(input: TerminalTabInput = {}): Omit<WorkspaceT
   }
 }
 
-export function createDefaultTerminalTab(title = 'New Terminal'): Omit<WorkspaceTab, 'id'> {
+export function createDefaultTerminalTab(title = TERMINAL_TAB_DEFAULT_TITLE): Omit<WorkspaceTab, 'id'> {
   return createTerminalTab({ title })
 }
 

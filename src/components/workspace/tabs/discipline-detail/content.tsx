@@ -12,6 +12,12 @@ import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { DisciplineConfig } from '@/types/generated'
 import { DetailPageLayout } from '../../DetailPageLayout'
 import { PropertyRow } from '../../PropertyRow'
+import {
+  DISCIPLINE_DETAIL_EMPTY_STATE_DESCRIPTION,
+  DISCIPLINE_DETAIL_EMPTY_STATE_TITLE,
+  DISCIPLINE_DETAIL_FALLBACK_EYELINE_PERCENT,
+  DISCIPLINE_DETAIL_TAB_FALLBACK_TITLE
+} from './constants'
 import type { DisciplineDetailTabParams } from './schema'
 
 function DisciplineContent({ discipline }: { discipline: DisciplineConfig }) {
@@ -168,7 +174,7 @@ export function DisciplineDetailTabContent({ tab, params }: { tab: WorkspaceTab;
   const discipline = disciplines?.find(d => d.name === disciplineName)
   const stackName = discipline?.stackId != null ? stacks.find(s => s.stackId === discipline.stackId)?.name : undefined
 
-  useTabMeta(tab.id, discipline?.displayName ?? 'Discipline', Layers)
+  useTabMeta(tab.id, discipline?.displayName ?? DISCIPLINE_DETAIL_TAB_FALLBACK_TITLE, Layers)
 
   if (isLoading) {
     return (
@@ -185,8 +191,8 @@ export function DisciplineDetailTabContent({ tab, params }: { tab: WorkspaceTab;
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
           <Layers className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-lg font-semibold mb-2">Discipline not found</h2>
-          <p className="text-sm text-muted-foreground">The requested discipline could not be loaded</p>
+          <h2 className="text-lg font-semibold mb-2">{DISCIPLINE_DETAIL_EMPTY_STATE_TITLE}</h2>
+          <p className="text-sm text-muted-foreground">{DISCIPLINE_DETAIL_EMPTY_STATE_DESCRIPTION}</p>
         </div>
       </div>
     )
@@ -194,7 +200,9 @@ export function DisciplineDetailTabContent({ tab, params }: { tab: WorkspaceTab;
 
   const borderColor = `${discipline.color}40`
   const faceCrop = discipline.crops?.face
-  const eyelinePercent = faceCrop ? Math.round((faceCrop.y + faceCrop.h / 2) * 100) : 30
+  const eyelinePercent = faceCrop
+    ? Math.round((faceCrop.y + faceCrop.h / 2) * 100)
+    : DISCIPLINE_DETAIL_FALLBACK_EYELINE_PERCENT
 
   return (
     <DetailPageLayout
