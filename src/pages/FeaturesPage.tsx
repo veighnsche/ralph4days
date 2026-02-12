@@ -15,25 +15,12 @@ import {
 } from '@/components/ui/item'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
-import { FeatureDetailTabContent } from '@/components/workspace/FeatureDetailTabContent'
 import { useFeatureStats } from '@/hooks/features'
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
+import { useWorkspaceActions } from '@/hooks/workspace'
 
 export function FeaturesPage() {
   const { features, statsMap, progress, isLoading, error } = useFeatureStats()
-  const openTab = useWorkspaceStore(state => state.openTab)
-
-  const handleFeatureClick = (name: string, displayName: string) => {
-    openTab({
-      type: 'feature-detail',
-      component: FeatureDetailTabContent,
-      title: displayName,
-      closeable: true,
-      data: {
-        entityId: name
-      }
-    })
-  }
+  const { openFeatureDetailTab } = useWorkspaceActions()
 
   if (isLoading) {
     return (
@@ -136,8 +123,8 @@ export function FeaturesPage() {
                     className="cursor-pointer hover:bg-muted/50"
                     role="button"
                     tabIndex={0}
-                    onClick={() => handleFeatureClick(feature.name, feature.displayName)}
-                    onKeyDown={e => e.key === 'Enter' && handleFeatureClick(feature.name, feature.displayName)}>
+                    onClick={() => openFeatureDetailTab(feature)}
+                    onKeyDown={e => e.key === 'Enter' && openFeatureDetailTab(feature)}>
                     <ItemContent>
                       <ItemTitle>
                         {feature.displayName}

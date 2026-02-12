@@ -1,7 +1,3 @@
-export { AgentSessionConfigTabContent } from './AgentSessionConfigTabContent'
 export type { BrowserTab } from './BrowserTabs'
 export { BrowserTabs } from './BrowserTabs'
-export { FeatureDetailTabContent } from './FeatureDetailTabContent'
-export { TaskDetailTabContent } from './TaskDetailTabContent'
-export { TerminalTabContent } from './TerminalTabContent'
 export { WorkspacePanel } from './WorkspacePanel'

@@ -1,5 +1,11 @@
-import { FeatureDetailTabContent, TaskDetailTabContent, TerminalTabContent } from '@/components/workspace'
-import type { Agent, Effort, PermissionLevel } from '@/hooks/preferences'
+import {
+  createAgentSessionConfigTab,
+  createDisciplineDetailTab,
+  createFeatureDetailTab,
+  createTaskDetailTab,
+  createTerminalTab
+} from '@/components/workspace/tabs'
+import type { Agent, AgentSessionLaunchConfig, Effort, PermissionLevel } from '@/hooks/preferences'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { FeatureData, Task } from '@/types/generated'
 
@@ -7,23 +13,18 @@ export function useWorkspaceActions() {
   const openTab = useWorkspaceStore(s => s.openTab)
 
   return {
-    openFeatureDetailTab: (feature: FeatureData) =>
-      openTab({
-        type: 'feature-detail',
-        component: FeatureDetailTabContent,
-        title: feature.displayName,
-        closeable: true,
-        data: { entityId: feature.name }
-      }),
+    openDisciplineDetailTab: (discipline: { name: string; displayName: string }) =>
+      openTab(createDisciplineDetailTab(discipline)),
 
-    openTaskDetailTab: (task: Task) =>
-      openTab({
-        type: 'task-detail',
-        component: TaskDetailTabContent,
-        title: task.title,
-        closeable: true,
-        data: { entityId: task.id, entity: task }
-      }),
+    openFeatureDetailTab: (feature: FeatureData) => openTab(createFeatureDetailTab(feature)),
+
+    openTaskDetailTab: (task: Task) => openTab(createTaskDetailTab(task)),
+
+    openTerminalFromLaunchConfig: (config: AgentSessionLaunchConfig) => openTab(createTerminalTab(config)),
+
+    openAgentSessionConfigTab: (config: AgentSessionLaunchConfig) => openTab(createAgentSessionConfigTab(config)),
+
+    openDefaultTerminalTab: () => openTab(createTerminalTab({ title: 'Terminal 1' })),
 
     openTerminalTab: (
       agent: Agent,
@@ -33,14 +34,7 @@ export function useWorkspaceActions() {
       permissionLevel: PermissionLevel,
       initPrompt?: string
     ) => {
-      const agentLabel = agent === 'codex' ? 'Codex' : 'Claude'
-      return openTab({
-        type: 'terminal',
-        component: TerminalTabContent,
-        title: `${agentLabel} (${model})`,
-        closeable: true,
-        data: { agent, model, effort, thinking, permissionLevel, initPrompt }
-      })
+      return openTab(createTerminalTab({ agent, model, effort, thinking, permissionLevel, initPrompt }))
     }
   }
 }

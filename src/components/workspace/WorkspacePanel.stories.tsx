@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { useEffect } from 'react'
-import { TerminalTabContent } from '@/components/workspace'
+import { createTerminalTab } from '@/components/workspace/tabs'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import { WorkspacePanel } from './WorkspacePanel'
 
@@ -37,12 +37,7 @@ export const WithTerminal: Story = {
     Story => {
       const { openTab } = useWorkspaceStore()
       useEffect(() => {
-        openTab({
-          type: 'terminal',
-          component: TerminalTabContent,
-          title: 'Terminal 1',
-          closeable: true
-        })
+        openTab(createTerminalTab({ title: 'Terminal 1' }))
       }, [openTab])
       return <Story />
     }
@@ -54,24 +49,9 @@ export const MultipleTerminals: Story = {
     Story => {
       const { openTab } = useWorkspaceStore()
       useEffect(() => {
-        openTab({
-          type: 'terminal',
-          component: TerminalTabContent,
-          title: 'Terminal 1',
-          closeable: true
-        })
-        openTab({
-          type: 'terminal',
-          component: TerminalTabContent,
-          title: 'Terminal 2',
-          closeable: true
-        })
-        openTab({
-          type: 'terminal',
-          component: TerminalTabContent,
-          title: 'Terminal 3',
-          closeable: true
-        })
+        openTab(createTerminalTab({ title: 'Terminal 1' }))
+        openTab(createTerminalTab({ title: 'Terminal 2' }))
+        openTab(createTerminalTab({ title: 'Terminal 3' }))
       }, [openTab])
       return <Story />
     }

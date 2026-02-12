@@ -1,10 +1,9 @@
 import { useEffect, useRef } from 'react'
-import { AgentSessionLaunchButton, type AgentSessionLaunchConfig } from '@/components/agent-session-launch'
+import { AgentSessionLaunchButton } from '@/components/agent-session-launch'
 import { ErrorBoundary } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { TerminalTabContent } from '@/components/workspace'
-import { createAgentSessionConfigTab } from '@/components/workspace/tabs/agentSessionConfigTab'
-import { useBrowserTabsActions } from '@/hooks/workspace'
+import { WorkspaceTabProvider } from '@/components/workspace/tabs'
+import { useBrowserTabsActions, useWorkspaceActions } from '@/hooks/workspace'
 import { useWorkspaceStore, type WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { BrowserTab } from './BrowserTabs'
 import { BrowserTabs } from './BrowserTabs'
@@ -20,8 +19,8 @@ function runLifecycle(tab: WorkspaceTab, hook: 'onMount' | 'onUnmount' | 'onActi
 export function WorkspacePanel() {
   const tabs = useWorkspaceStore(s => s.tabs)
   const activeTabId = useWorkspaceStore(s => s.activeTabId)
-  const openTab = useWorkspaceStore(s => s.openTab)
   const tabActions = useBrowserTabsActions()
+  const { openAgentSessionConfigTab, openTerminalFromLaunchConfig } = useWorkspaceActions()
   const previousTabsRef = useRef<Map<string, WorkspaceTab>>(new Map())
   const previousActiveTabIdRef = useRef<string>('')
 
@@ -56,27 +55,6 @@ export function WorkspacePanel() {
     previousActiveTabIdRef.current = activeTabId
   }, [activeTabId, tabs])
 
-  const handleNewTab = ({ agent, model, effort, thinking, permissionLevel }: AgentSessionLaunchConfig) => {
-    const agentLabel = agent === 'codex' ? 'Codex' : 'Claude'
-    openTab({
-      type: 'terminal',
-      component: TerminalTabContent,
-      title: `${agentLabel} (${model})`,
-      closeable: true,
-      data: {
-        agent,
-        model,
-        effort,
-        thinking,
-        permissionLevel
-      }
-    })
-  }
-
-  const handleOpenRunForm = ({ agent, model, effort, thinking, permissionLevel }: AgentSessionLaunchConfig) => {
-    openTab(createAgentSessionConfigTab({ agent, model, effort, thinking, permissionLevel }))
-  }
-
   const browserTabs: BrowserTab[] = tabs.map(t => ({
     id: t.id,
     title: t.title,
@@ -84,7 +62,9 @@ export function WorkspacePanel() {
     closeable: t.closeable
   }))
 
-  const newTabButton = <AgentSessionLaunchButton onNewTab={handleNewTab} onOpenRunForm={handleOpenRunForm} />
+  const newTabButton = (
+    <AgentSessionLaunchButton onNewTab={openTerminalFromLaunchConfig} onOpenRunForm={openAgentSessionConfigTab} />
+  )
 
   return (
     <div className="flex h-full flex-col">
@@ -97,7 +77,9 @@ export function WorkspacePanel() {
           tabs.map(tab => (
             <div key={tab.id} className={tab.id === activeTabId ? 'absolute inset-0' : 'absolute inset-0 hidden'}>
               <ErrorBoundary>
-                <tab.component tab={tab} />
+                <WorkspaceTabProvider tab={tab}>
+                  <tab.component tab={tab} />
+                </WorkspaceTabProvider>
               </ErrorBoundary>
             </div>
           ))
@@ -108,16 +90,7 @@ export function WorkspacePanel() {
 }
 
 function EmptyWorkspace() {
-  const openTab = useWorkspaceStore(s => s.openTab)
-
-  const handleCreateTerminal = () => {
-    openTab({
-      type: 'terminal',
-      component: TerminalTabContent,
-      title: 'Terminal 1',
-      closeable: true
-    })
-  }
+  const { openDefaultTerminalTab } = useWorkspaceActions()
 
   return (
     <div className="h-full flex items-center justify-center">
@@ -127,7 +100,7 @@ function EmptyWorkspace() {
           <p>Click the + button above to create a new terminal</p>
           <p>or select an item from the left to open a tab</p>
         </div>
-        <Button variant="link" size="sm" onClick={handleCreateTerminal} className="text-xs">
+        <Button variant="link" size="sm" onClick={openDefaultTerminalTab} className="text-xs">
           Create terminal tab
         </Button>
       </div>

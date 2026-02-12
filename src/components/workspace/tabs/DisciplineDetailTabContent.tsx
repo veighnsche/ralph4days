@@ -159,6 +159,10 @@ function DisciplineSidebar({ discipline, stackName }: { discipline: DisciplineCo
 export type DisciplineDetailTabParams = {
   entityId: string
 }
+export type DisciplineDetailTabInput = {
+  name: string
+  displayName: string
+}
 
 function parseDisciplineDetailTabParams(params: unknown): DisciplineDetailTabParams {
   if (typeof params !== 'object' || params == null || Array.isArray(params)) {
@@ -171,7 +175,7 @@ function parseDisciplineDetailTabParams(params: unknown): DisciplineDetailTabPar
   return { entityId: candidate.entityId }
 }
 
-export function createDisciplineDetailTab(discipline: DisciplineConfig): Omit<WorkspaceTab, 'id'> {
+export function createDisciplineDetailTab(discipline: DisciplineDetailTabInput): Omit<WorkspaceTab, 'id'> {
   return {
     type: 'discipline-detail',
     component: DisciplineDetailTabContent,

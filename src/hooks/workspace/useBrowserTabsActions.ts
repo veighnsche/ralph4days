@@ -1,4 +1,4 @@
-import { TerminalTabContent } from '@/components/workspace'
+import { createTerminalTab } from '@/components/workspace/tabs'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
 export interface BrowserTabsActions {
@@ -21,12 +21,7 @@ export function useBrowserTabsActions(): BrowserTabsActions {
   const reorderTabs = useWorkspaceStore(s => s.reorderTabs)
 
   const newTabToRight = (afterTabId: string) => {
-    openTabAfter(afterTabId, {
-      type: 'terminal',
-      component: TerminalTabContent,
-      title: 'New Terminal',
-      closeable: true
-    })
+    openTabAfter(afterTabId, createTerminalTab({ title: 'New Terminal' }))
   }
 
   return {

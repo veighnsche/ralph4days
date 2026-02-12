@@ -7,25 +7,13 @@ import { CroppedImage } from '@/components/ui/cropped-image'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
-import { DisciplineDetailTabContent } from '@/components/workspace/DisciplineDetailTabContent'
 import { useDisciplineStats, useStackMetadata } from '@/hooks/disciplines'
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
+import { useWorkspaceActions } from '@/hooks/workspace'
 
 export function DisciplinesPage() {
   const { disciplines, statsMap, progress, isLoading: disciplinesLoading } = useDisciplineStats()
   const { stacks, isLoading: stacksLoading } = useStackMetadata()
-  const openTab = useWorkspaceStore(state => state.openTab)
-  const handleDisciplineClick = (disciplineName: string, displayName: string) => {
-    openTab({
-      type: 'discipline-detail',
-      component: DisciplineDetailTabContent,
-      title: displayName,
-      closeable: true,
-      data: {
-        entityId: disciplineName
-      }
-    })
-  }
+  const { openDisciplineDetailTab } = useWorkspaceActions()
 
   const isLoading = disciplinesLoading || stacksLoading
 
@@ -125,7 +113,7 @@ export function DisciplinesPage() {
                       '--disc-color': discipline.color
                     } as React.CSSProperties
                   }
-                  onClick={() => handleDisciplineClick(discipline.name, discipline.displayName)}>
+                  onClick={() => openDisciplineDetailTab(discipline)}>
                   <div
                     className="h-full rounded-lg border-2 bg-card overflow-hidden cursor-pointer transition-shadow duration-200 hover:shadow-[0_0_12px_var(--disc-color)]"
                     style={{ borderColor: discipline.color }}>
