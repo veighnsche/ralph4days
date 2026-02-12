@@ -1,5 +1,5 @@
 export { BottomBar } from './BottomBar'
-export { LoopToggle } from './LoopToggle'
+export { ExecutionToggle } from './ExecutionToggle'
 export { NavigationMenu } from './NavigationMenu'
 export { ProjectSelector } from './ProjectSelector'
 export { Settings } from './Settings'

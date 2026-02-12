@@ -1,15 +1,15 @@
-import { RotateCw } from 'lucide-react'
+import { FastForward } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 // TODO: Wire up to new terminal-based task execution system
-export function LoopToggle() {
+export function ExecutionToggle() {
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button disabled size="icon" variant="outline" title="Execution disabled">
-            <RotateCw className="h-4 w-4 opacity-50" />
+            <FastForward className="h-4 w-4 opacity-50" />
           </Button>
         </TooltipTrigger>
         <TooltipContent>

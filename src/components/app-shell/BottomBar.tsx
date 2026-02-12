@@ -2,7 +2,7 @@ import { Play, Square } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
 import type { Page } from '@/pages/pageRegistry'
-import { LoopToggle } from './LoopToggle'
+import { ExecutionToggle } from './ExecutionToggle'
 import { NavigationMenu } from './NavigationMenu'
 
 interface BottomBarProps {
@@ -21,7 +21,7 @@ export function BottomBar({ lockedProject: _lockedProject, currentPage, onPageCh
         </div>
 
         <ButtonGroup>
-          <LoopToggle />
+          <ExecutionToggle />
 
           <Button disabled size="icon" variant="default" title="Start">
             <Play className="h-4 w-4" />
