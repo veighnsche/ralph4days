@@ -92,7 +92,7 @@ describe('terminalBridgeClient', () => {
   it('filters output events by session id', async () => {
     let handler: ((event: { payload: { session_id: string; data: string } }) => void) | undefined
     mockListen.mockImplementation((eventName: string, cb: unknown) => {
-      if (eventName === 'terminal_bridge.output') {
+      if (eventName === 'terminal_bridge:output') {
         handler = cb as typeof handler
       }
       return Promise.resolve(vi.fn())
@@ -111,7 +111,7 @@ describe('terminalBridgeClient', () => {
   it('filters closed events by session id', async () => {
     let handler: ((event: { payload: { session_id: string; exit_code: number } }) => void) | undefined
     mockListen.mockImplementation((eventName: string, cb: unknown) => {
-      if (eventName === 'terminal_bridge.closed') {
+      if (eventName === 'terminal_bridge:closed') {
         handler = cb as typeof handler
       }
       return Promise.resolve(vi.fn())

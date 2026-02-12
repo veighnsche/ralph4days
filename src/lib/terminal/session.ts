@@ -15,9 +15,11 @@ export interface TerminalSessionConfig {
   taskId?: number
   model?: string | null
   thinking?: boolean | null
+  enabled?: boolean
 }
 
 export interface TerminalSessionHandlers {
+  onStarted?: () => void
   onOutput?: (data: Uint8Array) => void
   onClosed?: (exitCode: number) => void
   onError?: (error: string) => void
@@ -28,8 +30,17 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
   const outputBufferRef = useRef<Uint8Array[]>([])
   const pendingInputRef = useRef<string[]>([])
   const sessionStartedRef = useRef(false)
+  const startedNotifiedRef = useRef(false)
   const handlersRef = useRef(handlers)
   handlersRef.current = handlers
+  const isEnabled = config.enabled ?? true
+
+  const markSessionStarted = () => {
+    sessionStartedRef.current = true
+    if (startedNotifiedRef.current) return
+    startedNotifiedRef.current = true
+    handlersRef.current.onStarted?.()
+  }
 
   const flushPendingInput = () => {
     if (!sessionStartedRef.current || pendingInputRef.current.length === 0) return
@@ -43,6 +54,8 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
   }
 
   useEffect(() => {
+    if (!isEnabled) return
+
     if (config.taskId !== undefined) {
       terminalBridgeStartTaskSession({
         sessionId: config.sessionId,
@@ -51,7 +64,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
         thinking: config.thinking ?? null
       })
         .then(() => {
-          sessionStartedRef.current = true
+          markSessionStarted()
           flushPendingInput()
         })
         .catch(err => handlersRef.current.onError?.(String(err)))
@@ -63,7 +76,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
         thinking: config.thinking ?? null
       })
         .then(() => {
-          sessionStartedRef.current = true
+          markSessionStarted()
           flushPendingInput()
         })
         .catch(err => handlersRef.current.onError?.(String(err)))
@@ -72,11 +85,13 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     return () => {
       terminalBridgeTerminate(config.sessionId).catch(() => {})
     }
-  }, [config.sessionId, config.mcpMode, config.taskId, config.model, config.thinking])
+  }, [config.sessionId, config.mcpMode, config.taskId, config.model, config.thinking, isEnabled])
 
   useEffect(() => {
+    if (!isEnabled) return
+
     const unlisten = terminalBridgeListenSessionOutput(config.sessionId, payload => {
-      sessionStartedRef.current = true
+      markSessionStarted()
       flushPendingInput()
 
       const binary = atob(payload.data)
@@ -92,9 +107,11 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     return () => {
       unlisten.then(unsub => unsub())
     }
-  }, [config.sessionId])
+  }, [config.sessionId, isEnabled])
 
   useEffect(() => {
+    if (!isEnabled) return
+
     const unlisten = terminalBridgeListenSessionClosed(config.sessionId, payload => {
       if (!sessionStartedRef.current) return
       handlersRef.current.onClosed?.(payload.exit_code)
@@ -103,7 +120,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     return () => {
       unlisten.then(unsub => unsub())
     }
-  }, [config.sessionId])
+  }, [config.sessionId, isEnabled])
 
   const markReady = () => {
     isReadyRef.current = true

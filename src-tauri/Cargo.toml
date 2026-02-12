@@ -47,6 +47,7 @@ workspace = true
 
 [dev-dependencies]
 tempfile = "3"
+tauri = { version = "2", default-features = false, features = ["test"] }
 
 [profile.dev]
 opt-level = 0

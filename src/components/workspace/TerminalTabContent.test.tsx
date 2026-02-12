@@ -1,30 +1,36 @@
-import { render, waitFor } from '@testing-library/react'
+import { act, render, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import { TerminalTabContent } from './TerminalTabContent'
 
+const { terminalBridgeEmitSystemMessageMock, useTerminalSessionMock, useTerminalSessionState } = vi.hoisted(() => ({
+  terminalBridgeEmitSystemMessageMock: vi.fn().mockResolvedValue(undefined),
+  useTerminalSessionMock: vi.fn(),
+  useTerminalSessionState: { lastHandlers: null as { onStarted?: () => void } | null }
+}))
+
 vi.mock('@/lib/terminal', () => ({
-  terminalBridgeEmitSystemMessage: vi.fn().mockResolvedValue(undefined),
+  terminalBridgeEmitSystemMessage: terminalBridgeEmitSystemMessageMock,
   Terminal: ({ onReady }: { onReady?: (terminal: unknown) => void }) => {
-    if (onReady) {
-      setTimeout(() => {
-        onReady({
-          cols: 80,
-          rows: 24,
-          write: vi.fn(),
-          writeln: vi.fn(),
-          onData: vi.fn(),
-          attachCustomKeyEventHandler: vi.fn()
-        })
-      }, 0)
-    }
+    onReady?.({
+      cols: 80,
+      rows: 24,
+      write: vi.fn(),
+      writeln: vi.fn(),
+      onData: vi.fn(),
+      attachCustomKeyEventHandler: vi.fn()
+    })
     return <div data-testid="terminal">Terminal</div>
   },
-  useTerminalSession: () => ({
-    markReady: vi.fn(),
-    sendInput: vi.fn(),
-    resize: vi.fn()
-  })
+  useTerminalSession: (config: unknown, handlers: { onStarted?: () => void }) => {
+    useTerminalSessionMock(config)
+    useTerminalSessionState.lastHandlers = handlers
+    return {
+      markReady: vi.fn(),
+      sendInput: vi.fn(),
+      resize: vi.fn()
+    }
+  }
 }))
 
 vi.mock('@tauri-apps/api/core', () => ({
@@ -55,6 +61,7 @@ describe('TerminalTabContent', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    useTerminalSessionState.lastHandlers = null
   })
 
   it('renders Terminal component', () => {
@@ -89,5 +96,43 @@ describe('TerminalTabContent', () => {
     const wrapper = container.firstElementChild
     expect(wrapper?.classList.contains('flex')).toBe(true)
     expect(wrapper?.querySelector('[data-testid="terminal"]')).toBeTruthy()
+  })
+
+  it('emits startup message only after session persisted and bridge started', async () => {
+    vi.useFakeTimers()
+    render(<TerminalTabContent tab={mockTab} />)
+
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(useTerminalSessionMock).toHaveBeenCalled()
+
+    const firstConfig = useTerminalSessionMock.mock.calls[0][0] as { enabled?: boolean }
+    expect(firstConfig.enabled).toBe(false)
+
+    await act(async () => {
+      await Promise.resolve()
+    })
+    const hasEnabledTrue = useTerminalSessionMock.mock.calls.some(
+      call => ((call[0] as { enabled?: boolean }).enabled ?? false) === true
+    )
+    expect(hasEnabledTrue).toBe(true)
+
+    expect(terminalBridgeEmitSystemMessageMock).not.toHaveBeenCalled()
+
+    act(() => {
+      useTerminalSessionState.lastHandlers?.onStarted?.()
+    })
+
+    act(() => {
+      vi.advanceTimersByTime(1500)
+    })
+
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(terminalBridgeEmitSystemMessageMock).toHaveBeenCalledTimes(1)
+
+    vi.useRealTimers()
   })
 })

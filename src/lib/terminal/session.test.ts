@@ -52,6 +52,33 @@ describe('useTerminalSession', () => {
     })
   })
 
+  it('does not start terminal bridge session when disabled', async () => {
+    const config: TerminalSessionConfig = {
+      ...defaultConfig,
+      enabled: false
+    }
+
+    renderHook(() => useTerminalSession(config, defaultHandlers))
+
+    await waitFor(() => {
+      expect(mockInvoke).not.toHaveBeenCalledWith('terminal_bridge_start_session', expect.anything())
+      expect(mockInvoke).not.toHaveBeenCalledWith('terminal_bridge_start_task_session', expect.anything())
+    })
+  })
+
+  it('calls onStarted once when bridge session starts', async () => {
+    const handlers = {
+      ...defaultHandlers,
+      onStarted: vi.fn()
+    }
+
+    renderHook(() => useTerminalSession(defaultConfig, handlers))
+
+    await waitFor(() => {
+      expect(handlers.onStarted).toHaveBeenCalledTimes(1)
+    })
+  })
+
   it('terminates PTY session on unmount', async () => {
     const { unmount } = renderHook(() => useTerminalSession(defaultConfig, defaultHandlers))
 
@@ -84,7 +111,7 @@ describe('useTerminalSession', () => {
     renderHook(() => useTerminalSession(defaultConfig, defaultHandlers))
 
     await waitFor(() => {
-      expect(mockListen).toHaveBeenCalledWith('terminal_bridge.output', expect.any(Function))
+      expect(mockListen).toHaveBeenCalledWith('terminal_bridge:output', expect.any(Function))
     })
   })
 
@@ -92,7 +119,7 @@ describe('useTerminalSession', () => {
     renderHook(() => useTerminalSession(defaultConfig, defaultHandlers))
 
     await waitFor(() => {
-      expect(mockListen).toHaveBeenCalledWith('terminal_bridge.closed', expect.any(Function))
+      expect(mockListen).toHaveBeenCalledWith('terminal_bridge:closed', expect.any(Function))
     })
   })
 
@@ -105,7 +132,7 @@ describe('useTerminalSession', () => {
     let outputCallback: ((event: { payload: { session_id: string; data: string } }) => void) | undefined
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
-      if (eventName === 'terminal_bridge.output') {
+      if (eventName === 'terminal_bridge:output') {
         outputCallback = callback as typeof outputCallback
       }
       return Promise.resolve(mockUnlisten)
@@ -131,7 +158,7 @@ describe('useTerminalSession', () => {
     let outputCallback: ((event: { payload: { session_id: string; data: string } }) => void) | undefined
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
-      if (eventName === 'terminal_bridge.output') {
+      if (eventName === 'terminal_bridge:output') {
         outputCallback = callback as typeof outputCallback
       }
       return Promise.resolve(mockUnlisten)
@@ -193,7 +220,7 @@ describe('useTerminalSession', () => {
     let outputCallback: ((event: { payload: { session_id: string; data: string } }) => void) | undefined
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
-      if (eventName === 'terminal_bridge.output') {
+      if (eventName === 'terminal_bridge:output') {
         outputCallback = callback as typeof outputCallback
       }
       return Promise.resolve(mockUnlisten)
@@ -222,10 +249,10 @@ describe('useTerminalSession', () => {
     let outputCallback: ((event: { payload: { session_id: string; data: string } }) => void) | undefined
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
-      if (eventName === 'terminal_bridge.closed') {
+      if (eventName === 'terminal_bridge:closed') {
         closedCallback = callback as typeof closedCallback
       }
-      if (eventName === 'terminal_bridge.output') {
+      if (eventName === 'terminal_bridge:output') {
         outputCallback = callback as typeof outputCallback
       }
       return Promise.resolve(mockUnlisten)

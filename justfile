@@ -100,6 +100,11 @@ test: test-rust test-frontend
 test-rust:
     cargo test --manifest-path src-tauri/Cargo.toml
 
+# Run backend terminal-bridge test suite only
+test-terminal-bridge-backend:
+    cargo test --manifest-path src-tauri/Cargo.toml terminal_bridge
+    cargo test --manifest-path src-tauri/Cargo.toml terminal::manager::tests
+
 # Run frontend unit tests
 test-frontend:
     bun test:run
@@ -199,6 +204,13 @@ types-check:
 # Reset mock directory from fixtures (copies fixtures → mock, makes .ralph visible)
 reset-mock:
     @bash scripts/reset-mock.sh
+
+# Rebuild Tauri backend, regenerate all fixtures, then copy fixtures -> mock
+refresh-tauri-fixtures-mock:
+    cargo build --manifest-path src-tauri/Cargo.toml
+    cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures generate_all_fixtures -- --ignored --nocapture --test-threads=1
+    bash scripts/verify-fixtures.sh
+    just reset-mock
 
 # List available mock projects
 list-mock:

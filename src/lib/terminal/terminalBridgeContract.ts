@@ -8,6 +8,6 @@ export const TERMINAL_BRIDGE_COMMANDS = {
 } as const
 
 export const TERMINAL_BRIDGE_EVENTS = {
-  output: 'terminal_bridge.output',
-  closed: 'terminal_bridge.closed'
+  output: 'terminal_bridge:output',
+  closed: 'terminal_bridge:closed'
 } as const

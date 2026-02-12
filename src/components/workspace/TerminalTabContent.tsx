@@ -14,14 +14,15 @@ export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
   useTabMeta(tab.id, tab.title, TerminalSquare)
   const terminalRef = useRef<XTerm | null>(null)
   const [sessionError, setSessionError] = useState<string | null>(null)
+  const [agentSessionPersisted, setAgentSessionPersisted] = useState(false)
+  const [bridgeStarted, setBridgeStarted] = useState(false)
   const agentSessionCreatedRef = useRef(false)
-  const agentSessionPersistedRef = useRef(false)
   const terminalReadyRef = useRef(false)
   const startMessageEmittedRef = useRef(false)
 
   const tryEmitSessionStartMessage = () => {
     if (startMessageEmittedRef.current) return
-    if (!(agentSessionPersistedRef.current && terminalReadyRef.current && terminalRef.current)) return
+    if (!(agentSessionPersisted && bridgeStarted && terminalReadyRef.current && terminalRef.current)) return
     startMessageEmittedRef.current = true
 
     // Claude startup repaints the screen; delayed write keeps this visible.
@@ -53,8 +54,7 @@ export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
       }
     })
       .then(() => {
-        agentSessionPersistedRef.current = true
-        tryEmitSessionStartMessage()
+        setAgentSessionPersisted(true)
       })
       .catch(err => {
         // Keep terminal usable even if session bookkeeping fails.
@@ -62,15 +62,21 @@ export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
       })
   }, [tab.id, tab.data?.taskId, tab.data?.model, tab.data?.thinking, tab.data?.initPrompt])
 
+  useEffect(() => {
+    tryEmitSessionStartMessage()
+  }, [agentSessionPersisted, bridgeStarted])
+
   const session = useTerminalSession(
     {
       sessionId: tab.id,
       mcpMode: tab.data?.taskId !== undefined ? undefined : 'interactive',
       taskId: tab.data?.taskId,
       model: tab.data?.model,
-      thinking: tab.data?.thinking
+      thinking: tab.data?.thinking,
+      enabled: agentSessionPersisted
     },
     {
+      onStarted: () => setBridgeStarted(true),
       onOutput: data => terminalRef.current?.write(data),
       onClosed: () => {
         terminalRef.current?.writeln('\r\n\x1b[2m[Session ended]\x1b[0m')
