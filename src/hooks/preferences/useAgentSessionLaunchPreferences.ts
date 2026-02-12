@@ -29,6 +29,7 @@ type AgentSessionLaunchPreferencesStore = AgentSessionLaunchConfig & {
   setEffort: (value: Effort) => void
   setThinking: (value: boolean) => void
   setPermissionLevel: (value: PermissionLevel) => void
+  setLaunchConfig: (value: AgentSessionLaunchConfig) => void
   getDefaultModel: (agent: Agent) => Model
 }
 
@@ -40,14 +41,46 @@ export const useAgentSessionLaunchPreferences = create<AgentSessionLaunchPrefere
       effort: 'medium',
       thinking: true,
       permissionLevel: 'balanced',
-      setAgent: value => set({ agent: value }),
+      setAgent: value =>
+        set(state => {
+          if (state.agent === value) return state
+          return { agent: value }
+        }),
       setModel: value => {
         if (!value.trim()) return
-        set({ model: value })
+        set(state => {
+          if (state.model === value) return state
+          return { model: value }
+        })
       },
-      setEffort: value => set({ effort: value }),
-      setThinking: value => set({ thinking: value }),
-      setPermissionLevel: value => set({ permissionLevel: value }),
+      setEffort: value =>
+        set(state => {
+          if (state.effort === value) return state
+          return { effort: value }
+        }),
+      setThinking: value =>
+        set(state => {
+          if (state.thinking === value) return state
+          return { thinking: value }
+        }),
+      setPermissionLevel: value =>
+        set(state => {
+          if (state.permissionLevel === value) return state
+          return { permissionLevel: value }
+        }),
+      setLaunchConfig: value =>
+        set(state => {
+          if (
+            state.agent === value.agent &&
+            state.model === value.model &&
+            state.effort === value.effort &&
+            state.thinking === value.thinking &&
+            state.permissionLevel === value.permissionLevel
+          ) {
+            return state
+          }
+          return value
+        }),
       getDefaultModel
     }),
     {

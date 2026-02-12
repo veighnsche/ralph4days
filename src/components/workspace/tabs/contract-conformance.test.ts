@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 const REQUIRED_TAB_FILES = ['constants.ts', 'content.tsx', 'factory.ts', 'index.ts', 'module.ts', 'schema.ts'] as const
 const OPTIONAL_TAB_DIRS = new Set(['components', 'hooks'])
-const OPTIONAL_TAB_FILES = new Set(['state.ts', 'store.tsx'])
+const OPTIONAL_TAB_FILES = new Set(['selectors.ts', 'state.ts', 'store.tsx'])
 
 function tabsRootDir() {
   const currentFile = fileURLToPath(import.meta.url)

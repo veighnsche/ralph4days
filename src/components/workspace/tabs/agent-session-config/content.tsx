@@ -1,5 +1,4 @@
 import { Bot } from 'lucide-react'
-import { useMemo } from 'react'
 import { InlineError } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { FormDescription, FormHeader, FormTitle } from '@/components/ui/form-header'
@@ -10,14 +9,14 @@ import { useTabMeta } from '@/hooks/workspace'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import { AgentProviderPicker, ModelPicker, PermissionLevelControls } from './components'
 import { useAgentSessionConfigController } from './hooks'
+import { useAgentSessionConfigLaunchState } from './hooks/useAgentSessionConfigTabState'
 import type { AgentSessionConfigTabParams } from './schema'
 import { buildInitialLaunchConfig } from './state'
-import { AgentSessionConfigStoreProvider, useAgentSessionConfigStore } from './store'
+import { AgentSessionConfigStoreProvider } from './store'
 
 function AgentSessionConfigTabBody({ tab }: { tab: WorkspaceTab }) {
-  const { loadingModels, error, runSession } = useAgentSessionConfigController(tab)
-  const model = useAgentSessionConfigStore(state => state.model)
-  const models = useAgentSessionConfigStore(state => state.models)
+  const { models, loadingModels, error, runSession } = useAgentSessionConfigController(tab)
+  const { model } = useAgentSessionConfigLaunchState()
 
   return (
     <div className="h-full flex flex-col">
@@ -31,7 +30,7 @@ function AgentSessionConfigTabBody({ tab }: { tab: WorkspaceTab }) {
       <ScrollArea className="flex-1 min-h-0">
         <div className="px-4 py-4 space-y-4">
           <AgentProviderPicker />
-          <ModelPicker />
+          <ModelPicker models={models} loadingModels={loadingModels} />
         </div>
       </ScrollArea>
       <Separator />
@@ -64,15 +63,11 @@ export function AgentSessionConfigTabContent({
   const thinking = useAgentSessionLaunchPreferences(s => s.thinking)
   const permissionLevel = useAgentSessionLaunchPreferences(s => s.permissionLevel)
 
-  const initialConfig = useMemo(
-    () =>
-      buildInitialLaunchConfig(params, getDefaultModel, {
-        effort,
-        thinking,
-        permissionLevel
-      }),
-    [effort, getDefaultModel, params, permissionLevel, thinking]
-  )
+  const initialConfig = buildInitialLaunchConfig(params, getDefaultModel, {
+    effort,
+    thinking,
+    permissionLevel
+  })
 
   return (
     <AgentSessionConfigStoreProvider initialConfig={initialConfig}>

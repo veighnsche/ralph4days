@@ -2,36 +2,43 @@ import { createContext, type ReactNode, useContext, useRef } from 'react'
 import { useStore } from 'zustand'
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { AgentSessionLaunchConfig } from '@/hooks/preferences'
-import type { TerminalBridgeModelOption } from '@/types/generated'
 
-type AgentSessionConfigStoreState = AgentSessionLaunchConfig & {
-  models: TerminalBridgeModelOption[]
-  loadingModels: boolean
-  error: string | null
+export type AgentSessionConfigStoreState = AgentSessionLaunchConfig & {
   setAgent: (agent: AgentSessionLaunchConfig['agent']) => void
   setModel: (model: string) => void
   setEffort: (effort: AgentSessionLaunchConfig['effort']) => void
   setThinking: (thinking: boolean) => void
   setPermissionLevel: (permissionLevel: AgentSessionLaunchConfig['permissionLevel']) => void
-  setModels: (models: TerminalBridgeModelOption[]) => void
-  setLoadingModels: (loading: boolean) => void
-  setError: (error: string | null) => void
 }
 
-function createAgentSessionConfigStore(initial: AgentSessionLaunchConfig) {
+export function createAgentSessionConfigStore(initial: AgentSessionLaunchConfig) {
   return createStore<AgentSessionConfigStoreState>()(set => ({
     ...initial,
-    models: [],
-    loadingModels: true,
-    error: null,
-    setAgent: agent => set({ agent }),
-    setModel: model => set({ model }),
-    setEffort: effort => set({ effort }),
-    setThinking: thinking => set({ thinking }),
-    setPermissionLevel: permissionLevel => set({ permissionLevel }),
-    setModels: models => set({ models }),
-    setLoadingModels: loadingModels => set({ loadingModels }),
-    setError: error => set({ error })
+    setAgent: agent =>
+      set(state => {
+        if (state.agent === agent) return state
+        return { agent }
+      }),
+    setModel: model =>
+      set(state => {
+        if (state.model === model) return state
+        return { model }
+      }),
+    setEffort: effort =>
+      set(state => {
+        if (state.effort === effort) return state
+        return { effort }
+      }),
+    setThinking: thinking =>
+      set(state => {
+        if (state.thinking === thinking) return state
+        return { thinking }
+      }),
+    setPermissionLevel: permissionLevel =>
+      set(state => {
+        if (state.permissionLevel === permissionLevel) return state
+        return { permissionLevel }
+      })
   }))
 }
 

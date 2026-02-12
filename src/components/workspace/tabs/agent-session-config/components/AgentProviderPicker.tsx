@@ -2,7 +2,7 @@ import { Field, FieldLabel } from '@/components/ui/field'
 import { SelectableCard } from '@/components/ui/selectable-card'
 import type { Agent } from '@/hooks/preferences'
 import { AGENT_OPTIONS, AGENT_PROVIDER_META } from '../constants'
-import { useAgentSessionConfigStore } from '../store'
+import { useAgentSessionConfigActions, useAgentSessionConfigLaunchState } from '../hooks/useAgentSessionConfigTabState'
 
 function AgentProviderCard({
   agentOption,
@@ -53,8 +53,8 @@ function AgentProviderCard({
 }
 
 export function AgentProviderPicker() {
-  const agent = useAgentSessionConfigStore(state => state.agent)
-  const setAgent = useAgentSessionConfigStore(state => state.setAgent)
+  const { agent } = useAgentSessionConfigLaunchState()
+  const { setAgent } = useAgentSessionConfigActions()
 
   return (
     <Field className="gap-0">

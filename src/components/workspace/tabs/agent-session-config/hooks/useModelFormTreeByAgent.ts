@@ -1,37 +1,23 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { terminalBridgeListModelFormTree } from '@/lib/terminal/terminalBridgeClient'
 import type { TerminalBridgeModelOption } from '@/types/generated'
+import { MODEL_FORM_TREE_QUERY_KEY } from '../constants'
 import { groupModelsByAgent } from '../state'
 
 export function useModelFormTreeByAgent() {
-  const [formTreeByAgent, setFormTreeByAgent] = useState<Record<string, TerminalBridgeModelOption[]>>({})
-  const [formTreeLoading, setFormTreeLoading] = useState(true)
-  const [formTreeError, setFormTreeError] = useState<string | null>(null)
+  const query = useQuery({
+    queryKey: MODEL_FORM_TREE_QUERY_KEY,
+    queryFn: terminalBridgeListModelFormTree,
+    staleTime: 0,
+    gcTime: 5 * 60 * 1000,
+    retry: false,
+    refetchOnWindowFocus: false,
+    select: result => groupModelsByAgent(result.providers)
+  })
 
-  useEffect(() => {
-    let active = true
-
-    const load = async () => {
-      setFormTreeLoading(true)
-      setFormTreeError(null)
-      try {
-        const result = await terminalBridgeListModelFormTree()
-        if (!active) return
-        setFormTreeByAgent(groupModelsByAgent(result.providers))
-      } catch (error) {
-        if (!active) return
-        setFormTreeByAgent({})
-        setFormTreeError(`Failed to load model form tree: ${String(error)}`)
-      } finally {
-        if (active) setFormTreeLoading(false)
-      }
-    }
-
-    void load()
-    return () => {
-      active = false
-    }
-  }, [])
+  const formTreeByAgent: Record<string, TerminalBridgeModelOption[]> = query.data ?? {}
+  const formTreeLoading = query.isPending
+  const formTreeError = query.error ? `Failed to load model form tree: ${String(query.error)}` : null
 
   return { formTreeByAgent, formTreeLoading, formTreeError }
 }

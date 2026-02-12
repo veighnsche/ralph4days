@@ -34,6 +34,8 @@ Use `just` as the primary task runner (`just --list`).
 - Prefer simple defaults and explicit state contracts over defensive branching.
 - Avoid compatibility layers for low-value local data unless there is clear product impact.
 - Any compatibility path must have documented value, owner, and removal criteria.
+- Zustand state updates must no-op on same-value writes (no redundant transitions).
+- Any store changed in a PR must include/maintain tests that assert no-op writes produce zero transitions.
 
 ## Agent Failure Mode
 - Common failure mode: under uncertainty, agents overproduce defensive fallbacks to avoid visible breakage.

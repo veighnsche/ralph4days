@@ -108,7 +108,10 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
   },
 
   switchTab: tabId => {
-    set({ activeTabId: tabId })
+    set(state => {
+      if (state.activeTabId === tabId) return state
+      return { activeTabId: tabId }
+    })
   },
 
   closeAllExcept: tabId => {

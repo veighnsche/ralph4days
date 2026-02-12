@@ -5,8 +5,8 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import type { Effort } from '@/hooks/preferences'
 import type { TerminalBridgeModelOption } from '@/types/generated'
+import { useAgentSessionConfigActions, useAgentSessionConfigLaunchState } from '../hooks/useAgentSessionConfigTabState'
 import { asEffort } from '../state'
-import { useAgentSessionConfigStore } from '../store'
 
 function ModelCard({
   modelOption,
@@ -105,15 +105,15 @@ function ModelSectionHeader({
   )
 }
 
-export function ModelPicker() {
-  const models = useAgentSessionConfigStore(state => state.models)
-  const model = useAgentSessionConfigStore(state => state.model)
-  const effort = useAgentSessionConfigStore(state => state.effort)
-  const thinking = useAgentSessionConfigStore(state => state.thinking)
-  const loadingModels = useAgentSessionConfigStore(state => state.loadingModels)
-  const setModel = useAgentSessionConfigStore(state => state.setModel)
-  const setEffort = useAgentSessionConfigStore(state => state.setEffort)
-  const setThinking = useAgentSessionConfigStore(state => state.setThinking)
+export function ModelPicker({
+  models,
+  loadingModels
+}: {
+  models: TerminalBridgeModelOption[]
+  loadingModels: boolean
+}) {
+  const { model, effort, thinking } = useAgentSessionConfigLaunchState()
+  const { setModel, setEffort, setThinking } = useAgentSessionConfigActions()
 
   return (
     <div className="flex flex-col gap-1" role="radiogroup" aria-label="Model">

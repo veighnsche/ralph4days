@@ -1,19 +1,18 @@
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import type { PermissionLevel } from '@/hooks/preferences'
-import { PERMISSION_LEVEL_OPTIONS } from '../constants'
-import { useAgentSessionConfigStore } from '../store'
+import { isPermissionLevel, PERMISSION_LEVEL_OPTIONS } from '../constants'
+import { useAgentSessionConfigActions, useAgentSessionConfigLaunchState } from '../hooks/useAgentSessionConfigTabState'
 
 export function PermissionLevelControls() {
-  const permissionLevel = useAgentSessionConfigStore(state => state.permissionLevel)
-  const setPermissionLevel = useAgentSessionConfigStore(state => state.setPermissionLevel)
+  const { permissionLevel } = useAgentSessionConfigLaunchState()
+  const { setPermissionLevel } = useAgentSessionConfigActions()
 
   return (
     <ToggleGroup
       type="single"
       value={permissionLevel}
       onValueChange={value => {
-        if (value === '') return
-        setPermissionLevel(value as PermissionLevel)
+        if (value === '' || !isPermissionLevel(value)) return
+        setPermissionLevel(value)
       }}
       variant="outline"
       aria-label="Permission Level">
