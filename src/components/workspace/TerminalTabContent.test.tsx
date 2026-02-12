@@ -101,4 +101,27 @@ describe('TerminalTabContent', () => {
     expect(config.humanSession?.kind).toBe('manual')
     expect(config.humanSession?.agent).toBe('claude')
   })
+
+  it('supports codex agent launch metadata', async () => {
+    const codexTab: WorkspaceTab = {
+      ...mockTab,
+      id: 'test-terminal-codex',
+      data: {
+        agent: 'codex',
+        model: 'gpt-5-codex',
+        thinking: true
+      }
+    }
+
+    render(<TerminalTabContent tab={codexTab} />)
+    await waitFor(() => expect(useTerminalSessionMock).toHaveBeenCalled())
+
+    const config = useTerminalSessionMock.mock.calls[0][0] as {
+      agent?: string
+      humanSession?: { agent?: string; launchCommand?: string }
+    }
+    expect(config.agent).toBe('codex')
+    expect(config.humanSession?.agent).toBe('codex')
+    expect(config.humanSession?.launchCommand).toBe('codex --model gpt-5-codex')
+  })
 })

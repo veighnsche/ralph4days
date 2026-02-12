@@ -45,6 +45,7 @@ describe('useTerminalSession', () => {
     await waitFor(() => {
       expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_start_session', {
         sessionId: 'test-session',
+        agent: 'claude',
         mcpMode: 'interactive',
         model: 'haiku',
         thinking: true
@@ -288,6 +289,7 @@ describe('useTerminalSession', () => {
     await waitFor(() => {
       expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_start_session', {
         sessionId: 'test',
+        agent: 'claude',
         mcpMode: 'interactive',
         model: undefined,
         thinking: undefined

@@ -14,19 +14,21 @@ export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
   const terminalRef = useRef<XTerm | null>(null)
   const [sessionError, setSessionError] = useState<string | null>(null)
   const kind = tab.data?.taskId != null ? 'task_execution' : 'manual'
+  const agent = tab.data?.agent ?? 'claude'
   const model = tab.data?.model
-  const launchCommand = model != null ? `claude --model ${model}${tab.data?.thinking ? ' --thinking' : ''}` : 'claude'
+  const launchCommand = buildLaunchCommand(agent, model)
 
   const session = useTerminalSession(
     {
       sessionId: tab.id,
+      agent,
       mcpMode: tab.data?.taskId !== undefined ? undefined : 'interactive',
       taskId: tab.data?.taskId,
       model: tab.data?.model,
       thinking: tab.data?.thinking,
       humanSession: {
         kind,
-        agent: 'claude',
+        agent,
         launchCommand,
         postStartPreamble: undefined,
         initPrompt: tab.data?.initPrompt ?? undefined
@@ -77,4 +79,11 @@ export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
       </div>
     </div>
   )
+}
+
+function buildLaunchCommand(agent: string, model?: string) {
+  if (agent === 'codex') {
+    return model != null ? `codex --model ${model}` : 'codex'
+  }
+  return model != null ? `claude --model ${model}` : 'claude'
 }

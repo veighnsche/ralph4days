@@ -7,6 +7,7 @@ import type { FeatureData as Feature, Task } from '@/types/generated'
 
 export type TabType =
   | 'terminal'
+  | 'terminal-run-form'
   | 'task-form'
   | 'feature-form'
   | 'discipline-form'
@@ -27,6 +28,7 @@ export interface WorkspaceTab {
     entityId?: number | string
     entity?: Task | Feature | DisciplineConfig
     sessionId?: string // For output tabs
+    agent?: string // For terminal tabs (claude, codex)
     model?: string // For terminal tabs (haiku, sonnet, opus)
     thinking?: boolean // For terminal tabs (extended thinking)
     taskId?: number // For task execution terminals

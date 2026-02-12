@@ -1,2 +1,2 @@
-export type { Model } from './useModelThinkingPreferences'
+export type { Agent, Model } from './useModelThinkingPreferences'
 export { useModelThinkingPreferences } from './useModelThinkingPreferences'

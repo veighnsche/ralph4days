@@ -4,6 +4,7 @@ import type {
   PtyClosedEvent,
   PtyOutputEvent,
   TerminalBridgeEmitSystemMessageArgs,
+  TerminalBridgeListModelsResult,
   TerminalBridgeResizeArgs,
   TerminalBridgeSendInputArgs,
   TerminalBridgeStartSessionArgs,
@@ -66,6 +67,12 @@ export async function terminalBridgeStartSession(params: TerminalBridgeStartSess
 export async function terminalBridgeStartTaskSession(params: TerminalBridgeStartTaskSessionArgs) {
   terminalBridgeDebugLog('tx.startTaskSession', params)
   await invoke(TERMINAL_BRIDGE_COMMANDS.startTaskSession, params)
+}
+
+export async function terminalBridgeListModels(agent?: string): Promise<TerminalBridgeListModelsResult> {
+  const params = { agent }
+  terminalBridgeDebugLog('tx.listModels', params)
+  return invoke<TerminalBridgeListModelsResult>(TERMINAL_BRIDGE_COMMANDS.listModels, params)
 }
 
 export async function terminalBridgeStartHumanSession(

@@ -3,6 +3,7 @@ import {
   terminalBridgeEmitSystemMessage,
   terminalBridgeListenSessionClosed,
   terminalBridgeListenSessionOutput,
+  terminalBridgeListModels,
   terminalBridgeResize,
   terminalBridgeSendInput,
   terminalBridgeStartSession,
@@ -87,6 +88,14 @@ describe('terminalBridgeClient', () => {
       sessionId: 's1',
       text: '[session started]\r\n'
     })
+  })
+
+  it('maps model-list command', async () => {
+    mockInvoke.mockResolvedValue({ agent: 'claude', models: ['claude-opus-4'] })
+    const result = await terminalBridgeListModels('claude')
+
+    expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_list_models', { agent: 'claude' })
+    expect(result).toEqual({ agent: 'claude', models: ['claude-opus-4'] })
   })
 
   it('filters output events by session id', async () => {

@@ -1,30 +1,25 @@
 import { ChevronDown, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { type Model, useModelThinkingPreferences } from '@/hooks/preferences'
+import { type Agent, type Model, useModelThinkingPreferences } from '@/hooks/preferences'
 import { cn } from '@/lib/utils'
 
 export type { Model } from '@/hooks/preferences'
 
 interface ModelThinkingTabButtonProps {
-  onNewTab: (model: Model, thinking: boolean) => void
+  onNewTab: (agent: Agent, model: Model, thinking: boolean) => void
+  onOpenRunForm: (agent: Agent, model: Model, thinking: boolean) => void
 }
 
-export function ModelThinkingTabButton({ onNewTab }: ModelThinkingTabButtonProps) {
-  const { model, setModel, thinking, setThinking } = useModelThinkingPreferences()
+export function ModelThinkingTabButton({ onNewTab, onOpenRunForm }: ModelThinkingTabButtonProps) {
+  const { agent, model, thinking } = useModelThinkingPreferences()
 
   const handleNewTab = () => {
-    onNewTab(model, thinking)
+    onNewTab(agent, model, thinking)
+  }
+
+  const handleOpenRunForm = () => {
+    onOpenRunForm(agent, model, thinking)
   }
 
   return (
@@ -47,7 +42,10 @@ export function ModelThinkingTabButton({ onNewTab }: ModelThinkingTabButtonProps
           <TooltipContent>
             <div className="space-y-1">
               <div>
-                <span className="font-semibold">Model:</span> {model.charAt(0).toUpperCase() + model.slice(1)}
+                <span className="font-semibold">Agent:</span> {agent}
+              </div>
+              <div>
+                <span className="font-semibold">Model:</span> {model}
               </div>
               <div>
                 <span className="font-semibold">Thinking:</span> {thinking ? 'On' : 'Off'}
@@ -56,35 +54,17 @@ export function ModelThinkingTabButton({ onNewTab }: ModelThinkingTabButtonProps
           </TooltipContent>
         </Tooltip>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(
-                'h-7 px-1 rounded-md rounded-l-none border-l border-border/50',
-                'text-muted-foreground hover:text-foreground hover:bg-accent/50'
-              )}>
-              <ChevronDown className="h-3 w-3" />
-              <span className="sr-only">Terminal options</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuLabel>Model</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={model} onValueChange={v => setModel(v as Model)}>
-              <DropdownMenuRadioItem value="haiku">Haiku (fast)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="sonnet">Sonnet (balanced)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="opus">Opus (smart)</DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-
-            <DropdownMenuSeparator />
-
-            <DropdownMenuLabel>Options</DropdownMenuLabel>
-            <DropdownMenuCheckboxItem checked={thinking} onCheckedChange={setThinking}>
-              Extended thinking
-            </DropdownMenuCheckboxItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleOpenRunForm}
+          className={cn(
+            'h-7 px-1 rounded-md rounded-l-none border-l border-border/50',
+            'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+          )}>
+          <ChevronDown className="h-3 w-3" />
+          <span className="sr-only">Open run form</span>
+        </Button>
       </div>
     </TooltipProvider>
   )

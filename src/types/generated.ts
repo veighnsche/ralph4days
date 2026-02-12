@@ -221,6 +221,7 @@ export type TaskSignalSummary = {
 }
 export type TaskStatus = 'draft' | 'pending' | 'in_progress' | 'done' | 'blocked' | 'skipped'
 export type TerminalBridgeEmitSystemMessageArgs = { sessionId: string; text: string }
+export type TerminalBridgeListModelsResult = { agent: string; models: string[] }
 export type TerminalBridgeResizeArgs = { sessionId: string; cols: number; rows: number }
 export type TerminalBridgeSendInputArgs = { sessionId: string; data: number[] }
 export type TerminalBridgeStartHumanSessionArgs = {
@@ -236,12 +237,21 @@ export type TerminalBridgeStartHumanSessionArgs = {
   thinking?: boolean
 }
 export type TerminalBridgeStartHumanSessionResult = { agentSessionId: string; agentSessionNumber: number }
-export type TerminalBridgeStartSessionArgs = { sessionId: string; mcpMode?: string; model?: string; thinking?: boolean }
+export type TerminalBridgeStartSessionArgs = {
+  sessionId: string
+  agent?: string
+  mcpMode?: string
+  model?: string
+  thinking?: boolean
+  postStartPreamble?: string
+}
 export type TerminalBridgeStartTaskSessionArgs = {
   sessionId: string
   taskId: number
+  agent?: string
   model?: string
   thinking?: boolean
+  postStartPreamble?: string
 }
 export type TerminalBridgeTerminateArgs = { sessionId: string }
 export type VisualIdentityData = { style: string; theme: string; tone: string; references: string }

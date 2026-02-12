@@ -7,6 +7,7 @@ import {
   TaskFormTabContent,
   TerminalTabContent
 } from '@/components/workspace'
+import type { Agent } from '@/hooks/preferences'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { FeatureData, Task } from '@/types/generated'
 
@@ -62,13 +63,15 @@ export function useWorkspaceActions() {
         data: { entityId: task.id, entity: task }
       }),
 
-    openTerminalTab: (model: string, thinking: boolean, initPrompt?: string) =>
-      openTab({
+    openTerminalTab: (agent: Agent, model: string, thinking: boolean, initPrompt?: string) => {
+      const agentLabel = agent === 'codex' ? 'Codex' : 'Claude'
+      return openTab({
         type: 'terminal',
         component: TerminalTabContent,
-        title: `Claude (${model})`,
+        title: `${agentLabel} (${model})`,
         closeable: true,
-        data: { model, thinking, initPrompt }
+        data: { agent, model, thinking, initPrompt }
       })
+    }
   }
 }

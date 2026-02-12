@@ -12,6 +12,7 @@ import {
 
 export interface TerminalSessionConfig {
   sessionId: string
+  agent?: string
   mcpMode?: string
   taskId?: number
   model?: string | null
@@ -151,6 +152,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
       terminalBridgeStartTaskSession({
         sessionId: config.sessionId,
         taskId: config.taskId,
+        agent: config.agent ?? 'claude',
         model: config.model ?? undefined,
         thinking: config.thinking ?? undefined
       })
@@ -162,6 +164,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     } else {
       terminalBridgeStartSession({
         sessionId: config.sessionId,
+        agent: config.agent ?? 'claude',
         mcpMode: config.mcpMode || 'interactive',
         model: config.model ?? undefined,
         thinking: config.thinking ?? undefined
@@ -176,6 +179,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     config.sessionId,
     config.mcpMode,
     config.taskId,
+    config.agent,
     config.model,
     config.thinking,
     config.humanSession?.kind,

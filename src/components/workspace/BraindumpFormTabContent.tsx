@@ -7,7 +7,7 @@
 import { Brain } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { type Model, ModelThinkingPicker } from '@/components/model-thinking'
+import { type Agent, type Model, ModelThinkingPicker } from '@/components/model-thinking'
 import { InlineError } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { FormDescription, FormHeader, FormTitle } from '@/components/ui/form-header'
@@ -70,7 +70,7 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
     toast.success('Braindump sent to Claude')
   }
 
-  const handleSubmit = async (model: Model, thinking: boolean) => {
+  const handleSubmit = async (agent: Agent, model: Model, thinking: boolean) => {
     setError(null)
     const trimmedBraindump = braindump.trim()
     if (!trimmedBraindump) {
@@ -82,7 +82,7 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
     setIsSubmitting(true)
 
     try {
-      const terminalId = openTerminalTab(model, thinking, trimmedBraindump)
+      const terminalId = openTerminalTab(agent, model, thinking, trimmedBraindump)
       await sendToTerminal(terminalId, trimmedBraindump)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
@@ -139,7 +139,7 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
 
         <ModelThinkingPicker
           onAction={handleSubmit}
-          actionLabel={isSubmitting ? 'Sending...' : 'Send to Claude'}
+          actionLabel={isSubmitting ? 'Sending...' : 'Send to Agent'}
           disabled={isSubmitting || !braindump.trim()}
         />
       </div>

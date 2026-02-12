@@ -1,7 +1,7 @@
-import { type Model, ModelThinkingTabButton } from '@/components/model-thinking'
+import { type Agent, type Model, ModelThinkingTabButton } from '@/components/model-thinking'
 import { ErrorBoundary } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { TerminalTabContent } from '@/components/workspace'
+import { TerminalRunFormTabContent, TerminalTabContent } from '@/components/workspace'
 import { useBrowserTabsActions } from '@/hooks/workspace'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { BrowserTab } from './BrowserTabs'
@@ -13,16 +13,28 @@ export function WorkspacePanel() {
   const openTab = useWorkspaceStore(s => s.openTab)
   const tabActions = useBrowserTabsActions()
 
-  const handleNewTab = (model: Model, thinking: boolean) => {
+  const handleNewTab = (agent: Agent, model: Model, thinking: boolean) => {
+    const agentLabel = agent === 'codex' ? 'Codex' : 'Claude'
     openTab({
       type: 'terminal',
       component: TerminalTabContent,
-      title: `Claude (${model})`,
+      title: `${agentLabel} (${model})`,
       closeable: true,
       data: {
+        agent,
         model,
         thinking
       }
+    })
+  }
+
+  const handleOpenRunForm = (agent: Agent, model: Model, thinking: boolean) => {
+    openTab({
+      type: 'terminal-run-form',
+      component: TerminalRunFormTabContent,
+      title: 'Run Agent',
+      closeable: true,
+      data: { agent, model, thinking }
     })
   }
 
@@ -33,7 +45,7 @@ export function WorkspacePanel() {
     closeable: t.closeable
   }))
 
-  const newTabButton = <ModelThinkingTabButton onNewTab={handleNewTab} />
+  const newTabButton = <ModelThinkingTabButton onNewTab={handleNewTab} onOpenRunForm={handleOpenRunForm} />
 
   return (
     <div className="flex h-full flex-col">
