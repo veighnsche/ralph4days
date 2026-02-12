@@ -1,4 +1,4 @@
-use super::state::{with_db, AppState};
+use super::state::{AppState, CommandContext, ProjectSessionService};
 use crate::terminal::{
     PtyOutputEvent, SessionConfig, TerminalBridgeEmitSystemMessageArgs, TerminalBridgeResizeArgs,
     TerminalBridgeSendInputArgs, TerminalBridgeStartHumanSessionArgs,
@@ -6,7 +6,6 @@ use crate::terminal::{
     TerminalBridgeStartTaskSessionArgs, TerminalBridgeTerminateArgs, TERMINAL_BRIDGE_OUTPUT_EVENT,
 };
 use base64::{engine::general_purpose::STANDARD, Engine};
-use ralph_errors::{codes, ToStringErr};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -15,11 +14,7 @@ use tauri::{AppHandle, Emitter, State};
 static AGENT_SESSION_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 fn locked_project_path(state: &AppState) -> Result<PathBuf, String> {
-    let locked = state.locked_project.lock().err_str(codes::INTERNAL)?;
-    locked
-        .as_ref()
-        .cloned()
-        .ok_or_else(|| ralph_errors::err_string(codes::PROJECT_LOCK, "No project locked"))
+    ProjectSessionService::new(state).locked_project_path()
 }
 
 fn build_system_message_event(session_id: String, text: String) -> PtyOutputEvent {
@@ -296,7 +291,9 @@ pub fn terminal_bridge_start_human_session(
         "terminal_bridge_start_human_session.created_agent_session_id"
     );
 
-    with_db(&state, |db| {
+    let command_ctx = CommandContext::from_tauri_state(&state);
+
+    let agent_session_number = command_ctx.db_tx(|db| {
         db.create_human_agent_session(sqlite_db::AgentSessionCreateInput {
             id: agent_session_id.clone(),
             kind: args.kind.clone(),
@@ -306,10 +303,8 @@ pub fn terminal_bridge_start_human_session(
             launch_command: args.launch_command.clone(),
             post_start_preamble: args.post_start_preamble.clone(),
             init_prompt: args.init_prompt.clone(),
-        })
-    })?;
+        })?;
 
-    let agent_session_number = with_db(&state, |db| {
         db.get_agent_session_by_id(&agent_session_id)
             .map(|s| s.session_number)
             .ok_or_else(|| {
@@ -342,7 +337,7 @@ pub fn terminal_bridge_start_human_session(
     };
 
     if let Err(err) = start_result {
-        let _ = with_db(&state, |db| {
+        let _ = command_ctx.db(|db| {
             db.update_human_agent_session(sqlite_db::AgentSessionUpdateInput {
                 id: agent_session_id.clone(),
                 kind: None,

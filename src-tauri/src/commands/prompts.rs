@@ -1,4 +1,4 @@
-use super::state::{get_locked_project_path, with_db, AppState};
+use super::state::{AppState, CommandContext};
 use ralph_macros::ipc_type;
 use sqlite_db::{PromptBuilderConfigData, PromptBuilderConfigInput};
 use tauri::State;
@@ -34,7 +34,8 @@ pub fn preview_custom_prompt_builder(
     sections: Vec<SectionConfig>,
     user_input: Option<String>,
 ) -> Result<PromptPreview, String> {
-    let project_path = get_locked_project_path(&state)?;
+    let ctx = CommandContext::from_tauri_state(&state);
+    let project_path = ctx.locked_project_path()?;
 
     let overrides: std::collections::HashMap<String, String> = sections
         .iter()
@@ -80,7 +81,7 @@ pub fn preview_custom_prompt_builder(
 
 #[tauri::command]
 pub fn list_prompt_builder_configs(state: State<'_, AppState>) -> Result<Vec<String>, String> {
-    with_db(&state, sqlite_db::SqliteDb::list_prompt_builder_configs)
+    CommandContext::from_tauri_state(&state).db(sqlite_db::SqliteDb::list_prompt_builder_configs)
 }
 
 #[tauri::command]
@@ -88,7 +89,7 @@ pub fn get_prompt_builder_config(
     state: State<'_, AppState>,
     name: String,
 ) -> Result<Option<PromptBuilderConfigData>, String> {
-    with_db(&state, |db| db.get_prompt_builder_config(&name))
+    CommandContext::from_tauri_state(&state).db(|db| db.get_prompt_builder_config(&name))
 }
 
 #[tauri::command]
@@ -96,7 +97,7 @@ pub fn save_prompt_builder_config(
     state: State<'_, AppState>,
     config: PromptBuilderConfigInput,
 ) -> Result<(), String> {
-    with_db(&state, |db| db.save_prompt_builder_config(config))
+    CommandContext::from_tauri_state(&state).db(|db| db.save_prompt_builder_config(config))
 }
 
 #[tauri::command]
@@ -104,5 +105,5 @@ pub fn delete_prompt_builder_config(
     state: State<'_, AppState>,
     name: String,
 ) -> Result<(), String> {
-    with_db(&state, |db| db.delete_prompt_builder_config(&name))
+    CommandContext::from_tauri_state(&state).db(|db| db.delete_prompt_builder_config(&name))
 }

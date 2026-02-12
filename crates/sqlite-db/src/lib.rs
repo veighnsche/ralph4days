@@ -85,6 +85,33 @@ impl SqliteDb {
         self.clock.now()
     }
 
+    pub fn with_transaction<T, F>(&self, f: F) -> Result<T, String>
+    where
+        F: FnOnce(&Self) -> Result<T, String>,
+    {
+        self.conn
+            .execute_batch("BEGIN IMMEDIATE TRANSACTION;")
+            .ralph_err(codes::DB_WRITE, "Failed to start transaction")?;
+
+        match f(self) {
+            Ok(value) => {
+                self.conn
+                    .execute_batch("COMMIT;")
+                    .ralph_err(codes::DB_WRITE, "Failed to commit transaction")?;
+                Ok(value)
+            }
+            Err(err) => {
+                if let Err(rollback_err) = self.conn.execute_batch("ROLLBACK;") {
+                    return Err(format!(
+                        "{err} (rollback failed: [R-{}] {rollback_err})",
+                        codes::DB_WRITE
+                    ));
+                }
+                Err(err)
+            }
+        }
+    }
+
     // ⚠️ WARNING: DO NOT add execute_raw() or any raw SQL execution method here!
     //
     // Rationale: Raw SQL execution bypasses type safety, validation, and the proper

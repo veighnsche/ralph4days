@@ -37,6 +37,110 @@ impl Drop for AppState {
     }
 }
 
+pub(super) struct ProjectSessionService<'a> {
+    app_state: &'a AppState,
+}
+
+impl<'a> ProjectSessionService<'a> {
+    pub(super) fn new(app_state: &'a AppState) -> Self {
+        Self { app_state }
+    }
+
+    pub(super) fn with_db<T, F>(&self, f: F) -> Result<T, String>
+    where
+        F: FnOnce(&SqliteDb) -> Result<T, String>,
+    {
+        let guard = self.app_state.db.lock().err_str(codes::INTERNAL)?;
+        let db = guard.as_ref().ok_or_else(|| {
+            ralph_errors::err_string(codes::PROJECT_LOCK, "No project locked (database not open)")
+        })?;
+        f(db)
+    }
+
+    pub(super) fn with_db_tx<T, F>(&self, f: F) -> Result<T, String>
+    where
+        F: FnOnce(&SqliteDb) -> Result<T, String>,
+    {
+        self.with_db(|db| TransactionService::new(db).run(f))
+    }
+
+    pub(super) fn locked_project_path(&self) -> Result<PathBuf, String> {
+        let locked = self
+            .app_state
+            .locked_project
+            .lock()
+            .err_str(codes::INTERNAL)?;
+        locked
+            .as_ref()
+            .cloned()
+            .ok_or_else(|| ralph_errors::err_string(codes::PROJECT_LOCK, "No project locked"))
+    }
+
+    pub(super) fn maybe_locked_project_path(&self) -> Result<Option<PathBuf>, String> {
+        let locked = self
+            .app_state
+            .locked_project
+            .lock()
+            .err_str(codes::INTERNAL)?;
+        Ok(locked.as_ref().cloned())
+    }
+}
+
+pub(super) struct TransactionService<'a> {
+    db: &'a SqliteDb,
+}
+
+impl<'a> TransactionService<'a> {
+    pub(super) fn new(db: &'a SqliteDb) -> Self {
+        Self { db }
+    }
+
+    pub(super) fn run<T, F>(&self, f: F) -> Result<T, String>
+    where
+        F: FnOnce(&SqliteDb) -> Result<T, String>,
+    {
+        self.db.with_transaction(f)
+    }
+}
+
+pub(super) struct CommandContext<'a> {
+    session: ProjectSessionService<'a>,
+}
+
+impl<'a> CommandContext<'a> {
+    pub(super) fn new(app_state: &'a AppState) -> Self {
+        Self {
+            session: ProjectSessionService::new(app_state),
+        }
+    }
+
+    pub(super) fn from_tauri_state(state: &'a State<'_, AppState>) -> Self {
+        Self::new(state.inner())
+    }
+
+    pub(super) fn db<T, F>(&self, f: F) -> Result<T, String>
+    where
+        F: FnOnce(&SqliteDb) -> Result<T, String>,
+    {
+        self.session.with_db(f)
+    }
+
+    pub(super) fn db_tx<T, F>(&self, f: F) -> Result<T, String>
+    where
+        F: FnOnce(&SqliteDb) -> Result<T, String>,
+    {
+        self.session.with_db_tx(f)
+    }
+
+    pub(super) fn locked_project_path(&self) -> Result<PathBuf, String> {
+        self.session.locked_project_path()
+    }
+
+    pub(super) fn maybe_locked_project_path(&self) -> Result<Option<PathBuf>, String> {
+        self.session.maybe_locked_project_path()
+    }
+}
+
 impl AppState {
     pub(super) fn build_prompt_context(
         &self,
@@ -162,21 +266,23 @@ impl AppState {
     }
 }
 
+#[allow(dead_code)]
 pub(super) fn with_db<T, F>(state: &State<'_, AppState>, f: F) -> Result<T, String>
 where
     F: FnOnce(&SqliteDb) -> Result<T, String>,
 {
-    let guard = state.db.lock().err_str(codes::INTERNAL)?;
-    let db = guard.as_ref().ok_or_else(|| {
-        ralph_errors::err_string(codes::PROJECT_LOCK, "No project locked (database not open)")
-    })?;
-    f(db)
+    CommandContext::from_tauri_state(state).db(f)
 }
 
+#[allow(dead_code)]
+pub(super) fn with_db_tx<T, F>(state: &State<'_, AppState>, f: F) -> Result<T, String>
+where
+    F: FnOnce(&SqliteDb) -> Result<T, String>,
+{
+    CommandContext::from_tauri_state(state).db_tx(f)
+}
+
+#[allow(dead_code)]
 pub(super) fn get_locked_project_path(state: &State<'_, AppState>) -> Result<PathBuf, String> {
-    let locked = state.locked_project.lock().err_str(codes::INTERNAL)?;
-    locked
-        .as_ref()
-        .cloned()
-        .ok_or_else(|| ralph_errors::err_string(codes::PROJECT_LOCK, "No project locked"))
+    CommandContext::from_tauri_state(state).locked_project_path()
 }

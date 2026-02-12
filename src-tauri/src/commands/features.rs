@@ -1,4 +1,4 @@
-use super::state::{get_locked_project_path, with_db, AppState};
+use super::state::{AppState, CommandContext};
 use ralph_errors::{codes, RalphResultExt};
 use ralph_macros::ipc_type;
 use serde::Deserialize;
@@ -16,8 +16,8 @@ fn build_embedding_config(
     }
 }
 
-fn db_path(state: &State<'_, AppState>) -> Result<std::path::PathBuf, String> {
-    let project_path = get_locked_project_path(state)?;
+fn db_path(ctx: &CommandContext<'_>) -> Result<std::path::PathBuf, String> {
+    let project_path = ctx.locked_project_path()?;
     Ok(project_path.join(".ralph").join("db").join("ralph.db"))
 }
 
@@ -83,7 +83,7 @@ pub struct DisciplineConfig {
 
 #[tauri::command]
 pub fn get_disciplines_config(state: State<'_, AppState>) -> Result<Vec<DisciplineConfig>, String> {
-    with_db(&state, |db| {
+    CommandContext::from_tauri_state(&state).db(|db| {
         Ok(db
             .get_disciplines()
             .iter()
@@ -175,7 +175,7 @@ fn to_comment_data(c: &sqlite_db::FeatureComment) -> FeatureCommentData {
 
 #[tauri::command]
 pub fn get_features(state: State<'_, AppState>) -> Result<Vec<FeatureData>, String> {
-    with_db(&state, |db| {
+    CommandContext::from_tauri_state(&state).db(|db| {
         Ok(db
             .get_features()
             .iter()
@@ -205,7 +205,7 @@ pub fn create_feature(
     state: State<'_, AppState>,
     params: CreateFeatureParams,
 ) -> Result<(), String> {
-    with_db(&state, |db| {
+    CommandContext::from_tauri_state(&state).db(|db| {
         db.create_feature(sqlite_db::FeatureInput {
             name: params.name,
             display_name: params.display_name,
@@ -228,7 +228,7 @@ pub fn update_feature(
     state: State<'_, AppState>,
     params: UpdateFeatureParams,
 ) -> Result<(), String> {
-    with_db(&state, |db| {
+    CommandContext::from_tauri_state(&state).db(|db| {
         db.update_feature(sqlite_db::FeatureInput {
             name: params.name,
             display_name: params.display_name,
@@ -256,8 +256,9 @@ pub async fn add_feature_comment(
     state: State<'_, AppState>,
     params: AddFeatureCommentParams,
 ) -> Result<(), String> {
-    let path = db_path(&state)?;
-    let (comment_id, embedding_text) = with_db(&state, |db| {
+    let command_ctx = CommandContext::from_tauri_state(&state);
+    let path = db_path(&command_ctx)?;
+    let (comment_id, embedding_text) = command_ctx.db_tx(|db| {
         db.add_feature_comment(sqlite_db::AddFeatureCommentInput {
             feature_name: params.feature_name.clone(),
             category: params.category.clone(),
@@ -309,8 +310,9 @@ pub async fn update_feature_comment(
     state: State<'_, AppState>,
     params: UpdateFeatureCommentParams,
 ) -> Result<(), String> {
-    let path = db_path(&state)?;
-    let (embedding_text, needs_embed) = with_db(&state, |db| {
+    let command_ctx = CommandContext::from_tauri_state(&state);
+    let path = db_path(&command_ctx)?;
+    let (embedding_text, needs_embed) = command_ctx.db_tx(|db| {
         db.update_feature_comment(
             &params.feature_name,
             params.comment_id,
@@ -373,9 +375,8 @@ pub fn delete_feature_comment(
     state: State<'_, AppState>,
     params: DeleteFeatureCommentParams,
 ) -> Result<(), String> {
-    with_db(&state, |db| {
-        db.delete_feature_comment(&params.feature_name, params.comment_id)
-    })
+    CommandContext::from_tauri_state(&state)
+        .db(|db| db.delete_feature_comment(&params.feature_name, params.comment_id))
 }
 
 #[derive(Deserialize)]
@@ -420,7 +421,7 @@ pub fn create_discipline(
     let mcp_json = serde_json::to_string(&mcp_servers)
         .ralph_err(codes::DISCIPLINE_OPS, "Failed to serialize mcp_servers")?;
 
-    with_db(&state, |db| {
+    CommandContext::from_tauri_state(&state).db(|db| {
         db.create_discipline(sqlite_db::DisciplineInput {
             name: normalized_name,
             display_name: params.display_name,
@@ -475,7 +476,7 @@ pub fn update_discipline(
     let mcp_json = serde_json::to_string(&mcp_servers)
         .ralph_err(codes::DISCIPLINE_OPS, "Failed to serialize mcp_servers")?;
 
-    with_db(&state, |db| {
+    CommandContext::from_tauri_state(&state).db(|db| {
         db.update_discipline(sqlite_db::DisciplineInput {
             name: params.name,
             display_name: params.display_name,
@@ -496,12 +497,12 @@ pub fn update_discipline(
 
 #[tauri::command]
 pub fn delete_feature(state: State<'_, AppState>, name: String) -> Result<(), String> {
-    with_db(&state, |db| db.delete_feature(name))
+    CommandContext::from_tauri_state(&state).db(|db| db.delete_feature(name))
 }
 
 #[tauri::command]
 pub fn delete_discipline(state: State<'_, AppState>, name: String) -> Result<(), String> {
-    with_db(&state, |db| db.delete_discipline(name))
+    CommandContext::from_tauri_state(&state).db(|db| db.delete_discipline(name))
 }
 
 #[ipc_type]
@@ -557,9 +558,8 @@ pub fn get_discipline_image_data(
 ) -> Result<Option<String>, String> {
     use base64::Engine;
 
-    let disc = with_db(&state, |db| {
-        Ok(db.get_disciplines().into_iter().find(|d| d.name == name))
-    })?;
+    let disc = CommandContext::from_tauri_state(&state)
+        .db(|db| Ok(db.get_disciplines().into_iter().find(|d| d.name == name)))?;
 
     let Some(disc) = disc else {
         return Ok(None);
@@ -568,7 +568,7 @@ pub fn get_discipline_image_data(
         return Ok(None);
     };
 
-    let project_path = get_locked_project_path(&state)?;
+    let project_path = CommandContext::from_tauri_state(&state).locked_project_path()?;
     let abs_path = project_path.join(".ralph").join(image_path);
 
     std::fs::read(&abs_path).map_or(Ok(None), |bytes| {
@@ -586,9 +586,8 @@ pub fn get_cropped_image(
 ) -> Result<Option<String>, String> {
     use base64::Engine;
 
-    let disc = with_db(&state, |db| {
-        Ok(db.get_disciplines().into_iter().find(|d| d.name == name))
-    })?;
+    let disc = CommandContext::from_tauri_state(&state)
+        .db(|db| Ok(db.get_disciplines().into_iter().find(|d| d.name == name)))?;
 
     let Some(disc) = disc else {
         return Ok(None);
@@ -597,7 +596,7 @@ pub fn get_cropped_image(
         return Ok(None);
     };
 
-    let project_path = get_locked_project_path(&state)?;
+    let project_path = CommandContext::from_tauri_state(&state).locked_project_path()?;
     let cache_dir = project_path.join(".ralph").join("cache").join("crops");
     let cache_key = format!(
         "{}_{}_{}_{}_{}_{}.png",

@@ -1,4 +1,4 @@
-use super::state::{with_db, AppState};
+use super::state::{AppState, CommandContext};
 use ralph_errors::{codes, ralph_err, RalphResultExt, ToStringErr};
 use ralph_macros::ipc_type;
 use sqlite_db::SqliteDb;
@@ -261,7 +261,7 @@ pub fn set_locked_project(state: State<'_, AppState>, path: String) -> Result<()
 
 #[tauri::command]
 pub fn get_locked_project(state: State<'_, AppState>) -> Result<Option<String>, String> {
-    let locked = state.locked_project.lock().err_str(codes::INTERNAL)?;
+    let locked = CommandContext::from_tauri_state(&state).maybe_locked_project_path()?;
     Ok(locked.as_ref().map(|p| p.to_string_lossy().to_string()))
 }
 
@@ -380,7 +380,7 @@ pub fn get_current_dir() -> Result<String, String> {
 
 #[tauri::command]
 pub fn get_project_info(state: State<'_, AppState>) -> Result<ProjectInfo, String> {
-    let info = with_db(&state, |db| Ok(db.get_project_info()))?;
+    let info = CommandContext::from_tauri_state(&state).db(|db| Ok(db.get_project_info()))?;
     Ok(ProjectInfo {
         title: info.title.clone(),
         description: info.description.clone(),

@@ -35,6 +35,10 @@ Use `just` as the primary task runner (`just --list`).
 - E2E/visual: Playwright in `e2e/`.
 - No fixed coverage threshold is currently enforced; all changed behavior should include or update tests.
 
+## Environment Notes
+- This system is Wayland-only for GUI runs.
+- Do not suggest or depend on X11/XWayland fallbacks (`GDK_BACKEND=x11`, etc.); X11 is not available here.
+
 ## Commit & Pull Request Guidelines
 - Follow Conventional Commit-style prefixes seen in history: `feat(...)`, `fix(...)`, `refactor(...)`, `chore(...)`, `docs(...)`.
 - Keep commits scoped and functional; avoid mixing unrelated frontend/backend changes when possible.
