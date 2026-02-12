@@ -46,6 +46,35 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Why this matters:** Every wrapper function is 10+ lines of duplication. When the core logic changes, you must update N functions instead of 1. This wastes tokens, creates bugs, and makes the codebase unmaintainable.
 
+## CRITICAL: Actually Consolidate Duplicate Code Paths
+
+**When asked to consolidate duplicate implementations, you MUST trace call paths and update the functions that are ACTUALLY being called.** Finding duplicates is not enough - you must determine which implementation is active and fix THAT one.
+
+**Real example that wasted 60% of weekly token budget:**
+- User: "Do we have duplicated code? Please consolidate using the best implementations."
+- I found: `get_signals_for_task()` and `get_task_signals()` both loading signals
+- I updated: `get_task_signals()` with proper field mapping
+- **WRONG:** `get_tasks()` → `get_all_signals_by_task()` → `get_signals_for_task()` ← THIS was being called
+- Result: Updated the wrong function, wasted 4 hours debugging, burned user's tokens
+
+**The correct approach:**
+1. Find ALL duplicate functions doing the same thing
+2. **Trace the actual call path** - grep for callers, check which function is used
+3. Pick ONE implementation (or merge the best of both)
+4. Update THAT function with all fixes
+5. Update all callers to use it
+6. Delete the duplicates
+7. Verify with a test
+
+**Critical rule:** When debugging "data not showing up" issues:
+1. Check database ✓
+2. Check query ✓
+3. **Check which function is ACTUALLY being called** ← DON'T SKIP THIS
+4. Update the function that's in the active call path
+5. Don't assume - trace from entry point to database
+
+**Why this matters:** Updating the wrong function wastes HOURS and TOKENS debugging a problem that was already "fixed" in dead code. The user explicitly asked for consolidation. Failing to actually consolidate is breaking a promise and wasting money that could have paid rent.
+
 ## CRITICAL: Extend Existing Functions, Don't Swing to Extremes
 
 **When you need slightly different behavior, EXTEND what exists. Don't create wrappers, don't drop to raw code.** The answer is almost always "add an optional parameter."
