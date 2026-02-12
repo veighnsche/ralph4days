@@ -342,24 +342,25 @@ pub fn terminal_bridge_start_human_session(
     };
 
     if let Err(err) = start_result {
-        let db = get_db(&state)?;
-        let _ = db.update_human_agent_session(sqlite_db::AgentSessionUpdateInput {
-            id: agent_session_id,
-            kind: None,
-            task_id: None,
-            agent: None,
-            model: None,
-            launch_command: None,
-            post_start_preamble: None,
-            init_prompt: None,
-            ended: Some(chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()),
-            exit_code: Some(1),
-            closing_verb: Some("error".to_owned()),
-            status: Some("failed".to_owned()),
-            prompt_hash: None,
-            output_bytes: None,
-            error_text: Some(err.clone()),
-        });
+        if let Ok(db) = get_db(&state) {
+            let _ = db.update_human_agent_session(sqlite_db::AgentSessionUpdateInput {
+                id: agent_session_id,
+                kind: None,
+                task_id: None,
+                agent: None,
+                model: None,
+                launch_command: None,
+                post_start_preamble: None,
+                init_prompt: None,
+                ended: Some(chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()),
+                exit_code: Some(1),
+                closing_verb: None,
+                status: Some("crashed".to_owned()),
+                prompt_hash: None,
+                output_bytes: None,
+                error_text: Some(err.clone()),
+            });
+        }
         return Err(err);
     }
 
