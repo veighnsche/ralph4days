@@ -397,6 +397,7 @@ pub struct TaskInput {
 #[serde(rename_all = "camelCase")]
 pub struct AgentSession {
     pub id: String,
+    pub session_number: u32,
     pub kind: String,
     pub started_by: String,
     #[serde(skip_serializing_if = "Option::is_none")]

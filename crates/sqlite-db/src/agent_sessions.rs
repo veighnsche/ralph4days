@@ -19,9 +19,9 @@ impl SqliteDb {
 
         self.conn
             .execute(
-                "INSERT INTO agent_sessions (id, kind, started_by, task_id, agent, model, launch_command, \
+                "INSERT INTO agent_sessions (id, session_number, kind, started_by, task_id, agent, model, launch_command, \
                  post_start_preamble, init_prompt, started, status) \
-                 VALUES (?1, ?2, 'human', ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'running')",
+                 VALUES (?1, (SELECT COALESCE(MAX(session_number), 0) + 1 FROM agent_sessions), ?2, 'human', ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'running')",
                 rusqlite::params![
                     input.id,
                     input.kind,
@@ -133,7 +133,7 @@ impl SqliteDb {
             .prepare(
                 "SELECT id, kind, started_by, task_id, agent, model, launch_command, \
                  post_start_preamble, init_prompt, started, ended, exit_code, closing_verb, \
-                 status, prompt_hash, output_bytes, error_text \
+                 status, prompt_hash, output_bytes, error_text, session_number \
                  FROM agent_sessions WHERE id = ?1",
             )
             .ok()?;
@@ -144,9 +144,9 @@ impl SqliteDb {
     pub fn list_human_agent_sessions(&self) -> Vec<AgentSession> {
         let Ok(mut stmt) = self.conn.prepare(
             "SELECT id, kind, started_by, task_id, agent, model, launch_command, \
-             post_start_preamble, init_prompt, started, ended, exit_code, closing_verb, \
-             status, prompt_hash, output_bytes, error_text \
-             FROM agent_sessions WHERE started_by = 'human' ORDER BY started DESC, id DESC",
+                 post_start_preamble, init_prompt, started, ended, exit_code, closing_verb, \
+                 status, prompt_hash, output_bytes, error_text, session_number \
+                 FROM agent_sessions WHERE started_by = 'human' ORDER BY session_number DESC",
         ) else {
             return vec![];
         };
@@ -159,8 +159,10 @@ impl SqliteDb {
 
     fn row_to_agent_session(row: &rusqlite::Row<'_>) -> rusqlite::Result<AgentSession> {
         let output_bytes_i64: Option<i64> = row.get(15)?;
+        let session_number_i64: i64 = row.get(17)?;
         Ok(AgentSession {
             id: row.get(0)?,
+            session_number: u32::try_from(session_number_i64).unwrap_or_default(),
             kind: row.get(1)?,
             started_by: row.get(2)?,
             task_id: row.get(3)?,

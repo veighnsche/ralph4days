@@ -151,6 +151,7 @@ CREATE TABLE task_output_artifacts (
 -- Agent sessions (agent runs, human starts, braindumps, reviews)
 CREATE TABLE agent_sessions (
   id TEXT PRIMARY KEY, -- e.g. RALPH_SESSION_ID
+  session_number INTEGER NOT NULL UNIQUE CHECK(session_number > 0),
   kind TEXT NOT NULL CHECK(kind IN ('task_execution','human_braindump','manual','review')),
   started_by TEXT NOT NULL CHECK(started_by IN ('agent','human','system')),
   task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL,

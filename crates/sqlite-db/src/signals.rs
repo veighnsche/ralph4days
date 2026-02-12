@@ -90,8 +90,8 @@ impl SqliteDb {
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
-                "INSERT INTO agent_sessions (id, kind, started_by, task_id, started, ended, status) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'finished')",
+                "INSERT INTO agent_sessions (id, session_number, kind, started_by, task_id, started, ended, status) \
+                 VALUES (?1, (SELECT COALESCE(MAX(session_number), 0) + 1 FROM agent_sessions), ?2, ?3, ?4, ?5, ?6, 'finished')",
                 rusqlite::params![session_id, kind, started_by, task_id, now, now],
             )
             .ralph_err(codes::DB_WRITE, "Failed to create implicit agent session")?;
