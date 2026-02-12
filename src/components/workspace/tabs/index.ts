@@ -3,16 +3,16 @@ export {
   createAgentSessionConfigTab
 } from './agent-session-config'
 export {
-  defineWorkspaceTabModule,
-  type WorkspaceTabLifecycle,
-  type WorkspaceTabModule
-} from './contracts'
-export {
   useWorkspaceTabContext,
   useWorkspaceTabData,
   useWorkspaceTabOfType,
   WorkspaceTabProvider
-} from './core'
+} from './context'
+export {
+  defineWorkspaceTabModule,
+  type WorkspaceTabLifecycle,
+  type WorkspaceTabModule
+} from './contracts'
 export {
   createDisciplineDetailTab,
   type DisciplineDetailTabInput,
