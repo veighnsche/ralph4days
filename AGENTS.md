@@ -29,6 +29,18 @@ Use `just` as the primary task runner (`just --list`).
 - Rust uses `cargo fmt` and clippy (workspace lints in `Cargo.toml`), with `unsafe_code = deny`.
 - Keep naming consistent with existing patterns: React components in PascalCase, hooks as `useX`, tests as `*.test.ts(x)`; Rust tests commonly in `tests/*_test.rs`.
 
+## State & Compatibility Policy
+- Keep shared UI state centralized with a single source of truth.
+- Prefer simple defaults and explicit state contracts over defensive branching.
+- Avoid compatibility layers for low-value local data unless there is clear product impact.
+- Any compatibility path must have documented value, owner, and removal criteria.
+
+## Agent Failure Mode
+- Common failure mode: under uncertainty, agents overproduce defensive fallbacks to avoid visible breakage.
+- This masks contract violations and creates silent-error paths that accumulate over time.
+- Default standard: fail loud on broken invariants and boundary contract mismatches.
+- Allow defensive handling only for genuinely unreliable external edges, with explicit error surfacing.
+
 ## Testing Guidelines
 - Frontend unit tests: Vitest (`bun test:run` or `just test-frontend`).
 - Rust tests: `cargo test --manifest-path src-tauri/Cargo.toml` (or `just test-rust`).
