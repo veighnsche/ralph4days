@@ -218,6 +218,56 @@ fn resolve_session_post_start_preamble(
     resolve_post_start_preamble(agent, &config, user_preamble)
 }
 
+fn build_launch_command(config: &SessionConfig) -> String {
+    let agent = resolve_agent_provider(config.agent.as_deref()).id();
+    let mut parts = vec![agent.to_owned()];
+
+    if let Some(model) = config.model.as_deref() {
+        parts.push("--model".to_owned());
+        parts.push(model.to_owned());
+    }
+    if let Some(effort) = config.effort.as_deref() {
+        parts.push("--effort".to_owned());
+        parts.push(effort.to_owned());
+    }
+
+    if agent == AGENT_CODEX {
+        match config.permission_level.as_deref().map(str::trim) {
+            Some("safe") => {
+                parts.push("--sandbox".to_owned());
+                parts.push("workspace-write".to_owned());
+                parts.push("--ask-for-approval".to_owned());
+                parts.push("untrusted".to_owned());
+            }
+            Some("auto") => {
+                parts.push("--full-auto".to_owned());
+            }
+            Some("full_auto") => {
+                parts.push("--dangerously-bypass-approvals-and-sandbox".to_owned());
+            }
+            _ => {
+                parts.push("--sandbox".to_owned());
+                parts.push("workspace-write".to_owned());
+                parts.push("--ask-for-approval".to_owned());
+                parts.push("on-request".to_owned());
+            }
+        }
+    } else {
+        parts.push("--permission-mode".to_owned());
+        parts.push(
+            match config.permission_level.as_deref().map(str::trim) {
+                Some("safe") => "default",
+                Some("auto") => "dontAsk",
+                Some("full_auto") => "bypassPermissions",
+                _ => "delegate",
+            }
+            .to_owned(),
+        );
+    }
+
+    parts.join(" ")
+}
+
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
 pub fn terminal_bridge_start_session(
@@ -339,7 +389,6 @@ pub fn terminal_bridge_start_human_session(
     model: Option<String>,
     effort: Option<String>,
     permission_level: Option<String>,
-    launch_command: Option<String>,
     post_start_preamble: Option<String>,
     init_prompt: Option<String>,
     mcp_mode: Option<String>,
@@ -363,20 +412,23 @@ pub fn terminal_bridge_start_human_session(
         model,
         effort,
         permission_level,
-        launch_command,
         post_start_preamble,
         init_prompt,
         mcp_mode,
         thinking,
     };
 
-    let resolved_post_start_preamble = resolve_session_post_start_preamble(
-        args.agent.as_deref(),
+    let session_config = build_session_config(
+        args.agent.clone(),
         args.model.clone(),
         args.effort.clone(),
         args.thinking,
+        args.permission_level.clone(),
         args.post_start_preamble.clone(),
-    );
+    )?;
+    let launch_command = build_launch_command(&session_config);
+
+    let resolved_post_start_preamble = session_config.post_start_preamble;
 
     let agent_session_id = generate_agent_session_id();
     tracing::debug!(
@@ -394,8 +446,8 @@ pub fn terminal_bridge_start_human_session(
             task_id: args.task_id,
             agent: args.agent.clone(),
             model: args.model.clone(),
-            launch_command: args.launch_command.clone(),
-            post_start_preamble: resolved_post_start_preamble.clone(),
+            launch_command: Some(launch_command),
+            post_start_preamble: resolved_post_start_preamble,
             init_prompt: args.init_prompt.clone(),
         })?;
 

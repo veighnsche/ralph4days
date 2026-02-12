@@ -93,7 +93,7 @@ describe('TerminalTabContent', () => {
 
     const config = useTerminalSessionMock.mock.calls[0][0] as {
       sessionId: string
-      humanSession?: { kind: string; agent?: string; launchCommand?: string }
+      humanSession?: { kind: string; agent?: string }
     }
     expect(config.sessionId).toBe('test-terminal-1')
     expect(config.humanSession?.kind).toBe('manual')
@@ -116,12 +116,9 @@ describe('TerminalTabContent', () => {
 
     const config = useTerminalSessionMock.mock.calls[0][0] as {
       agent?: string
-      humanSession?: { agent?: string; launchCommand?: string }
+      humanSession?: { agent?: string }
     }
     expect(config.agent).toBe('codex')
     expect(config.humanSession?.agent).toBe('codex')
-    expect(config.humanSession?.launchCommand).toBe(
-      'codex --model gpt-5-codex --sandbox workspace-write --ask-for-approval on-request'
-    )
   })
 })

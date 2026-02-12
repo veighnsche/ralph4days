@@ -17,10 +17,7 @@ export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
   const params = parseTerminalTabParams(tab.params)
   const kind = params.taskId != null ? 'task_execution' : 'manual'
   const agent = params.agent ?? 'claude'
-  const model = params.model
-  const effort = params.effort
   const permissionLevel = params.permissionLevel ?? 'balanced'
-  const launchCommand = buildLaunchCommand(agent, model, effort, permissionLevel)
 
   const session = useTerminalSession(
     {
@@ -35,8 +32,6 @@ export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
       humanSession: {
         kind,
         agent,
-        launchCommand,
-        postStartPreamble: undefined,
         initPrompt: params.initPrompt ?? undefined
       }
     },
@@ -176,35 +171,4 @@ export function createTerminalTab(input: TerminalTabParams = {}): Omit<Workspace
       initPrompt: input.initPrompt
     }
   }
-}
-
-function buildLaunchCommand(
-  agent: string,
-  model?: string,
-  effort?: 'low' | 'medium' | 'high',
-  permissionLevel: PermissionLevel = 'balanced'
-) {
-  if (agent === 'codex') {
-    const modelArg = model != null ? ` --model ${model}` : ''
-    const permissionArg =
-      permissionLevel === 'safe'
-        ? ' --sandbox workspace-write --ask-for-approval untrusted'
-        : permissionLevel === 'balanced'
-          ? ' --sandbox workspace-write --ask-for-approval on-request'
-          : permissionLevel === 'auto'
-            ? ' --full-auto'
-            : ' --dangerously-bypass-approvals-and-sandbox'
-    return `codex${modelArg}${permissionArg}`
-  }
-  const modelArg = model != null ? ` --model ${model}` : ''
-  const effortArg = effort != null ? ` --effort ${effort}` : ''
-  const permissionArg =
-    permissionLevel === 'safe'
-      ? ' --permission-mode default'
-      : permissionLevel === 'balanced'
-        ? ' --permission-mode delegate'
-        : permissionLevel === 'auto'
-          ? ' --permission-mode dontAsk'
-          : ' --permission-mode bypassPermissions'
-  return `claude${modelArg}${effortArg}${permissionArg}`
 }

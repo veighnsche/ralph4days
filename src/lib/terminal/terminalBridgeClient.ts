@@ -49,7 +49,6 @@ export type TerminalBridgeStartHumanSessionArgs = {
   model?: string
   effort?: 'low' | 'medium' | 'high'
   permissionLevel?: 'safe' | 'balanced' | 'auto' | 'full_auto'
-  launchCommand?: string
   postStartPreamble?: string
   initPrompt?: string
   mcpMode?: string
@@ -88,7 +87,6 @@ export async function terminalBridgeStartHumanSession(
     model: params.model ?? null,
     effort: params.effort ?? null,
     permissionLevel: params.permissionLevel ?? null,
-    launchCommand: params.launchCommand ?? null,
     postStartPreamble: params.postStartPreamble ?? null,
     initPrompt: params.initPrompt ?? null,
     mcpMode: params.mcpMode ?? null,

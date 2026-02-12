@@ -23,7 +23,6 @@ export interface TerminalSessionConfig {
   humanSession?: {
     kind: string
     agent?: string
-    launchCommand?: string
     postStartPreamble?: string
     initPrompt?: string
   }
@@ -141,7 +140,6 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
         model: config.model ?? undefined,
         effort: config.effort ?? undefined,
         ...(config.permissionLevel != null ? { permissionLevel: config.permissionLevel } : {}),
-        launchCommand: config.humanSession.launchCommand ?? undefined,
         postStartPreamble: config.humanSession.postStartPreamble ?? undefined,
         initPrompt: config.humanSession.initPrompt ?? undefined,
         mcpMode: config.taskId !== undefined ? undefined : config.mcpMode || 'interactive',
@@ -194,7 +192,6 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     config.permissionLevel,
     config.humanSession?.kind,
     config.humanSession?.agent,
-    config.humanSession?.launchCommand,
     config.humanSession?.postStartPreamble,
     config.humanSession?.initPrompt,
     isEnabled,

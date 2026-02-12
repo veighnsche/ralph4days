@@ -98,7 +98,6 @@ pub struct TerminalBridgeStartHumanSessionArgs {
     pub model: Option<String>,
     pub effort: Option<String>,
     pub permission_level: Option<String>,
-    pub launch_command: Option<String>,
     pub post_start_preamble: Option<String>,
     pub init_prompt: Option<String>,
     pub mcp_mode: Option<String>,

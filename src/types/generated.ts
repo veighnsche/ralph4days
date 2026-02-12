@@ -240,7 +240,6 @@ export type TerminalBridgeStartHumanSessionArgs = {
   model?: string
   effort?: string
   permissionLevel?: string
-  launchCommand?: string
   postStartPreamble?: string
   initPrompt?: string
   mcpMode?: string
