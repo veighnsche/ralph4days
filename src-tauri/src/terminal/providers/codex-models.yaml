@@ -14,5 +14,5 @@ models:
     display: GPT 5.2
     description: Latest frontier model with improvements across knowledge, reasoning and coding.
   - name: gpt-5.1-codex-mini
-    display: GPT 5.1 codex MINI
+    display: GPT 5.1 codex mini
     description: Optimized for codex. Cheaper, faster, but less capable.

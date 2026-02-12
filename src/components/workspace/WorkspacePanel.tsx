@@ -1,11 +1,5 @@
 import { useEffect, useRef } from 'react'
-import {
-  type Agent,
-  AgentSessionLaunchButton,
-  type Effort,
-  type Model,
-  type PermissionLevel
-} from '@/components/agent-session-launch'
+import { AgentSessionLaunchButton, type AgentSessionLaunchConfig } from '@/components/agent-session-launch'
 import { ErrorBoundary } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { TerminalTabContent } from '@/components/workspace'
@@ -62,13 +56,7 @@ export function WorkspacePanel() {
     previousActiveTabIdRef.current = activeTabId
   }, [activeTabId, tabs])
 
-  const handleNewTab = (
-    agent: Agent,
-    model: Model,
-    effort: Effort,
-    thinking: boolean,
-    permissionLevel: PermissionLevel
-  ) => {
+  const handleNewTab = ({ agent, model, effort, thinking, permissionLevel }: AgentSessionLaunchConfig) => {
     const agentLabel = agent === 'codex' ? 'Codex' : 'Claude'
     openTab({
       type: 'terminal',
@@ -85,13 +73,7 @@ export function WorkspacePanel() {
     })
   }
 
-  const handleOpenRunForm = (
-    agent: Agent,
-    model: Model,
-    effort: Effort,
-    thinking: boolean,
-    permissionLevel: PermissionLevel
-  ) => {
+  const handleOpenRunForm = ({ agent, model, effort, thinking, permissionLevel }: AgentSessionLaunchConfig) => {
     openTab(createAgentSessionConfigTab({ agent, model, effort, thinking, permissionLevel }))
   }
 

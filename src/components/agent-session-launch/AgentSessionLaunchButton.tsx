@@ -1,37 +1,25 @@
 import { ChevronDown, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import {
-  type Agent,
-  type Effort,
-  type Model,
-  type PermissionLevel,
-  useAgentSessionLaunchPreferences
-} from '@/hooks/preferences'
+import { type AgentSessionLaunchConfig, useAgentSessionLaunchPreferences } from '@/hooks/preferences'
 import { cn } from '@/lib/utils'
 
 export type { Model } from '@/hooks/preferences'
 
 interface AgentSessionLaunchButtonProps {
-  onNewTab: (agent: Agent, model: Model, effort: Effort, thinking: boolean, permissionLevel: PermissionLevel) => void
-  onOpenRunForm: (
-    agent: Agent,
-    model: Model,
-    effort: Effort,
-    thinking: boolean,
-    permissionLevel: PermissionLevel
-  ) => void
+  onNewTab: (config: AgentSessionLaunchConfig) => void
+  onOpenRunForm: (config: AgentSessionLaunchConfig) => void
 }
 
 export function AgentSessionLaunchButton({ onNewTab, onOpenRunForm }: AgentSessionLaunchButtonProps) {
   const { agent, model, effort, thinking, permissionLevel } = useAgentSessionLaunchPreferences()
 
   const handleNewTab = () => {
-    onNewTab(agent, model, effort, thinking, permissionLevel)
+    onNewTab({ agent, model, effort, thinking, permissionLevel })
   }
 
   const handleOpenRunForm = () => {
-    onOpenRunForm(agent, model, effort, thinking, permissionLevel)
+    onOpenRunForm({ agent, model, effort, thinking, permissionLevel })
   }
 
   return (

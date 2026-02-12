@@ -6,6 +6,13 @@ export type Agent = (typeof VALID_AGENTS)[number]
 export type Model = string
 export type Effort = 'low' | 'medium' | 'high'
 export type PermissionLevel = 'safe' | 'balanced' | 'auto' | 'full_auto'
+export type AgentSessionLaunchConfig = {
+  agent: Agent
+  model: Model
+  effort: Effort
+  thinking: boolean
+  permissionLevel: PermissionLevel
+}
 
 const DEFAULT_MODELS_BY_AGENT: Record<Agent, string> = {
   claude: 'claude-sonnet-4',
@@ -16,12 +23,7 @@ function getDefaultModel(agent: Agent) {
   return DEFAULT_MODELS_BY_AGENT[agent]
 }
 
-type AgentSessionLaunchPreferencesStore = {
-  agent: Agent
-  model: Model
-  effort: Effort
-  thinking: boolean
-  permissionLevel: PermissionLevel
+type AgentSessionLaunchPreferencesStore = AgentSessionLaunchConfig & {
   setAgent: (value: Agent) => void
   setModel: (value: Model) => void
   setEffort: (value: Effort) => void
@@ -36,7 +38,7 @@ export const useAgentSessionLaunchPreferences = create<AgentSessionLaunchPrefere
       agent: 'claude',
       model: getDefaultModel('claude'),
       effort: 'medium',
-      thinking: false,
+      thinking: true,
       permissionLevel: 'balanced',
       setAgent: value => set({ agent: value }),
       setModel: value => {

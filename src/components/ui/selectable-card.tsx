@@ -13,11 +13,16 @@ const selectableCardVariants = cva(
       radius: {
         default: 'rounded-md',
         lg: 'rounded-lg'
+      },
+      variant: {
+        default: '',
+        icon: 'inline-flex items-center justify-center h-9 w-9 p-0'
       }
     },
     defaultVariants: {
       selected: false,
-      radius: 'default'
+      radius: 'default',
+      variant: 'default'
     }
   }
 )
@@ -27,12 +32,19 @@ type SelectableCardProps = React.ComponentProps<'button'> &
     selected?: boolean
   }
 
-export function SelectableCard({ className, selected, radius, type = 'button', ...props }: SelectableCardProps) {
+export function SelectableCard({
+  className,
+  selected,
+  radius,
+  variant,
+  type = 'button',
+  ...props
+}: SelectableCardProps) {
   return (
     <button
       type={type}
       data-selected={selected ? 'true' : 'false'}
-      className={cn(selectableCardVariants({ selected, radius }), className)}
+      className={cn(selectableCardVariants({ selected, radius, variant }), className)}
       {...props}
     />
   )

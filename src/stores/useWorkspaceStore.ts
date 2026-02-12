@@ -3,6 +3,7 @@ import type { ComponentType } from 'react'
 import { create } from 'zustand'
 import { MAX_TABS } from '@/constants/workspace'
 import type { DisciplineConfig } from '@/hooks/disciplines'
+import type { AgentSessionLaunchConfig } from '@/hooks/preferences'
 import type { FeatureData as Feature, Task, TerminalBridgeModelOption } from '@/types/generated'
 
 export type TabType = 'terminal' | 'agent-session-config' | 'task-detail' | 'feature-detail' | 'discipline-detail'
@@ -22,16 +23,11 @@ export interface WorkspaceTab {
   icon?: LucideIcon
   closeable: boolean
   lifecycle: WorkspaceTabLifecycle
-  data?: {
+  data?: Partial<AgentSessionLaunchConfig> & {
     mode?: 'create' | 'edit'
     entityId?: number | string
     entity?: Task | Feature | DisciplineConfig
     sessionId?: string // For output tabs
-    agent?: string // For terminal tabs (claude, codex)
-    model?: string // For terminal tabs (haiku, sonnet, opus)
-    effort?: 'low' | 'medium' | 'high' // Model capability: optional effort level
-    thinking?: boolean // For terminal tabs (extended thinking)
-    permissionLevel?: 'safe' | 'balanced' | 'auto' | 'full_auto' // Canonical launch permission level
     taskId?: number // For task execution terminals
     initPrompt?: string // Optional prompt captured at session start
     formTreeByAgent?: Record<string, TerminalBridgeModelOption[]>

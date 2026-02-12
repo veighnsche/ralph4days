@@ -1,16 +1,10 @@
 import { AgentSessionConfigTabContent } from '@/components/workspace/AgentSessionConfigTabContent'
-import type { Agent, Effort, PermissionLevel } from '@/hooks/preferences'
+import type { AgentSessionLaunchConfig } from '@/hooks/preferences'
 import { terminalBridgeListModelFormTree } from '@/lib/terminal/terminalBridgeClient'
 import { useWorkspaceStore, type WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { TerminalBridgeModelOption } from '@/types/generated'
 
-export type AgentSessionConfigTabInput = {
-  agent: Agent
-  model: string
-  effort: Effort
-  thinking: boolean
-  permissionLevel: PermissionLevel
-}
+export type AgentSessionConfigTabInput = AgentSessionLaunchConfig
 
 async function loadFormTrees(tabId: string) {
   const { setTabData } = useWorkspaceStore.getState()
