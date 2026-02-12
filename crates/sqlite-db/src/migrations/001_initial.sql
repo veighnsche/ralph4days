@@ -103,7 +103,7 @@ CREATE TABLE tasks (
   discipline_id INTEGER NOT NULL REFERENCES disciplines(id) ON DELETE RESTRICT,
   title TEXT NOT NULL,
   description TEXT,
-  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('draft','pending','in_progress','completed','blocked','skipped','needs_input','failed')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('draft','pending','in_progress','done','blocked','skipped','needs_input','failed')),
   priority TEXT CHECK(priority IN ('low','medium','high','critical') OR priority IS NULL),
   hints TEXT,
   estimated_turns INTEGER,
@@ -112,7 +112,7 @@ CREATE TABLE tasks (
   enriched_at TEXT,
   created TEXT,
   updated TEXT,
-  completed_at TEXT
+  completed TEXT
 ) STRICT;
 
 CREATE TABLE task_tags (
