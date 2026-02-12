@@ -20,6 +20,7 @@ import type { Task, TaskSignal } from '@/types/generated'
 import { ReplyCard } from './ReplyCard'
 import { ReplyForm } from './ReplyForm'
 import { SignalEditor } from './SignalEditor'
+import { SignalPayloadDisplay } from './SignalPayloadDisplay'
 
 const VERB_CONFIG: Record<
   string,
@@ -229,7 +230,7 @@ export function SignalsSection({ task }: SignalsSectionProps) {
                         />
                       </div>
                     ) : (
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{signal.body}</p>
+                      <SignalPayloadDisplay signal={signal} />
                     )}
                   </div>
 
