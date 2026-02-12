@@ -12,21 +12,21 @@ export type Task = {
   description?: string
   status: TaskStatus
   priority?: Priority
-  tags: Array<string>
-  dependsOn: Array<number>
+  tags: string[]
+  dependsOn: number[]
   blockedBy?: string
   created?: string
   updated?: string
   completed?: string
-  acceptanceCriteria: Array<string>
-  contextFiles: Array<string>
-  outputArtifacts: Array<string>
+  acceptanceCriteria: string[]
+  contextFiles: string[]
+  outputArtifacts: string[]
   hints?: string
   estimatedTurns?: number
   provenance?: TaskProvenance
   pseudocode?: string
   enrichedAt?: string
-  comments: Array<TaskComment>
+  comments: TaskComment[]
   featureDisplayName: string
   featureAcronym: string
   disciplineDisplayName: string

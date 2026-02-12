@@ -4,7 +4,7 @@ import type { SectionSettingsData } from './SectionSettingsData'
 export type RecipeConfigData = {
   name: string
   baseRecipe: string
-  sectionOrder: Array<string>
+  sectionOrder: string[]
   sections: { [key in string]: SectionSettingsData }
   created?: string
   updated?: string
