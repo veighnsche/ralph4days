@@ -1,8 +1,7 @@
-import { Brain, MessageCircle, Target } from 'lucide-react'
+import { Brain, Target } from 'lucide-react'
 import { PageContent, PageHeader, PageLayout } from '@/components/layout/PageLayout'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import {
@@ -18,12 +17,10 @@ import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { FeatureDetailTabContent } from '@/components/workspace/FeatureDetailTabContent'
 import { useFeatureStats } from '@/hooks/features'
-import { useWorkspaceActions } from '@/hooks/workspace'
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
+import { NOOP_TAB_LIFECYCLE, useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
 export function FeaturesPage() {
   const { features, statsMap, progress, isLoading, error } = useFeatureStats()
-  const { openBraindumpTab } = useWorkspaceActions()
   const openTab = useWorkspaceStore(state => state.openTab)
 
   const handleFeatureClick = (name: string, displayName: string) => {
@@ -32,6 +29,7 @@ export function FeaturesPage() {
       component: FeatureDetailTabContent,
       title: displayName,
       closeable: true,
+      lifecycle: NOOP_TAB_LIFECYCLE,
       data: {
         entityId: name
       }
@@ -114,21 +112,10 @@ export function FeaturesPage() {
               </EmptyMedia>
               <EmptyTitle>No features yet</EmptyTitle>
               <EmptyDescription>
-                Get started by braindumping your project ideas. Claude will help structure them into features and tasks.
+                Features appear as work is captured in the project. Run an agent session to generate initial structure.
               </EmptyDescription>
             </EmptyHeader>
-            <EmptyContent>
-              <div className="flex flex-col gap-2">
-                <Button onClick={() => openBraindumpTab('Braindump Project')}>
-                  <Brain className="h-4 w-4 mr-2" />
-                  Braindump Project
-                </Button>
-                <Button onClick={() => openBraindumpTab('Ramble about Features')} variant="outline">
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Ramble about Features
-                </Button>
-              </div>
-            </EmptyContent>
+            <EmptyContent />
           </Empty>
         ) : (
           <ItemGroup className="rounded-md border">

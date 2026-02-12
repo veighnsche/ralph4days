@@ -1,4 +1,4 @@
-import { Brain, FileX, MessageSquare } from 'lucide-react'
+import { Brain, FileX } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import type { DisciplineCropsData, Task } from '@/types/generated'
@@ -10,19 +10,9 @@ interface PRDBodyProps {
   cropsStore: Map<string, DisciplineCropsData>
   onTaskClick: (task: Task) => void
   onClearFilters: () => void
-  onBraindump: () => void
-  onYap: () => void
 }
 
-export function PRDBody({
-  filteredTasks,
-  totalTasks,
-  cropsStore,
-  onTaskClick,
-  onClearFilters,
-  onBraindump,
-  onYap
-}: PRDBodyProps) {
+export function PRDBody({ filteredTasks, totalTasks, cropsStore, onTaskClick, onClearFilters }: PRDBodyProps) {
   if (filteredTasks.length === 0) {
     if (totalTasks === 0) {
       return (
@@ -33,21 +23,10 @@ export function PRDBody({
             </EmptyMedia>
             <EmptyTitle>No tasks yet</EmptyTitle>
             <EmptyDescription>
-              Get started by braindumping your project ideas. Claude will help structure them into features and tasks.
+              Start an agent session from the workspace (+) and execute tasks as they are created.
             </EmptyDescription>
           </EmptyHeader>
-          <EmptyContent>
-            <div className="flex flex-col gap-2">
-              <Button onClick={onBraindump}>
-                <Brain className="h-4 w-4 mr-2" />
-                Braindump Project
-              </Button>
-              <Button onClick={onYap} variant="outline">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Yap about Tasks
-              </Button>
-            </div>
-          </EmptyContent>
+          <EmptyContent />
         </Empty>
       )
     }

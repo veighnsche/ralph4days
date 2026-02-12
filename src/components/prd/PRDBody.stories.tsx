@@ -10,9 +10,7 @@ const meta = {
     totalTasks: 0,
     cropsStore: new Map(),
     onTaskClick: () => {},
-    onClearFilters: () => {},
-    onBraindump: () => {},
-    onYap: () => {}
+    onClearFilters: () => {}
   }
 } satisfies Meta<typeof PRDBody>
 

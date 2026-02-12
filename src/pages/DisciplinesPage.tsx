@@ -9,7 +9,7 @@ import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DisciplineDetailTabContent } from '@/components/workspace/DisciplineDetailTabContent'
 import { useDisciplineStats, useStackMetadata } from '@/hooks/disciplines'
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
+import { NOOP_TAB_LIFECYCLE, useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
 export function DisciplinesPage() {
   const { disciplines, statsMap, progress, isLoading: disciplinesLoading } = useDisciplineStats()
@@ -21,6 +21,7 @@ export function DisciplinesPage() {
       component: DisciplineDetailTabContent,
       title: displayName,
       closeable: true,
+      lifecycle: NOOP_TAB_LIFECYCLE,
       data: {
         entityId: disciplineName
       }

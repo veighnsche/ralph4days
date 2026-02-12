@@ -1,6 +1,6 @@
 import { render, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
+import { NOOP_TAB_LIFECYCLE, type WorkspaceTab } from '@/stores/useWorkspaceStore'
 import { TerminalTabContent } from './TerminalTabContent'
 
 const { useTerminalSessionMock } = vi.hoisted(() => ({
@@ -45,6 +45,7 @@ describe('TerminalTabContent', () => {
     component: TerminalTabContent,
     title: 'Terminal 1',
     closeable: true,
+    lifecycle: NOOP_TAB_LIFECYCLE,
     data: {
       model: 'haiku',
       thinking: true
@@ -75,7 +76,8 @@ describe('TerminalTabContent', () => {
       type: 'terminal',
       component: TerminalTabContent,
       title: 'Terminal 2',
-      closeable: true
+      closeable: true,
+      lifecycle: NOOP_TAB_LIFECYCLE
     }
 
     const { getByTestId } = render(<TerminalTabContent tab={minimalTab} />)

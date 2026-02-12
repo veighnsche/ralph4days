@@ -1,41 +1,80 @@
-import { type Agent, type Model, ModelThinkingTabButton } from '@/components/model-thinking'
+import { useEffect, useRef } from 'react'
+import { type Agent, AgentSessionLaunchButton, type Effort, type Model } from '@/components/agent-session-launch'
 import { ErrorBoundary } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { TerminalRunFormTabContent, TerminalTabContent } from '@/components/workspace'
+import { TerminalTabContent } from '@/components/workspace'
+import { createAgentSessionConfigTab } from '@/components/workspace/tabs/agentSessionConfigTab'
 import { useBrowserTabsActions } from '@/hooks/workspace'
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
+import { NOOP_TAB_LIFECYCLE, useWorkspaceStore, type WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { BrowserTab } from './BrowserTabs'
 import { BrowserTabs } from './BrowserTabs'
+
+function runLifecycle(tab: WorkspaceTab, hook: 'onMount' | 'onUnmount' | 'onActivate' | 'onDeactivate') {
+  try {
+    tab.lifecycle?.[hook]?.(tab)
+  } catch (error) {
+    console.error(`[workspace] tab lifecycle ${hook} failed`, error)
+  }
+}
 
 export function WorkspacePanel() {
   const tabs = useWorkspaceStore(s => s.tabs)
   const activeTabId = useWorkspaceStore(s => s.activeTabId)
   const openTab = useWorkspaceStore(s => s.openTab)
   const tabActions = useBrowserTabsActions()
+  const previousTabsRef = useRef<Map<string, WorkspaceTab>>(new Map())
+  const previousActiveTabIdRef = useRef<string>('')
 
-  const handleNewTab = (agent: Agent, model: Model, thinking: boolean) => {
+  useEffect(() => {
+    const previousTabs = previousTabsRef.current
+    const nextTabs = new Map(tabs.map(tab => [tab.id, tab]))
+
+    for (const tab of tabs) {
+      if (!previousTabs.has(tab.id)) {
+        runLifecycle(tab, 'onMount')
+      }
+    }
+    for (const [tabId, tab] of previousTabs) {
+      if (!nextTabs.has(tabId)) {
+        runLifecycle(tab, 'onUnmount')
+      }
+    }
+
+    previousTabsRef.current = nextTabs
+  }, [tabs])
+
+  useEffect(() => {
+    const previousActiveTabId = previousActiveTabIdRef.current
+    if (previousActiveTabId === activeTabId) return
+
+    const previousActiveTab = tabs.find(tab => tab.id === previousActiveTabId)
+    const nextActiveTab = tabs.find(tab => tab.id === activeTabId)
+
+    if (previousActiveTab) runLifecycle(previousActiveTab, 'onDeactivate')
+    if (nextActiveTab) runLifecycle(nextActiveTab, 'onActivate')
+
+    previousActiveTabIdRef.current = activeTabId
+  }, [activeTabId, tabs])
+
+  const handleNewTab = (agent: Agent, model: Model, effort: Effort, thinking: boolean) => {
     const agentLabel = agent === 'codex' ? 'Codex' : 'Claude'
     openTab({
       type: 'terminal',
       component: TerminalTabContent,
       title: `${agentLabel} (${model})`,
       closeable: true,
+      lifecycle: NOOP_TAB_LIFECYCLE,
       data: {
         agent,
         model,
+        effort: agent === 'claude' ? effort : undefined,
         thinking
       }
     })
   }
 
-  const handleOpenRunForm = (agent: Agent, model: Model, thinking: boolean) => {
-    openTab({
-      type: 'terminal-run-form',
-      component: TerminalRunFormTabContent,
-      title: 'Run Agent',
-      closeable: true,
-      data: { agent, model, thinking }
-    })
+  const handleOpenRunForm = (agent: Agent, model: Model, effort: Effort, thinking: boolean) => {
+    openTab(createAgentSessionConfigTab({ agent, model, effort, thinking }))
   }
 
   const browserTabs: BrowserTab[] = tabs.map(t => ({
@@ -45,7 +84,7 @@ export function WorkspacePanel() {
     closeable: t.closeable
   }))
 
-  const newTabButton = <ModelThinkingTabButton onNewTab={handleNewTab} onOpenRunForm={handleOpenRunForm} />
+  const newTabButton = <AgentSessionLaunchButton onNewTab={handleNewTab} onOpenRunForm={handleOpenRunForm} />
 
   return (
     <div className="flex h-full flex-col">
@@ -76,7 +115,8 @@ function EmptyWorkspace() {
       type: 'terminal',
       component: TerminalTabContent,
       title: 'Terminal 1',
-      closeable: true
+      closeable: true,
+      lifecycle: NOOP_TAB_LIFECYCLE
     })
   }
 

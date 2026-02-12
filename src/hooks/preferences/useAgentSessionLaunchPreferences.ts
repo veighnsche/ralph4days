@@ -1,0 +1,57 @@
+import { create } from 'zustand'
+import { createJSONStorage, persist } from 'zustand/middleware'
+
+const VALID_AGENTS = ['claude', 'codex'] as const
+export type Agent = (typeof VALID_AGENTS)[number]
+export type Model = string
+export type Effort = 'low' | 'medium' | 'high'
+
+const DEFAULT_MODELS_BY_AGENT: Record<Agent, string> = {
+  claude: 'claude-sonnet-4',
+  codex: 'gpt-5-codex'
+}
+
+function getDefaultModel(agent: Agent) {
+  return DEFAULT_MODELS_BY_AGENT[agent]
+}
+
+type AgentSessionLaunchPreferencesStore = {
+  agent: Agent
+  model: Model
+  effort: Effort
+  thinking: boolean
+  setAgent: (value: Agent) => void
+  setModel: (value: Model) => void
+  setEffort: (value: Effort) => void
+  setThinking: (value: boolean) => void
+  getDefaultModel: (agent: Agent) => Model
+}
+
+export const useAgentSessionLaunchPreferences = create<AgentSessionLaunchPreferencesStore>()(
+  persist(
+    set => ({
+      agent: 'claude',
+      model: getDefaultModel('claude'),
+      effort: 'medium',
+      thinking: false,
+      setAgent: value => set({ agent: value }),
+      setModel: value => {
+        if (!value.trim()) return
+        set({ model: value })
+      },
+      setEffort: value => set({ effort: value }),
+      setThinking: value => set({ thinking: value }),
+      getDefaultModel
+    }),
+    {
+      name: 'ralph.preferences.agent-session-launch',
+      storage: createJSONStorage(() => localStorage),
+      partialize: state => ({
+        agent: state.agent,
+        model: state.model,
+        effort: state.effort,
+        thinking: state.thinking
+      })
+    }
+  )
+)

@@ -1,6 +1,5 @@
 import { Puzzle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useInvoke } from '@/hooks/api'
@@ -8,14 +7,12 @@ import { useFeatureStats } from '@/hooks/features'
 import { useTabMeta } from '@/hooks/workspace'
 import { formatDate } from '@/lib/formatDate'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { FeatureData } from '@/types/generated'
 import { DetailPageLayout } from './DetailPageLayout'
-import { FeatureFormTabContent } from './FeatureFormTabContent'
 import { FeatureCommentsSection } from './feature-detail/FeatureCommentsSection'
 import { PropertyRow } from './PropertyRow'
 
-function FeatureContent({ feature, onEdit }: { feature: FeatureData; onEdit: () => void }) {
+function FeatureContent({ feature }: { feature: FeatureData }) {
   const sections: React.ReactNode[] = []
 
   sections.push(
@@ -35,9 +32,6 @@ function FeatureContent({ feature, onEdit }: { feature: FeatureData; onEdit: () 
           </div>
         </div>
       </div>
-      <Button onClick={onEdit} size="sm">
-        Edit
-      </Button>
     </div>
   )
 
@@ -124,7 +118,6 @@ function FeatureSidebar({
 }
 
 export function FeatureDetailTabContent({ tab }: { tab: WorkspaceTab }) {
-  const openTab = useWorkspaceStore(state => state.openTab)
   const featureName = tab.data?.entityId as string
 
   const { data: features, isLoading } = useInvoke<FeatureData[]>('get_features', undefined, {
@@ -167,23 +160,10 @@ export function FeatureDetailTabContent({ tab }: { tab: WorkspaceTab }) {
     )
   }
 
-  const handleEdit = () => {
-    openTab({
-      type: 'feature-form',
-      component: FeatureFormTabContent,
-      title: `Edit ${feature.displayName}`,
-      closeable: true,
-      data: {
-        mode: 'edit',
-        entityId: feature.name
-      }
-    })
-  }
-
   return (
     <DetailPageLayout
       accentColor="hsl(var(--muted-foreground))"
-      mainContent={<FeatureContent feature={feature} onEdit={handleEdit} />}
+      mainContent={<FeatureContent feature={feature} />}
       sidebar={<FeatureSidebar feature={feature} stats={stats} featureProgress={featureProgress} />}>
       <FeatureCommentsSection feature={feature} />
     </DetailPageLayout>

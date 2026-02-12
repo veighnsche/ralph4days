@@ -31,7 +31,7 @@ export function TasksPage() {
   const progress = useMemo(() => computeProjectProgress(tasks ?? []), [tasks])
 
   const { filters, setters, filteredTasks, clearFilters } = usePRDFilters(tasks, allTags)
-  const { openBraindumpTab, openTaskDetailTab } = useWorkspaceActions()
+  const { openTaskDetailTab } = useWorkspaceActions()
 
   const totalTasks = progress.totalTasks
   const doneTasks = progress.doneTasks
@@ -103,8 +103,6 @@ export function TasksPage() {
           cropsStore={cropsStore}
           onTaskClick={openTaskDetailTab}
           onClearFilters={clearFilters}
-          onBraindump={() => openBraindumpTab('Braindump Project')}
-          onYap={() => openBraindumpTab('Yap about Tasks')}
         />
       </PageContent>
     </PageLayout>

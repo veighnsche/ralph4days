@@ -16,7 +16,8 @@ export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
   const kind = tab.data?.taskId != null ? 'task_execution' : 'manual'
   const agent = tab.data?.agent ?? 'claude'
   const model = tab.data?.model
-  const launchCommand = buildLaunchCommand(agent, model)
+  const effort = tab.data?.effort
+  const launchCommand = buildLaunchCommand(agent, model, effort)
 
   const session = useTerminalSession(
     {
@@ -25,6 +26,7 @@ export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
       mcpMode: tab.data?.taskId !== undefined ? undefined : 'interactive',
       taskId: tab.data?.taskId,
       model: tab.data?.model,
+      effort: tab.data?.effort,
       thinking: tab.data?.thinking,
       humanSession: {
         kind,
@@ -81,9 +83,11 @@ export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
   )
 }
 
-function buildLaunchCommand(agent: string, model?: string) {
+function buildLaunchCommand(agent: string, model?: string, effort?: 'low' | 'medium' | 'high') {
   if (agent === 'codex') {
     return model != null ? `codex --model ${model}` : 'codex'
   }
-  return model != null ? `claude --model ${model}` : 'claude'
+  const modelArg = model != null ? ` --model ${model}` : ''
+  const effortArg = effort != null ? ` --effort ${effort}` : ''
+  return `claude${modelArg}${effortArg}`
 }

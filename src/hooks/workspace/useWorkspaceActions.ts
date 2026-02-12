@@ -1,56 +1,19 @@
-import {
-  BraindumpFormTabContent,
-  DisciplineFormTabContent,
-  FeatureDetailTabContent,
-  FeatureFormTabContent,
-  TaskDetailTabContent,
-  TaskFormTabContent,
-  TerminalTabContent
-} from '@/components/workspace'
-import type { Agent } from '@/hooks/preferences'
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
+import { FeatureDetailTabContent, TaskDetailTabContent, TerminalTabContent } from '@/components/workspace'
+import type { Agent, Effort } from '@/hooks/preferences'
+import { NOOP_TAB_LIFECYCLE, useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { FeatureData, Task } from '@/types/generated'
 
 export function useWorkspaceActions() {
   const openTab = useWorkspaceStore(s => s.openTab)
 
   return {
-    openBraindumpTab: (title: string) =>
-      openTab({ type: 'braindump-form', component: BraindumpFormTabContent, title, closeable: true }),
-
-    openCreateTaskTab: () =>
-      openTab({
-        type: 'task-form',
-        component: TaskFormTabContent,
-        title: 'Create Task',
-        closeable: true,
-        data: { mode: 'create' }
-      }),
-
-    openCreateFeatureTab: () =>
-      openTab({
-        type: 'feature-form',
-        component: FeatureFormTabContent,
-        title: 'Create Feature',
-        closeable: true,
-        data: { mode: 'create' }
-      }),
-
-    openCreateDisciplineTab: () =>
-      openTab({
-        type: 'discipline-form',
-        component: DisciplineFormTabContent,
-        title: 'Create Discipline',
-        closeable: true,
-        data: { mode: 'create' }
-      }),
-
     openFeatureDetailTab: (feature: FeatureData) =>
       openTab({
         type: 'feature-detail',
         component: FeatureDetailTabContent,
         title: feature.displayName,
         closeable: true,
+        lifecycle: NOOP_TAB_LIFECYCLE,
         data: { entityId: feature.name }
       }),
 
@@ -60,17 +23,19 @@ export function useWorkspaceActions() {
         component: TaskDetailTabContent,
         title: task.title,
         closeable: true,
+        lifecycle: NOOP_TAB_LIFECYCLE,
         data: { entityId: task.id, entity: task }
       }),
 
-    openTerminalTab: (agent: Agent, model: string, thinking: boolean, initPrompt?: string) => {
+    openTerminalTab: (agent: Agent, model: string, effort: Effort, thinking: boolean, initPrompt?: string) => {
       const agentLabel = agent === 'codex' ? 'Codex' : 'Claude'
       return openTab({
         type: 'terminal',
         component: TerminalTabContent,
         title: `${agentLabel} (${model})`,
         closeable: true,
-        data: { agent, model, thinking, initPrompt }
+        lifecycle: NOOP_TAB_LIFECYCLE,
+        data: { agent, model, effort: agent === 'claude' ? effort : undefined, thinking, initPrompt }
       })
     }
   }

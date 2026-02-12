@@ -1,5 +1,5 @@
 import { TerminalTabContent } from '@/components/workspace'
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
+import { NOOP_TAB_LIFECYCLE, useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
 export interface BrowserTabsActions {
   switchTab: (tabId: string) => void
@@ -25,7 +25,8 @@ export function useBrowserTabsActions(): BrowserTabsActions {
       type: 'terminal',
       component: TerminalTabContent,
       title: 'New Terminal',
-      closeable: true
+      closeable: true,
+      lifecycle: NOOP_TAB_LIFECYCLE
     })
   }
 

@@ -10,7 +10,7 @@ import { formatDate } from '@/lib/formatDate'
 import { resolveIcon } from '@/lib/iconRegistry'
 import type { InferredTaskStatus } from '@/lib/taskStatus'
 import { shouldShowInferredStatus } from '@/lib/taskStatus'
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
+import { NOOP_TAB_LIFECYCLE, useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { Task, TaskSignal } from '@/types/generated'
 import { PropertyRow } from '../PropertyRow'
 import { TerminalTabContent } from '../TerminalTabContent'
@@ -67,6 +67,7 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
       component: TerminalTabContent,
       title: `Task #${task.id.toString().padStart(3, '0')}`,
       closeable: true,
+      lifecycle: NOOP_TAB_LIFECYCLE,
       data: {
         taskId: task.id
       }

@@ -1,25 +1,25 @@
 import { ChevronDown, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { type Agent, type Model, useModelThinkingPreferences } from '@/hooks/preferences'
+import { type Agent, type Effort, type Model, useAgentSessionLaunchPreferences } from '@/hooks/preferences'
 import { cn } from '@/lib/utils'
 
 export type { Model } from '@/hooks/preferences'
 
-interface ModelThinkingTabButtonProps {
-  onNewTab: (agent: Agent, model: Model, thinking: boolean) => void
-  onOpenRunForm: (agent: Agent, model: Model, thinking: boolean) => void
+interface AgentSessionLaunchButtonProps {
+  onNewTab: (agent: Agent, model: Model, effort: Effort, thinking: boolean) => void
+  onOpenRunForm: (agent: Agent, model: Model, effort: Effort, thinking: boolean) => void
 }
 
-export function ModelThinkingTabButton({ onNewTab, onOpenRunForm }: ModelThinkingTabButtonProps) {
-  const { agent, model, thinking } = useModelThinkingPreferences()
+export function AgentSessionLaunchButton({ onNewTab, onOpenRunForm }: AgentSessionLaunchButtonProps) {
+  const { agent, model, effort, thinking } = useAgentSessionLaunchPreferences()
 
   const handleNewTab = () => {
-    onNewTab(agent, model, thinking)
+    onNewTab(agent, model, effort, thinking)
   }
 
   const handleOpenRunForm = () => {
-    onOpenRunForm(agent, model, thinking)
+    onOpenRunForm(agent, model, effort, thinking)
   }
 
   return (
@@ -46,6 +46,9 @@ export function ModelThinkingTabButton({ onNewTab, onOpenRunForm }: ModelThinkin
               </div>
               <div>
                 <span className="font-semibold">Model:</span> {model}
+              </div>
+              <div>
+                <span className="font-semibold">Effort:</span> {effort}
               </div>
               <div>
                 <span className="font-semibold">Thinking:</span> {thinking ? 'On' : 'Off'}
