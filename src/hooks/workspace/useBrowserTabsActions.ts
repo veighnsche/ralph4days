@@ -1,4 +1,4 @@
-import { createTerminalTab } from '@/components/workspace/tabs'
+import { createDefaultTerminalTab } from '@/components/workspace/tabs'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
 export interface BrowserTabsActions {
@@ -21,7 +21,7 @@ export function useBrowserTabsActions(): BrowserTabsActions {
   const reorderTabs = useWorkspaceStore(s => s.reorderTabs)
 
   const newTabToRight = (afterTabId: string) => {
-    openTabAfter(afterTabId, createTerminalTab({ title: 'New Terminal' }))
+    openTabAfter(afterTabId, createDefaultTerminalTab())
   }
 
   return {

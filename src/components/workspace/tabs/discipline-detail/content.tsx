@@ -12,7 +12,7 @@ import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { DisciplineConfig } from '@/types/generated'
 import { DetailPageLayout } from '../../DetailPageLayout'
 import { PropertyRow } from '../../PropertyRow'
-import { parseDisciplineDetailTabParams } from './schema'
+import type { DisciplineDetailTabParams } from './schema'
 
 function DisciplineContent({ discipline }: { discipline: DisciplineConfig }) {
   const Icon = resolveIcon(discipline.icon)
@@ -157,8 +157,8 @@ function DisciplineSidebar({ discipline, stackName }: { discipline: DisciplineCo
   )
 }
 
-export function DisciplineDetailTabContent({ tab }: { tab: WorkspaceTab }) {
-  const { entityId: disciplineName } = parseDisciplineDetailTabParams(tab.params)
+export function DisciplineDetailTabContent({ tab, params }: { tab: WorkspaceTab; params: DisciplineDetailTabParams }) {
+  const { entityId: disciplineName } = params
 
   const { data: disciplines, isLoading } = useInvoke<DisciplineConfig[]>('get_disciplines_config', undefined, {
     staleTime: 5 * 60 * 1000

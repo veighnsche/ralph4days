@@ -10,7 +10,7 @@ export interface WorkspaceTabLifecycle {
 
 export interface WorkspaceTabModule<TType extends string = string, TParams = unknown, TInput = unknown> {
   type: TType
-  component: ComponentType<{ tab: WorkspaceTab }>
+  component: ComponentType<{ tab: WorkspaceTab; params: TParams }>
   parseParams: (params: unknown) => TParams
   createTab: (input: TInput) => Omit<WorkspaceTab, 'id'>
   lifecycle?: WorkspaceTabLifecycle

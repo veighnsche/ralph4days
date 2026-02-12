@@ -5,33 +5,29 @@ import { InlineError } from '@/components/shared'
 import { useTabMeta } from '@/hooks/workspace'
 import { Terminal, useTerminalSession } from '@/lib/terminal'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
-import { parseTerminalTabParams } from './schema'
+import type { TerminalTabParams } from './schema'
 
 // WHY: Claude Code welcome screen is left-aligned in PTY (upstream issue #5430)
 // See: https://github.com/anthropics/claude-code/issues/5430
 
-export function TerminalTabContent({ tab }: { tab: WorkspaceTab }) {
+export function TerminalTabContent({ tab, params }: { tab: WorkspaceTab; params: TerminalTabParams }) {
   useTabMeta(tab.id, tab.title, TerminalSquare)
   const terminalRef = useRef<XTerm | null>(null)
   const [sessionError, setSessionError] = useState<string | null>(null)
-  const params = parseTerminalTabParams(tab.params)
-  const kind = params.taskId != null ? 'task_execution' : 'manual'
-  const agent = params.agent ?? 'claude'
-  const permissionLevel = params.permissionLevel ?? 'balanced'
 
   const session = useTerminalSession(
     {
       sessionId: tab.id,
-      agent,
+      agent: params.agent,
       mcpMode: params.taskId !== undefined ? undefined : 'interactive',
       taskId: params.taskId,
       model: params.model,
       effort: params.effort,
       thinking: params.thinking,
-      permissionLevel,
+      permissionLevel: params.permissionLevel,
       humanSession: {
-        kind,
-        agent,
+        kind: params.kind,
+        agent: params.agent,
         initPrompt: params.initPrompt ?? undefined
       }
     },

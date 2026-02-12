@@ -13,7 +13,7 @@ import { shouldShowInferredStatus } from '@/lib/taskStatus'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { Task, TaskSignal } from '@/types/generated'
 import { PropertyRow } from '../PropertyRow'
-import { createTerminalTab } from '../tabs'
+import { createTerminalTabFromTask } from '../tabs'
 
 const PROVENANCE_CONFIG = {
   agent: { label: 'Agent', icon: Bot },
@@ -62,12 +62,7 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
   }
 
   const handleExecute = () => {
-    openTab(
-      createTerminalTab({
-        title: `Task #${task.id.toString().padStart(3, '0')}`,
-        taskId: task.id
-      })
-    )
+    openTab(createTerminalTabFromTask(task.id))
   }
 
   return (

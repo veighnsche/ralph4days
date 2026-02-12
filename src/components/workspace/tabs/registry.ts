@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react'
+import { type ComponentType, createElement } from 'react'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { WorkspaceTabLifecycle } from './contracts'
 import { workspaceTabModules } from './modules'
@@ -10,10 +10,16 @@ const NOOP_TAB_LIFECYCLE: WorkspaceTabLifecycle = {
   onDeactivate: () => {}
 }
 
-const TAB_COMPONENTS = Object.fromEntries(workspaceTabModules.map(module => [module.type, module.component])) as Record<
-  string,
-  ComponentType<{ tab: WorkspaceTab }>
->
+const TAB_COMPONENTS = Object.fromEntries(
+  workspaceTabModules.map(module => [
+    module.type,
+    ({ tab }: { tab: WorkspaceTab }) => {
+      const params = module.parseParams(tab.params)
+      const component = module.component as ComponentType<{ tab: WorkspaceTab; params: unknown }>
+      return createElement(component, { tab, params })
+    }
+  ])
+) as Record<string, ComponentType<{ tab: WorkspaceTab }>>
 
 const TAB_LIFECYCLES = Object.fromEntries(
   workspaceTabModules.filter(module => module.lifecycle !== undefined).map(module => [module.type, module.lifecycle])

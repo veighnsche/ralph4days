@@ -21,4 +21,10 @@ export {
 export { createFeatureDetailTab, type FeatureDetailTabParams } from './feature-detail'
 export { getTabComponent, getTabLifecycle } from './registry'
 export { createTaskDetailTab, type TaskDetailTabParams } from './task-detail'
-export { createTerminalTab, type TerminalTabParams } from './terminal'
+export {
+  createDefaultTerminalTab,
+  createTerminalTab,
+  createTerminalTabFromLaunch,
+  createTerminalTabFromTask,
+  type TerminalTabParams
+} from './terminal'

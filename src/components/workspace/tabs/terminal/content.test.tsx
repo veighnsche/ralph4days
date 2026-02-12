@@ -2,6 +2,7 @@ import { render, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import { TerminalTabContent } from './content'
+import { parseTerminalTabParams } from './schema'
 
 const { useTerminalSessionMock } = vi.hoisted(() => ({
   useTerminalSessionMock: vi.fn()
@@ -55,13 +56,13 @@ describe('TerminalTabContent', () => {
   })
 
   it('renders Terminal component', () => {
-    const { getByTestId } = render(<TerminalTabContent tab={mockTab} />)
+    const { getByTestId } = render(<TerminalTabContent tab={mockTab} params={parseTerminalTabParams(mockTab.params)} />)
     expect(getByTestId('terminal')).toBeTruthy()
   })
 
   it('sets tab metadata', async () => {
     const { useTabMeta } = await import('@/hooks/workspace/useTabMeta')
-    render(<TerminalTabContent tab={mockTab} />)
+    render(<TerminalTabContent tab={mockTab} params={parseTerminalTabParams(mockTab.params)} />)
 
     await waitFor(() => {
       expect(useTabMeta).toHaveBeenCalledWith('test-terminal-1', 'Terminal 1', expect.any(Function))
@@ -76,19 +77,21 @@ describe('TerminalTabContent', () => {
       closeable: true
     }
 
-    const { getByTestId } = render(<TerminalTabContent tab={minimalTab} />)
+    const { getByTestId } = render(
+      <TerminalTabContent tab={minimalTab} params={parseTerminalTabParams(minimalTab.params)} />
+    )
     expect(getByTestId('terminal')).toBeTruthy()
   })
 
   it('renders Terminal inside flex layout wrapper', () => {
-    const { container } = render(<TerminalTabContent tab={mockTab} />)
+    const { container } = render(<TerminalTabContent tab={mockTab} params={parseTerminalTabParams(mockTab.params)} />)
     const wrapper = container.firstElementChild
     expect(wrapper?.classList.contains('flex')).toBe(true)
     expect(wrapper?.querySelector('[data-testid="terminal"]')).toBeTruthy()
   })
 
   it('starts through backend human session path', async () => {
-    render(<TerminalTabContent tab={mockTab} />)
+    render(<TerminalTabContent tab={mockTab} params={parseTerminalTabParams(mockTab.params)} />)
     await waitFor(() => expect(useTerminalSessionMock).toHaveBeenCalled())
 
     const config = useTerminalSessionMock.mock.calls[0][0] as {
@@ -111,7 +114,7 @@ describe('TerminalTabContent', () => {
       }
     }
 
-    render(<TerminalTabContent tab={codexTab} />)
+    render(<TerminalTabContent tab={codexTab} params={parseTerminalTabParams(codexTab.params)} />)
     await waitFor(() => expect(useTerminalSessionMock).toHaveBeenCalled())
 
     const config = useTerminalSessionMock.mock.calls[0][0] as {

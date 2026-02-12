@@ -5,7 +5,8 @@ import { ErrorBoundary } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import {
   createAgentSessionConfigTab,
-  createTerminalTab,
+  createDefaultTerminalTab,
+  createTerminalTabFromLaunch,
   getTabComponent,
   getTabLifecycle,
   WorkspaceTabProvider
@@ -63,7 +64,7 @@ export function WorkspacePanel() {
   }, [activeTabId, tabs])
 
   const handleNewTab = (config: AgentSessionLaunchConfig) => {
-    openTab(createTerminalTab(config))
+    openTab(createTerminalTabFromLaunch(config))
   }
 
   const handleOpenRunForm = (config: AgentSessionLaunchConfig) => {
@@ -119,7 +120,7 @@ function EmptyWorkspace() {
         <Button
           variant="link"
           size="sm"
-          onClick={() => openTab(createTerminalTab({ title: 'Terminal 1' }))}
+          onClick={() => openTab(createDefaultTerminalTab('Terminal 1'))}
           className="text-xs">
           Create terminal tab
         </Button>

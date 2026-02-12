@@ -1,25 +1,23 @@
 import { z } from 'zod'
+import { optionalLaunchOptionsSchema } from '../launch-options-schema'
 
-const agentSchema = z.enum(['claude', 'codex'])
-const effortSchema = z.enum(['low', 'medium', 'high'])
-const permissionLevelSchema = z.enum(['safe', 'balanced', 'auto', 'full_auto'])
-
-export const terminalTabParamsSchema = z
-  .object({
-    agent: agentSchema.optional(),
-    model: z.string().trim().min(1).optional(),
-    effort: effortSchema.optional(),
-    thinking: z.boolean().optional(),
-    permissionLevel: permissionLevelSchema.optional(),
+const terminalTabInputSchema = optionalLaunchOptionsSchema
+  .extend({
     taskId: z.number().int().positive().optional(),
     initPrompt: z.string().optional(),
     title: z.string().trim().min(1).optional()
   })
   .strict()
+export const terminalTabParamsSchema = terminalTabInputSchema.transform(params => ({
+  ...params,
+  agent: params.agent ?? 'claude',
+  permissionLevel: params.permissionLevel ?? 'balanced',
+  kind: params.taskId != null ? 'task_execution' : 'manual'
+}))
 
-export type TerminalTabParams = z.infer<typeof terminalTabParamsSchema>
+export type TerminalTabInput = z.input<typeof terminalTabParamsSchema>
+export type TerminalTabParams = z.output<typeof terminalTabParamsSchema>
 
 export function parseTerminalTabParams(params: unknown): TerminalTabParams {
-  if (params == null) return {}
-  return terminalTabParamsSchema.parse(params)
+  return terminalTabParamsSchema.parse(params ?? {})
 }

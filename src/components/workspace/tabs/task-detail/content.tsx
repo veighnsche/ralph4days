@@ -10,10 +10,10 @@ import { DetailPageLayout } from '../../DetailPageLayout'
 import { CommentsSection } from '../../task-detail'
 import { TaskCardContent } from '../../task-detail/TaskCardContent'
 import { TaskSidebar } from '../../task-detail/TaskSidebar'
-import { parseTaskDetailTabParams } from './schema'
+import type { TaskDetailTabParams } from './schema'
 
-export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
-  const { entityId, entity: snapshotTask } = parseTaskDetailTabParams(tab.params)
+export function TaskDetailTabContent({ tab, params }: { tab: WorkspaceTab; params: TaskDetailTabParams }) {
+  const { entityId, entity: snapshotTask } = params
 
   const { tasks } = usePRDData()
   const task = (entityId != null ? tasks?.find(t => t.id === entityId) : undefined) ?? snapshotTask

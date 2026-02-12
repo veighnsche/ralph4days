@@ -11,7 +11,7 @@ import type { FeatureData } from '@/types/generated'
 import { DetailPageLayout } from '../../DetailPageLayout'
 import { FeatureCommentsSection } from '../../feature-detail/FeatureCommentsSection'
 import { PropertyRow } from '../../PropertyRow'
-import { parseFeatureDetailTabParams } from './schema'
+import type { FeatureDetailTabParams } from './schema'
 
 function FeatureContent({ feature }: { feature: FeatureData }) {
   const sections: React.ReactNode[] = []
@@ -118,8 +118,8 @@ function FeatureSidebar({
   )
 }
 
-export function FeatureDetailTabContent({ tab }: { tab: WorkspaceTab }) {
-  const { entityId: featureName } = parseFeatureDetailTabParams(tab.params)
+export function FeatureDetailTabContent({ tab, params }: { tab: WorkspaceTab; params: FeatureDetailTabParams }) {
+  const { entityId: featureName } = params
 
   const { data: features, isLoading } = useInvoke<FeatureData[]>('get_features', undefined, {
     staleTime: 5 * 60 * 1000
