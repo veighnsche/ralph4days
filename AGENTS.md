@@ -56,3 +56,13 @@ Use `just` as the primary task runner (`just --list`).
 - Keep commits scoped and functional; avoid mixing unrelated frontend/backend changes when possible.
 - Before opening a PR, run `just check-all` and `just test` (plus `just test-e2e` for UI-impacting changes).
 - PRs should include: clear summary, impacted areas, linked issue/task, and screenshots or recordings for UI changes.
+
+## Communication Gap Note (UI Placement)
+- Known user gap: translating spatial UI intent into unambiguous implementation constraints can be inconsistent under frustration.
+- Agent requirement: when UI placement wording is directional (`under`, `inside`, `outside`, `between`) and there is any ambiguity, convert the request into a strict ordered structure before coding.
+- Use this format in replies before implementation:
+  - exact render order list,
+  - explicit inside/outside container rules,
+  - explicit "must not" rules,
+  - short acceptance checklist.
+- Treat the user's ASCII layout as authoritative when provided.
