@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import type { CropBoxData } from '@/types/generated'
 
 const cropCache = new Map<string, string>()
+const inflightCropRequests = new Map<string, Promise<string | null>>()
 
 function cacheKey(name: string, label: string, crop: CropBoxData): string {
   return `${name}|${label}|${crop.x},${crop.y},${crop.w},${crop.h}`
@@ -25,19 +26,28 @@ export function CroppedImage({
   const [src, setSrc] = useState<string | undefined>(cropCache.get(key))
 
   useEffect(() => {
-    if (cropCache.has(key)) {
-      setSrc(cropCache.get(key))
+    const cached = cropCache.get(key)
+    if (cached) {
+      setSrc(cached)
       return
     }
 
-    invoke<string | null>('get_cropped_image', { name: disciplineName, crop, label }).then(b64 => {
+    let request = inflightCropRequests.get(key)
+    if (!request) {
+      request = invoke<string | null>('get_cropped_image', { name: disciplineName, crop, label }).finally(() => {
+        inflightCropRequests.delete(key)
+      })
+      inflightCropRequests.set(key, request)
+    }
+
+    request.then(b64 => {
       if (b64) {
         const dataUrl = `data:image/png;base64,${b64}`
         cropCache.set(key, dataUrl)
         setSrc(dataUrl)
       }
     })
-  }, [key, disciplineName, crop, label])
+  }, [key])
 
   if (!src) return <div className={className} style={style} />
 
