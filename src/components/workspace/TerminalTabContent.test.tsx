@@ -1,19 +1,13 @@
-import { act, render, waitFor } from '@testing-library/react'
+import { render, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import { TerminalTabContent } from './TerminalTabContent'
 
-const { invokeMock, terminalBridgeEmitSystemMessageMock, useTerminalSessionMock, useTerminalSessionState } = vi.hoisted(
-  () => ({
-    invokeMock: vi.fn(),
-    terminalBridgeEmitSystemMessageMock: vi.fn().mockResolvedValue(undefined),
-    useTerminalSessionMock: vi.fn(),
-    useTerminalSessionState: { lastHandlers: null as { onStarted?: () => void } | null }
-  })
-)
+const { useTerminalSessionMock } = vi.hoisted(() => ({
+  useTerminalSessionMock: vi.fn()
+}))
 
 vi.mock('@/lib/terminal', () => ({
-  terminalBridgeEmitSystemMessage: terminalBridgeEmitSystemMessageMock,
   Terminal: ({ onReady }: { onReady?: (terminal: unknown) => void }) => {
     onReady?.({
       cols: 80,
@@ -25,19 +19,14 @@ vi.mock('@/lib/terminal', () => ({
     })
     return <div data-testid="terminal">Terminal</div>
   },
-  useTerminalSession: (config: unknown, handlers: { onStarted?: () => void }) => {
+  useTerminalSession: (config: unknown) => {
     useTerminalSessionMock(config)
-    useTerminalSessionState.lastHandlers = handlers
     return {
       markReady: vi.fn(),
       sendInput: vi.fn(),
       resize: vi.fn()
     }
   }
-}))
-
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: (...args: unknown[]) => invokeMock(...args)
 }))
 
 vi.mock('@/hooks/workspace/useTabMeta', () => ({
@@ -64,9 +53,6 @@ describe('TerminalTabContent', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    useTerminalSessionState.lastHandlers = null
-    // Keep async session-persist state transitions out of tests that do not await them.
-    invokeMock.mockImplementation(() => new Promise(() => {}))
   })
 
   it('renders Terminal component', () => {
@@ -103,42 +89,16 @@ describe('TerminalTabContent', () => {
     expect(wrapper?.querySelector('[data-testid="terminal"]')).toBeTruthy()
   })
 
-  it('emits startup message only after session persisted and bridge started', async () => {
-    vi.useFakeTimers()
-    invokeMock.mockResolvedValueOnce(undefined)
+  it('starts through backend human session path', async () => {
     render(<TerminalTabContent tab={mockTab} />)
+    await waitFor(() => expect(useTerminalSessionMock).toHaveBeenCalled())
 
-    await act(async () => {
-      await Promise.resolve()
-    })
-    expect(useTerminalSessionMock).toHaveBeenCalled()
-
-    const firstConfig = useTerminalSessionMock.mock.calls[0][0] as { enabled?: boolean }
-    expect(firstConfig.enabled).toBe(false)
-
-    await act(async () => {
-      await Promise.resolve()
-    })
-    const hasEnabledTrue = useTerminalSessionMock.mock.calls.some(
-      call => ((call[0] as { enabled?: boolean }).enabled ?? false) === true
-    )
-    expect(hasEnabledTrue).toBe(true)
-
-    expect(terminalBridgeEmitSystemMessageMock).not.toHaveBeenCalled()
-
-    act(() => {
-      useTerminalSessionState.lastHandlers?.onStarted?.()
-    })
-
-    act(() => {
-      vi.advanceTimersByTime(1500)
-    })
-
-    await act(async () => {
-      await Promise.resolve()
-    })
-    expect(terminalBridgeEmitSystemMessageMock).toHaveBeenCalledTimes(1)
-
-    vi.useRealTimers()
+    const config = useTerminalSessionMock.mock.calls[0][0] as {
+      sessionId: string
+      humanSession?: { kind: string; agent?: string; launchCommand?: string }
+    }
+    expect(config.sessionId).toBe('test-terminal-1')
+    expect(config.humanSession?.kind).toBe('manual')
+    expect(config.humanSession?.agent).toBe('claude')
   })
 })

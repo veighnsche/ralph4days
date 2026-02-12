@@ -2,6 +2,7 @@
 
 pub use contract::{
     TerminalBridgeEmitSystemMessageArgs, TerminalBridgeResizeArgs, TerminalBridgeSendInputArgs,
+    TerminalBridgeStartHumanSessionArgs, TerminalBridgeStartHumanSessionResult,
     TerminalBridgeStartSessionArgs, TerminalBridgeStartTaskSessionArgs,
     TerminalBridgeTerminateArgs,
 };

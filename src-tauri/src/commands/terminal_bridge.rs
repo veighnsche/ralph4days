@@ -1,13 +1,18 @@
-use super::state::AppState;
+use super::state::{get_db, AppState};
 use crate::terminal::{
     PtyOutputEvent, SessionConfig, TerminalBridgeEmitSystemMessageArgs, TerminalBridgeResizeArgs,
-    TerminalBridgeSendInputArgs, TerminalBridgeStartSessionArgs,
+    TerminalBridgeSendInputArgs, TerminalBridgeStartHumanSessionArgs,
+    TerminalBridgeStartHumanSessionResult, TerminalBridgeStartSessionArgs,
     TerminalBridgeStartTaskSessionArgs, TerminalBridgeTerminateArgs, TERMINAL_BRIDGE_OUTPUT_EVENT,
 };
 use base64::{engine::general_purpose::STANDARD, Engine};
 use ralph_errors::{codes, ToStringErr};
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter, State};
+
+static AGENT_SESSION_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 fn locked_project_path(state: &AppState) -> Result<PathBuf, String> {
     let locked = state.locked_project.lock().err_str(codes::INTERNAL)?;
@@ -61,6 +66,13 @@ fn start_session_impl(
     state: &AppState,
     args: TerminalBridgeStartSessionArgs,
 ) -> Result<(), String> {
+    tracing::debug!(
+        session_id = %args.session_id,
+        mcp_mode = ?args.mcp_mode,
+        model = ?args.model,
+        thinking = ?args.thinking,
+        "terminal_bridge_start_session"
+    );
     let (project_path, mcp_config) =
         resolve_start_session_context(state, args.mcp_mode.as_deref())?;
     let config = SessionConfig {
@@ -78,6 +90,13 @@ fn start_task_session_impl(
     state: &AppState,
     args: TerminalBridgeStartTaskSessionArgs,
 ) -> Result<(), String> {
+    tracing::debug!(
+        session_id = %args.session_id,
+        task_id = args.task_id,
+        model = ?args.model,
+        thinking = ?args.thinking,
+        "terminal_bridge_start_task_session"
+    );
     let (project_path, mcp_config) = resolve_start_task_session_context(state, args.task_id)?;
     let config = SessionConfig {
         model: args.model,
@@ -94,16 +113,29 @@ fn start_task_session_impl(
 }
 
 fn send_input_impl(state: &AppState, args: TerminalBridgeSendInputArgs) -> Result<(), String> {
+    tracing::trace!(
+        session_id = %args.session_id,
+        byte_count = args.data.len(),
+        text = %String::from_utf8_lossy(&args.data).escape_debug().to_string(),
+        "terminal_bridge_send_input"
+    );
     state.pty_manager.send_input(&args.session_id, &args.data)
 }
 
 fn resize_impl(state: &AppState, args: TerminalBridgeResizeArgs) -> Result<(), String> {
+    tracing::trace!(
+        session_id = %args.session_id,
+        cols = args.cols,
+        rows = args.rows,
+        "terminal_bridge_resize"
+    );
     state
         .pty_manager
         .resize(&args.session_id, args.cols, args.rows)
 }
 
 fn terminate_impl(state: &AppState, args: TerminalBridgeTerminateArgs) -> Result<(), String> {
+    tracing::debug!(session_id = %args.session_id, "terminal_bridge_terminate");
     state.pty_manager.terminate(&args.session_id)
 }
 
@@ -111,7 +143,20 @@ fn emit_system_message_impl<R: tauri::Runtime>(
     app: &AppHandle<R>,
     args: TerminalBridgeEmitSystemMessageArgs,
 ) -> Result<(), String> {
+    tracing::debug!(
+        session_id = %args.session_id,
+        text = %args.text.escape_debug().to_string(),
+        "terminal_bridge_emit_system_message"
+    );
     emit_system_message(app, args.session_id, args.text)
+}
+
+fn generate_agent_session_id() -> String {
+    let millis = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0u128, |d| d.as_millis());
+    let counter = AGENT_SESSION_COUNTER.fetch_add(1, Ordering::Relaxed);
+    format!("agent-session-{millis}-{counter}")
 }
 
 #[tauri::command]
@@ -203,6 +248,129 @@ pub fn terminal_bridge_emit_system_message(
         &app,
         TerminalBridgeEmitSystemMessageArgs { session_id, text },
     )
+}
+
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub fn terminal_bridge_start_human_session(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    terminal_session_id: String,
+    kind: String,
+    task_id: Option<u32>,
+    agent: Option<String>,
+    model: Option<String>,
+    launch_command: Option<String>,
+    post_start_preamble: Option<String>,
+    init_prompt: Option<String>,
+    mcp_mode: Option<String>,
+    thinking: Option<bool>,
+) -> Result<TerminalBridgeStartHumanSessionResult, String> {
+    tracing::debug!(
+        terminal_session_id = %terminal_session_id,
+        kind = %kind,
+        task_id = ?task_id,
+        agent = ?agent,
+        model = ?model,
+        mcp_mode = ?mcp_mode,
+        thinking = ?thinking,
+        "terminal_bridge_start_human_session"
+    );
+    let args = TerminalBridgeStartHumanSessionArgs {
+        terminal_session_id,
+        kind,
+        task_id,
+        agent,
+        model,
+        launch_command,
+        post_start_preamble,
+        init_prompt,
+        mcp_mode,
+        thinking,
+    };
+
+    let agent_session_id = generate_agent_session_id();
+    tracing::debug!(
+        terminal_session_id = %args.terminal_session_id,
+        agent_session_id = %agent_session_id,
+        "terminal_bridge_start_human_session.created_agent_session_id"
+    );
+
+    let db = get_db(&state)?;
+    db.create_human_agent_session(sqlite_db::AgentSessionCreateInput {
+        id: agent_session_id.clone(),
+        kind: args.kind.clone(),
+        task_id: args.task_id,
+        agent: args.agent.clone(),
+        model: args.model.clone(),
+        launch_command: args.launch_command.clone(),
+        post_start_preamble: args.post_start_preamble.clone(),
+        init_prompt: args.init_prompt.clone(),
+    })?;
+
+    let agent_session_number = {
+        let db = get_db(&state)?;
+        db.get_agent_session_by_id(&agent_session_id)
+            .map(|s| s.session_number)
+            .ok_or_else(|| {
+                format!("Failed to load newly created agent session '{agent_session_id}'")
+            })?
+    };
+
+    let start_result = if let Some(task_id) = args.task_id {
+        start_task_session_impl(
+            app.clone(),
+            state.inner(),
+            TerminalBridgeStartTaskSessionArgs {
+                session_id: args.terminal_session_id.clone(),
+                task_id,
+                model: args.model.clone(),
+                thinking: args.thinking,
+            },
+        )
+    } else {
+        start_session_impl(
+            app.clone(),
+            state.inner(),
+            TerminalBridgeStartSessionArgs {
+                session_id: args.terminal_session_id.clone(),
+                mcp_mode: args.mcp_mode.clone(),
+                model: args.model.clone(),
+                thinking: args.thinking,
+            },
+        )
+    };
+
+    if let Err(err) = start_result {
+        let db = get_db(&state)?;
+        let _ = db.update_human_agent_session(sqlite_db::AgentSessionUpdateInput {
+            id: agent_session_id,
+            kind: None,
+            task_id: None,
+            agent: None,
+            model: None,
+            launch_command: None,
+            post_start_preamble: None,
+            init_prompt: None,
+            ended: Some(chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()),
+            exit_code: Some(1),
+            closing_verb: Some("error".to_owned()),
+            status: Some("failed".to_owned()),
+            prompt_hash: None,
+            output_bytes: None,
+            error_text: Some(err.clone()),
+        });
+        return Err(err);
+    }
+
+    let connected_line =
+        format!("\x1b[2m[connected to agent_session #{agent_session_number:03}]\x1b[0m\r\n");
+    emit_system_message(&app, args.terminal_session_id, connected_line)?;
+
+    Ok(TerminalBridgeStartHumanSessionResult {
+        agent_session_id,
+        agent_session_number,
+    })
 }
 
 #[cfg(test)]

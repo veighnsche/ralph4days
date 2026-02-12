@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   terminalBridgeListenSessionClosed,
   terminalBridgeListenSessionOutput,
   terminalBridgeResize,
   terminalBridgeSendInput,
+  terminalBridgeStartHumanSession,
   terminalBridgeStartSession,
   terminalBridgeStartTaskSession,
   terminalBridgeTerminate
@@ -16,6 +17,13 @@ export interface TerminalSessionConfig {
   model?: string | null
   thinking?: boolean | null
   enabled?: boolean
+  humanSession?: {
+    kind: string
+    agent?: string
+    launchCommand?: string
+    postStartPreamble?: string
+    initPrompt?: string
+  }
 }
 
 export interface TerminalSessionHandlers {
@@ -29,14 +37,22 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
   const isReadyRef = useRef(false)
   const outputBufferRef = useRef<Uint8Array[]>([])
   const pendingInputRef = useRef<string[]>([])
+  const pendingResizeRef = useRef<{ cols: number; rows: number } | null>(null)
   const sessionStartedRef = useRef(false)
   const startedNotifiedRef = useRef(false)
+  const startRequestedRef = useRef(false)
   const handlersRef = useRef(handlers)
   handlersRef.current = handlers
   const isEnabled = config.enabled ?? true
+  const [listenersReady, setListenersReady] = useState(false)
 
   const markSessionStarted = () => {
     sessionStartedRef.current = true
+    if (pendingResizeRef.current) {
+      const { cols, rows } = pendingResizeRef.current
+      pendingResizeRef.current = null
+      terminalBridgeResize(config.sessionId, cols, rows).catch(() => {})
+    }
     if (startedNotifiedRef.current) return
     startedNotifiedRef.current = true
     handlersRef.current.onStarted?.()
@@ -56,7 +72,82 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
   useEffect(() => {
     if (!isEnabled) return
 
-    if (config.taskId !== undefined) {
+    startRequestedRef.current = false
+    sessionStartedRef.current = false
+    startedNotifiedRef.current = false
+    outputBufferRef.current = []
+    pendingInputRef.current = []
+    pendingResizeRef.current = null
+
+    let active = true
+    let unlistenOutput: (() => void) | null = null
+    let unlistenClosed: (() => void) | null = null
+
+    setListenersReady(false)
+
+    Promise.all([
+      terminalBridgeListenSessionOutput(config.sessionId, payload => {
+        markSessionStarted()
+        flushPendingInput()
+
+        const binary = atob(payload.data)
+        const bytes = new Uint8Array(binary.length)
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+        if (isReadyRef.current) {
+          handlersRef.current.onOutput?.(bytes)
+        } else {
+          outputBufferRef.current.push(bytes)
+        }
+      }),
+      terminalBridgeListenSessionClosed(config.sessionId, payload => {
+        if (!sessionStartedRef.current) return
+        handlersRef.current.onClosed?.(payload.exit_code)
+      })
+    ])
+      .then(([outUnsub, closedUnsub]) => {
+        unlistenOutput = outUnsub
+        unlistenClosed = closedUnsub
+        if (active) setListenersReady(true)
+      })
+      .catch(err => handlersRef.current.onError?.(String(err)))
+
+    return () => {
+      active = false
+      setListenersReady(false)
+      unlistenOutput?.()
+      unlistenClosed?.()
+    }
+  }, [config.sessionId, isEnabled])
+
+  useEffect(() => {
+    if (!(isEnabled && listenersReady) || startRequestedRef.current) return
+
+    startRequestedRef.current = true
+
+    const onStartFailed = (err: unknown) => {
+      startRequestedRef.current = false
+      handlersRef.current.onError?.(String(err))
+    }
+
+    if (config.humanSession) {
+      terminalBridgeStartHumanSession({
+        terminalSessionId: config.sessionId,
+        kind: config.humanSession.kind,
+        taskId: config.taskId,
+        agent: config.humanSession.agent ?? 'claude',
+        model: config.model ?? undefined,
+        launchCommand: config.humanSession.launchCommand ?? undefined,
+        postStartPreamble: config.humanSession.postStartPreamble ?? undefined,
+        initPrompt: config.humanSession.initPrompt ?? undefined,
+        mcpMode: config.taskId !== undefined ? undefined : config.mcpMode || 'interactive',
+        thinking: config.thinking ?? undefined
+      })
+        .then(() => {
+          markSessionStarted()
+          flushPendingInput()
+        })
+        .catch(onStartFailed)
+    } else if (config.taskId !== undefined) {
       terminalBridgeStartTaskSession({
         sessionId: config.sessionId,
         taskId: config.taskId,
@@ -67,7 +158,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
           markSessionStarted()
           flushPendingInput()
         })
-        .catch(err => handlersRef.current.onError?.(String(err)))
+        .catch(onStartFailed)
     } else {
       terminalBridgeStartSession({
         sessionId: config.sessionId,
@@ -79,46 +170,28 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
           markSessionStarted()
           flushPendingInput()
         })
-        .catch(err => handlersRef.current.onError?.(String(err)))
+        .catch(onStartFailed)
     }
+  }, [
+    config.sessionId,
+    config.mcpMode,
+    config.taskId,
+    config.model,
+    config.thinking,
+    config.humanSession?.kind,
+    config.humanSession?.agent,
+    config.humanSession?.launchCommand,
+    config.humanSession?.postStartPreamble,
+    config.humanSession?.initPrompt,
+    isEnabled,
+    listenersReady
+  ])
+
+  useEffect(() => {
+    if (!isEnabled) return
 
     return () => {
       terminalBridgeTerminate(config.sessionId).catch(() => {})
-    }
-  }, [config.sessionId, config.mcpMode, config.taskId, config.model, config.thinking, isEnabled])
-
-  useEffect(() => {
-    if (!isEnabled) return
-
-    const unlisten = terminalBridgeListenSessionOutput(config.sessionId, payload => {
-      markSessionStarted()
-      flushPendingInput()
-
-      const binary = atob(payload.data)
-      const bytes = new Uint8Array(binary.length)
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-      if (isReadyRef.current) {
-        handlersRef.current.onOutput?.(bytes)
-      } else {
-        outputBufferRef.current.push(bytes)
-      }
-    })
-
-    return () => {
-      unlisten.then(unsub => unsub())
-    }
-  }, [config.sessionId, isEnabled])
-
-  useEffect(() => {
-    if (!isEnabled) return
-
-    const unlisten = terminalBridgeListenSessionClosed(config.sessionId, payload => {
-      if (!sessionStartedRef.current) return
-      handlersRef.current.onClosed?.(payload.exit_code)
-    })
-
-    return () => {
-      unlisten.then(unsub => unsub())
     }
   }, [config.sessionId, isEnabled])
 
@@ -140,6 +213,10 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
   }
 
   const resize = (cols: number, rows: number) => {
+    if (!sessionStartedRef.current) {
+      pendingResizeRef.current = { cols, rows }
+      return
+    }
     terminalBridgeResize(config.sessionId, cols, rows).catch(() => {})
   }
 

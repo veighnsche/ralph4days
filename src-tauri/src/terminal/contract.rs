@@ -52,3 +52,27 @@ pub struct TerminalBridgeEmitSystemMessageArgs {
     pub session_id: String,
     pub text: String,
 }
+
+#[ipc_type]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TerminalBridgeStartHumanSessionArgs {
+    pub terminal_session_id: String,
+    pub kind: String,
+    pub task_id: Option<u32>,
+    pub agent: Option<String>,
+    pub model: Option<String>,
+    pub launch_command: Option<String>,
+    pub post_start_preamble: Option<String>,
+    pub init_prompt: Option<String>,
+    pub mcp_mode: Option<String>,
+    pub thinking: Option<bool>,
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TerminalBridgeStartHumanSessionResult {
+    pub agent_session_id: String,
+    pub agent_session_number: u32,
+}

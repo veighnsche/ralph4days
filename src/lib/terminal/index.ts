@@ -7,6 +7,7 @@ export {
   terminalBridgeListenSessionOutput,
   terminalBridgeResize,
   terminalBridgeSendInput,
+  terminalBridgeStartHumanSession,
   terminalBridgeStartSession,
   terminalBridgeStartTaskSession,
   terminalBridgeTerminate

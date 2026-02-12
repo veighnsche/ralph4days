@@ -13,6 +13,15 @@ use super::session::{build_settings_json, PTYSession, SessionConfig};
 
 use ralph_errors::{codes, RalphResultExt, ToStringErr};
 
+fn preview_text(bytes: &[u8], max_chars: usize) -> String {
+    let escaped = String::from_utf8_lossy(bytes).escape_debug().to_string();
+    if escaped.chars().count() <= max_chars {
+        return escaped;
+    }
+    let preview: String = escaped.chars().take(max_chars).collect();
+    format!("{preview}…")
+}
+
 pub struct PTYManager {
     sessions: Arc<Mutex<HashMap<String, PTYSession>>>,
 }
@@ -136,6 +145,12 @@ impl PTYManager {
                     Ok(n) => {
                         total_bytes += n as u64;
                         tracing::trace!(session_id = %sid, bytes = n, total_bytes, "PTY output");
+                        tracing::trace!(
+                            session_id = %sid,
+                            bytes = n,
+                            preview = %preview_text(&buf[..n], 220),
+                            "terminal_bridge_output_chunk"
+                        );
                         let _ = app_clone.emit(
                             TERMINAL_BRIDGE_OUTPUT_EVENT,
                             PtyOutputEvent {
@@ -192,6 +207,12 @@ impl PTYManager {
 
     #[tracing::instrument(skip(self, data), fields(session_id, bytes = data.len()))]
     pub fn send_input(&self, session_id: &str, data: &[u8]) -> Result<(), String> {
+        tracing::trace!(
+            session_id,
+            bytes = data.len(),
+            preview = %preview_text(data, 140),
+            "terminal_bridge_input_chunk"
+        );
         let writer = {
             let sessions = self.sessions.lock().err_str(codes::INTERNAL)?;
             let session = sessions.get(session_id).ok_or_else(|| {

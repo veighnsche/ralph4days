@@ -1,6 +1,7 @@
 export const TERMINAL_BRIDGE_COMMANDS = {
   startSession: 'terminal_bridge_start_session',
   startTaskSession: 'terminal_bridge_start_task_session',
+  startHumanSession: 'terminal_bridge_start_human_session',
   sendInput: 'terminal_bridge_send_input',
   resize: 'terminal_bridge_resize',
   terminate: 'terminal_bridge_terminate',
