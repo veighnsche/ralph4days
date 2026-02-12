@@ -7,17 +7,19 @@ import { useSyncLaunchPreferences } from './useSyncLaunchPreferences'
 export function useAgentSessionConfigController(tab: WorkspaceTab) {
   useSyncLaunchPreferences()
   const { formTreeByAgent, formTreeLoading, formTreeError } = useModelFormTreeByAgent()
-  const { models, loadingModels, error, selectedModel } = useModelConstraints({
+  const { models, loadingModels, error, selectedModel, selectedModelEffortValid } = useModelConstraints({
     formTreeByAgent,
     formTreeLoading,
     formTreeError
   })
-  const runSession = useRunSessionAction(tab, selectedModel?.display)
+  const canRun = !!selectedModel && selectedModelEffortValid
+  const runSession = useRunSessionAction(tab, { selectedModelDisplay: selectedModel?.display, canRun })
 
   return {
     models,
     loadingModels,
     error,
+    canRun,
     runSession
   }
 }

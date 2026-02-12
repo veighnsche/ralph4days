@@ -52,6 +52,7 @@ Use `just` as the primary task runner (`just --list`).
 ## Environment Notes
 - This system is Wayland-only for GUI runs.
 - Do not suggest or depend on X11/XWayland fallbacks (`GDK_BACKEND=x11`, etc.); X11 is not available here.
+- `fixtures/04-desktop-dev/.undetect-ralph/db/ralph.db` is a known persistent diff artifact and can be ignored in change lists unless explicitly asked to handle it.
 
 ## Commit & Pull Request Guidelines
 - Follow Conventional Commit-style prefixes seen in history: `feat(...)`, `fix(...)`, `refactor(...)`, `chore(...)`, `docs(...)`.

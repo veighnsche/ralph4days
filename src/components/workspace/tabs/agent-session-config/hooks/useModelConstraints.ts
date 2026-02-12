@@ -19,6 +19,8 @@ export function useModelConstraints({
   const error = formTreeError
 
   const selectedModel = models.find(nextModel => nextModel.name === model) ?? null
+  const effortOptions = selectedModel?.effortOptions ?? []
+  const selectedModelEffortValid = effortOptions.length === 0 || effortOptions.includes(effort)
 
   useEffect(() => {
     if (models.length === 0 || selectedModel) return
@@ -29,12 +31,11 @@ export function useModelConstraints({
 
   useEffect(() => {
     if (!selectedModel) return
-    const effortOptions = selectedModel.effortOptions ?? []
     if (effortOptions.length === 0 || effortOptions.includes(effort)) return
     const fallbackEffort = resolveFallbackEffort(effortOptions)
     if (!fallbackEffort) return
     setEffort(fallbackEffort)
-  }, [effort, selectedModel, setEffort])
+  }, [effort, effortOptions, selectedModel, setEffort])
 
-  return { models, loadingModels, error, selectedModel }
+  return { models, loadingModels, error, selectedModel, selectedModelEffortValid }
 }

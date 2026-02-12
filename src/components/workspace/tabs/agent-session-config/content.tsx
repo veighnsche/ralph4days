@@ -15,7 +15,7 @@ import { buildInitialLaunchConfig } from './state'
 import { AgentSessionConfigStoreProvider } from './store'
 
 function AgentSessionConfigTabBody({ tab }: { tab: WorkspaceTab }) {
-  const { models, loadingModels, error, runSession } = useAgentSessionConfigController(tab)
+  const { models, loadingModels, error, canRun, runSession } = useAgentSessionConfigController(tab)
   const { model } = useAgentSessionConfigLaunchState()
 
   return (
@@ -41,7 +41,7 @@ function AgentSessionConfigTabBody({ tab }: { tab: WorkspaceTab }) {
       )}
       <div className="px-3 py-1.5 flex justify-end gap-2">
         <PermissionLevelControls />
-        <Button type="button" onClick={runSession} disabled={loadingModels || !model || models.length === 0}>
+        <Button type="button" onClick={runSession} disabled={loadingModels || !model || models.length === 0 || !canRun}>
           Run
         </Button>
       </div>
