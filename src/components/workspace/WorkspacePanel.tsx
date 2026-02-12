@@ -1,15 +1,13 @@
 import { useEffect, useRef } from 'react'
 import type { AgentSessionLaunchConfig } from '@/components/agent-session-launch'
 import { AgentSessionLaunchButton } from '@/components/agent-session-launch'
-import { ErrorBoundary } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import {
   createAgentSessionConfigTab,
   createDefaultTerminalTab,
   createTerminalTabFromLaunch,
-  getTabComponent,
   getTabLifecycle,
-  WorkspaceTabProvider
+  WorkspaceTabContentHost
 } from '@/components/workspace/tabs'
 import { useBrowserTabsActions } from '@/hooks/workspace'
 import { useWorkspaceStore, type WorkspaceTab } from '@/stores/useWorkspaceStore'
@@ -89,14 +87,9 @@ export function WorkspacePanel() {
           <EmptyWorkspace />
         ) : (
           tabs.map(tab => {
-            const TabComponent = getTabComponent(tab.type)
             return (
               <div key={tab.id} className={tab.id === activeTabId ? 'absolute inset-0' : 'absolute inset-0 hidden'}>
-                <ErrorBoundary>
-                  <WorkspaceTabProvider tab={tab}>
-                    <TabComponent tab={tab} />
-                  </WorkspaceTabProvider>
-                </ErrorBoundary>
+                <WorkspaceTabContentHost tab={tab} />
               </div>
             )
           })

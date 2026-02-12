@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { useAgentSessionLaunchPreferences } from '@/hooks/preferences'
 import { useWorkspaceStore, type WorkspaceTab } from '@/stores/useWorkspaceStore'
-import { createTerminalTabFromLaunch } from '../../terminal'
+import { createTerminalTabFromLaunch } from '../../terminal/factory'
 import { AGENT_PROVIDER_META } from '../constants'
 import { resolveFallbackEffort } from '../state'
 import { useAgentSessionConfigStore } from '../store'

@@ -2,6 +2,7 @@ export {
   type AgentSessionConfigTabParams,
   createAgentSessionConfigTab
 } from './agent-session-config'
+export { WorkspaceTabContentHost } from './content-host'
 export {
   useWorkspaceTabContext,
   useWorkspaceTabData,
