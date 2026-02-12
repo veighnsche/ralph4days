@@ -133,7 +133,7 @@ export function AgentSessionConfigTabContent({ tab }: { tab: WorkspaceTab }) {
                       ? 'border-primary bg-primary/5 shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.2)]'
                       : 'hover:bg-accent'
                   )}>
-                  <span className="absolute -left-20 -top-12 inline-flex min-w-28 items-center justify-center">
+                  <span className="absolute -left-10 -top-10 inline-flex min-w-28 items-center justify-center">
                     {agentOption === 'codex' ? (
                       <span
                         aria-hidden="true"
