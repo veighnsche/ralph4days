@@ -2,9 +2,6 @@ import type { LucideIcon } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { create } from 'zustand'
 import { MAX_TABS } from '@/constants/workspace'
-import type { DisciplineConfig } from '@/hooks/disciplines'
-import type { AgentSessionLaunchConfig } from '@/hooks/preferences'
-import type { FeatureData as Feature, Task, TerminalBridgeModelOption } from '@/types/generated'
 
 export type TabType = 'terminal' | 'agent-session-config' | 'task-detail' | 'feature-detail' | 'discipline-detail'
 
@@ -23,17 +20,8 @@ export interface WorkspaceTab {
   icon?: LucideIcon
   closeable: boolean
   lifecycle: WorkspaceTabLifecycle
-  data?: Partial<AgentSessionLaunchConfig> & {
-    mode?: 'create' | 'edit'
-    entityId?: number | string
-    entity?: Task | Feature | DisciplineConfig
-    sessionId?: string // For output tabs
-    taskId?: number // For task execution terminals
-    initPrompt?: string // Optional prompt captured at session start
-    formTreeByAgent?: Record<string, TerminalBridgeModelOption[]>
-    formTreeLoading?: boolean
-    formTreeError?: string | null
-  }
+  key?: string
+  params?: unknown
 }
 
 interface WorkspaceStore {
@@ -44,7 +32,6 @@ interface WorkspaceStore {
     afterTabId: string,
     tab: Omit<WorkspaceTab, 'id' | 'lifecycle'> & { id?: string; lifecycle?: WorkspaceTabLifecycle }
   ) => string
-  setTabData: (tabId: string, data: Partial<NonNullable<WorkspaceTab['data']>>) => void
   closeTab: (tabId: string) => void
   switchTab: (tabId: string) => void
   closeAllExcept: (tabId: string) => void
@@ -66,10 +53,7 @@ function generateTabId(
   tab: Omit<WorkspaceTab, 'id' | 'lifecycle'> & { id?: string; lifecycle?: WorkspaceTabLifecycle }
 ): string {
   if (tab.id) return tab.id
-  const entityId = tab.data?.entityId
-  const mode = tab.data?.mode
-  if (mode) return `${tab.type}-${mode}${entityId != null ? `-${entityId}` : ''}`
-  if (entityId != null) return `${tab.type}-${entityId}`
+  if (tab.key) return `${tab.type}-${tab.key}`
   return `${tab.type}-${Date.now()}`
 }
 
@@ -126,24 +110,6 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
 
     set({ tabs: nextTabs, activeTabId: id })
     return id
-  },
-
-  setTabData: (tabId, data) => {
-    const { tabs } = get()
-    const tab = tabs.find(t => t.id === tabId)
-    if (!tab) return
-    set({
-      tabs: tabs.map(t => {
-        if (t.id !== tabId) return t
-        return {
-          ...t,
-          data: {
-            ...(t.data ?? {}),
-            ...data
-          }
-        }
-      })
-    })
   },
 
   closeTab: tabId => {
