@@ -22,6 +22,14 @@ dev:
 dev-frontend:
     bun dev
 
+# Start Storybook dev server
+storybook:
+    bun storybook
+
+# Build static Storybook
+build-storybook:
+    bun build-storybook
+
 # Start development server with a mock project (skips project picker)
 dev-mock FIXTURE:
     #!/usr/bin/env bash
