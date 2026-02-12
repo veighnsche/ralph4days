@@ -1,8 +1,9 @@
 //! Terminal bridge subsystem - PTY-backed session transport for interactive agent sessions
 
 pub use contract::{
-    TerminalBridgeEmitSystemMessageArgs, TerminalBridgeListModelsResult, TerminalBridgeModelOption,
-    TerminalBridgeResizeArgs, TerminalBridgeSendInputArgs, TerminalBridgeStartHumanSessionArgs,
+    TerminalBridgeEmitSystemMessageArgs, TerminalBridgeListModelFormTreeResult,
+    TerminalBridgeListModelsResult, TerminalBridgeModelOption, TerminalBridgeResizeArgs,
+    TerminalBridgeSendInputArgs, TerminalBridgeStartHumanSessionArgs,
     TerminalBridgeStartHumanSessionResult, TerminalBridgeStartSessionArgs,
     TerminalBridgeStartTaskSessionArgs, TerminalBridgeTerminateArgs,
 };

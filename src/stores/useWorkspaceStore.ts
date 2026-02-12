@@ -29,24 +29,24 @@ export interface WorkspaceTab {
     sessionId?: string // For output tabs
     agent?: string // For terminal tabs (claude, codex)
     model?: string // For terminal tabs (haiku, sonnet, opus)
-    effort?: 'low' | 'medium' | 'high' // Claude-only effort
+    effort?: 'low' | 'medium' | 'high' // Model capability: optional effort level
     thinking?: boolean // For terminal tabs (extended thinking)
     taskId?: number // For task execution terminals
     initPrompt?: string // Optional prompt captured at session start
-    agentSessionFormTree?: {
-      agent: string
-      models: TerminalBridgeModelOption[]
-    }
-    agentSessionFormTreeLoading?: boolean
-    agentSessionFormTreeError?: string | null
+    formTreeByAgent?: Record<string, TerminalBridgeModelOption[]>
+    formTreeLoading?: boolean
+    formTreeError?: string | null
   }
 }
 
 interface WorkspaceStore {
   tabs: WorkspaceTab[]
   activeTabId: string
-  openTab: (tab: Omit<WorkspaceTab, 'id'> & { id?: string }) => string
-  openTabAfter: (afterTabId: string, tab: Omit<WorkspaceTab, 'id'> & { id?: string }) => string
+  openTab: (tab: Omit<WorkspaceTab, 'id' | 'lifecycle'> & { id?: string; lifecycle?: WorkspaceTabLifecycle }) => string
+  openTabAfter: (
+    afterTabId: string,
+    tab: Omit<WorkspaceTab, 'id' | 'lifecycle'> & { id?: string; lifecycle?: WorkspaceTabLifecycle }
+  ) => string
   setTabData: (tabId: string, data: Partial<NonNullable<WorkspaceTab['data']>>) => void
   closeTab: (tabId: string) => void
   switchTab: (tabId: string) => void
@@ -65,7 +65,9 @@ export const NOOP_TAB_LIFECYCLE: WorkspaceTabLifecycle = {
   onDeactivate: () => {}
 }
 
-function generateTabId(tab: Omit<WorkspaceTab, 'id'> & { id?: string }): string {
+function generateTabId(
+  tab: Omit<WorkspaceTab, 'id' | 'lifecycle'> & { id?: string; lifecycle?: WorkspaceTabLifecycle }
+): string {
   if (tab.id) return tab.id
   const entityId = tab.data?.entityId
   const mode = tab.data?.mode
@@ -88,7 +90,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
       return id
     }
 
-    const tab: WorkspaceTab = { ...tabInput, id }
+    const tab: WorkspaceTab = { ...tabInput, id, lifecycle: tabInput.lifecycle ?? NOOP_TAB_LIFECYCLE }
 
     let nextTabs = [...tabs, tab]
     while (nextTabs.length > MAX_TABS) {
@@ -116,7 +118,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
       return get().openTab(tabInput)
     }
 
-    const tab: WorkspaceTab = { ...tabInput, id }
+    const tab: WorkspaceTab = { ...tabInput, id, lifecycle: tabInput.lifecycle ?? NOOP_TAB_LIFECYCLE }
     let nextTabs = [...tabs.slice(0, afterIndex + 1), tab, ...tabs.slice(afterIndex + 1)]
 
     while (nextTabs.length > MAX_TABS) {

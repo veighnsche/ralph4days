@@ -48,6 +48,13 @@ pub struct TerminalBridgeListModelsResult {
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct TerminalBridgeListModelFormTreeResult {
+    pub providers: Vec<TerminalBridgeListModelsResult>,
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TerminalBridgeSendInputArgs {
     pub session_id: String,
     pub data: Vec<u8>,

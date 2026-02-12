@@ -17,7 +17,7 @@ import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { FeatureDetailTabContent } from '@/components/workspace/FeatureDetailTabContent'
 import { useFeatureStats } from '@/hooks/features'
-import { NOOP_TAB_LIFECYCLE, useWorkspaceStore } from '@/stores/useWorkspaceStore'
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
 export function FeaturesPage() {
   const { features, statsMap, progress, isLoading, error } = useFeatureStats()
@@ -29,7 +29,6 @@ export function FeaturesPage() {
       component: FeatureDetailTabContent,
       title: displayName,
       closeable: true,
-      lifecycle: NOOP_TAB_LIFECYCLE,
       data: {
         entityId: name
       }

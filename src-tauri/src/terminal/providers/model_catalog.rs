@@ -17,6 +17,10 @@ struct CodexModelCatalog {
 struct CodexModelSpec {
     name: String,
     description: String,
+    #[serde(default)]
+    session_model: Option<String>,
+    #[serde(default)]
+    effort_options: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -84,8 +88,8 @@ pub fn codex_model_entries() -> Vec<ModelEntry> {
         .map(|m| ModelEntry {
             name: m.name,
             description: m.description,
-            session_model: None,
-            effort_options: vec![],
+            session_model: m.session_model,
+            effort_options: m.effort_options,
         })
         .collect()
 }
@@ -113,34 +117,9 @@ pub fn claudecode_models() -> Vec<String> {
         .collect()
 }
 
-pub fn resolve_codex_session_model(selected_model: &str) -> String {
-    let trimmed = selected_model.trim();
-    if trimmed.is_empty() {
-        return trimmed.to_owned();
-    }
-    codex_specs()
-        .into_iter()
-        .find(|m| m.name == trimmed)
-        .map_or_else(|| trimmed.to_owned(), |m| m.name)
-}
-
-pub fn resolve_claudecode_session_model(selected_model: &str) -> String {
-    let trimmed = selected_model.trim();
-    if trimmed.is_empty() {
-        return trimmed.to_owned();
-    }
-    claudecode_specs()
-        .into_iter()
-        .find(|m| m.name == trimmed)
-        .map_or_else(|| trimmed.to_owned(), |m| m.session_model.unwrap_or(m.name))
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{
-        parse_claudecode_models_yaml, parse_codex_models_yaml, resolve_claudecode_session_model,
-        resolve_codex_session_model,
-    };
+    use super::{parse_claudecode_models_yaml, parse_codex_models_yaml};
 
     #[test]
     fn parses_basic_yaml_list() {
@@ -150,11 +129,15 @@ mod tests {
             vec![
                 super::CodexModelSpec {
                     name: "gpt-5-codex".to_owned(),
-                    description: "Codex default".to_owned()
+                    description: "Codex default".to_owned(),
+                    session_model: None,
+                    effort_options: vec![],
                 },
                 super::CodexModelSpec {
                     name: "gpt-5".to_owned(),
-                    description: "General model".to_owned()
+                    description: "General model".to_owned(),
+                    session_model: None,
+                    effort_options: vec![],
                 }
             ]
         );
@@ -180,14 +163,5 @@ mod tests {
         let specs = parse_claudecode_models_yaml(yaml);
         assert_eq!(specs[0].session_model.as_deref(), Some("opus-4.6"));
         assert_eq!(specs[0].effort_options, vec!["low", "medium", "high"]);
-    }
-
-    #[test]
-    fn resolve_functions_fall_back_to_selected_name() {
-        assert_eq!(resolve_codex_session_model("custom-codex"), "custom-codex");
-        assert_eq!(
-            resolve_claudecode_session_model("custom-claude"),
-            "custom-claude"
-        );
     }
 }

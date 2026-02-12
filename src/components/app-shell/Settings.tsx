@@ -28,6 +28,10 @@ export function Settings({ open, onOpenChange }: SettingsProps) {
             </div>
             <Switch checked={isDark} onCheckedChange={checked => setTheme(checked ? 'dark' : 'light')} />
           </Field>
+
+          <p className="text-xs text-muted-foreground">
+            Claude is a trademark of Anthropic. OpenAI and Codex are trademarks of OpenAI.
+          </p>
         </div>
       </DialogContent>
     </Dialog>

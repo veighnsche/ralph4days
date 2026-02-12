@@ -1,7 +1,8 @@
 import { AgentSessionConfigTabContent } from '@/components/workspace/AgentSessionConfigTabContent'
 import type { Agent, Effort } from '@/hooks/preferences'
-import { terminalBridgeListModels } from '@/lib/terminal/terminalBridgeClient'
+import { terminalBridgeListModelFormTree } from '@/lib/terminal/terminalBridgeClient'
 import { useWorkspaceStore, type WorkspaceTab } from '@/stores/useWorkspaceStore'
+import type { TerminalBridgeModelOption } from '@/types/generated'
 
 export type AgentSessionConfigTabInput = {
   agent: Agent
@@ -10,33 +11,28 @@ export type AgentSessionConfigTabInput = {
   thinking: boolean
 }
 
-async function loadFormTree(tabId: string, agent: Agent) {
+async function loadFormTrees(tabId: string) {
   const { setTabData } = useWorkspaceStore.getState()
   setTabData(tabId, {
-    agentSessionFormTreeLoading: true,
-    agentSessionFormTreeError: null
+    formTreeLoading: true,
+    formTreeError: null
   })
+  const formTreeByAgent: Record<string, TerminalBridgeModelOption[]> = {}
+  let firstError: string | null = null
   try {
-    const result = await terminalBridgeListModels(agent)
-    setTabData(tabId, {
-      agentSessionFormTree: {
-        agent: result.agent,
-        models: result.models
-      },
-      agentSessionFormTreeLoading: false,
-      agentSessionFormTreeError: null
-    })
+    const result = await terminalBridgeListModelFormTree()
+    for (const provider of result.providers) {
+      formTreeByAgent[provider.agent] = provider.models
+    }
   } catch (error) {
-    setTabData(tabId, {
-      agentSessionFormTree: undefined,
-      agentSessionFormTreeLoading: false,
-      agentSessionFormTreeError: `Failed to load model list: ${String(error)}`
-    })
+    firstError = `Failed to load model form tree: ${String(error)}`
   }
-}
 
-export function refreshAgentSessionConfigFormTree(tabId: string, agent: Agent) {
-  void loadFormTree(tabId, agent)
+  setTabData(tabId, {
+    formTreeByAgent,
+    formTreeLoading: false,
+    formTreeError: firstError
+  })
 }
 
 export function createAgentSessionConfigTab(input: AgentSessionConfigTabInput): Omit<WorkspaceTab, 'id'> {
@@ -47,8 +43,7 @@ export function createAgentSessionConfigTab(input: AgentSessionConfigTabInput): 
     closeable: true,
     lifecycle: {
       onMount: tab => {
-        const tabAgent = (tab.data?.agent as Agent | undefined) ?? input.agent
-        refreshAgentSessionConfigFormTree(tab.id, tabAgent)
+        void loadFormTrees(tab.id)
       },
       onUnmount: () => {},
       onActivate: () => {},
@@ -57,10 +52,11 @@ export function createAgentSessionConfigTab(input: AgentSessionConfigTabInput): 
     data: {
       agent: input.agent,
       model: input.model,
-      effort: input.agent === 'claude' ? input.effort : undefined,
+      effort: input.effort,
       thinking: input.thinking,
-      agentSessionFormTreeLoading: true,
-      agentSessionFormTreeError: null
+      formTreeByAgent: {},
+      formTreeLoading: true,
+      formTreeError: null
     }
   }
 }

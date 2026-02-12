@@ -11,9 +11,21 @@ import { type Agent, type Effort, useAgentSessionLaunchPreferences } from '@/hoo
 import { useTabMeta } from '@/hooks/workspace'
 import { cn } from '@/lib/utils'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
-import { NOOP_TAB_LIFECYCLE, useWorkspaceStore } from '@/stores/useWorkspaceStore'
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import { TerminalTabContent } from './TerminalTabContent'
-import { refreshAgentSessionConfigFormTree } from './tabs/agentSessionConfigTab'
+
+const AGENT_PROVIDER_META = {
+  claude: {
+    label: 'Claude',
+    logoSrc: '/reference-logos/anthropic.svg',
+    logoAlt: 'Anthropic logo'
+  },
+  codex: {
+    label: 'Codex',
+    logoSrc: '/reference-logos/openai.svg',
+    logoAlt: 'OpenAI logo'
+  }
+} as const
 
 export function AgentSessionConfigTabContent({ tab }: { tab: WorkspaceTab }) {
   useTabMeta(tab.id, 'Start Agent Session', Bot)
@@ -32,14 +44,13 @@ export function AgentSessionConfigTabContent({ tab }: { tab: WorkspaceTab }) {
   const [model, setModel] = useState(tab.data?.model ?? getDefaultModel(agent))
   const [effort, setEffort] = useState<Effort>((tab.data?.effort as Effort | undefined) ?? preferredEffort)
   const [thinking, setThinking] = useState(tab.data?.thinking ?? false)
-  const models = tab.data?.agentSessionFormTree?.agent === agent ? (tab.data?.agentSessionFormTree?.models ?? []) : []
-  const loadingModels = tab.data?.agentSessionFormTreeLoading ?? false
-  const error = tab.data?.agentSessionFormTreeError ?? null
+  const models = tab.data?.formTreeByAgent?.[agent] ?? []
+  const loadingModels = (tab.data?.formTreeLoading ?? false) && models.length === 0
+  const error = tab.data?.formTreeError ?? null
 
   const handleAgentSelect = (value: Agent) => {
     setAgent(value)
     saveAgent(value)
-    refreshAgentSessionConfigFormTree(tab.id, value)
   }
 
   const handleModelSelect = (value: string) => {
@@ -81,7 +92,7 @@ export function AgentSessionConfigTabContent({ tab }: { tab: WorkspaceTab }) {
 
   const selectedModelOption = models.find(m => m.name === model)
   const selectedEffortOptions = selectedModelOption?.effortOptions ?? []
-  const showEffortSelector = agent === 'claude' && selectedEffortOptions.length > 0
+  const showEffortSelector = selectedEffortOptions.length > 0
 
   const handleRun = () => {
     const agentLabel = agent === 'codex' ? 'Codex' : 'Claude'
@@ -90,8 +101,7 @@ export function AgentSessionConfigTabContent({ tab }: { tab: WorkspaceTab }) {
       component: TerminalTabContent,
       title: `${agentLabel} (${model})`,
       closeable: true,
-      lifecycle: NOOP_TAB_LIFECYCLE,
-      data: { agent, model, effort: agent === 'claude' ? effort : undefined, thinking }
+      data: { agent, model, effort, thinking }
     })
     closeTab(tab.id)
   }
@@ -109,7 +119,7 @@ export function AgentSessionConfigTabContent({ tab }: { tab: WorkspaceTab }) {
         <div className="px-4 py-4 space-y-4">
           <Field>
             <FieldLabel>Agent Provider</FieldLabel>
-            <div className="flex flex-col gap-1" role="radiogroup" aria-label="Agent provider">
+            <div className="flex items-center justify-start gap-3" role="radiogroup" aria-label="Agent provider">
               {(['claude', 'codex'] as const).map(agentOption => (
                 <button
                   key={agentOption}
@@ -118,10 +128,38 @@ export function AgentSessionConfigTabContent({ tab }: { tab: WorkspaceTab }) {
                   aria-checked={agent === agentOption}
                   onClick={() => handleAgentSelect(agentOption)}
                   className={cn(
-                    'flex items-center rounded-md border px-3 py-2 text-left text-sm font-medium transition-colors duration-100 cursor-pointer',
-                    agent === agentOption ? 'border-primary bg-primary/5' : 'hover:bg-accent'
+                    'relative aspect-[5/7] w-40 shrink-0 overflow-hidden rounded-lg border px-3 py-2 text-left text-sm font-medium transition-colors duration-100 cursor-pointer',
+                    agent === agentOption
+                      ? 'border-primary bg-primary/5 shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.2)]'
+                      : 'hover:bg-accent'
                   )}>
-                  {agentOption === 'claude' ? 'Claude' : 'Codex'}
+                  <span className="absolute -left-20 -top-12 inline-flex min-w-28 items-center justify-center">
+                    {agentOption === 'codex' ? (
+                      <span
+                        aria-hidden="true"
+                        className="h-48 w-48 bg-current text-foreground opacity-95"
+                        style={{
+                          WebkitMaskImage: 'url(/reference-logos/openai.svg)',
+                          maskImage: 'url(/reference-logos/openai.svg)',
+                          WebkitMaskRepeat: 'no-repeat',
+                          maskRepeat: 'no-repeat',
+                          WebkitMaskPosition: 'center',
+                          maskPosition: 'center',
+                          WebkitMaskSize: 'contain',
+                          maskSize: 'contain'
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src={AGENT_PROVIDER_META[agentOption].logoSrc}
+                        alt={AGENT_PROVIDER_META[agentOption].logoAlt}
+                        className="h-48 w-auto opacity-95"
+                      />
+                    )}
+                  </span>
+                  <span className="absolute bottom-3 left-1/2 -translate-x-1/2 text-center">
+                    {AGENT_PROVIDER_META[agentOption].label}
+                  </span>
                 </button>
               ))}
             </div>
@@ -165,7 +203,7 @@ export function AgentSessionConfigTabContent({ tab }: { tab: WorkspaceTab }) {
 
           {showEffortSelector && (
             <Field>
-              <FieldLabel>Effort (Claude)</FieldLabel>
+              <FieldLabel>Effort</FieldLabel>
               <div className="flex flex-col gap-1" role="radiogroup" aria-label="Effort">
                 {selectedEffortOptions.map(effortOption => (
                   <button

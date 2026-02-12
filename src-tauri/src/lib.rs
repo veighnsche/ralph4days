@@ -189,7 +189,7 @@ pub fn run() {
             commands::terminal_bridge::terminal_bridge_terminate,
             commands::terminal_bridge::terminal_bridge_emit_system_message,
             commands::terminal_bridge::terminal_bridge_start_human_session,
-            commands::terminal_bridge::terminal_bridge_list_models,
+            commands::terminal_bridge::terminal_bridge_list_model_form_tree,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

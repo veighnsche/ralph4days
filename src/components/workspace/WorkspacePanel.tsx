@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { TerminalTabContent } from '@/components/workspace'
 import { createAgentSessionConfigTab } from '@/components/workspace/tabs/agentSessionConfigTab'
 import { useBrowserTabsActions } from '@/hooks/workspace'
-import { NOOP_TAB_LIFECYCLE, useWorkspaceStore, type WorkspaceTab } from '@/stores/useWorkspaceStore'
+import { useWorkspaceStore, type WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { BrowserTab } from './BrowserTabs'
 import { BrowserTabs } from './BrowserTabs'
 
@@ -63,11 +63,10 @@ export function WorkspacePanel() {
       component: TerminalTabContent,
       title: `${agentLabel} (${model})`,
       closeable: true,
-      lifecycle: NOOP_TAB_LIFECYCLE,
       data: {
         agent,
         model,
-        effort: agent === 'claude' ? effort : undefined,
+        effort,
         thinking
       }
     })
@@ -115,8 +114,7 @@ function EmptyWorkspace() {
       type: 'terminal',
       component: TerminalTabContent,
       title: 'Terminal 1',
-      closeable: true,
-      lifecycle: NOOP_TAB_LIFECYCLE
+      closeable: true
     })
   }
 

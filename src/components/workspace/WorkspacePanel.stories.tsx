@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { useEffect } from 'react'
 import { TerminalTabContent } from '@/components/workspace'
-import { NOOP_TAB_LIFECYCLE, useWorkspaceStore } from '@/stores/useWorkspaceStore'
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import { WorkspacePanel } from './WorkspacePanel'
 
 const meta = {
@@ -41,8 +41,7 @@ export const WithTerminal: Story = {
           type: 'terminal',
           component: TerminalTabContent,
           title: 'Terminal 1',
-          closeable: true,
-          lifecycle: NOOP_TAB_LIFECYCLE
+          closeable: true
         })
       }, [openTab])
       return <Story />
@@ -59,22 +58,19 @@ export const MultipleTerminals: Story = {
           type: 'terminal',
           component: TerminalTabContent,
           title: 'Terminal 1',
-          closeable: true,
-          lifecycle: NOOP_TAB_LIFECYCLE
+          closeable: true
         })
         openTab({
           type: 'terminal',
           component: TerminalTabContent,
           title: 'Terminal 2',
-          closeable: true,
-          lifecycle: NOOP_TAB_LIFECYCLE
+          closeable: true
         })
         openTab({
           type: 'terminal',
           component: TerminalTabContent,
           title: 'Terminal 3',
-          closeable: true,
-          lifecycle: NOOP_TAB_LIFECYCLE
+          closeable: true
         })
       }, [openTab])
       return <Story />

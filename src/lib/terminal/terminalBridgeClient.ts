@@ -4,7 +4,7 @@ import type {
   PtyClosedEvent,
   PtyOutputEvent,
   TerminalBridgeEmitSystemMessageArgs,
-  TerminalBridgeListModelsResult,
+  TerminalBridgeListModelFormTreeResult,
   TerminalBridgeResizeArgs,
   TerminalBridgeSendInputArgs,
   TerminalBridgeStartSessionArgs,
@@ -70,10 +70,9 @@ export async function terminalBridgeStartTaskSession(params: TerminalBridgeStart
   await invoke(TERMINAL_BRIDGE_COMMANDS.startTaskSession, params)
 }
 
-export async function terminalBridgeListModels(agent?: string): Promise<TerminalBridgeListModelsResult> {
-  const params = { agent }
-  terminalBridgeDebugLog('tx.listModels', params)
-  return invoke<TerminalBridgeListModelsResult>(TERMINAL_BRIDGE_COMMANDS.listModels, params)
+export async function terminalBridgeListModelFormTree(): Promise<TerminalBridgeListModelFormTreeResult> {
+  terminalBridgeDebugLog('tx.listModelFormTree', {})
+  return invoke<TerminalBridgeListModelFormTreeResult>(TERMINAL_BRIDGE_COMMANDS.listModelFormTree)
 }
 
 export async function terminalBridgeStartHumanSession(

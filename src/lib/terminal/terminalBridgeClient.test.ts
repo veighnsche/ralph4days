@@ -3,7 +3,7 @@ import {
   terminalBridgeEmitSystemMessage,
   terminalBridgeListenSessionClosed,
   terminalBridgeListenSessionOutput,
-  terminalBridgeListModels,
+  terminalBridgeListModelFormTree,
   terminalBridgeResize,
   terminalBridgeSendInput,
   terminalBridgeStartSession,
@@ -90,30 +90,21 @@ describe('terminalBridgeClient', () => {
     })
   })
 
-  it('maps model-list command', async () => {
+  it('maps model-form-tree command', async () => {
     mockInvoke.mockResolvedValue({
-      agent: 'claude',
-      models: [
-        {
-          name: 'opus-4.6 (High)',
-          description: 'Most capable for complex work with high effort',
-          sessionModel: 'opus-4.6',
-          effortOptions: ['low', 'medium', 'high']
-        }
+      providers: [
+        { agent: 'claude', models: [] },
+        { agent: 'codex', models: [] }
       ]
     })
-    const result = await terminalBridgeListModels('claude')
 
-    expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_list_models', { agent: 'claude' })
+    const result = await terminalBridgeListModelFormTree()
+
+    expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_list_model_form_tree')
     expect(result).toEqual({
-      agent: 'claude',
-      models: [
-        {
-          name: 'opus-4.6 (High)',
-          description: 'Most capable for complex work with high effort',
-          sessionModel: 'opus-4.6',
-          effortOptions: ['low', 'medium', 'high']
-        }
+      providers: [
+        { agent: 'claude', models: [] },
+        { agent: 'codex', models: [] }
       ]
     })
   })

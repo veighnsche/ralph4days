@@ -32,6 +32,14 @@ pub fn list_model_entries_for_agent(agent: Option<&str>) -> Vec<ModelEntry> {
     }
 }
 
+fn find_model_entry_for_agent(agent: Option<&str>, selected_model: &str) -> Option<ModelEntry> {
+    list_model_entries_for_agent(agent)
+        .into_iter()
+        .find(|entry| {
+            entry.name == selected_model || entry.session_model.as_deref() == Some(selected_model)
+        })
+}
+
 pub fn resolve_session_model_for_agent(
     agent: Option<&str>,
     model: Option<String>,
@@ -41,11 +49,10 @@ pub fn resolve_session_model_for_agent(
     if trimmed.is_empty() {
         return None;
     }
-    let resolved = match normalize_agent(agent).as_deref() {
-        Some(AGENT_CODEX) => model_catalog::resolve_codex_session_model(trimmed),
-        _ => model_catalog::resolve_claudecode_session_model(trimmed),
-    };
-    Some(resolved)
+    if let Some(entry) = find_model_entry_for_agent(agent, trimmed) {
+        return Some(entry.session_model.unwrap_or(entry.name));
+    }
+    Some(trimmed.to_owned())
 }
 
 pub fn resolve_session_effort_for_agent(
@@ -60,18 +67,30 @@ pub fn resolve_session_effort_for_agent(
     if normalized.is_empty() {
         return Ok(None);
     }
-    if let Some(AGENT_CODEX) = normalize_agent(agent).as_deref() {
-        Err("Effort is only supported for Claude sessions".to_owned())
+    let selected_model = model
+        .map(str::trim)
+        .filter(|name| !name.is_empty())
+        .ok_or_else(|| "Effort requires an explicit model selection".to_owned())?;
+    let model_entry = find_model_entry_for_agent(agent, selected_model)
+        .ok_or_else(|| format!("Effort validation failed: unknown model '{selected_model}'"))?;
+    if model_entry.effort_options.is_empty() {
+        return Err(format!(
+            "Effort is not supported for model '{}'",
+            model_entry.name
+        ));
+    }
+    if model_entry
+        .effort_options
+        .iter()
+        .any(|level| level == &normalized)
+    {
+        Ok(Some(normalized))
     } else {
-        if model.unwrap_or_default() != "opus-4.6" {
-            return Err("Effort is only supported for model 'opus-4.6'".to_owned());
-        }
-        match normalized.as_str() {
-            "low" | "medium" | "high" => Ok(Some(normalized)),
-            _ => Err(format!(
-                "Invalid effort '{normalized}'. Expected one of: low, medium, high"
-            )),
-        }
+        Err(format!(
+            "Invalid effort '{normalized}' for model '{}'. Expected one of: {}",
+            model_entry.name,
+            model_entry.effort_options.join(", ")
+        ))
     }
 }
 
@@ -137,5 +156,32 @@ mod tests {
             merge_post_start_preamble(Some("user".to_owned()), Some("provider".to_owned()))
                 .expect("preamble should exist");
         assert_eq!(merged, "provider\nuser");
+    }
+
+    #[test]
+    fn validates_effort_from_model_capability() {
+        let effort =
+            resolve_session_effort_for_agent(Some("claude"), Some("opus-4.6"), Some("high".into()))
+                .expect("effort should resolve");
+        assert_eq!(effort.as_deref(), Some("high"));
+    }
+
+    #[test]
+    fn rejects_effort_when_model_has_no_effort_capability() {
+        let err = resolve_session_effort_for_agent(
+            Some("claude"),
+            Some("sonnet-4.5"),
+            Some("medium".into()),
+        )
+        .unwrap_err();
+        assert!(err.contains("not supported"));
+    }
+
+    #[test]
+    fn rejects_invalid_effort_level_for_supported_model() {
+        let err =
+            resolve_session_effort_for_agent(Some("claude"), Some("opus-4.6"), Some("max".into()))
+                .unwrap_err();
+        assert!(err.contains("Invalid effort"));
     }
 }

@@ -5,7 +5,7 @@ describe('terminalBridgeContract', () => {
   it('keeps canonical terminal bridge command names', () => {
     expect(TERMINAL_BRIDGE_COMMANDS.startSession).toBe('terminal_bridge_start_session')
     expect(TERMINAL_BRIDGE_COMMANDS.startTaskSession).toBe('terminal_bridge_start_task_session')
-    expect(TERMINAL_BRIDGE_COMMANDS.listModels).toBe('terminal_bridge_list_models')
+    expect(TERMINAL_BRIDGE_COMMANDS.listModelFormTree).toBe('terminal_bridge_list_model_form_tree')
     expect(TERMINAL_BRIDGE_COMMANDS.sendInput).toBe('terminal_bridge_send_input')
     expect(TERMINAL_BRIDGE_COMMANDS.resize).toBe('terminal_bridge_resize')
     expect(TERMINAL_BRIDGE_COMMANDS.terminate).toBe('terminal_bridge_terminate')

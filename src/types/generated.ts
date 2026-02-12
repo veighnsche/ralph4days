@@ -221,6 +221,7 @@ export type TaskSignalSummary = {
 }
 export type TaskStatus = 'draft' | 'pending' | 'in_progress' | 'done' | 'blocked' | 'skipped'
 export type TerminalBridgeEmitSystemMessageArgs = { sessionId: string; text: string }
+export type TerminalBridgeListModelFormTreeResult = { providers: TerminalBridgeListModelsResult[] }
 export type TerminalBridgeListModelsResult = { agent: string; models: TerminalBridgeModelOption[] }
 export type TerminalBridgeModelOption = {
   name: string
