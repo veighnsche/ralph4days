@@ -1,11 +1,11 @@
 import { AlertCircle } from 'lucide-react'
 import type { TaskSignal } from '@/types/generated'
 
-interface SignalPayloadDisplayProps {
+interface SignalDisplayProps {
   signal: TaskSignal
 }
 
-export function SignalPayloadDisplay({ signal }: SignalPayloadDisplayProps) {
+export function SignalDisplay({ signal }: SignalDisplayProps) {
   const verb = signal.signal_verb
   if (!verb) return null
 

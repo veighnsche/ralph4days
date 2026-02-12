@@ -19,8 +19,8 @@ import { formatDate } from '@/lib/formatDate'
 import type { Task, TaskSignal } from '@/types/generated'
 import { ReplyCard } from './ReplyCard'
 import { ReplyForm } from './ReplyForm'
+import { SignalDisplay } from './SignalDisplay'
 import { SignalEditor } from './SignalEditor'
-import { SignalPayloadDisplay } from './SignalPayloadDisplay'
 
 const VERB_CONFIG: Record<
   string,
@@ -230,7 +230,7 @@ export function SignalsSection({ task }: SignalsSectionProps) {
                         />
                       </div>
                     ) : (
-                      <SignalPayloadDisplay signal={signal} />
+                      <SignalDisplay signal={signal} />
                     )}
                   </div>
 

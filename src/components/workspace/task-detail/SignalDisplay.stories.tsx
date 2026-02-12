@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import type { TaskSignal } from '@/types/generated'
-import { SignalPayloadDisplay } from './SignalPayloadDisplay'
+import { SignalDisplay } from './SignalDisplay'
 
 const meta = {
-  title: 'Workspace/Task Detail/SignalPayloadDisplay',
-  component: SignalPayloadDisplay,
+  title: 'Workspace/Task Detail/SignalDisplay',
+  component: SignalDisplay,
   parameters: {
     layout: 'padded'
   },
@@ -16,7 +16,7 @@ const meta = {
       </div>
     )
   ]
-} satisfies Meta<typeof SignalPayloadDisplay>
+} satisfies Meta<typeof SignalDisplay>
 
 export default meta
 type Story = StoryObj<typeof meta>
@@ -168,7 +168,7 @@ export const SparsePayloads: Story = {
         {sparse.map(signal => (
           <div key={signal.id} className="rounded border bg-background p-3">
             <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">{signal.signal_verb}</div>
-            <SignalPayloadDisplay signal={signal} />
+            <SignalDisplay signal={signal} />
           </div>
         ))}
       </div>
@@ -193,7 +193,7 @@ export const UnknownOrMissingVerb: Story = {
             <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
               verb: {signal.signal_verb ?? '(none)'}
             </div>
-            <SignalPayloadDisplay signal={signal} />
+            <SignalDisplay signal={signal} />
             <div className="mt-2 text-xs text-muted-foreground">No payload is rendered for unsupported verbs.</div>
           </div>
         ))}
@@ -280,7 +280,7 @@ export const AllVerbVariantsMatrix: Story = {
         {variants.map(({ label, signal }) => (
           <div key={signal.id} className="rounded border bg-background p-3">
             <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
-            <SignalPayloadDisplay signal={signal} />
+            <SignalDisplay signal={signal} />
           </div>
         ))}
       </div>

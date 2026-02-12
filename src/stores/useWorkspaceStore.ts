@@ -30,6 +30,7 @@ export interface WorkspaceTab {
     model?: string // For terminal tabs (haiku, sonnet, opus)
     thinking?: boolean // For terminal tabs (extended thinking)
     taskId?: number // For task execution terminals
+    initPrompt?: string // Optional prompt captured at session start
   }
 }
 

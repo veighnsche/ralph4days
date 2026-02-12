@@ -62,13 +62,13 @@ export function useWorkspaceActions() {
         data: { entityId: task.id, entity: task }
       }),
 
-    openTerminalTab: (model: string, thinking: boolean) =>
+    openTerminalTab: (model: string, thinking: boolean, initPrompt?: string) =>
       openTab({
         type: 'terminal',
         component: TerminalTabContent,
         title: `Claude (${model})`,
         closeable: true,
-        data: { model, thinking }
+        data: { model, thinking, initPrompt }
       })
   }
 }

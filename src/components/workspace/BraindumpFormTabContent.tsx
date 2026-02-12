@@ -4,7 +4,6 @@
 // TODO: Handle terminal close gracefully with background option
 // TODO: Show progress indicator & creation summary
 
-import { invoke } from '@tauri-apps/api/core'
 import { Brain } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -17,6 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { useTabMeta, useWorkspaceActions } from '@/hooks/workspace'
+import { terminalBridgeSendInput } from '@/lib/terminal'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
@@ -51,8 +51,20 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
     const terminalExists = useWorkspaceStore.getState().tabs.some(t => t.id === terminalId)
     if (!terminalExists) throw new Error('Terminal tab was closed before sending')
 
-    const bytes = Array.from(new TextEncoder().encode(`${text}\n`))
-    await invoke('send_terminal_input', { sessionId: terminalId, data: bytes })
+    let lastError: unknown = null
+    for (let attempt = 0; attempt < 15; attempt++) {
+      try {
+        await terminalBridgeSendInput(terminalId, `${text}\n`)
+        lastError = null
+        break
+      } catch (err) {
+        lastError = err
+        const message = String(err)
+        if (!message.includes('No terminal bridge session')) throw err
+        await new Promise(resolve => setTimeout(resolve, 200))
+      }
+    }
+    if (lastError) throw lastError
 
     closeTab(tab.id)
     toast.success('Braindump sent to Claude')
@@ -70,7 +82,7 @@ export function BraindumpFormTabContent({ tab }: BraindumpFormTabContentProps) {
     setIsSubmitting(true)
 
     try {
-      const terminalId = openTerminalTab(model, thinking)
+      const terminalId = openTerminalTab(model, thinking, trimmedBraindump)
       await sendToTerminal(terminalId, trimmedBraindump)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'

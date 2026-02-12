@@ -103,7 +103,7 @@ pub fn delete_task(state: State<'_, AppState>, id: u32) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn add_task_comment(
+pub fn add_task_signal(
     state: State<'_, AppState>,
     task_id: u32,
     discipline: Option<String>,
@@ -116,24 +116,24 @@ pub fn add_task_comment(
 }
 
 #[tauri::command]
-pub fn update_task_comment(
+pub fn update_task_signal(
     state: State<'_, AppState>,
     task_id: u32,
-    comment_id: u32,
+    signal_id: u32,
     body: String,
 ) -> Result<(), String> {
     let db = get_db(&state)?;
-    db.update_signal(task_id, comment_id, body)
+    db.update_signal(task_id, signal_id, body)
 }
 
 #[tauri::command]
-pub fn delete_task_comment(
+pub fn delete_task_signal(
     state: State<'_, AppState>,
     task_id: u32,
-    comment_id: u32,
+    signal_id: u32,
 ) -> Result<(), String> {
     let db = get_db(&state)?;
-    db.delete_signal(task_id, comment_id)
+    db.delete_signal(task_id, signal_id)
 }
 
 #[tauri::command]
@@ -171,4 +171,41 @@ pub fn add_reply_to_comment(
 ) -> Result<(), String> {
     let db = get_db(&state)?;
     db.add_signal_with_parent(task_id, None, priority, body, Some(parent_comment_id))
+}
+
+#[tauri::command]
+pub fn add_task_signal_comment(
+    state: State<'_, AppState>,
+    params: sqlite_db::TaskSignalCommentCreateInput,
+) -> Result<u32, String> {
+    let db = get_db(&state)?;
+    db.add_task_signal_comment(params)
+}
+
+#[tauri::command]
+pub fn update_task_signal_comment(
+    state: State<'_, AppState>,
+    comment_id: u32,
+    body: String,
+) -> Result<(), String> {
+    let db = get_db(&state)?;
+    db.update_task_signal_comment(comment_id, body)
+}
+
+#[tauri::command]
+pub fn delete_task_signal_comment(
+    state: State<'_, AppState>,
+    comment_id: u32,
+) -> Result<(), String> {
+    let db = get_db(&state)?;
+    db.delete_task_signal_comment(comment_id)
+}
+
+#[tauri::command]
+pub fn get_task_signal_comments(
+    state: State<'_, AppState>,
+    signal_id: u32,
+) -> Result<Vec<sqlite_db::TaskSignalComment>, String> {
+    let db = get_db(&state)?;
+    Ok(db.get_task_signal_comments(signal_id))
 }
