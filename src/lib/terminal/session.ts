@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   terminalBridgeListenSessionClosed,
   terminalBridgeListenSessionOutput,
@@ -35,6 +35,13 @@ export interface TerminalSessionHandlers {
   onError?: (error: string) => void
 }
 
+function decodeOutputBytes(base64Data: string): Uint8Array {
+  const binary = atob(base64Data)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  return bytes
+}
+
 export function useTerminalSession(config: TerminalSessionConfig, handlers: TerminalSessionHandlers) {
   const isReadyRef = useRef(false)
   const outputBufferRef = useRef<Uint8Array[]>([])
@@ -46,30 +53,102 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
   const handlersRef = useRef(handlers)
   handlersRef.current = handlers
   const isEnabled = config.enabled ?? true
+  const sessionId = config.sessionId
+  const mcpMode = config.mcpMode
+  const taskId = config.taskId
+  const agent = config.agent
+  const model = config.model
+  const effort = config.effort
+  const thinking = config.thinking
+  const permissionLevel = config.permissionLevel
+  const humanSession = config.humanSession
+  const humanKind = humanSession?.kind
+  const humanAgent = humanSession?.agent
+  const humanPostStartPreamble = humanSession?.postStartPreamble
+  const humanInitPrompt = humanSession?.initPrompt
   const [listenersReady, setListenersReady] = useState(false)
 
-  const markSessionStarted = () => {
+  const markSessionStarted = useCallback(() => {
     sessionStartedRef.current = true
     if (pendingResizeRef.current) {
       const { cols, rows } = pendingResizeRef.current
       pendingResizeRef.current = null
-      terminalBridgeResize(config.sessionId, cols, rows).catch(() => {})
+      terminalBridgeResize(sessionId, cols, rows).catch(() => {})
     }
     if (startedNotifiedRef.current) return
     startedNotifiedRef.current = true
     handlersRef.current.onStarted?.()
-  }
+  }, [sessionId])
 
-  const flushPendingInput = () => {
+  const flushPendingInput = useCallback(() => {
     if (!sessionStartedRef.current || pendingInputRef.current.length === 0) return
 
     const pending = [...pendingInputRef.current]
     pendingInputRef.current = []
 
     for (const data of pending) {
-      terminalBridgeSendInput(config.sessionId, data).catch(err => handlersRef.current.onError?.(String(err)))
+      terminalBridgeSendInput(sessionId, data).catch(err => handlersRef.current.onError?.(String(err)))
     }
-  }
+  }, [sessionId])
+
+  const notifyStartSuccess = useCallback(() => {
+    markSessionStarted()
+    flushPendingInput()
+  }, [markSessionStarted, flushPendingInput])
+
+  const startHumanSession = useCallback(() => {
+    if (!humanKind) return null
+    return terminalBridgeStartHumanSession({
+      terminalSessionId: sessionId,
+      kind: humanKind,
+      taskId,
+      agent: humanAgent ?? 'claude',
+      model: model ?? undefined,
+      effort: effort ?? undefined,
+      ...(permissionLevel != null ? { permissionLevel } : {}),
+      postStartPreamble: humanPostStartPreamble ?? undefined,
+      initPrompt: humanInitPrompt ?? undefined,
+      mcpMode: taskId !== undefined ? undefined : mcpMode || 'interactive',
+      thinking: thinking ?? undefined
+    })
+  }, [
+    effort,
+    humanAgent,
+    humanInitPrompt,
+    humanKind,
+    humanPostStartPreamble,
+    mcpMode,
+    model,
+    permissionLevel,
+    sessionId,
+    taskId,
+    thinking
+  ])
+
+  const startTaskSession = useCallback(() => {
+    if (taskId === undefined) return null
+    return terminalBridgeStartTaskSession({
+      sessionId,
+      taskId,
+      agent: agent ?? 'claude',
+      model: model ?? undefined,
+      effort: effort ?? undefined,
+      ...(permissionLevel != null ? { permissionLevel } : {}),
+      thinking: thinking ?? undefined
+    })
+  }, [agent, effort, model, permissionLevel, sessionId, taskId, thinking])
+
+  const startInteractiveSession = useCallback(() => {
+    return terminalBridgeStartSession({
+      sessionId,
+      agent: agent ?? 'claude',
+      mcpMode: mcpMode || 'interactive',
+      model: model ?? undefined,
+      effort: effort ?? undefined,
+      ...(permissionLevel != null ? { permissionLevel } : {}),
+      thinking: thinking ?? undefined
+    })
+  }, [agent, effort, mcpMode, model, permissionLevel, sessionId, thinking])
 
   useEffect(() => {
     if (!isEnabled) return
@@ -88,20 +167,17 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     setListenersReady(false)
 
     Promise.all([
-      terminalBridgeListenSessionOutput(config.sessionId, payload => {
+      terminalBridgeListenSessionOutput(sessionId, payload => {
         markSessionStarted()
         flushPendingInput()
-
-        const binary = atob(payload.data)
-        const bytes = new Uint8Array(binary.length)
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+        const bytes = decodeOutputBytes(payload.data)
         if (isReadyRef.current) {
           handlersRef.current.onOutput?.(bytes)
         } else {
           outputBufferRef.current.push(bytes)
         }
       }),
-      terminalBridgeListenSessionClosed(config.sessionId, payload => {
+      terminalBridgeListenSessionClosed(sessionId, payload => {
         if (!sessionStartedRef.current) return
         handlersRef.current.onClosed?.(payload.exit_code)
       })
@@ -119,7 +195,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
       unlistenOutput?.()
       unlistenClosed?.()
     }
-  }, [config.sessionId, isEnabled])
+  }, [flushPendingInput, isEnabled, markSessionStarted, sessionId])
 
   useEffect(() => {
     if (!(isEnabled && listenersReady) || startRequestedRef.current) return
@@ -130,81 +206,17 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
       startRequestedRef.current = false
       handlersRef.current.onError?.(String(err))
     }
-
-    if (config.humanSession) {
-      terminalBridgeStartHumanSession({
-        terminalSessionId: config.sessionId,
-        kind: config.humanSession.kind,
-        taskId: config.taskId,
-        agent: config.humanSession.agent ?? 'claude',
-        model: config.model ?? undefined,
-        effort: config.effort ?? undefined,
-        ...(config.permissionLevel != null ? { permissionLevel: config.permissionLevel } : {}),
-        postStartPreamble: config.humanSession.postStartPreamble ?? undefined,
-        initPrompt: config.humanSession.initPrompt ?? undefined,
-        mcpMode: config.taskId !== undefined ? undefined : config.mcpMode || 'interactive',
-        thinking: config.thinking ?? undefined
-      })
-        .then(() => {
-          markSessionStarted()
-          flushPendingInput()
-        })
-        .catch(onStartFailed)
-    } else if (config.taskId !== undefined) {
-      terminalBridgeStartTaskSession({
-        sessionId: config.sessionId,
-        taskId: config.taskId,
-        agent: config.agent ?? 'claude',
-        model: config.model ?? undefined,
-        effort: config.effort ?? undefined,
-        ...(config.permissionLevel != null ? { permissionLevel: config.permissionLevel } : {}),
-        thinking: config.thinking ?? undefined
-      })
-        .then(() => {
-          markSessionStarted()
-          flushPendingInput()
-        })
-        .catch(onStartFailed)
-    } else {
-      terminalBridgeStartSession({
-        sessionId: config.sessionId,
-        agent: config.agent ?? 'claude',
-        mcpMode: config.mcpMode || 'interactive',
-        model: config.model ?? undefined,
-        effort: config.effort ?? undefined,
-        ...(config.permissionLevel != null ? { permissionLevel: config.permissionLevel } : {}),
-        thinking: config.thinking ?? undefined
-      })
-        .then(() => {
-          markSessionStarted()
-          flushPendingInput()
-        })
-        .catch(onStartFailed)
-    }
-  }, [
-    config.sessionId,
-    config.mcpMode,
-    config.taskId,
-    config.agent,
-    config.model,
-    config.effort,
-    config.thinking,
-    config.permissionLevel,
-    config.humanSession?.kind,
-    config.humanSession?.agent,
-    config.humanSession?.postStartPreamble,
-    config.humanSession?.initPrompt,
-    isEnabled,
-    listenersReady
-  ])
+    const startPromise = startHumanSession() ?? startTaskSession() ?? startInteractiveSession()
+    startPromise.then(notifyStartSuccess).catch(onStartFailed)
+  }, [isEnabled, listenersReady, notifyStartSuccess, startHumanSession, startInteractiveSession, startTaskSession])
 
   useEffect(() => {
     if (!isEnabled) return
 
     return () => {
-      terminalBridgeTerminate(config.sessionId).catch(() => {})
+      terminalBridgeTerminate(sessionId).catch(() => {})
     }
-  }, [config.sessionId, isEnabled])
+  }, [isEnabled, sessionId])
 
   const markReady = () => {
     isReadyRef.current = true
@@ -220,7 +232,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
       return
     }
 
-    terminalBridgeSendInput(config.sessionId, data).catch(err => handlersRef.current.onError?.(String(err)))
+    terminalBridgeSendInput(sessionId, data).catch(err => handlersRef.current.onError?.(String(err)))
   }
 
   const resize = (cols: number, rows: number) => {
@@ -228,7 +240,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
       pendingResizeRef.current = { cols, rows }
       return
     }
-    terminalBridgeResize(config.sessionId, cols, rows).catch(() => {})
+    terminalBridgeResize(sessionId, cols, rows).catch(() => {})
   }
 
   return { markReady, sendInput, resize }

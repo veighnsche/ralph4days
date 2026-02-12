@@ -92,6 +92,55 @@ export type TerminalTabParams = Partial<AgentSessionLaunchConfig> & {
   initPrompt?: string
 }
 
+function parseAgentField(value: unknown): Agent {
+  if (value !== 'claude' && value !== 'codex') {
+    throw new Error('Invalid terminal tab params.agent')
+  }
+  return value
+}
+
+function parseModelField(value: unknown): string {
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new Error('Invalid terminal tab params.model')
+  }
+  return value
+}
+
+function parseEffortField(value: unknown): Effort {
+  if (value !== 'low' && value !== 'medium' && value !== 'high') {
+    throw new Error('Invalid terminal tab params.effort')
+  }
+  return value
+}
+
+function parseBooleanField(value: unknown, key: 'thinking'): boolean {
+  if (typeof value !== 'boolean') {
+    throw new Error(`Invalid terminal tab params.${key}`)
+  }
+  return value
+}
+
+function parsePermissionLevelField(value: unknown): PermissionLevel {
+  if (value !== 'safe' && value !== 'balanced' && value !== 'auto' && value !== 'full_auto') {
+    throw new Error('Invalid terminal tab params.permissionLevel')
+  }
+  return value
+}
+
+function parseTaskIdField(value: unknown): number {
+  if (!Number.isInteger(value) || Number(value) <= 0) {
+    throw new Error('Invalid terminal tab params.taskId')
+  }
+  return value as number
+}
+
+function parseStringField(value: unknown, key: 'initPrompt' | 'title'): string {
+  if (typeof value !== 'string' || (key === 'title' && value.trim() === '')) {
+    throw new Error(`Invalid terminal tab params.${key}`)
+  }
+  return value
+}
+
 function parseTerminalTabParams(params: unknown): TerminalTabParams {
   if (params == null) return {}
   if (typeof params !== 'object' || Array.isArray(params)) {
@@ -99,59 +148,16 @@ function parseTerminalTabParams(params: unknown): TerminalTabParams {
   }
   const candidate = params as Record<string, unknown>
   const parsed: TerminalTabParams = {}
-  if (candidate.agent !== undefined) {
-    if (candidate.agent !== 'claude' && candidate.agent !== 'codex') {
-      throw new Error('Invalid terminal tab params.agent')
-    }
-    parsed.agent = candidate.agent as Agent
-  }
-  if (candidate.model !== undefined) {
-    if (typeof candidate.model !== 'string' || candidate.model.trim() === '') {
-      throw new Error('Invalid terminal tab params.model')
-    }
-    parsed.model = candidate.model
-  }
-  if (candidate.effort !== undefined) {
-    if (candidate.effort !== 'low' && candidate.effort !== 'medium' && candidate.effort !== 'high') {
-      throw new Error('Invalid terminal tab params.effort')
-    }
-    parsed.effort = candidate.effort as Effort
-  }
-  if (candidate.thinking !== undefined) {
-    if (typeof candidate.thinking !== 'boolean') {
-      throw new Error('Invalid terminal tab params.thinking')
-    }
-    parsed.thinking = candidate.thinking
-  }
+  if (candidate.agent !== undefined) parsed.agent = parseAgentField(candidate.agent)
+  if (candidate.model !== undefined) parsed.model = parseModelField(candidate.model)
+  if (candidate.effort !== undefined) parsed.effort = parseEffortField(candidate.effort)
+  if (candidate.thinking !== undefined) parsed.thinking = parseBooleanField(candidate.thinking, 'thinking')
   if (candidate.permissionLevel !== undefined) {
-    if (
-      candidate.permissionLevel !== 'safe' &&
-      candidate.permissionLevel !== 'balanced' &&
-      candidate.permissionLevel !== 'auto' &&
-      candidate.permissionLevel !== 'full_auto'
-    ) {
-      throw new Error('Invalid terminal tab params.permissionLevel')
-    }
-    parsed.permissionLevel = candidate.permissionLevel as PermissionLevel
+    parsed.permissionLevel = parsePermissionLevelField(candidate.permissionLevel)
   }
-  if (candidate.taskId !== undefined) {
-    if (!Number.isInteger(candidate.taskId) || Number(candidate.taskId) <= 0) {
-      throw new Error('Invalid terminal tab params.taskId')
-    }
-    parsed.taskId = candidate.taskId as number
-  }
-  if (candidate.initPrompt !== undefined) {
-    if (typeof candidate.initPrompt !== 'string') {
-      throw new Error('Invalid terminal tab params.initPrompt')
-    }
-    parsed.initPrompt = candidate.initPrompt
-  }
-  if (candidate.title !== undefined) {
-    if (typeof candidate.title !== 'string' || candidate.title.trim() === '') {
-      throw new Error('Invalid terminal tab params.title')
-    }
-    parsed.title = candidate.title
-  }
+  if (candidate.taskId !== undefined) parsed.taskId = parseTaskIdField(candidate.taskId)
+  if (candidate.initPrompt !== undefined) parsed.initPrompt = parseStringField(candidate.initPrompt, 'initPrompt')
+  if (candidate.title !== undefined) parsed.title = parseStringField(candidate.title, 'title')
   return parsed
 }
 

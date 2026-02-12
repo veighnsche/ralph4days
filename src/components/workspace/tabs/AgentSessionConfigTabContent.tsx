@@ -292,6 +292,41 @@ function PermissionLevelControls({
 
 export type AgentSessionConfigTabParams = Partial<AgentSessionLaunchConfig>
 
+function parseAgentConfigField(value: unknown): Agent {
+  if (value !== 'claude' && value !== 'codex') {
+    throw new Error('Invalid agent session config tab params.agent')
+  }
+  return value
+}
+
+function parseModelConfigField(value: unknown): string {
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new Error('Invalid agent session config tab params.model')
+  }
+  return value
+}
+
+function parseEffortConfigField(value: unknown): Effort {
+  if (value !== 'low' && value !== 'medium' && value !== 'high') {
+    throw new Error('Invalid agent session config tab params.effort')
+  }
+  return value
+}
+
+function parseThinkingConfigField(value: unknown): boolean {
+  if (typeof value !== 'boolean') {
+    throw new Error('Invalid agent session config tab params.thinking')
+  }
+  return value
+}
+
+function parsePermissionLevelConfigField(value: unknown): PermissionLevel {
+  if (value !== 'safe' && value !== 'balanced' && value !== 'auto' && value !== 'full_auto') {
+    throw new Error('Invalid agent session config tab params.permissionLevel')
+  }
+  return value
+}
+
 function parseAgentSessionConfigTabParams(params: unknown): AgentSessionConfigTabParams {
   if (params == null) return {}
   if (typeof params !== 'object' || Array.isArray(params)) {
@@ -299,40 +334,12 @@ function parseAgentSessionConfigTabParams(params: unknown): AgentSessionConfigTa
   }
   const candidate = params as Record<string, unknown>
   const parsed: AgentSessionConfigTabParams = {}
-  if (candidate.agent !== undefined) {
-    if (candidate.agent !== 'claude' && candidate.agent !== 'codex') {
-      throw new Error('Invalid agent session config tab params.agent')
-    }
-    parsed.agent = candidate.agent as Agent
-  }
-  if (candidate.model !== undefined) {
-    if (typeof candidate.model !== 'string' || candidate.model.trim() === '') {
-      throw new Error('Invalid agent session config tab params.model')
-    }
-    parsed.model = candidate.model
-  }
-  if (candidate.effort !== undefined) {
-    if (candidate.effort !== 'low' && candidate.effort !== 'medium' && candidate.effort !== 'high') {
-      throw new Error('Invalid agent session config tab params.effort')
-    }
-    parsed.effort = candidate.effort as Effort
-  }
-  if (candidate.thinking !== undefined) {
-    if (typeof candidate.thinking !== 'boolean') {
-      throw new Error('Invalid agent session config tab params.thinking')
-    }
-    parsed.thinking = candidate.thinking
-  }
+  if (candidate.agent !== undefined) parsed.agent = parseAgentConfigField(candidate.agent)
+  if (candidate.model !== undefined) parsed.model = parseModelConfigField(candidate.model)
+  if (candidate.effort !== undefined) parsed.effort = parseEffortConfigField(candidate.effort)
+  if (candidate.thinking !== undefined) parsed.thinking = parseThinkingConfigField(candidate.thinking)
   if (candidate.permissionLevel !== undefined) {
-    if (
-      candidate.permissionLevel !== 'safe' &&
-      candidate.permissionLevel !== 'balanced' &&
-      candidate.permissionLevel !== 'auto' &&
-      candidate.permissionLevel !== 'full_auto'
-    ) {
-      throw new Error('Invalid agent session config tab params.permissionLevel')
-    }
-    parsed.permissionLevel = candidate.permissionLevel as PermissionLevel
+    parsed.permissionLevel = parsePermissionLevelConfigField(candidate.permissionLevel)
   }
   return parsed
 }
