@@ -79,6 +79,7 @@ function AddCommentForm({
   const [body, setBody] = useState('')
   const [reason, setReason] = useState('')
   const [focused, setFocused] = useState(false)
+  const wrapperRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const canSubmit = category.trim() !== '' && body.trim() !== '' && !mutations.isPending
@@ -102,15 +103,21 @@ function AddCommentForm({
     )
   }
 
+  const handleBlurWithin = () => {
+    // Wait for focus to move, then collapse only if nothing inside remains focused.
+    requestAnimationFrame(() => {
+      if (!wrapperRef.current?.matches(':focus-within')) {
+        setFocused(false)
+      }
+    })
+  }
+
   const collapsed = !(focused || category || body.trim())
 
   return (
     <div
-      className={`rounded-md border bg-muted/30 overflow-hidden transition-opacity ${collapsed ? 'opacity-30' : ''}`}
-      onFocus={() => setFocused(true)}
-      onBlur={e => {
-        if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false)
-      }}>
+      ref={wrapperRef}
+      className={`rounded-md border bg-muted/30 overflow-hidden transition-opacity ${collapsed ? 'opacity-30' : ''}`}>
       {!collapsed && (
         <div className="border-b">
           <ToggleGroup
@@ -143,6 +150,8 @@ function AddCommentForm({
         ref={textareaRef}
         value={body}
         onChange={e => setBody(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={handleBlurWithin}
         onKeyDown={e => {
           if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
             e.preventDefault()
@@ -158,6 +167,8 @@ function AddCommentForm({
             type="text"
             value={reason}
             onChange={e => setReason(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={handleBlurWithin}
             onKeyDown={e => {
               if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault()

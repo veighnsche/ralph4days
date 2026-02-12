@@ -8,7 +8,7 @@ interface PrioritySelectProps {
 export function PrioritySelect({ value, onChange }: PrioritySelectProps) {
   return (
     <div className="flex items-center gap-2">
-      <label className="text-xs font-medium text-muted-foreground">Priority</label>
+      <span className="text-xs font-medium text-muted-foreground">Priority</span>
       <Select value={value || 'none'} onValueChange={onChange}>
         <SelectTrigger className="h-6 w-28 text-xs">
           <SelectValue />
