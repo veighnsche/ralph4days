@@ -1,4 +1,5 @@
 pub mod acronym;
+mod agent_sessions;
 mod comment_embeddings;
 mod disciplines;
 mod export;
@@ -20,9 +21,10 @@ pub use signals::{
     PartialSignalInput, StuckSignalInput, SuggestSignalInput,
 };
 pub use types::{
-    Discipline, DisciplineInput, Feature, FeatureComment, FeatureInput, FeatureStatus,
-    McpServerConfig, Priority, ProjectMetadata, Task, TaskInput, TaskProvenance, TaskSignal,
-    TaskSignalSummary, TaskStatus,
+    AgentSession, AgentSessionCreateInput, AgentSessionUpdateInput, Discipline, DisciplineInput,
+    Feature, FeatureComment, FeatureInput, FeatureStatus, McpServerConfig, Priority,
+    ProjectMetadata, Task, TaskInput, TaskProvenance, TaskSignal, TaskSignalComment,
+    TaskSignalCommentCreateInput, TaskSignalSummary, TaskStatus,
 };
 
 use ralph_errors::{codes, RalphResultExt};

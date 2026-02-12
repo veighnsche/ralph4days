@@ -10,7 +10,7 @@
 
 Single `task_signals` table. Single reusable MCP server binary. All 8 verbs are `INSERT INTO task_signals`. Intelligence lives in Ralph's post-processing (Rust), not the MCP server.
 
-The MCP server is parameterized via environment variables (`RALPH_TASK_ID`, `RALPH_SESSION_ID`, `RALPH_DB_PATH`). Every tool call is the same operation: parse params → JSON encode → INSERT. The MCP server is truly dumb — just an INSERT pipe.
+The MCP server is parameterized via environment variables (`RALPH_TASK_ID`, `RALPH_SESSION_ID`, `RALPH_DB_PATH`). Every tool call is the same operation: parse params → bind verb-specific flat columns → INSERT. The MCP server is truly dumb — just an INSERT pipe.
 
 ### Execution Flow
 
@@ -29,17 +29,52 @@ The MCP server is parameterized via environment variables (`RALPH_TASK_ID`, `RAL
 ```sql
 CREATE TABLE task_signals (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    task_id INTEGER NOT NULL,
-    session_id TEXT NOT NULL,
+    task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    discipline_id INTEGER REFERENCES disciplines(id) ON DELETE SET NULL,
+    session_id TEXT,
     verb TEXT NOT NULL CHECK(verb IN ('done','partial','stuck','ask','flag','learned','suggest','blocked')),
-    payload TEXT NOT NULL,  -- JSON, schema depends on verb
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (task_id) REFERENCES tasks(id)
+
+    -- Closing verbs
+    summary TEXT,    -- done, partial
+    remaining TEXT,  -- partial
+    reason TEXT,     -- stuck
+
+    -- ask
+    question TEXT,
+    options TEXT,    -- newline-separated string[] from tool input
+    preferred TEXT,
+    blocking INTEGER CHECK(blocking IN (0,1) OR blocking IS NULL),
+
+    -- flag
+    what TEXT,       -- flag, suggest
+    severity TEXT CHECK(severity IN ('info','warning','blocking') OR severity IS NULL),
+    category TEXT CHECK(category IN ('bug','stale','contradiction','ambiguity','overlap','performance','security','incomplete_prior') OR category IS NULL),
+
+    -- learned
+    kind TEXT,
+    scope TEXT CHECK(scope IN ('project','feature','task') OR scope IS NULL),
+    rationale TEXT,
+
+    -- suggest
+    why TEXT,
+    feature_id INTEGER REFERENCES features(id) ON DELETE SET NULL,
+
+    -- blocked
+    "on" TEXT,
+    detail TEXT,
+
+    -- human answer to ask
+    answer TEXT,
+
+    created TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE INDEX idx_task_signals_task ON task_signals(task_id);
+CREATE INDEX idx_task_signals_discipline ON task_signals(discipline_id);
 CREATE INDEX idx_task_signals_session ON task_signals(session_id);
 CREATE INDEX idx_task_signals_verb ON task_signals(verb);
+CREATE INDEX idx_task_signals_task_verb ON task_signals(task_id, verb);
+CREATE INDEX idx_task_signals_feature ON task_signals(feature_id);
 ```
 
 The `session_id` tracks which CLI session produced each signal — a task attempted multiple times (partial → re-queue) produces signals across multiple sessions.
@@ -236,7 +271,7 @@ Only actionable when closing verb is NOT `done`. If agent calls `blocked` + `don
 
 Ralph's loop_engine runs this pipeline after every CLI session:
 
-1. **Read** all `task_signals` for this `session_id`, ordered by `created_at`
+1. **Read** all `task_signals` for this `session_id`, ordered by `created`
 2. **Identify closing verb:** the last `done`/`partial`/`stuck` signal
 3. **No closing verb?** Infer `stuck(reason: "session ended without closing signal")`
 4. **Process closing verb:**

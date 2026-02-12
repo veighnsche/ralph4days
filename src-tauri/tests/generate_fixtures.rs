@@ -1427,7 +1427,7 @@ just dev-mock 04-desktop-dev
     .unwrap();
 
     // Set varied statuses with historical dates (fixture-only)
-    // Tasks 1,2,3,8 = done; Tasks 4,9 = in_progress; Tasks 14,17 = blocked; Task 19 = skipped
+    // Tasks 1,2,3,8 = completed; Tasks 4,9 = in_progress; Tasks 14,17 = blocked; Task 19 = skipped
     db.set_task_status_with_date(1, TaskStatus::Done, "2025-01-14")
         .unwrap();
     db.set_task_status_with_date(2, TaskStatus::Done, "2025-01-16")
@@ -1564,7 +1564,7 @@ just dev-mock 04-desktop-dev
             task_id: 21,
             session_id: sess.to_owned(),
             text: "Browser download APIs create Blob URLs that must be manually revoked via URL.revokeObjectURL() or they leak memory until page reload.".to_owned(),
-            kind: "gotcha".to_owned(),
+            kind: "discovery".to_owned(),
             scope: "feature".to_owned(),
             rationale: Some("Without cleanup, every export leaks ~50KB. User with 100 exports = 5MB leaked RAM.".to_owned()),
         },
@@ -1577,7 +1577,7 @@ just dev-mock 04-desktop-dev
             task_id: 21,
             session_id: sess.to_owned(),
             text: "Wrap all localStorage operations in try/catch with LRU eviction fallback — handles quota errors gracefully.".to_owned(),
-            kind: "pattern".to_owned(),
+            kind: "convention".to_owned(),
             scope: "task".to_owned(),
             rationale: None,
         },
@@ -1604,7 +1604,7 @@ just dev-mock 04-desktop-dev
             task_id: 21,
             session_id: sess.to_owned(),
             what: "Add Copy to Clipboard button next to Download — users want to paste bookmark JSON into Slack without saving a file.".to_owned(),
-            kind: "improvement".to_owned(),
+            kind: "alternative".to_owned(),
             why: "40% of exports in analytics are followed by manual file-open-copy-paste. Direct clipboard = better UX.".to_owned(),
         },
     )
@@ -1652,7 +1652,9 @@ just dev-mock 04-desktop-dev
         "\n✓ Created 04-desktop-dev fixture at: {}",
         fixture_path.display()
     );
-    println!("  5 features, 21 tasks (4 done, 3 in_progress, 11 pending, 2 blocked, 1 skipped)");
+    println!(
+        "  5 features, 21 tasks (4 completed, 3 in_progress, 11 pending, 2 blocked, 1 skipped)"
+    );
     println!("  15 comment examples on task 21 showing all 8 verbs with variants");
     println!("  → Task #21: MCP Signal Reference with ALL 8 VERBS + VARIANTS (15 signals)");
 }

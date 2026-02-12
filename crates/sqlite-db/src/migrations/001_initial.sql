@@ -103,7 +103,7 @@ CREATE TABLE tasks (
   discipline_id INTEGER NOT NULL REFERENCES disciplines(id) ON DELETE RESTRICT,
   title TEXT NOT NULL,
   description TEXT,
-  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('draft','pending','in_progress','done','blocked','skipped')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('draft','pending','in_progress','completed','blocked','skipped','needs_input','failed')),
   priority TEXT CHECK(priority IN ('low','medium','high','critical') OR priority IS NULL),
   hints TEXT,
   estimated_turns INTEGER,
@@ -112,7 +112,7 @@ CREATE TABLE tasks (
   enriched_at TEXT,
   created TEXT,
   updated TEXT,
-  completed TEXT
+  completed_at TEXT
 ) STRICT;
 
 CREATE TABLE task_tags (
@@ -148,16 +148,58 @@ CREATE TABLE task_output_artifacts (
   artifact_path TEXT NOT NULL
 ) STRICT;
 
--- Task Comments (flat, no JSON)
+-- Agent sessions (agent runs, human starts, braindumps, reviews)
+CREATE TABLE agent_sessions (
+  id TEXT PRIMARY KEY, -- e.g. RALPH_SESSION_ID
+  kind TEXT NOT NULL CHECK(kind IN ('task_execution','human_braindump','manual','review')),
+  started_by TEXT NOT NULL CHECK(started_by IN ('agent','human','system')),
+  task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL,
+  agent TEXT, -- claude, codex, etc.
+  model TEXT,
+  launch_command TEXT,
+  post_start_preamble TEXT, -- newline-delimited steps; interpreted by agent-specific runner
+  init_prompt TEXT,
+  started TEXT NOT NULL DEFAULT (datetime('now')),
+  ended TEXT,
+  exit_code INTEGER,
+  closing_verb TEXT CHECK(closing_verb IN ('done','partial','stuck') OR closing_verb IS NULL),
+  status TEXT NOT NULL DEFAULT 'running' CHECK(status IN ('running','finished','crashed','timed_out','cancelled')),
+  prompt_hash TEXT,
+  output_bytes INTEGER CHECK(output_bytes >= 0 OR output_bytes IS NULL),
+  error_text TEXT,
+  CHECK((status = 'running' AND ended IS NULL) OR (status != 'running'))
+) STRICT;
+
+-- Agent session lifecycle events (structured timeline)
+CREATE TABLE agent_session_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id TEXT NOT NULL REFERENCES agent_sessions(id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL, -- started, preamble_applied, prompt_sent, mcp_connected, exited, error, etc.
+  detail TEXT,
+  created TEXT NOT NULL DEFAULT (datetime('now'))
+) STRICT;
+
+-- Agent session transcript (ordered I/O log)
+CREATE TABLE agent_session_transcript (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id TEXT NOT NULL REFERENCES agent_sessions(id) ON DELETE CASCADE,
+  seq INTEGER NOT NULL CHECK(seq >= 0),
+  role TEXT NOT NULL CHECK(role IN ('system','user','assistant','tool')),
+  channel TEXT NOT NULL CHECK(channel IN ('stdin','stdout','stderr','prompt','mcp','internal')),
+  content TEXT NOT NULL,
+  created TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(session_id, seq)
+) STRICT;
+
+-- Task signals (flat columns, no payload JSON)
 CREATE TABLE task_signals (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-  discipline_id INTEGER REFERENCES disciplines(id) ON DELETE SET NULL,
-  session_id TEXT,
+  session_id TEXT NOT NULL,
 
-  verb TEXT NOT NULL CHECK(verb IN ('signal','done','partial','stuck','ask','flag','learned','suggest','blocked')),
+  verb TEXT NOT NULL CHECK(verb IN ('done','partial','stuck','ask','flag','learned','suggest','blocked')),
 
-  -- Text fields (at least ONE must be populated)
+  -- Verb payload fields (flat columns)
   text TEXT,
   summary TEXT,
   remaining TEXT,
@@ -178,7 +220,6 @@ CREATE TABLE task_signals (
   options TEXT, -- newline-separated for 'ask' verb
   rationale TEXT,
   why TEXT,
-  feature_id INTEGER REFERENCES features(id) ON DELETE SET NULL, -- for 'suggest' verb
   detail TEXT,
 
   -- Answer
@@ -186,16 +227,49 @@ CREATE TABLE task_signals (
 
   created TEXT NOT NULL DEFAULT (datetime('now')),
 
-  -- Ensure at least one text field is populated
+  -- Verb-specific shape (required + disallowed fields)
   CHECK(
-    text IS NOT NULL OR
-    summary IS NOT NULL OR
-    remaining IS NOT NULL OR
-    reason IS NOT NULL OR
-    question IS NOT NULL OR
-    what IS NOT NULL OR
-    "on" IS NOT NULL
-  )
+    (verb = 'done' AND summary IS NOT NULL AND remaining IS NULL AND reason IS NULL AND question IS NULL AND what IS NULL AND text IS NULL AND "on" IS NULL) OR
+    (verb = 'partial' AND summary IS NOT NULL AND remaining IS NOT NULL AND reason IS NULL AND question IS NULL AND what IS NULL AND text IS NULL AND "on" IS NULL) OR
+    (verb = 'stuck' AND reason IS NOT NULL AND summary IS NULL AND remaining IS NULL AND question IS NULL AND what IS NULL AND text IS NULL AND "on" IS NULL) OR
+    (verb = 'ask' AND question IS NOT NULL AND blocking IS NOT NULL AND summary IS NULL AND remaining IS NULL AND reason IS NULL AND what IS NULL AND text IS NULL AND "on" IS NULL) OR
+    (verb = 'flag' AND what IS NOT NULL AND severity IS NOT NULL AND category IS NOT NULL AND summary IS NULL AND remaining IS NULL AND reason IS NULL AND question IS NULL AND text IS NULL AND "on" IS NULL) OR
+    (verb = 'learned' AND text IS NOT NULL AND kind IS NOT NULL AND summary IS NULL AND remaining IS NULL AND reason IS NULL AND question IS NULL AND what IS NULL AND "on" IS NULL) OR
+    (verb = 'suggest' AND what IS NOT NULL AND kind IS NOT NULL AND why IS NOT NULL AND summary IS NULL AND remaining IS NULL AND reason IS NULL AND question IS NULL AND text IS NULL AND "on" IS NULL) OR
+    (verb = 'blocked' AND "on" IS NOT NULL AND kind IS NOT NULL AND summary IS NULL AND remaining IS NULL AND reason IS NULL AND question IS NULL AND what IS NULL AND text IS NULL)
+  ),
+
+  -- Field-level enums by verb
+  CHECK(
+    (verb = 'flag' AND severity IN ('info','warning','blocking') AND category IN ('bug','stale','contradiction','ambiguity','overlap','performance','security','incomplete_prior')) OR
+    (verb != 'flag' AND severity IS NULL AND category IS NULL)
+  ),
+  CHECK(
+    (verb = 'learned' AND kind IN ('discovery','decision','convention')) OR
+    (verb = 'suggest' AND kind IN ('new_task','split','refactor','alternative','deprecate')) OR
+    (verb = 'blocked' AND kind IN ('upstream_task','external')) OR
+    (verb NOT IN ('learned','suggest','blocked') AND kind IS NULL)
+  ),
+  CHECK(
+    (verb = 'learned' AND (scope IN ('project','feature','task') OR scope IS NULL)) OR
+    (verb != 'learned' AND scope IS NULL)
+  ),
+  CHECK((verb = 'ask') OR (blocking IS NULL AND options IS NULL AND preferred IS NULL AND answer IS NULL)),
+  CHECK((verb = 'learned') OR (rationale IS NULL)),
+  CHECK((verb = 'suggest') OR (why IS NULL)),
+  CHECK((verb = 'blocked') OR (detail IS NULL)),
+
+  FOREIGN KEY (session_id) REFERENCES agent_sessions(id) ON DELETE CASCADE
+) STRICT;
+
+-- Comments under task signals (flat, non-threaded)
+CREATE TABLE task_signal_comments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  signal_id INTEGER NOT NULL REFERENCES task_signals(id) ON DELETE CASCADE,
+  session_id TEXT REFERENCES agent_sessions(id) ON DELETE SET NULL,
+  author_type TEXT NOT NULL CHECK(author_type IN ('human','agent','system')),
+  body TEXT NOT NULL,
+  created TEXT NOT NULL DEFAULT (datetime('now'))
 ) STRICT;
 
 -- Feature Comments (knowledge layer for features)
@@ -252,12 +326,24 @@ CREATE INDEX idx_task_tags_task ON task_tags(task_id);
 CREATE INDEX idx_task_deps_task ON task_dependencies(task_id);
 CREATE INDEX idx_task_deps_depends ON task_dependencies(depends_on_task_id);
 
+CREATE INDEX idx_agent_sessions_task ON agent_sessions(task_id);
+CREATE INDEX idx_agent_sessions_status ON agent_sessions(status);
+CREATE INDEX idx_agent_sessions_started ON agent_sessions(started);
+
+CREATE INDEX idx_session_events_session ON agent_session_events(session_id);
+CREATE INDEX idx_session_events_created ON agent_session_events(created);
+
+CREATE INDEX idx_session_transcript_session ON agent_session_transcript(session_id);
+CREATE INDEX idx_session_transcript_created ON agent_session_transcript(created);
+
 CREATE INDEX idx_signals_task ON task_signals(task_id);
-CREATE INDEX idx_signals_discipline ON task_signals(discipline_id);
 CREATE INDEX idx_signals_session ON task_signals(session_id);
 CREATE INDEX idx_signals_verb ON task_signals(verb);
 CREATE INDEX idx_signals_task_verb ON task_signals(task_id, verb);
-CREATE INDEX idx_signals_feature ON task_signals(feature_id);
+
+CREATE INDEX idx_signal_comments_signal ON task_signal_comments(signal_id);
+CREATE INDEX idx_signal_comments_session ON task_signal_comments(session_id);
+CREATE INDEX idx_signal_comments_created ON task_signal_comments(created);
 
 CREATE INDEX idx_feature_comments_feature ON feature_comments(feature_id);
 CREATE INDEX idx_feature_comments_category ON feature_comments(category);

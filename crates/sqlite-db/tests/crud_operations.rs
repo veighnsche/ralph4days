@@ -1031,7 +1031,7 @@ fn test_add_agent_comment() {
     .unwrap();
 
     let task = db.get_task_by_id(task_id).unwrap();
-    assert_eq!(task.signals[0].author, "Backend");
+    assert_eq!(task.signals[0].author, "human");
 }
 
 #[test]

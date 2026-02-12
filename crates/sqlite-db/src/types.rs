@@ -391,3 +391,95 @@ pub struct TaskInput {
     pub estimated_turns: Option<u32>,
     pub provenance: Option<TaskProvenance>,
 }
+
+#[ipc_type]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentSession {
+    pub id: String,
+    pub kind: String,
+    pub started_by: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub task_id: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub agent: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub launch_command: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub post_start_preamble: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub init_prompt: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub started: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ended: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub exit_code: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub closing_verb: Option<String>,
+    pub status: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub prompt_hash: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub output_bytes: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error_text: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentSessionCreateInput {
+    pub id: String,
+    pub kind: String,
+    pub task_id: Option<u32>,
+    pub agent: Option<String>,
+    pub model: Option<String>,
+    pub launch_command: Option<String>,
+    pub post_start_preamble: Option<String>,
+    pub init_prompt: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentSessionUpdateInput {
+    pub id: String,
+    pub kind: Option<String>,
+    pub task_id: Option<u32>,
+    pub agent: Option<String>,
+    pub model: Option<String>,
+    pub launch_command: Option<String>,
+    pub post_start_preamble: Option<String>,
+    pub init_prompt: Option<String>,
+    pub ended: Option<String>,
+    pub exit_code: Option<i32>,
+    pub closing_verb: Option<String>,
+    pub status: Option<String>,
+    pub prompt_hash: Option<String>,
+    pub output_bytes: Option<u32>,
+    pub error_text: Option<String>,
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TaskSignalComment {
+    pub id: u32,
+    pub signal_id: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub author_type: String,
+    pub body: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TaskSignalCommentCreateInput {
+    pub signal_id: u32,
+    pub session_id: Option<String>,
+    pub author_type: String,
+    pub body: String,
+}

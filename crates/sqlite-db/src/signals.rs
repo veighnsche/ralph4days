@@ -1,4 +1,6 @@
-use crate::types::{TaskSignal, TaskSignalSummary};
+use crate::types::{
+    TaskSignal, TaskSignalComment, TaskSignalCommentCreateInput, TaskSignalSummary,
+};
 use crate::SqliteDb;
 use ralph_errors::{codes, ralph_err, RalphResultExt};
 use std::collections::HashMap;
@@ -65,37 +67,56 @@ pub struct BlockedSignalInput {
 }
 
 impl SqliteDb {
-    fn resolve_discipline_id(&self, discipline_name: Option<&str>, task_id: u32) -> Option<u32> {
-        let _ = task_id;
-        discipline_name.and_then(|name| {
-            self.conn
-                .query_row(
-                    "SELECT id FROM disciplines WHERE name = ?1",
-                    [name],
-                    |row| row.get(0),
-                )
-                .ok()
-        })
+    fn ensure_agent_session_exists(
+        &self,
+        session_id: &str,
+        task_id: u32,
+        started_by: &str,
+        kind: &str,
+    ) -> Result<(), String> {
+        let exists: bool = self
+            .conn
+            .query_row(
+                "SELECT COUNT(*) > 0 FROM agent_sessions WHERE id = ?1",
+                [session_id],
+                |row| row.get(0),
+            )
+            .ralph_err(codes::DB_READ, "Failed to check agent session")?;
+
+        if exists {
+            return Ok(());
+        }
+
+        let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
+        self.conn
+            .execute(
+                "INSERT INTO agent_sessions (id, kind, started_by, task_id, started, ended, status) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'finished')",
+                rusqlite::params![session_id, kind, started_by, task_id, now, now],
+            )
+            .ralph_err(codes::DB_WRITE, "Failed to create implicit agent session")?;
+
+        Ok(())
     }
 
     pub fn add_signal(
         &self,
         task_id: u32,
-        discipline: Option<String>,
+        _discipline: Option<String>,
         _agent_task_id: Option<u32>,
         priority: Option<String>,
         body: String,
     ) -> Result<(), String> {
-        self.add_signal_with_parent(task_id, discipline, priority, body, None)
+        self.add_signal_with_parent(task_id, None, priority, body, None)
     }
 
     pub fn add_signal_with_parent(
         &self,
         task_id: u32,
-        discipline: Option<String>,
+        _discipline: Option<String>,
         _priority: Option<String>,
         body: String,
-        parent_signal_id: Option<u32>,
+        _parent_signal_id: Option<u32>,
     ) -> Result<(), String> {
         if body.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "Signal body cannot be empty");
@@ -113,45 +134,20 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "Task {task_id} does not exist");
         }
 
-        if let Some(parent_id) = parent_signal_id {
-            let parent_exists: bool = self
-                .conn
-                .query_row(
-                    "SELECT COUNT(*) > 0 FROM task_signals WHERE id = ?1 AND task_id = ?2",
-                    rusqlite::params![parent_id, task_id],
-                    |row| row.get(0),
-                )
-                .ralph_err(codes::DB_READ, "Failed to check parent signal")?;
-            if !parent_exists {
-                return ralph_err!(
-                    codes::SIGNAL_OPS,
-                    "Parent signal {parent_id} does not exist"
-                );
-            }
-
-            let parent_has_parent: bool = self
-                .conn
-                .query_row(
-                    "SELECT parent_signal_id IS NOT NULL FROM task_signals WHERE id = ?1",
-                    [parent_id],
-                    |row| row.get(0),
-                )
-                .ralph_err(codes::DB_READ, "Failed to check parent nesting")?;
-            if parent_has_parent {
-                return ralph_err!(codes::SIGNAL_OPS, "Cannot reply to a reply (max 2 layers)");
-            }
-        }
-
-        let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
-
-        let discipline_id: Option<i64> =
-            discipline.and_then(|disc_name| self.get_id_from_name("disciplines", &disc_name).ok());
+        // Legacy free-form task comments are mapped to learned/task signals.
+        let session_id = format!("legacy-task-{task_id}");
+        self.ensure_agent_session_exists(&session_id, task_id, "human", "manual")?;
 
         self.conn
             .execute(
-                "INSERT INTO task_signals (task_id, discipline_id, verb, text, created) \
-                 VALUES (?1, ?2, 'signal', ?3, ?4)",
-                rusqlite::params![task_id, discipline_id, body, now],
+                "INSERT INTO task_signals (task_id, session_id, verb, text, kind, scope, created) \
+                 VALUES (?1, ?2, 'learned', ?3, 'discovery', 'task', ?4)",
+                rusqlite::params![
+                    task_id,
+                    session_id,
+                    body,
+                    self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
+                ],
             )
             .ralph_err(codes::DB_WRITE, "Failed to insert signal")?;
 
@@ -226,14 +222,14 @@ impl SqliteDb {
 
     pub(crate) fn get_signals_for_task(&self, task_id: u32) -> Vec<TaskSignal> {
         let Ok(mut stmt) = self.conn.prepare(
-            "SELECT tc.id, COALESCE(d.display_name, 'human') as author, \
+            "SELECT tc.id, COALESCE(s.started_by, 'system') as author, \
              COALESCE(tc.text, tc.summary, tc.reason, tc.question, tc.what, tc.remaining, '') as body, \
              tc.created, tc.session_id, tc.verb, \
              tc.summary, tc.remaining, tc.reason, tc.question, tc.what, tc.\"on\", \
              tc.blocking, tc.severity, tc.category, tc.kind, tc.scope, \
              tc.preferred, tc.options, tc.rationale, tc.why, tc.detail, tc.text, tc.answer \
              FROM task_signals tc \
-             LEFT JOIN disciplines d ON tc.discipline_id = d.id \
+             LEFT JOIN agent_sessions s ON tc.session_id = s.id \
              WHERE tc.task_id = ?1 \
              ORDER BY tc.id DESC",
         ) else {
@@ -314,7 +310,7 @@ impl SqliteDb {
         let placeholders: Vec<String> = task_ids.iter().map(|_| "?".to_owned()).collect();
         let sql = format!(
             "SELECT task_id, verb, blocking, severity, answer, session_id \
-             FROM task_signals WHERE task_id IN ({}) AND verb != 'signal' ORDER BY task_id, created ASC",
+             FROM task_signals WHERE task_id IN ({}) ORDER BY task_id, created ASC",
             placeholders.join(",")
         );
 
@@ -420,28 +416,131 @@ impl SqliteDb {
         Ok(())
     }
 
+    pub fn add_task_signal_comment(
+        &self,
+        input: TaskSignalCommentCreateInput,
+    ) -> Result<u32, String> {
+        if input.body.trim().is_empty() {
+            return ralph_err!(codes::SIGNAL_OPS, "Comment body cannot be empty");
+        }
+        if input.author_type.trim().is_empty() {
+            return ralph_err!(codes::SIGNAL_OPS, "Comment author_type cannot be empty");
+        }
+
+        if let Some(session_id) = &input.session_id {
+            let session_exists: bool = self
+                .conn
+                .query_row(
+                    "SELECT COUNT(*) > 0 FROM agent_sessions WHERE id = ?1",
+                    [session_id],
+                    |row| row.get(0),
+                )
+                .ralph_err(codes::DB_READ, "Failed to check session")?;
+            if !session_exists {
+                return ralph_err!(codes::SIGNAL_OPS, "Session '{session_id}' does not exist");
+            }
+        }
+
+        let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
+        self.conn
+            .execute(
+                "INSERT INTO task_signal_comments (signal_id, session_id, author_type, body, created) \
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
+                rusqlite::params![
+                    input.signal_id,
+                    input.session_id,
+                    input.author_type.trim(),
+                    input.body.trim(),
+                    now
+                ],
+            )
+            .ralph_err(codes::DB_WRITE, "Failed to insert task signal comment")?;
+
+        let id = self.conn.last_insert_rowid();
+        Ok(u32::try_from(id).unwrap_or_default())
+    }
+
+    pub fn update_task_signal_comment(&self, comment_id: u32, body: String) -> Result<(), String> {
+        if body.trim().is_empty() {
+            return ralph_err!(codes::SIGNAL_OPS, "Comment body cannot be empty");
+        }
+
+        let affected = self
+            .conn
+            .execute(
+                "UPDATE task_signal_comments SET body = ?1 WHERE id = ?2",
+                rusqlite::params![body.trim(), comment_id],
+            )
+            .ralph_err(codes::DB_WRITE, "Failed to update task signal comment")?;
+
+        if affected == 0 {
+            return ralph_err!(codes::SIGNAL_OPS, "Comment {comment_id} does not exist");
+        }
+
+        Ok(())
+    }
+
+    pub fn delete_task_signal_comment(&self, comment_id: u32) -> Result<(), String> {
+        let affected = self
+            .conn
+            .execute(
+                "DELETE FROM task_signal_comments WHERE id = ?1",
+                rusqlite::params![comment_id],
+            )
+            .ralph_err(codes::DB_WRITE, "Failed to delete task signal comment")?;
+
+        if affected == 0 {
+            return ralph_err!(codes::SIGNAL_OPS, "Comment {comment_id} does not exist");
+        }
+
+        Ok(())
+    }
+
+    pub fn get_task_signal_comments(&self, signal_id: u32) -> Vec<TaskSignalComment> {
+        let Ok(mut stmt) = self.conn.prepare(
+            "SELECT id, signal_id, session_id, author_type, body, created \
+             FROM task_signal_comments WHERE signal_id = ?1 ORDER BY id ASC",
+        ) else {
+            return vec![];
+        };
+
+        stmt.query_map([signal_id], |row| {
+            Ok(TaskSignalComment {
+                id: row.get(0)?,
+                signal_id: row.get(1)?,
+                session_id: row.get(2)?,
+                author_type: row.get(3)?,
+                body: row.get(4)?,
+                created: row.get(5)?,
+            })
+        })
+        .map_or_else(
+            |_| vec![],
+            |rows| rows.filter_map(std::result::Result::ok).collect(),
+        )
+    }
+
     pub fn insert_done_signal(
         &self,
-        discipline_name: Option<&str>,
+        _discipline_name: Option<&str>,
         input: DoneSignalInput,
     ) -> Result<(), String> {
         if input.summary.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "Summary cannot be empty");
         }
 
-        let discipline_id = self.resolve_discipline_id(discipline_name, input.task_id);
+        self.ensure_agent_session_exists(
+            &input.session_id,
+            input.task_id,
+            "agent",
+            "task_execution",
+        )?;
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
-                "INSERT INTO task_signals (task_id, session_id, discipline_id, verb, summary, created) \
-                 VALUES (?1, ?2, ?3, 'done', ?4, ?5)",
-                rusqlite::params![
-                    input.task_id,
-                    input.session_id,
-                    discipline_id,
-                    input.summary.trim(),
-                    now
-                ],
+                "INSERT INTO task_signals (task_id, session_id, verb, summary, created) \
+                 VALUES (?1, ?2, 'done', ?3, ?4)",
+                rusqlite::params![input.task_id, input.session_id, input.summary.trim(), now],
             )
             .ralph_err(codes::DB_WRITE, "Failed to insert done signal")?;
 
@@ -450,7 +549,7 @@ impl SqliteDb {
 
     pub fn insert_partial_signal(
         &self,
-        discipline_name: Option<&str>,
+        _discipline_name: Option<&str>,
         input: PartialSignalInput,
     ) -> Result<(), String> {
         if input.summary.trim().is_empty() {
@@ -460,16 +559,20 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "Remaining cannot be empty");
         }
 
-        let discipline_id = self.resolve_discipline_id(discipline_name, input.task_id);
+        self.ensure_agent_session_exists(
+            &input.session_id,
+            input.task_id,
+            "agent",
+            "task_execution",
+        )?;
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
-                "INSERT INTO task_signals (task_id, session_id, discipline_id, verb, summary, remaining, created) \
-                 VALUES (?1, ?2, ?3, 'partial', ?4, ?5, ?6)",
+                "INSERT INTO task_signals (task_id, session_id, verb, summary, remaining, created) \
+                 VALUES (?1, ?2, 'partial', ?3, ?4, ?5)",
                 rusqlite::params![
                     input.task_id,
                     input.session_id,
-                    discipline_id,
                     input.summary.trim(),
                     input.remaining.trim(),
                     now
@@ -482,26 +585,25 @@ impl SqliteDb {
 
     pub fn insert_stuck_signal(
         &self,
-        discipline_name: Option<&str>,
+        _discipline_name: Option<&str>,
         input: StuckSignalInput,
     ) -> Result<(), String> {
         if input.reason.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "Reason cannot be empty");
         }
 
-        let discipline_id = self.resolve_discipline_id(discipline_name, input.task_id);
+        self.ensure_agent_session_exists(
+            &input.session_id,
+            input.task_id,
+            "agent",
+            "task_execution",
+        )?;
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
-                "INSERT INTO task_signals (task_id, session_id, discipline_id, verb, reason, created) \
-                 VALUES (?1, ?2, ?3, 'stuck', ?4, ?5)",
-                rusqlite::params![
-                    input.task_id,
-                    input.session_id,
-                    discipline_id,
-                    input.reason.trim(),
-                    now
-                ],
+                "INSERT INTO task_signals (task_id, session_id, verb, reason, created) \
+                 VALUES (?1, ?2, 'stuck', ?3, ?4)",
+                rusqlite::params![input.task_id, input.session_id, input.reason.trim(), now],
             )
             .ralph_err(codes::DB_WRITE, "Failed to insert stuck signal")?;
 
@@ -510,25 +612,29 @@ impl SqliteDb {
 
     pub fn insert_ask_signal(
         &self,
-        discipline_name: Option<&str>,
+        _discipline_name: Option<&str>,
         input: AskSignalInput,
     ) -> Result<(), String> {
         if input.question.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "Question cannot be empty");
         }
 
-        let discipline_id = self.resolve_discipline_id(discipline_name, input.task_id);
+        self.ensure_agent_session_exists(
+            &input.session_id,
+            input.task_id,
+            "agent",
+            "task_execution",
+        )?;
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         let options = input.options.map(|opts| opts.join("\n"));
 
         self.conn
             .execute(
-                "INSERT INTO task_signals (task_id, session_id, discipline_id, verb, question, options, preferred, blocking, created) \
-                 VALUES (?1, ?2, ?3, 'ask', ?4, ?5, ?6, ?7, ?8)",
+                "INSERT INTO task_signals (task_id, session_id, verb, question, options, preferred, blocking, created) \
+                 VALUES (?1, ?2, 'ask', ?3, ?4, ?5, ?6, ?7)",
                 rusqlite::params![
                     input.task_id,
                     input.session_id,
-                    discipline_id,
                     input.question.trim(),
                     options,
                     input.preferred,
@@ -543,23 +649,27 @@ impl SqliteDb {
 
     pub fn insert_flag_signal(
         &self,
-        discipline_name: Option<&str>,
+        _discipline_name: Option<&str>,
         input: FlagSignalInput,
     ) -> Result<(), String> {
         if input.what.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "What cannot be empty");
         }
 
-        let discipline_id = self.resolve_discipline_id(discipline_name, input.task_id);
+        self.ensure_agent_session_exists(
+            &input.session_id,
+            input.task_id,
+            "agent",
+            "task_execution",
+        )?;
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
-                "INSERT INTO task_signals (task_id, session_id, discipline_id, verb, what, severity, category, created) \
-                 VALUES (?1, ?2, ?3, 'flag', ?4, ?5, ?6, ?7)",
+                "INSERT INTO task_signals (task_id, session_id, verb, what, severity, category, created) \
+                 VALUES (?1, ?2, 'flag', ?3, ?4, ?5, ?6)",
                 rusqlite::params![
                     input.task_id,
                     input.session_id,
-                    discipline_id,
                     input.what.trim(),
                     input.severity,
                     input.category,
@@ -573,23 +683,27 @@ impl SqliteDb {
 
     pub fn insert_learned_signal(
         &self,
-        discipline_name: Option<&str>,
+        _discipline_name: Option<&str>,
         input: LearnedSignalInput,
     ) -> Result<(), String> {
         if input.text.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "Text cannot be empty");
         }
 
-        let discipline_id = self.resolve_discipline_id(discipline_name, input.task_id);
+        self.ensure_agent_session_exists(
+            &input.session_id,
+            input.task_id,
+            "agent",
+            "task_execution",
+        )?;
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
-                "INSERT INTO task_signals (task_id, session_id, discipline_id, verb, text, kind, scope, rationale, created) \
-                 VALUES (?1, ?2, ?3, 'learned', ?4, ?5, ?6, ?7, ?8)",
+                "INSERT INTO task_signals (task_id, session_id, verb, text, kind, scope, rationale, created) \
+                 VALUES (?1, ?2, 'learned', ?3, ?4, ?5, ?6, ?7)",
                 rusqlite::params![
                     input.task_id,
                     input.session_id,
-                    discipline_id,
                     input.text.trim(),
                     input.kind,
                     input.scope,
@@ -604,7 +718,7 @@ impl SqliteDb {
 
     pub fn insert_suggest_signal(
         &self,
-        discipline_name: Option<&str>,
+        _discipline_name: Option<&str>,
         input: SuggestSignalInput,
     ) -> Result<(), String> {
         if input.what.trim().is_empty() {
@@ -614,16 +728,20 @@ impl SqliteDb {
             return ralph_err!(codes::SIGNAL_OPS, "Why cannot be empty");
         }
 
-        let discipline_id = self.resolve_discipline_id(discipline_name, input.task_id);
+        self.ensure_agent_session_exists(
+            &input.session_id,
+            input.task_id,
+            "agent",
+            "task_execution",
+        )?;
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
-                "INSERT INTO task_signals (task_id, session_id, discipline_id, verb, what, kind, why, created) \
-                 VALUES (?1, ?2, ?3, 'suggest', ?4, ?5, ?6, ?7)",
+                "INSERT INTO task_signals (task_id, session_id, verb, what, kind, why, created) \
+                 VALUES (?1, ?2, 'suggest', ?3, ?4, ?5, ?6)",
                 rusqlite::params![
                     input.task_id,
                     input.session_id,
-                    discipline_id,
                     input.what.trim(),
                     input.kind,
                     input.why.trim(),
@@ -637,23 +755,27 @@ impl SqliteDb {
 
     pub fn insert_blocked_signal(
         &self,
-        discipline_name: Option<&str>,
+        _discipline_name: Option<&str>,
         input: BlockedSignalInput,
     ) -> Result<(), String> {
         if input.on.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "On cannot be empty");
         }
 
-        let discipline_id = self.resolve_discipline_id(discipline_name, input.task_id);
+        self.ensure_agent_session_exists(
+            &input.session_id,
+            input.task_id,
+            "agent",
+            "task_execution",
+        )?;
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         self.conn
             .execute(
-                "INSERT INTO task_signals (task_id, session_id, discipline_id, verb, \"on\", kind, detail, created) \
-                 VALUES (?1, ?2, ?3, 'blocked', ?4, ?5, ?6, ?7)",
+                "INSERT INTO task_signals (task_id, session_id, verb, \"on\", kind, detail, created) \
+                 VALUES (?1, ?2, 'blocked', ?3, ?4, ?5, ?6)",
                 rusqlite::params![
                     input.task_id,
                     input.session_id,
-                    discipline_id,
                     input.on.trim(),
                     input.kind,
                     input.detail,
