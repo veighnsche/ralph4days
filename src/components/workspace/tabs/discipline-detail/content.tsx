@@ -10,8 +10,9 @@ import { useTabMeta } from '@/hooks/workspace'
 import { resolveIcon } from '@/lib/iconRegistry'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { DisciplineConfig } from '@/types/generated'
-import { DetailPageLayout } from '../DetailPageLayout'
-import { PropertyRow } from '../PropertyRow'
+import { DetailPageLayout } from '../../DetailPageLayout'
+import { PropertyRow } from '../../PropertyRow'
+import { parseDisciplineDetailTabParams } from './schema'
 
 function DisciplineContent({ discipline }: { discipline: DisciplineConfig }) {
   const Icon = resolveIcon(discipline.icon)
@@ -154,37 +155,6 @@ function DisciplineSidebar({ discipline, stackName }: { discipline: DisciplineCo
       )}
     </div>
   )
-}
-
-export type DisciplineDetailTabParams = {
-  entityId: string
-}
-export type DisciplineDetailTabInput = {
-  name: string
-  displayName: string
-}
-
-function parseDisciplineDetailTabParams(params: unknown): DisciplineDetailTabParams {
-  if (typeof params !== 'object' || params == null || Array.isArray(params)) {
-    throw new Error('Invalid discipline detail tab params: expected object')
-  }
-  const candidate = params as Record<string, unknown>
-  if (typeof candidate.entityId !== 'string' || candidate.entityId.trim() === '') {
-    throw new Error('Invalid discipline detail tab params.entityId')
-  }
-  return { entityId: candidate.entityId }
-}
-
-export function createDisciplineDetailTab(discipline: DisciplineDetailTabInput): Omit<WorkspaceTab, 'id'> {
-  return {
-    type: 'discipline-detail',
-    title: discipline.displayName,
-    key: discipline.name,
-    closeable: true,
-    params: {
-      entityId: discipline.name
-    } satisfies DisciplineDetailTabParams
-  }
 }
 
 export function DisciplineDetailTabContent({ tab }: { tab: WorkspaceTab }) {

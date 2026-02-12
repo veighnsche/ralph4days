@@ -8,9 +8,10 @@ import { useTabMeta } from '@/hooks/workspace'
 import { formatDate } from '@/lib/formatDate'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { FeatureData } from '@/types/generated'
-import { DetailPageLayout } from '../DetailPageLayout'
-import { FeatureCommentsSection } from '../feature-detail/FeatureCommentsSection'
-import { PropertyRow } from '../PropertyRow'
+import { DetailPageLayout } from '../../DetailPageLayout'
+import { FeatureCommentsSection } from '../../feature-detail/FeatureCommentsSection'
+import { PropertyRow } from '../../PropertyRow'
+import { parseFeatureDetailTabParams } from './schema'
 
 function FeatureContent({ feature }: { feature: FeatureData }) {
   const sections: React.ReactNode[] = []
@@ -115,33 +116,6 @@ function FeatureSidebar({
       )}
     </div>
   )
-}
-
-export type FeatureDetailTabParams = {
-  entityId: string
-}
-
-function parseFeatureDetailTabParams(params: unknown): FeatureDetailTabParams {
-  if (typeof params !== 'object' || params == null || Array.isArray(params)) {
-    throw new Error('Invalid feature detail tab params: expected object')
-  }
-  const candidate = params as Record<string, unknown>
-  if (typeof candidate.entityId !== 'string' || candidate.entityId.trim() === '') {
-    throw new Error('Invalid feature detail tab params.entityId')
-  }
-  return { entityId: candidate.entityId }
-}
-
-export function createFeatureDetailTab(feature: FeatureData): Omit<WorkspaceTab, 'id'> {
-  return {
-    type: 'feature-detail',
-    title: feature.displayName,
-    key: feature.name,
-    closeable: true,
-    params: {
-      entityId: feature.name
-    } satisfies FeatureDetailTabParams
-  }
 }
 
 export function FeatureDetailTabContent({ tab }: { tab: WorkspaceTab }) {

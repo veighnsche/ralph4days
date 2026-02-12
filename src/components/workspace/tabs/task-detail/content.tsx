@@ -6,49 +6,11 @@ import { usePRDData } from '@/hooks/tasks'
 import { useTabMeta } from '@/hooks/workspace'
 import { computeInferredStatus } from '@/lib/taskStatus'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
-import type { Task } from '@/types/generated'
-import { DetailPageLayout } from '../DetailPageLayout'
-import { CommentsSection } from '../task-detail'
-import { TaskCardContent } from '../task-detail/TaskCardContent'
-import { TaskSidebar } from '../task-detail/TaskSidebar'
-
-export type TaskDetailTabParams = {
-  entityId: number
-  entity?: Task
-}
-
-function parseTaskDetailTabParams(params: unknown): TaskDetailTabParams {
-  if (typeof params !== 'object' || params == null || Array.isArray(params)) {
-    throw new Error('Invalid task detail tab params: expected object')
-  }
-  const candidate = params as Record<string, unknown>
-  if (!Number.isInteger(candidate.entityId)) {
-    throw new Error('Invalid task detail tab params.entityId')
-  }
-  const parsed: TaskDetailTabParams = {
-    entityId: candidate.entityId as number
-  }
-  if (candidate.entity !== undefined) {
-    if (typeof candidate.entity !== 'object' || candidate.entity == null || Array.isArray(candidate.entity)) {
-      throw new Error('Invalid task detail tab params.entity')
-    }
-    parsed.entity = candidate.entity as Task
-  }
-  return parsed
-}
-
-export function createTaskDetailTab(task: Task): Omit<WorkspaceTab, 'id'> {
-  return {
-    type: 'task-detail',
-    title: task.title,
-    key: String(task.id),
-    closeable: true,
-    params: {
-      entityId: task.id,
-      entity: task
-    } satisfies TaskDetailTabParams
-  }
-}
+import { DetailPageLayout } from '../../DetailPageLayout'
+import { CommentsSection } from '../../task-detail'
+import { TaskCardContent } from '../../task-detail/TaskCardContent'
+import { TaskSidebar } from '../../task-detail/TaskSidebar'
+import { parseTaskDetailTabParams } from './schema'
 
 export function TaskDetailTabContent({ tab }: { tab: WorkspaceTab }) {
   const { entityId, entity: snapshotTask } = parseTaskDetailTabParams(tab.params)

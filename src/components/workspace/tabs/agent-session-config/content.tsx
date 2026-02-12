@@ -20,7 +20,8 @@ import { useTabMeta } from '@/hooks/workspace'
 import { terminalBridgeListModelFormTree } from '@/lib/terminal/terminalBridgeClient'
 import { useWorkspaceStore, type WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { TerminalBridgeModelOption } from '@/types/generated'
-import { createTerminalTab } from './TerminalTabContent'
+import { createTerminalTab } from '../terminal'
+import { parseAgentSessionConfigTabParams } from './schema'
 
 const AGENT_OPTIONS: Agent[] = ['claude', 'codex']
 
@@ -288,75 +289,6 @@ function PermissionLevelControls({
       ))}
     </ToggleGroup>
   )
-}
-
-export type AgentSessionConfigTabParams = Partial<AgentSessionLaunchConfig>
-
-function parseAgentConfigField(value: unknown): Agent {
-  if (value !== 'claude' && value !== 'codex') {
-    throw new Error('Invalid agent session config tab params.agent')
-  }
-  return value
-}
-
-function parseModelConfigField(value: unknown): string {
-  if (typeof value !== 'string' || value.trim() === '') {
-    throw new Error('Invalid agent session config tab params.model')
-  }
-  return value
-}
-
-function parseEffortConfigField(value: unknown): Effort {
-  if (value !== 'low' && value !== 'medium' && value !== 'high') {
-    throw new Error('Invalid agent session config tab params.effort')
-  }
-  return value
-}
-
-function parseThinkingConfigField(value: unknown): boolean {
-  if (typeof value !== 'boolean') {
-    throw new Error('Invalid agent session config tab params.thinking')
-  }
-  return value
-}
-
-function parsePermissionLevelConfigField(value: unknown): PermissionLevel {
-  if (value !== 'safe' && value !== 'balanced' && value !== 'auto' && value !== 'full_auto') {
-    throw new Error('Invalid agent session config tab params.permissionLevel')
-  }
-  return value
-}
-
-function parseAgentSessionConfigTabParams(params: unknown): AgentSessionConfigTabParams {
-  if (params == null) return {}
-  if (typeof params !== 'object' || Array.isArray(params)) {
-    throw new Error('Invalid agent session config tab params: expected object')
-  }
-  const candidate = params as Record<string, unknown>
-  const parsed: AgentSessionConfigTabParams = {}
-  if (candidate.agent !== undefined) parsed.agent = parseAgentConfigField(candidate.agent)
-  if (candidate.model !== undefined) parsed.model = parseModelConfigField(candidate.model)
-  if (candidate.effort !== undefined) parsed.effort = parseEffortConfigField(candidate.effort)
-  if (candidate.thinking !== undefined) parsed.thinking = parseThinkingConfigField(candidate.thinking)
-  if (candidate.permissionLevel !== undefined) {
-    parsed.permissionLevel = parsePermissionLevelConfigField(candidate.permissionLevel)
-  }
-  return parsed
-}
-
-export function createAgentSessionConfigTab(input: AgentSessionConfigTabParams): Omit<WorkspaceTab, 'id'> {
-  return {
-    type: 'agent-session-config',
-    title: 'Start Agent Session',
-    closeable: true,
-    params: {
-      agent: input.agent,
-      model: input.model,
-      effort: input.effort,
-      thinking: input.thinking,
-      permissionLevel: input.permissionLevel
-    } satisfies AgentSessionConfigTabParams
-  }
 }
 
 function useAgentSessionConfigController(tab: WorkspaceTab) {

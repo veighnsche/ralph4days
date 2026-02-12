@@ -1,7 +1,12 @@
 export {
   type AgentSessionConfigTabParams,
   createAgentSessionConfigTab
-} from './AgentSessionConfigTabContent'
+} from './agent-session-config'
+export {
+  defineWorkspaceTabModule,
+  type WorkspaceTabLifecycle,
+  type WorkspaceTabModule
+} from './contracts'
 export {
   useWorkspaceTabContext,
   useWorkspaceTabData,
@@ -10,9 +15,10 @@ export {
 } from './core'
 export {
   createDisciplineDetailTab,
+  type DisciplineDetailTabInput,
   type DisciplineDetailTabParams
-} from './DisciplineDetailTabContent'
-export { createFeatureDetailTab, type FeatureDetailTabParams } from './FeatureDetailTabContent'
-export { getTabComponent, getTabLifecycle, type WorkspaceTabLifecycle } from './registry'
-export { createTaskDetailTab, type TaskDetailTabParams } from './TaskDetailTabContent'
-export { createTerminalTab, type TerminalTabParams } from './TerminalTabContent'
+} from './discipline-detail'
+export { createFeatureDetailTab, type FeatureDetailTabParams } from './feature-detail'
+export { getTabComponent, getTabLifecycle } from './registry'
+export { createTaskDetailTab, type TaskDetailTabParams } from './task-detail'
+export { createTerminalTab, type TerminalTabParams } from './terminal'

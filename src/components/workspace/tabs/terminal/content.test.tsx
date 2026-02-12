@@ -1,7 +1,7 @@
 import { render, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
-import { TerminalTabContent } from './TerminalTabContent'
+import { TerminalTabContent } from './content'
 
 const { useTerminalSessionMock } = vi.hoisted(() => ({
   useTerminalSessionMock: vi.fn()
