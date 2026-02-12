@@ -1,7 +1,7 @@
 use crate::terminal::PTYManager;
 use crate::xdg::XdgDirs;
 use prompt_builder::{CodebaseSnapshot, PromptContext};
-use ralph_errors::{codes, ralph_err, RalphResultExt, ToStringErr};
+use ralph_errors::{codes, RalphResultExt, ToStringErr};
 use sqlite_db::SqliteDb;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -162,22 +162,15 @@ impl AppState {
     }
 }
 
-pub(super) struct DbGuard<'a>(std::sync::MutexGuard<'a, Option<SqliteDb>>);
-
-impl std::ops::Deref for DbGuard<'_> {
-    type Target = SqliteDb;
-
-    fn deref(&self) -> &Self::Target {
-        self.0.as_ref().unwrap()
-    }
-}
-
-pub(super) fn get_db<'a>(state: &'a State<'a, AppState>) -> Result<DbGuard<'a>, String> {
+pub(super) fn with_db<T, F>(state: &State<'_, AppState>, f: F) -> Result<T, String>
+where
+    F: FnOnce(&SqliteDb) -> Result<T, String>,
+{
     let guard = state.db.lock().err_str(codes::INTERNAL)?;
-    if guard.is_none() {
-        return ralph_err!(codes::PROJECT_LOCK, "No project locked (database not open)");
-    }
-    Ok(DbGuard(guard))
+    let db = guard.as_ref().ok_or_else(|| {
+        ralph_errors::err_string(codes::PROJECT_LOCK, "No project locked (database not open)")
+    })?;
+    f(db)
 }
 
 pub(super) fn get_locked_project_path(state: &State<'_, AppState>) -> Result<PathBuf, String> {

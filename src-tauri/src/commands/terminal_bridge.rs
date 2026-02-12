@@ -1,4 +1,4 @@
-use super::state::{get_db, AppState};
+use super::state::{with_db, AppState};
 use crate::terminal::{
     PtyOutputEvent, SessionConfig, TerminalBridgeEmitSystemMessageArgs, TerminalBridgeResizeArgs,
     TerminalBridgeSendInputArgs, TerminalBridgeStartHumanSessionArgs,
@@ -296,26 +296,26 @@ pub fn terminal_bridge_start_human_session(
         "terminal_bridge_start_human_session.created_agent_session_id"
     );
 
-    let db = get_db(&state)?;
-    db.create_human_agent_session(sqlite_db::AgentSessionCreateInput {
-        id: agent_session_id.clone(),
-        kind: args.kind.clone(),
-        task_id: args.task_id,
-        agent: args.agent.clone(),
-        model: args.model.clone(),
-        launch_command: args.launch_command.clone(),
-        post_start_preamble: args.post_start_preamble.clone(),
-        init_prompt: args.init_prompt.clone(),
+    with_db(&state, |db| {
+        db.create_human_agent_session(sqlite_db::AgentSessionCreateInput {
+            id: agent_session_id.clone(),
+            kind: args.kind.clone(),
+            task_id: args.task_id,
+            agent: args.agent.clone(),
+            model: args.model.clone(),
+            launch_command: args.launch_command.clone(),
+            post_start_preamble: args.post_start_preamble.clone(),
+            init_prompt: args.init_prompt.clone(),
+        })
     })?;
 
-    let agent_session_number = {
-        let db = get_db(&state)?;
+    let agent_session_number = with_db(&state, |db| {
         db.get_agent_session_by_id(&agent_session_id)
             .map(|s| s.session_number)
             .ok_or_else(|| {
                 format!("Failed to load newly created agent session '{agent_session_id}'")
-            })?
-    };
+            })
+    })?;
 
     let start_result = if let Some(task_id) = args.task_id {
         start_task_session_impl(
@@ -342,9 +342,9 @@ pub fn terminal_bridge_start_human_session(
     };
 
     if let Err(err) = start_result {
-        if let Ok(db) = get_db(&state) {
-            let _ = db.update_human_agent_session(sqlite_db::AgentSessionUpdateInput {
-                id: agent_session_id,
+        let _ = with_db(&state, |db| {
+            db.update_human_agent_session(sqlite_db::AgentSessionUpdateInput {
+                id: agent_session_id.clone(),
                 kind: None,
                 task_id: None,
                 agent: None,
@@ -359,8 +359,8 @@ pub fn terminal_bridge_start_human_session(
                 prompt_hash: None,
                 output_bytes: None,
                 error_text: Some(err.clone()),
-            });
-        }
+            })
+        });
         return Err(err);
     }
 

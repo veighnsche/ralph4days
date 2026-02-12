@@ -1,4 +1,4 @@
-use super::state::AppState;
+use super::state::{with_db, AppState};
 use ralph_errors::{codes, ralph_err, RalphResultExt, ToStringErr};
 use ralph_macros::ipc_type;
 use sqlite_db::SqliteDb;
@@ -380,8 +380,7 @@ pub fn get_current_dir() -> Result<String, String> {
 
 #[tauri::command]
 pub fn get_project_info(state: State<'_, AppState>) -> Result<ProjectInfo, String> {
-    let db = super::state::get_db(&state)?;
-    let info = db.get_project_info();
+    let info = with_db(&state, |db| Ok(db.get_project_info()))?;
     Ok(ProjectInfo {
         title: info.title.clone(),
         description: info.description.clone(),

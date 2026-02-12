@@ -1,4 +1,4 @@
-use super::state::{get_db, get_locked_project_path, AppState};
+use super::state::{get_locked_project_path, with_db, AppState};
 use ralph_errors::{codes, RalphResultExt};
 use ralph_macros::ipc_type;
 use serde::Deserialize;
@@ -83,42 +83,43 @@ pub struct DisciplineConfig {
 
 #[tauri::command]
 pub fn get_disciplines_config(state: State<'_, AppState>) -> Result<Vec<DisciplineConfig>, String> {
-    let db = get_db(&state)?;
-    Ok(db
-        .get_disciplines()
-        .iter()
-        .map(|d| DisciplineConfig {
-            name: d.name.clone(),
-            display_name: d.display_name.clone(),
-            icon: d.icon.clone(),
-            color: d.color.clone(),
-            acronym: d.acronym.clone(),
-            description: d.description.clone(),
-            system_prompt: d.system_prompt.clone(),
-            skills: d.skills.clone(),
-            conventions: d.conventions.clone(),
-            mcp_servers: d
-                .mcp_servers
-                .iter()
-                .map(|m| McpServerConfigData {
-                    name: m.name.clone(),
-                    command: m.command.clone(),
-                    args: m.args.clone(),
-                    env: m.env.clone(),
-                })
-                .collect(),
-            stack_id: d.stack_id,
-            image_path: d.image_path.clone(),
-            crops: d
-                .crops
-                .as_deref()
-                .and_then(|s| serde_json::from_str::<DisciplineCropsData>(s).ok()),
-            image_prompt: d
-                .image_prompt
-                .as_deref()
-                .and_then(|s| serde_json::from_str::<DisciplineImagePromptData>(s).ok()),
-        })
-        .collect())
+    with_db(&state, |db| {
+        Ok(db
+            .get_disciplines()
+            .iter()
+            .map(|d| DisciplineConfig {
+                name: d.name.clone(),
+                display_name: d.display_name.clone(),
+                icon: d.icon.clone(),
+                color: d.color.clone(),
+                acronym: d.acronym.clone(),
+                description: d.description.clone(),
+                system_prompt: d.system_prompt.clone(),
+                skills: d.skills.clone(),
+                conventions: d.conventions.clone(),
+                mcp_servers: d
+                    .mcp_servers
+                    .iter()
+                    .map(|m| McpServerConfigData {
+                        name: m.name.clone(),
+                        command: m.command.clone(),
+                        args: m.args.clone(),
+                        env: m.env.clone(),
+                    })
+                    .collect(),
+                stack_id: d.stack_id,
+                image_path: d.image_path.clone(),
+                crops: d
+                    .crops
+                    .as_deref()
+                    .and_then(|s| serde_json::from_str::<DisciplineCropsData>(s).ok()),
+                image_prompt: d
+                    .image_prompt
+                    .as_deref()
+                    .and_then(|s| serde_json::from_str::<DisciplineImagePromptData>(s).ok()),
+            })
+            .collect())
+    })
 }
 
 #[ipc_type]
@@ -174,20 +175,21 @@ fn to_comment_data(c: &sqlite_db::FeatureComment) -> FeatureCommentData {
 
 #[tauri::command]
 pub fn get_features(state: State<'_, AppState>) -> Result<Vec<FeatureData>, String> {
-    let db = get_db(&state)?;
-    Ok(db
-        .get_features()
-        .iter()
-        .map(|f| FeatureData {
-            name: f.name.clone(),
-            display_name: f.display_name.clone(),
-            acronym: f.acronym.clone(),
-            description: f.description.clone(),
-            created: f.created.clone(),
-            status: f.status.as_str().to_owned(),
-            comments: f.comments.iter().map(to_comment_data).collect(),
-        })
-        .collect())
+    with_db(&state, |db| {
+        Ok(db
+            .get_features()
+            .iter()
+            .map(|f| FeatureData {
+                name: f.name.clone(),
+                display_name: f.display_name.clone(),
+                acronym: f.acronym.clone(),
+                description: f.description.clone(),
+                created: f.created.clone(),
+                status: f.status.as_str().to_owned(),
+                comments: f.comments.iter().map(to_comment_data).collect(),
+            })
+            .collect())
+    })
 }
 
 #[derive(Deserialize)]
@@ -203,13 +205,13 @@ pub fn create_feature(
     state: State<'_, AppState>,
     params: CreateFeatureParams,
 ) -> Result<(), String> {
-    let db = get_db(&state)?;
-
-    db.create_feature(sqlite_db::FeatureInput {
-        name: params.name,
-        display_name: params.display_name,
-        acronym: params.acronym,
-        description: params.description,
+    with_db(&state, |db| {
+        db.create_feature(sqlite_db::FeatureInput {
+            name: params.name,
+            display_name: params.display_name,
+            acronym: params.acronym,
+            description: params.description,
+        })
     })
 }
 
@@ -226,12 +228,13 @@ pub fn update_feature(
     state: State<'_, AppState>,
     params: UpdateFeatureParams,
 ) -> Result<(), String> {
-    let db = get_db(&state)?;
-    db.update_feature(sqlite_db::FeatureInput {
-        name: params.name,
-        display_name: params.display_name,
-        acronym: params.acronym,
-        description: params.description,
+    with_db(&state, |db| {
+        db.update_feature(sqlite_db::FeatureInput {
+            name: params.name,
+            display_name: params.display_name,
+            acronym: params.acronym,
+            description: params.description,
+        })
     })
 }
 
@@ -254,15 +257,14 @@ pub async fn add_feature_comment(
     params: AddFeatureCommentParams,
 ) -> Result<(), String> {
     let path = db_path(&state)?;
-    let (comment_id, embedding_text) = {
-        let db = get_db(&state)?;
+    let (comment_id, embedding_text) = with_db(&state, |db| {
         db.add_feature_comment(sqlite_db::AddFeatureCommentInput {
             feature_name: params.feature_name.clone(),
             category: params.category.clone(),
-            discipline: params.discipline,
+            discipline: params.discipline.clone(),
             agent_task_id: params.agent_task_id,
             body: params.body.clone(),
-            summary: params.summary,
+            summary: params.summary.clone(),
             reason: params.reason.clone(),
             source_iteration: params.source_iteration,
         })?;
@@ -280,8 +282,8 @@ pub async fn add_feature_comment(
             &params.body,
             params.reason.as_deref(),
         );
-        (cid, text)
-    };
+        Ok((cid, text))
+    })?;
 
     let ext_config = ralph_external::ExternalServicesConfig::load()?;
     let embed_config = build_embedding_config(&ext_config);
@@ -308,13 +310,12 @@ pub async fn update_feature_comment(
     params: UpdateFeatureCommentParams,
 ) -> Result<(), String> {
     let path = db_path(&state)?;
-    let (embedding_text, needs_embed) = {
-        let db = get_db(&state)?;
+    let (embedding_text, needs_embed) = with_db(&state, |db| {
         db.update_feature_comment(
             &params.feature_name,
             params.comment_id,
             &params.body,
-            params.summary,
+            params.summary.clone(),
             params.reason.clone(),
         )?;
 
@@ -332,15 +333,15 @@ pub async fn update_feature_comment(
             params.reason.as_deref(),
         );
         let needs = ralph_external::comment_embeddings::should_embed(
-            &db,
+            db,
             params.comment_id,
             &category,
             &params.body,
             params.reason.as_deref(),
         )
         .is_some();
-        (text, needs)
-    };
+        Ok((text, needs))
+    })?;
 
     if !needs_embed {
         return Ok(());
@@ -372,8 +373,9 @@ pub fn delete_feature_comment(
     state: State<'_, AppState>,
     params: DeleteFeatureCommentParams,
 ) -> Result<(), String> {
-    let db = get_db(&state)?;
-    db.delete_feature_comment(&params.feature_name, params.comment_id)
+    with_db(&state, |db| {
+        db.delete_feature_comment(&params.feature_name, params.comment_id)
+    })
 }
 
 #[derive(Deserialize)]
@@ -394,8 +396,6 @@ pub fn create_discipline(
     state: State<'_, AppState>,
     params: CreateDisciplineParams,
 ) -> Result<(), String> {
-    let db = get_db(&state)?;
-
     let normalized_name = params
         .name
         .to_lowercase()
@@ -420,20 +420,22 @@ pub fn create_discipline(
     let mcp_json = serde_json::to_string(&mcp_servers)
         .ralph_err(codes::DISCIPLINE_OPS, "Failed to serialize mcp_servers")?;
 
-    db.create_discipline(sqlite_db::DisciplineInput {
-        name: normalized_name,
-        display_name: params.display_name,
-        acronym: params.acronym,
-        icon: params.icon,
-        color: params.color,
-        description: None,
-        system_prompt: params.system_prompt,
-        skills: skills_json,
-        conventions: params.conventions,
-        mcp_servers: mcp_json,
-        image_path: None,
-        crops: None,
-        image_prompt: None,
+    with_db(&state, |db| {
+        db.create_discipline(sqlite_db::DisciplineInput {
+            name: normalized_name,
+            display_name: params.display_name,
+            acronym: params.acronym,
+            icon: params.icon,
+            color: params.color,
+            description: None,
+            system_prompt: params.system_prompt,
+            skills: skills_json,
+            conventions: params.conventions,
+            mcp_servers: mcp_json,
+            image_path: None,
+            crops: None,
+            image_prompt: None,
+        })
     })
 }
 
@@ -455,8 +457,6 @@ pub fn update_discipline(
     state: State<'_, AppState>,
     params: UpdateDisciplineParams,
 ) -> Result<(), String> {
-    let db = get_db(&state)?;
-
     let skills_json = serde_json::to_string(&params.skills.unwrap_or_default())
         .ralph_err(codes::DISCIPLINE_OPS, "Failed to serialize skills")?;
 
@@ -475,33 +475,33 @@ pub fn update_discipline(
     let mcp_json = serde_json::to_string(&mcp_servers)
         .ralph_err(codes::DISCIPLINE_OPS, "Failed to serialize mcp_servers")?;
 
-    db.update_discipline(sqlite_db::DisciplineInput {
-        name: params.name,
-        display_name: params.display_name,
-        acronym: params.acronym,
-        icon: params.icon,
-        color: params.color,
-        description: None,
-        system_prompt: params.system_prompt,
-        skills: skills_json,
-        conventions: params.conventions,
-        mcp_servers: mcp_json,
-        image_path: None,
-        crops: None,
-        image_prompt: None,
+    with_db(&state, |db| {
+        db.update_discipline(sqlite_db::DisciplineInput {
+            name: params.name,
+            display_name: params.display_name,
+            acronym: params.acronym,
+            icon: params.icon,
+            color: params.color,
+            description: None,
+            system_prompt: params.system_prompt,
+            skills: skills_json,
+            conventions: params.conventions,
+            mcp_servers: mcp_json,
+            image_path: None,
+            crops: None,
+            image_prompt: None,
+        })
     })
 }
 
 #[tauri::command]
 pub fn delete_feature(state: State<'_, AppState>, name: String) -> Result<(), String> {
-    let db = get_db(&state)?;
-    db.delete_feature(name)
+    with_db(&state, |db| db.delete_feature(name))
 }
 
 #[tauri::command]
 pub fn delete_discipline(state: State<'_, AppState>, name: String) -> Result<(), String> {
-    let db = get_db(&state)?;
-    db.delete_discipline(name)
+    with_db(&state, |db| db.delete_discipline(name))
 }
 
 #[ipc_type]
@@ -557,9 +557,9 @@ pub fn get_discipline_image_data(
 ) -> Result<Option<String>, String> {
     use base64::Engine;
 
-    let db = get_db(&state)?;
-    let disciplines = db.get_disciplines();
-    let disc = disciplines.iter().find(|d| d.name == name);
+    let disc = with_db(&state, |db| {
+        Ok(db.get_disciplines().into_iter().find(|d| d.name == name))
+    })?;
 
     let Some(disc) = disc else {
         return Ok(None);
@@ -586,9 +586,9 @@ pub fn get_cropped_image(
 ) -> Result<Option<String>, String> {
     use base64::Engine;
 
-    let db = get_db(&state)?;
-    let disciplines = db.get_disciplines();
-    let disc = disciplines.iter().find(|d| d.name == name);
+    let disc = with_db(&state, |db| {
+        Ok(db.get_disciplines().into_iter().find(|d| d.name == name))
+    })?;
 
     let Some(disc) = disc else {
         return Ok(None);

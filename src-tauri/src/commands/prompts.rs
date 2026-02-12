@@ -1,4 +1,4 @@
-use super::state::{get_db, get_locked_project_path, AppState};
+use super::state::{get_locked_project_path, with_db, AppState};
 use ralph_macros::ipc_type;
 use sqlite_db::{RecipeConfigData, RecipeConfigInput};
 use tauri::State;
@@ -80,8 +80,7 @@ pub fn preview_custom_recipe(
 
 #[tauri::command]
 pub fn list_recipe_configs(state: State<'_, AppState>) -> Result<Vec<String>, String> {
-    let db = get_db(&state)?;
-    db.list_recipe_configs()
+    with_db(&state, sqlite_db::SqliteDb::list_recipe_configs)
 }
 
 #[tauri::command]
@@ -89,8 +88,7 @@ pub fn get_recipe_config(
     state: State<'_, AppState>,
     name: String,
 ) -> Result<Option<RecipeConfigData>, String> {
-    let db = get_db(&state)?;
-    db.get_recipe_config(&name)
+    with_db(&state, |db| db.get_recipe_config(&name))
 }
 
 #[tauri::command]
@@ -98,12 +96,10 @@ pub fn save_recipe_config(
     state: State<'_, AppState>,
     config: RecipeConfigInput,
 ) -> Result<(), String> {
-    let db = get_db(&state)?;
-    db.save_recipe_config(config)
+    with_db(&state, |db| db.save_recipe_config(config))
 }
 
 #[tauri::command]
 pub fn delete_recipe_config(state: State<'_, AppState>, name: String) -> Result<(), String> {
-    let db = get_db(&state)?;
-    db.delete_recipe_config(&name)
+    with_db(&state, |db| db.delete_recipe_config(&name))
 }
