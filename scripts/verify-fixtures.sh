@@ -48,8 +48,8 @@ for fixture in 01-desktop-blank 02-desktop-feature 03-desktop-tasks 04-desktop-d
   echo "🧪 Verifying DB: $fixture"
   require_sql_result_eq "$db" "PRAGMA integrity_check;" "ok"
   require_sql_result_eq "$db" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='agent_sessions';" "1"
-  require_sql_result_eq "$db" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='agent_session_events';" "1"
-  require_sql_result_eq "$db" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='agent_session_transcript';" "1"
+  require_sql_result_eq "$db" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='agent_session_events';" "0"
+  require_sql_result_eq "$db" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='agent_session_transcript';" "0"
   require_sql_result_eq "$db" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='task_signal_comments';" "1"
 done
 

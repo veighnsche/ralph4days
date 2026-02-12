@@ -171,27 +171,6 @@ CREATE TABLE agent_sessions (
   CHECK((status = 'running' AND ended IS NULL) OR (status != 'running'))
 ) STRICT;
 
--- Agent session lifecycle events (structured timeline)
-CREATE TABLE agent_session_events (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  session_id TEXT NOT NULL REFERENCES agent_sessions(id) ON DELETE CASCADE,
-  event_type TEXT NOT NULL, -- started, preamble_applied, prompt_sent, mcp_connected, exited, error, etc.
-  detail TEXT,
-  created TEXT NOT NULL DEFAULT (datetime('now'))
-) STRICT;
-
--- Agent session transcript (ordered I/O log)
-CREATE TABLE agent_session_transcript (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  session_id TEXT NOT NULL REFERENCES agent_sessions(id) ON DELETE CASCADE,
-  seq INTEGER NOT NULL CHECK(seq >= 0),
-  role TEXT NOT NULL CHECK(role IN ('system','user','assistant','tool')),
-  channel TEXT NOT NULL CHECK(channel IN ('stdin','stdout','stderr','prompt','mcp','internal')),
-  content TEXT NOT NULL,
-  created TEXT NOT NULL DEFAULT (datetime('now')),
-  UNIQUE(session_id, seq)
-) STRICT;
-
 -- Task signals (flat columns, no payload JSON)
 CREATE TABLE task_signals (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -330,12 +309,6 @@ CREATE INDEX idx_task_deps_depends ON task_dependencies(depends_on_task_id);
 CREATE INDEX idx_agent_sessions_task ON agent_sessions(task_id);
 CREATE INDEX idx_agent_sessions_status ON agent_sessions(status);
 CREATE INDEX idx_agent_sessions_started ON agent_sessions(started);
-
-CREATE INDEX idx_session_events_session ON agent_session_events(session_id);
-CREATE INDEX idx_session_events_created ON agent_session_events(created);
-
-CREATE INDEX idx_session_transcript_session ON agent_session_transcript(session_id);
-CREATE INDEX idx_session_transcript_created ON agent_session_transcript(created);
 
 CREATE INDEX idx_signals_task ON task_signals(task_id);
 CREATE INDEX idx_signals_session ON task_signals(session_id);
