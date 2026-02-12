@@ -19,6 +19,7 @@
       "env": {}
     },
     "dev-tauri": {
+      "enabled": false,
       "type": "stdio",
       "command": "bun",
       "args": ["run", "/home/vince/Projects/ralph4days/mcp-dev-server.ts"],
