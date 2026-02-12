@@ -289,8 +289,8 @@ describe('useTerminalSession', () => {
       expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_start_session', {
         sessionId: 'test',
         mcpMode: 'interactive',
-        model: null,
-        thinking: null
+        model: undefined,
+        thinking: undefined
       })
     })
   })

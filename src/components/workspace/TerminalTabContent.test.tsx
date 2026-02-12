@@ -3,11 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import { TerminalTabContent } from './TerminalTabContent'
 
-const { terminalBridgeEmitSystemMessageMock, useTerminalSessionMock, useTerminalSessionState } = vi.hoisted(() => ({
-  terminalBridgeEmitSystemMessageMock: vi.fn().mockResolvedValue(undefined),
-  useTerminalSessionMock: vi.fn(),
-  useTerminalSessionState: { lastHandlers: null as { onStarted?: () => void } | null }
-}))
+const { invokeMock, terminalBridgeEmitSystemMessageMock, useTerminalSessionMock, useTerminalSessionState } = vi.hoisted(
+  () => ({
+    invokeMock: vi.fn(),
+    terminalBridgeEmitSystemMessageMock: vi.fn().mockResolvedValue(undefined),
+    useTerminalSessionMock: vi.fn(),
+    useTerminalSessionState: { lastHandlers: null as { onStarted?: () => void } | null }
+  })
+)
 
 vi.mock('@/lib/terminal', () => ({
   terminalBridgeEmitSystemMessage: terminalBridgeEmitSystemMessageMock,
@@ -34,7 +37,7 @@ vi.mock('@/lib/terminal', () => ({
 }))
 
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn().mockResolvedValue(undefined)
+  invoke: (...args: unknown[]) => invokeMock(...args)
 }))
 
 vi.mock('@/hooks/workspace/useTabMeta', () => ({
@@ -62,6 +65,8 @@ describe('TerminalTabContent', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     useTerminalSessionState.lastHandlers = null
+    // Keep async session-persist state transitions out of tests that do not await them.
+    invokeMock.mockImplementation(() => new Promise(() => {}))
   })
 
   it('renders Terminal component', () => {
@@ -100,6 +105,7 @@ describe('TerminalTabContent', () => {
 
   it('emits startup message only after session persisted and bridge started', async () => {
     vi.useFakeTimers()
+    invokeMock.mockResolvedValueOnce(undefined)
     render(<TerminalTabContent tab={mockTab} />)
 
     await act(async () => {

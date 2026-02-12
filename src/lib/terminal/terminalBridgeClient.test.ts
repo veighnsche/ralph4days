@@ -51,15 +51,15 @@ describe('terminalBridgeClient', () => {
     await terminalBridgeStartTaskSession({
       sessionId: 's1',
       taskId: 7,
-      model: null,
-      thinking: null
+      model: undefined,
+      thinking: undefined
     })
 
     expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_start_task_session', {
       sessionId: 's1',
       taskId: 7,
-      model: null,
-      thinking: null
+      model: undefined,
+      thinking: undefined
     })
   })
 

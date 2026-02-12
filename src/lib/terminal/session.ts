@@ -60,8 +60,8 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
       terminalBridgeStartTaskSession({
         sessionId: config.sessionId,
         taskId: config.taskId,
-        model: config.model || null,
-        thinking: config.thinking ?? null
+        model: config.model ?? undefined,
+        thinking: config.thinking ?? undefined
       })
         .then(() => {
           markSessionStarted()
@@ -72,8 +72,8 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
       terminalBridgeStartSession({
         sessionId: config.sessionId,
         mcpMode: config.mcpMode || 'interactive',
-        model: config.model || null,
-        thinking: config.thinking ?? null
+        model: config.model ?? undefined,
+        thinking: config.thinking ?? undefined
       })
         .then(() => {
           markSessionStarted()

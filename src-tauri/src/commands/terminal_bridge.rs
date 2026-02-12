@@ -1,5 +1,9 @@
 use super::state::AppState;
-use crate::terminal::{PtyOutputEvent, SessionConfig, TERMINAL_BRIDGE_OUTPUT_EVENT};
+use crate::terminal::{
+    PtyOutputEvent, SessionConfig, TerminalBridgeEmitSystemMessageArgs, TerminalBridgeResizeArgs,
+    TerminalBridgeSendInputArgs, TerminalBridgeStartSessionArgs,
+    TerminalBridgeStartTaskSessionArgs, TerminalBridgeTerminateArgs, TERMINAL_BRIDGE_OUTPUT_EVENT,
+};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use ralph_errors::{codes, ToStringErr};
 use std::path::PathBuf;
@@ -32,11 +36,11 @@ fn emit_system_message<R: tauri::Runtime>(
 
 fn resolve_start_session_context(
     state: &AppState,
-    mcp_mode: Option<String>,
+    mcp_mode: Option<&str>,
 ) -> Result<(PathBuf, Option<PathBuf>), String> {
     let project_path = locked_project_path(state)?;
     let mcp_config = if let Some(mode) = mcp_mode {
-        Some(state.generate_mcp_config(&mode, &project_path)?)
+        Some(state.generate_mcp_config(mode, &project_path)?)
     } else {
         None
     };
@@ -52,16 +56,62 @@ fn resolve_start_task_session_context(
     Ok((project_path, mcp_config))
 }
 
-fn send_input_impl(state: &AppState, session_id: String, data: Vec<u8>) -> Result<(), String> {
-    state.pty_manager.send_input(&session_id, &data)
+fn start_session_impl(
+    app: AppHandle,
+    state: &AppState,
+    args: TerminalBridgeStartSessionArgs,
+) -> Result<(), String> {
+    let (project_path, mcp_config) =
+        resolve_start_session_context(state, args.mcp_mode.as_deref())?;
+    let config = SessionConfig {
+        model: args.model,
+        thinking: args.thinking,
+    };
+
+    state
+        .pty_manager
+        .create_session(app, args.session_id, &project_path, mcp_config, config)
 }
 
-fn resize_impl(state: &AppState, session_id: String, cols: u16, rows: u16) -> Result<(), String> {
-    state.pty_manager.resize(&session_id, cols, rows)
+fn start_task_session_impl(
+    app: AppHandle,
+    state: &AppState,
+    args: TerminalBridgeStartTaskSessionArgs,
+) -> Result<(), String> {
+    let (project_path, mcp_config) = resolve_start_task_session_context(state, args.task_id)?;
+    let config = SessionConfig {
+        model: args.model,
+        thinking: args.thinking,
+    };
+
+    state.pty_manager.create_session(
+        app,
+        args.session_id,
+        &project_path,
+        Some(mcp_config),
+        config,
+    )
 }
 
-fn terminate_impl(state: &AppState, session_id: String) -> Result<(), String> {
-    state.pty_manager.terminate(&session_id)
+fn send_input_impl(state: &AppState, args: TerminalBridgeSendInputArgs) -> Result<(), String> {
+    state.pty_manager.send_input(&args.session_id, &args.data)
+}
+
+fn resize_impl(state: &AppState, args: TerminalBridgeResizeArgs) -> Result<(), String> {
+    state
+        .pty_manager
+        .resize(&args.session_id, args.cols, args.rows)
+}
+
+fn terminate_impl(state: &AppState, args: TerminalBridgeTerminateArgs) -> Result<(), String> {
+    state.pty_manager.terminate(&args.session_id)
+}
+
+fn emit_system_message_impl<R: tauri::Runtime>(
+    app: &AppHandle<R>,
+    args: TerminalBridgeEmitSystemMessageArgs,
+) -> Result<(), String> {
+    emit_system_message(app, args.session_id, args.text)
 }
 
 #[tauri::command]
@@ -73,13 +123,16 @@ pub fn terminal_bridge_start_session(
     model: Option<String>,
     thinking: Option<bool>,
 ) -> Result<(), String> {
-    let (project_path, mcp_config) = resolve_start_session_context(state.inner(), mcp_mode)?;
-
-    let config = SessionConfig { model, thinking };
-
-    state
-        .pty_manager
-        .create_session(app, session_id, &project_path, mcp_config, config)
+    start_session_impl(
+        app,
+        state.inner(),
+        TerminalBridgeStartSessionArgs {
+            session_id,
+            mcp_mode,
+            model,
+            thinking,
+        },
+    )
 }
 
 #[tauri::command]
@@ -88,7 +141,10 @@ pub fn terminal_bridge_send_input(
     session_id: String,
     data: Vec<u8>,
 ) -> Result<(), String> {
-    send_input_impl(state.inner(), session_id, data)
+    send_input_impl(
+        state.inner(),
+        TerminalBridgeSendInputArgs { session_id, data },
+    )
 }
 
 #[tauri::command]
@@ -98,7 +154,14 @@ pub fn terminal_bridge_resize(
     cols: u16,
     rows: u16,
 ) -> Result<(), String> {
-    resize_impl(state.inner(), session_id, cols, rows)
+    resize_impl(
+        state.inner(),
+        TerminalBridgeResizeArgs {
+            session_id,
+            cols,
+            rows,
+        },
+    )
 }
 
 #[tauri::command]
@@ -106,7 +169,7 @@ pub fn terminal_bridge_terminate(
     state: State<'_, AppState>,
     session_id: String,
 ) -> Result<(), String> {
-    terminate_impl(state.inner(), session_id)
+    terminate_impl(state.inner(), TerminalBridgeTerminateArgs { session_id })
 }
 
 #[tauri::command]
@@ -118,12 +181,16 @@ pub fn terminal_bridge_start_task_session(
     model: Option<String>,
     thinking: Option<bool>,
 ) -> Result<(), String> {
-    let (project_path, mcp_config) = resolve_start_task_session_context(state.inner(), task_id)?;
-    let config = SessionConfig { model, thinking };
-
-    state
-        .pty_manager
-        .create_session(app, session_id, &project_path, Some(mcp_config), config)
+    start_task_session_impl(
+        app,
+        state.inner(),
+        TerminalBridgeStartTaskSessionArgs {
+            session_id,
+            task_id,
+            model,
+            thinking,
+        },
+    )
 }
 
 #[tauri::command]
@@ -132,7 +199,10 @@ pub fn terminal_bridge_emit_system_message(
     session_id: String,
     text: String,
 ) -> Result<(), String> {
-    emit_system_message(&app, session_id, text)
+    emit_system_message_impl(
+        &app,
+        TerminalBridgeEmitSystemMessageArgs { session_id, text },
+    )
 }
 
 #[cfg(test)]
@@ -206,22 +276,42 @@ mod tests {
     #[test]
     fn send_input_impl_returns_missing_session_error() {
         let state = AppState::default();
-        let err = send_input_impl(&state, "missing-session".to_owned(), b"echo hi\n".to_vec())
-            .unwrap_err();
+        let err = send_input_impl(
+            &state,
+            TerminalBridgeSendInputArgs {
+                session_id: "missing-session".to_owned(),
+                data: b"echo hi\n".to_vec(),
+            },
+        )
+        .unwrap_err();
         assert!(err.contains("No terminal bridge session: missing-session"));
     }
 
     #[test]
     fn resize_impl_returns_missing_session_error() {
         let state = AppState::default();
-        let err = resize_impl(&state, "missing-session".to_owned(), 120, 40).unwrap_err();
+        let err = resize_impl(
+            &state,
+            TerminalBridgeResizeArgs {
+                session_id: "missing-session".to_owned(),
+                cols: 120,
+                rows: 40,
+            },
+        )
+        .unwrap_err();
         assert!(err.contains("No terminal bridge session: missing-session"));
     }
 
     #[test]
     fn terminate_impl_is_noop_for_missing_session() {
         let state = AppState::default();
-        assert!(terminate_impl(&state, "missing-session".to_owned()).is_ok());
+        assert!(terminate_impl(
+            &state,
+            TerminalBridgeTerminateArgs {
+                session_id: "missing-session".to_owned(),
+            }
+        )
+        .is_ok());
     }
 
     fn app_state_with_locked_project(path: PathBuf) -> AppState {
@@ -233,8 +323,7 @@ mod tests {
     #[test]
     fn resolve_start_session_context_errors_when_project_unlocked() {
         let state = AppState::default();
-        let err =
-            resolve_start_session_context(&state, Some("interactive".to_owned())).unwrap_err();
+        let err = resolve_start_session_context(&state, Some("interactive")).unwrap_err();
         assert!(err.contains("No project locked"));
     }
 
@@ -260,8 +349,7 @@ mod tests {
         let dir = tempdir().unwrap();
         let state = app_state_with_locked_project(dir.path().to_path_buf());
 
-        let err =
-            resolve_start_session_context(&state, Some("interactive".to_owned())).unwrap_err();
+        let err = resolve_start_session_context(&state, Some("interactive")).unwrap_err();
         assert!(err.contains("database not open"));
     }
 

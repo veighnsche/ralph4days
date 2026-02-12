@@ -1,8 +1,10 @@
+use ralph_macros::ipc_type;
 use serde::Serialize;
 
 pub const TERMINAL_BRIDGE_OUTPUT_EVENT: &str = "terminal_bridge:output";
 pub const TERMINAL_BRIDGE_CLOSED_EVENT: &str = "terminal_bridge:closed";
 
+#[ipc_type]
 #[derive(Clone, Serialize)]
 pub struct PtyOutputEvent {
     pub session_id: String,
@@ -10,6 +12,7 @@ pub struct PtyOutputEvent {
     pub data: String,
 }
 
+#[ipc_type]
 #[derive(Clone, Serialize)]
 pub struct PtyClosedEvent {
     pub session_id: String,

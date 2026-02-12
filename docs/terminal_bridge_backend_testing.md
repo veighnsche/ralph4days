@@ -2,6 +2,8 @@
 
 This test project scopes backend coverage for the `terminal_bridge` subsystem in `src-tauri`.
 
+Type-sharing workflow and drift checks live in `docs/terminal_bridge_type_sharing_checklist.md`.
+
 ## Current scope
 
 - Contract stability:
