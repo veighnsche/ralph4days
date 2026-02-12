@@ -275,22 +275,15 @@ CREATE TABLE comment_embeddings (
   embedding_hash TEXT NOT NULL
 ) STRICT;
 
--- Recipe configs (normalized)
-CREATE TABLE recipe_configs (
+-- Prompt builder configs
+CREATE TABLE prompt_builder_configs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL UNIQUE,
-  base_recipe TEXT NOT NULL,
+  base_prompt TEXT NOT NULL,
+  section_order TEXT NOT NULL,
+  sections TEXT NOT NULL,
   created TEXT,
   updated TEXT
-) STRICT;
-
-CREATE TABLE recipe_sections (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  recipe_id INTEGER NOT NULL REFERENCES recipe_configs(id) ON DELETE CASCADE,
-  section_name TEXT NOT NULL,
-  section_order INTEGER NOT NULL,
-  content TEXT NOT NULL,
-  UNIQUE(recipe_id, section_name)
 ) STRICT;
 
 -- Indexes for performance
@@ -323,7 +316,7 @@ CREATE INDEX idx_feature_comments_feature ON feature_comments(feature_id);
 CREATE INDEX idx_feature_comments_category ON feature_comments(category);
 CREATE INDEX idx_feature_comments_discipline ON feature_comments(discipline_id);
 
-CREATE INDEX idx_recipe_sections_recipe ON recipe_sections(recipe_id);
+CREATE INDEX idx_prompt_builder_configs_name ON prompt_builder_configs(name);
 
 -- Auto-update timestamp trigger
 CREATE TRIGGER update_task_timestamp

@@ -28,11 +28,11 @@ import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import {
   type SectionBlock,
+  usePromptBuilderManagement,
   usePromptPreview,
-  useRecipeManagement,
   useSectionConfiguration
 } from '@/hooks/prompt-builder'
-import { BUILT_IN_RECIPES, CATEGORY_COLORS, CATEGORY_GRADIENT_COLORS } from '@/lib/recipe-registry'
+import { BUILT_IN_PROMPT_BUILDERS, CATEGORY_COLORS, CATEGORY_GRADIENT_COLORS } from '@/lib/prompt-builder-registry'
 import { HighlightedPrompt } from './HighlightedPrompt'
 
 interface PromptBuilderModalProps {
@@ -44,7 +44,7 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
   const {
     sections,
     enabledCount,
-    loadRecipeSections,
+    loadPromptBuilderSections,
     loadCustomSections,
     handleDragEnd,
     toggleSection,
@@ -54,20 +54,20 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
   } = useSectionConfiguration(open)
 
   const {
-    recipeName,
-    customRecipeNames,
+    promptBuilderName,
+    customPromptBuilderNames,
     currentPickerValue,
     saveDialogOpen,
     setSaveDialogOpen,
     saveNameInput,
     setSaveNameInput,
-    handleRecipeChange,
+    handlePromptBuilderChange,
     handleSave,
     doSave,
     handleDelete,
-    error: recipeError,
-    resetError: resetRecipeError
-  } = useRecipeManagement(open, sections, loadRecipeSections, loadCustomSections)
+    error: promptBuilderError,
+    resetError: resetPromptBuilderError
+  } = usePromptBuilderManagement(open, sections, loadPromptBuilderSections, loadCustomSections)
 
   const { preview, handleUserInputChange, handleCopy, previewError, resetPreviewError } = usePromptPreview(
     open,
@@ -91,23 +91,23 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
         <DialogHeader className="px-4 pt-3 pb-3">
           <div className="flex items-center gap-3">
             <div className="flex-1 min-w-0">
-              <DialogTitle className="text-sm">Prompt Recipe Editor</DialogTitle>
+              <DialogTitle className="text-sm">Prompt Builder Editor</DialogTitle>
               <DialogDescription className="text-xs">
-                Compose sections, reorder, override instructions, save as custom recipes.
+                Compose sections, reorder, override instructions, save as custom prompt builder configs.
               </DialogDescription>
             </div>
-            <Select value={currentPickerValue} onValueChange={handleRecipeChange}>
+            <Select value={currentPickerValue} onValueChange={handlePromptBuilderChange}>
               <SelectTrigger className="w-[200px] h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {BUILT_IN_RECIPES.map(r => (
+                {BUILT_IN_PROMPT_BUILDERS.map(r => (
                   <SelectItem key={r.value} value={r.value}>
                     {r.label}
                   </SelectItem>
                 ))}
-                {customRecipeNames.length > 0 && <Separator className="my-1" />}
-                {customRecipeNames.map(name => (
+                {customPromptBuilderNames.length > 0 && <Separator className="my-1" />}
+                {customPromptBuilderNames.map(name => (
                   <SelectItem key={`custom-${name}`} value={name}>
                     {name}
                   </SelectItem>
@@ -177,15 +177,15 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
         <Separator />
 
         <DialogFooter className="px-4 pb-2.5 pt-1.5">
-          <InlineError error={recipeError} onDismiss={resetRecipeError} className="w-full" />
+          <InlineError error={promptBuilderError} onDismiss={resetPromptBuilderError} className="w-full" />
           <Badge variant="outline" className="text-[10px] mr-auto">
             {enabledCount} / {sections.length} sections
           </Badge>
 
-          {recipeName && (
+          {promptBuilderName && (
             <Button variant="outline" size="default" onClick={handleDelete}>
               <Trash2 className="size-3.5" />
-              Delete Recipe
+              Delete Config
             </Button>
           )}
 
@@ -196,7 +196,7 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
 
           <Button size="default" onClick={handleSave}>
             <Save className="size-3.5" />
-            {recipeName ? 'Save' : 'Save As...'}
+            {promptBuilderName ? 'Save' : 'Save As...'}
           </Button>
 
           <Button variant="outline" size="default" onClick={() => onOpenChange(false)}>
@@ -209,13 +209,15 @@ export function PromptBuilderModal({ open, onOpenChange }: PromptBuilderModalPro
       <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-sm">Save Recipe</DialogTitle>
-            <DialogDescription className="text-xs">Enter a name for this custom recipe.</DialogDescription>
+            <DialogTitle className="text-sm">Save Prompt Builder Config</DialogTitle>
+            <DialogDescription className="text-xs">
+              Enter a name for this custom prompt builder config.
+            </DialogDescription>
           </DialogHeader>
           <Input
             value={saveNameInput}
             onChange={e => setSaveNameInput(e.target.value)}
-            placeholder="my-custom-recipe"
+            placeholder="my-custom-prompt-builder"
             className="h-8"
             onKeyDown={e => {
               if (e.key === 'Enter' && saveNameInput.trim()) {

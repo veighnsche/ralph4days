@@ -57,7 +57,7 @@ export function usePromptPreview(open: boolean, sections: SectionBlock[]) {
           enabled: s.enabled,
           instructionOverride: s.instructionOverride ?? undefined
         }))
-        const result = await invoke<PromptPreview>('preview_custom_recipe', {
+        const result = await invoke<PromptPreview>('preview_custom_prompt_builder', {
           sections: wireSections,
           userInput: null
         })

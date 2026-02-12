@@ -8,7 +8,7 @@ export interface SectionMeta {
   isInstruction: boolean
 }
 
-export interface RecipeDefinition {
+export interface PromptBuilderDefinition {
   name: string
   label: string
   sections: string[]
@@ -19,8 +19,8 @@ export interface SectionSettings {
   instructionOverride?: string | null
 }
 
-export interface RecipeConfig {
-  baseRecipe: string
+export interface PromptBuilderConfig {
+  basePrompt: string
   sectionOrder: string[]
   sections: Record<string, SectionSettings>
 }
@@ -182,7 +182,7 @@ export const SECTION_REGISTRY: SectionMeta[] = [
   }
 ]
 
-export const RECIPE_REGISTRY: RecipeDefinition[] = [
+export const PROMPT_BUILDER_REGISTRY: PromptBuilderDefinition[] = [
   {
     name: 'braindump',
     label: 'Braindump',
@@ -422,7 +422,7 @@ export const CATEGORY_GRADIENT_COLORS: Record<string, string> = {
   instructions: 'rgba(249, 115, 22, 0.12)'
 }
 
-export const BUILT_IN_RECIPES = [
+export const BUILT_IN_PROMPT_BUILDERS = [
   { value: 'braindump', label: 'Braindump' },
   { value: 'yap', label: 'Yap' },
   { value: 'ramble', label: 'Ramble' },
@@ -431,22 +431,22 @@ export const BUILT_IN_RECIPES = [
   { value: 'opus_review', label: 'Opus Review' }
 ] as const
 
-export function getDefaultRecipeConfig(recipeName: string): RecipeConfig {
-  const recipe = RECIPE_REGISTRY.find(r => r.name === recipeName)
-  if (!recipe) {
+export function getDefaultPromptBuilderConfig(promptName: string): PromptBuilderConfig {
+  const promptBuilder = PROMPT_BUILDER_REGISTRY.find(r => r.name === promptName)
+  if (!promptBuilder) {
     return {
-      baseRecipe: recipeName,
+      basePrompt: promptName,
       sectionOrder: SECTION_REGISTRY.map(s => s.name),
       sections: Object.fromEntries(SECTION_REGISTRY.map(s => [s.name, { enabled: false }]))
     }
   }
 
-  const enabledSet = new Set(recipe.sections)
+  const enabledSet = new Set(promptBuilder.sections)
   const disabledSections = SECTION_REGISTRY.filter(s => !enabledSet.has(s.name)).map(s => s.name)
-  const sectionOrder = [...recipe.sections, ...disabledSections]
+  const sectionOrder = [...promptBuilder.sections, ...disabledSections]
 
   return {
-    baseRecipe: recipeName,
+    basePrompt: promptName,
     sectionOrder,
     sections: Object.fromEntries(sectionOrder.map(name => [name, { enabled: enabledSet.has(name) }]))
   }

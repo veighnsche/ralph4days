@@ -1,6 +1,6 @@
 import type { DragEndEvent } from '@dnd-kit/core'
 import { useState } from 'react'
-import { getDefaultRecipeConfig, SECTION_REGISTRY } from '@/lib/recipe-registry'
+import { getDefaultPromptBuilderConfig, SECTION_REGISTRY } from '@/lib/prompt-builder-registry'
 
 export interface SectionBlock {
   name: string
@@ -33,9 +33,9 @@ export function useSectionConfiguration(_open: boolean) {
   const [sections, setSections] = useState<SectionBlock[]>([])
   const [loadError, setLoadError] = useState<string | null>(null)
 
-  const loadRecipeSections = async (promptType: string) => {
+  const loadPromptBuilderSections = async (promptType: string) => {
     try {
-      const config = getDefaultRecipeConfig(promptType)
+      const config = getDefaultPromptBuilderConfig(promptType)
       const blocks = config.sectionOrder.map(name => {
         const meta = SECTION_REGISTRY.find(m => m.name === name)
         return {
@@ -53,7 +53,7 @@ export function useSectionConfiguration(_open: boolean) {
       return true
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
-      setLoadError(`Failed to load recipe sections: ${message}`)
+      setLoadError(`Failed to load prompt builder sections: ${message}`)
       return false
     }
   }
@@ -91,7 +91,7 @@ export function useSectionConfiguration(_open: boolean) {
   return {
     sections,
     enabledCount,
-    loadRecipeSections,
+    loadPromptBuilderSections,
     loadCustomSections,
     handleDragEnd,
     toggleSection,

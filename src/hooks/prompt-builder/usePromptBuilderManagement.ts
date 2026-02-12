@@ -2,27 +2,29 @@ import { invoke } from '@tauri-apps/api/core'
 import { useEffect, useRef, useState } from 'react'
 import { QUERY_KEYS } from '@/constants/cache'
 import { useInvoke, useInvokeMutation } from '@/hooks/api'
-import { SECTION_REGISTRY } from '@/lib/recipe-registry'
-import type { RecipeConfigData, RecipeConfigInput } from '@/types/generated'
+import { SECTION_REGISTRY } from '@/lib/prompt-builder-registry'
+import type { PromptBuilderConfigData, PromptBuilderConfigInput } from '@/types/generated'
 import type { SectionBlock } from './useSectionConfiguration'
 
-export function useRecipeManagement(
+export function usePromptBuilderManagement(
   open: boolean,
   sections: SectionBlock[],
-  loadRecipeSections: (promptType: string) => Promise<boolean>,
+  loadPromptBuilderSections: (promptType: string) => Promise<boolean>,
   loadCustomSections: (configs: { name: string; enabled: boolean; instructionOverride?: string | null }[]) => void
 ) {
-  const [baseRecipe, setBaseRecipe] = useState('braindump')
-  const [recipeName, setRecipeName] = useState<string | null>(null)
+  const [basePrompt, setBasePrompt] = useState('braindump')
+  const [promptBuilderName, setPromptBuilderName] = useState<string | null>(null)
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [saveNameInput, setSaveNameInput] = useState('')
   const [loadError, setLoadError] = useState<string | null>(null)
-  const recipeChangeGenRef = useRef(0)
+  const promptBuilderChangeGenRef = useRef(0)
 
-  const { data: customRecipeNames = [] } = useInvoke<string[]>('list_recipe_configs', undefined, { enabled: open })
+  const { data: customPromptBuilderNames = [] } = useInvoke<string[]>('list_prompt_builder_configs', undefined, {
+    enabled: open
+  })
 
   const initializedRef = useRef(false)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: baseRecipe and loadRecipeSections intentionally excluded — recipe switching is handled by handleRecipeChange, not this init effect
+  // biome-ignore lint/correctness/useExhaustiveDependencies: basePrompt and loadPromptBuilderSections intentionally excluded — picker switching is handled by handlePromptBuilderChange, not this init effect
   useEffect(() => {
     if (!open) {
       initializedRef.current = false
@@ -30,35 +32,35 @@ export function useRecipeManagement(
     }
     if (!initializedRef.current) {
       initializedRef.current = true
-      loadRecipeSections(baseRecipe)
+      loadPromptBuilderSections(basePrompt)
     }
   }, [open])
 
-  const saveMutation = useInvokeMutation<{ config: RecipeConfigInput }>('save_recipe_config', {
-    invalidateKeys: QUERY_KEYS.RECIPE_LIST,
+  const saveMutation = useInvokeMutation<{ config: PromptBuilderConfigInput }>('save_prompt_builder_config', {
+    invalidateKeys: QUERY_KEYS.PROMPT_BUILDER_LIST,
     onSuccess: (_data, variables) => {
-      setRecipeName(variables.config.name)
+      setPromptBuilderName(variables.config.name)
       setSaveDialogOpen(false)
     }
   })
 
-  const deleteMutation = useInvokeMutation<{ name: string }>('delete_recipe_config', {
-    invalidateKeys: QUERY_KEYS.RECIPE_LIST,
+  const deleteMutation = useInvokeMutation<{ name: string }>('delete_prompt_builder_config', {
+    invalidateKeys: QUERY_KEYS.PROMPT_BUILDER_LIST,
     onSuccess: () => {
-      setRecipeName(null)
-      loadRecipeSections(baseRecipe)
+      setPromptBuilderName(null)
+      loadPromptBuilderSections(basePrompt)
     }
   })
 
-  const loadCustomRecipe = async (name: string, gen: number) => {
-    const data = await invoke<RecipeConfigData>('get_recipe_config', { name })
-    if (gen !== recipeChangeGenRef.current) return
+  const loadCustomPromptBuilder = async (name: string, gen: number) => {
+    const data = await invoke<PromptBuilderConfigData>('get_prompt_builder_config', { name })
+    if (gen !== promptBuilderChangeGenRef.current) return
     if (!data) {
-      setLoadError(`Recipe "${name}" not found`)
+      setLoadError(`Prompt builder config "${name}" not found`)
       return
     }
-    setBaseRecipe(data.baseRecipe)
-    setRecipeName(data.name)
+    setBasePrompt(data.basePrompt)
+    setPromptBuilderName(data.name)
     const configs = data.sectionOrder.map(sectionName => {
       const settings = data.sections[sectionName]
       const meta = SECTION_REGISTRY.find(m => m.name === sectionName)
@@ -75,34 +77,34 @@ export function useRecipeManagement(
     loadCustomSections(configs)
   }
 
-  const handleRecipeChange = async (value: string) => {
-    const gen = ++recipeChangeGenRef.current
-    if (customRecipeNames.includes(value)) {
+  const handlePromptBuilderChange = async (value: string) => {
+    const gen = ++promptBuilderChangeGenRef.current
+    if (customPromptBuilderNames.includes(value)) {
       try {
-        await loadCustomRecipe(value, gen)
+        await loadCustomPromptBuilder(value, gen)
       } catch (err) {
-        if (gen !== recipeChangeGenRef.current) return
-        setLoadError(`Failed to load recipe: ${err}`)
+        if (gen !== promptBuilderChangeGenRef.current) return
+        setLoadError(`Failed to load prompt builder config: ${err}`)
       }
     } else {
-      setBaseRecipe(value)
-      await loadRecipeSections(value)
-      setRecipeName(null)
+      setBasePrompt(value)
+      await loadPromptBuilderSections(value)
+      setPromptBuilderName(null)
     }
   }
 
   const handleSave = () => {
-    if (!recipeName) {
+    if (!promptBuilderName) {
       setSaveDialogOpen(true)
       return
     }
-    doSave(recipeName)
+    doSave(promptBuilderName)
   }
 
   const doSave = (name: string) => {
-    const config: RecipeConfigInput = {
+    const config: PromptBuilderConfigInput = {
       name,
-      baseRecipe: baseRecipe,
+      basePrompt: basePrompt,
       sectionOrder: sections.map(s => s.name),
       sections: Object.fromEntries(
         sections.map(s => [
@@ -118,11 +120,11 @@ export function useRecipeManagement(
   }
 
   const handleDelete = () => {
-    if (!recipeName) return
-    deleteMutation.mutate({ name: recipeName })
+    if (!promptBuilderName) return
+    deleteMutation.mutate({ name: promptBuilderName })
   }
 
-  const currentPickerValue = recipeName ?? baseRecipe
+  const currentPickerValue = promptBuilderName ?? basePrompt
   const error = saveMutation.error ?? deleteMutation.error ?? loadError
   const resetError = () => {
     saveMutation.reset()
@@ -131,15 +133,15 @@ export function useRecipeManagement(
   }
 
   return {
-    baseRecipe,
-    recipeName,
-    customRecipeNames,
+    basePrompt,
+    promptBuilderName,
+    customPromptBuilderNames,
     saveDialogOpen,
     setSaveDialogOpen,
     saveNameInput,
     setSaveNameInput,
     currentPickerValue,
-    handleRecipeChange,
+    handlePromptBuilderChange,
     handleSave,
     doSave,
     handleDelete,

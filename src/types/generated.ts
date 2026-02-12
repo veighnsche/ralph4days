@@ -107,25 +107,25 @@ export type McpServerConfigData = { name: string; command: string; args: string[
 export type Priority = 'low' | 'medium' | 'high' | 'critical'
 export type ProjectInfo = { title: string; description?: string; created?: string }
 export type ProjectProgress = { totalTasks: number; doneTasks: number; progressPercent: number }
-export type PromptPreview = { sections: PromptPreviewSection[]; fullPrompt: string }
-export type PromptPreviewSection = { name: string; content: string }
-export type PtyClosedEvent = { session_id: string; exit_code: number }
-export type PtyOutputEvent = { session_id: string; data: string }
-export type RalphProject = { name: string; path: string }
-export type RecipeConfigData = {
+export type PromptBuilderConfigData = {
   name: string
-  baseRecipe: string
+  basePrompt: string
   sectionOrder: string[]
   sections: { [key in string]: SectionSettingsData }
   created?: string
   updated?: string
 }
-export type RecipeConfigInput = {
+export type PromptBuilderConfigInput = {
   name: string
-  baseRecipe: string
+  basePrompt: string
   sectionOrder: string[]
   sections: { [key in string]: SectionSettingsData }
 }
+export type PromptPreview = { sections: PromptPreviewSection[]; fullPrompt: string }
+export type PromptPreviewSection = { name: string; content: string }
+export type PtyClosedEvent = { session_id: string; exit_code: number }
+export type PtyOutputEvent = { session_id: string; data: string }
+export type RalphProject = { name: string; path: string }
 export type SectionConfig = { name: string; enabled: boolean; instructionOverride?: string }
 export type SectionInfo = {
   name: string

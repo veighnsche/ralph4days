@@ -7,7 +7,7 @@ mod feature_comments;
 mod features;
 mod helpers;
 mod metadata;
-mod recipe_configs;
+mod prompt_builder_configs;
 mod signals;
 mod tasks;
 pub mod types;
@@ -15,7 +15,9 @@ pub mod types;
 // Re-export public types
 pub use comment_embeddings::ScoredCommentRow;
 pub use feature_comments::AddFeatureCommentInput;
-pub use recipe_configs::{RecipeConfigData, RecipeConfigInput, SectionSettingsData};
+pub use prompt_builder_configs::{
+    PromptBuilderConfigData, PromptBuilderConfigInput, SectionSettingsData,
+};
 pub use signals::{
     AskSignalInput, BlockedSignalInput, DoneSignalInput, FlagSignalInput, LearnedSignalInput,
     PartialSignalInput, StuckSignalInput, SuggestSignalInput,

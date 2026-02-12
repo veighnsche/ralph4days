@@ -1,6 +1,6 @@
 use super::state::{get_locked_project_path, with_db, AppState};
 use ralph_macros::ipc_type;
-use sqlite_db::{RecipeConfigData, RecipeConfigInput};
+use sqlite_db::{PromptBuilderConfigData, PromptBuilderConfigInput};
 use tauri::State;
 
 #[ipc_type]
@@ -29,7 +29,7 @@ pub struct SectionConfig {
 }
 
 #[tauri::command]
-pub fn preview_custom_recipe(
+pub fn preview_custom_prompt_builder(
     state: State<'_, AppState>,
     sections: Vec<SectionConfig>,
     user_input: Option<String>,
@@ -79,27 +79,30 @@ pub fn preview_custom_recipe(
 }
 
 #[tauri::command]
-pub fn list_recipe_configs(state: State<'_, AppState>) -> Result<Vec<String>, String> {
-    with_db(&state, sqlite_db::SqliteDb::list_recipe_configs)
+pub fn list_prompt_builder_configs(state: State<'_, AppState>) -> Result<Vec<String>, String> {
+    with_db(&state, sqlite_db::SqliteDb::list_prompt_builder_configs)
 }
 
 #[tauri::command]
-pub fn get_recipe_config(
+pub fn get_prompt_builder_config(
     state: State<'_, AppState>,
     name: String,
-) -> Result<Option<RecipeConfigData>, String> {
-    with_db(&state, |db| db.get_recipe_config(&name))
+) -> Result<Option<PromptBuilderConfigData>, String> {
+    with_db(&state, |db| db.get_prompt_builder_config(&name))
 }
 
 #[tauri::command]
-pub fn save_recipe_config(
+pub fn save_prompt_builder_config(
     state: State<'_, AppState>,
-    config: RecipeConfigInput,
+    config: PromptBuilderConfigInput,
 ) -> Result<(), String> {
-    with_db(&state, |db| db.save_recipe_config(config))
+    with_db(&state, |db| db.save_prompt_builder_config(config))
 }
 
 #[tauri::command]
-pub fn delete_recipe_config(state: State<'_, AppState>, name: String) -> Result<(), String> {
-    with_db(&state, |db| db.delete_recipe_config(&name))
+pub fn delete_prompt_builder_config(
+    state: State<'_, AppState>,
+    name: String,
+) -> Result<(), String> {
+    with_db(&state, |db| db.delete_prompt_builder_config(&name))
 }
