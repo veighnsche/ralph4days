@@ -74,10 +74,7 @@ pub fn resolve_session_effort_for_agent(
     let model_entry = find_model_entry_for_agent(agent, selected_model)
         .ok_or_else(|| format!("Effort validation failed: unknown model '{selected_model}'"))?;
     if model_entry.effort_options.is_empty() {
-        return Err(format!(
-            "Effort is not supported for model '{}'",
-            model_entry.name
-        ));
+        return Ok(None);
     }
     if model_entry
         .effort_options
@@ -168,10 +165,10 @@ mod tests {
 
     #[test]
     fn rejects_effort_when_model_has_no_effort_capability() {
-        let err =
+        let effort =
             resolve_session_effort_for_agent(Some("claude"), Some("sonnet"), Some("medium".into()))
-                .unwrap_err();
-        assert!(err.contains("not supported"));
+                .expect("unsupported-model effort should be ignored");
+        assert_eq!(effort, None);
     }
 
     #[test]
