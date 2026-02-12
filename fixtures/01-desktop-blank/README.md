@@ -28,7 +28,7 @@ ralph --project mock/01-desktop-blank
 
 ## Expected Behavior
 
-- Loop starts with no tasks (clean slate)
+- Execution sequence starts with no tasks (clean slate)
 - AI agents will create tasks and features as needed
 - Disciplines provide Desktop stack defaults (Frontend, Backend, Data, etc.)
 - Ready for AI-driven development workflow
