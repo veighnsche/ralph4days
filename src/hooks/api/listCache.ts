@@ -91,6 +91,43 @@ export function replaceListItemInQueryCache<TItem, TKey>({
   )
 }
 
+export function replaceListItemInQueryCacheOptimistically<TItem, TKey>({
+  queryClient,
+  queryDomain,
+  command,
+  item,
+  getKey,
+  entityLabel
+}: ListCacheParams<TItem, TKey>): () => void {
+  const queryKey = buildInvokeQueryKey(command, undefined, queryDomain)
+  const currentItems = queryClient.getQueryData<TItem[]>(queryKey)
+  if (!currentItems) {
+    throw new Error(`[list-cache] ${command} cache is missing for ${queryDomain} domain`)
+  }
+
+  const key = getKey(item)
+  const itemIndex = currentItems.findIndex(current => getKey(current) === key)
+  if (itemIndex === -1) {
+    throw new Error(`[list-cache] ${entityLabel} ${String(key)} missing from cache`)
+  }
+
+  const currentItem = currentItems[itemIndex]
+  const nextItems = [...currentItems]
+  nextItems[itemIndex] = item
+  queryClient.setQueryData<TItem[]>(queryKey, nextItems)
+
+  return () => {
+    replaceListItemInQueryCache({
+      queryClient,
+      queryDomain,
+      command,
+      item: currentItem,
+      getKey,
+      entityLabel
+    })
+  }
+}
+
 export function removeListItemFromQueryCache<TItem, TKey>({
   queryClient,
   queryDomain,

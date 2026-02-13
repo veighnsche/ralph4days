@@ -184,6 +184,18 @@ pub fn get_tasks(state: State<'_, AppState>) -> Result<Vec<sqlite_db::Task>, Str
 }
 
 #[tauri::command]
+pub fn get_task(state: State<'_, AppState>, id: u32) -> Result<sqlite_db::Task, String> {
+    CommandContext::from_tauri_state(&state).db(|db| get_task_or_error(db, id))
+}
+
+#[tauri::command]
+pub fn get_task_list_items(
+    state: State<'_, AppState>,
+) -> Result<Vec<sqlite_db::TaskListItem>, String> {
+    CommandContext::from_tauri_state(&state).db(sqlite_db::SqliteDb::get_task_list_items)
+}
+
+#[tauri::command]
 pub fn get_signal_summaries(
     state: State<'_, AppState>,
     task_ids: Vec<u32>,

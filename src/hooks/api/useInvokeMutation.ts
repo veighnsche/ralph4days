@@ -9,19 +9,43 @@ type MutationCacheUpdater<TArgs, TResult> = (params: {
   queryDomain: InvokeQueryDomain
 }) => void | Promise<void>
 
+type MutationRollback = () => void | Promise<void>
+
+type MutationOptimisticUpdater<TArgs> = (params: {
+  queryClient: QueryClient
+  variables: TArgs
+  queryDomain: InvokeQueryDomain
+}) => MutationRollback | undefined | Promise<MutationRollback | undefined>
+
+interface InternalMutationContext<TUserOnMutateResult> {
+  rollback?: MutationRollback
+  userOnMutateResult: TUserOnMutateResult
+}
+
 // WHY: Mirror of useInvoke for writes; allows either invalidation or explicit cache patching.
-export function useInvokeMutation<TArgs = void, TResult = void>(
+export function useInvokeMutation<TArgs = void, TResult = void, TUserOnMutateResult = unknown>(
   command: string,
   options?: {
     invalidateKeys?: readonly unknown[][]
     queryDomain?: InvokeQueryDomain
     updateCache?: MutationCacheUpdater<TArgs, TResult>
-  } & Omit<UseMutationOptions<TResult, Error, TArgs>, 'mutationFn'>
+    optimisticUpdate?: MutationOptimisticUpdater<TArgs>
+  } & Omit<UseMutationOptions<TResult, Error, TArgs, TUserOnMutateResult>, 'mutationFn'>
 ) {
   const queryClient = useQueryClient()
-  const { invalidateKeys, queryDomain = 'app', updateCache, onSuccess: userOnSuccess, ...restOptions } = options ?? {}
+  const {
+    invalidateKeys,
+    queryDomain = 'app',
+    updateCache,
+    optimisticUpdate,
+    onMutate: userOnMutate,
+    onError: userOnError,
+    onSuccess: userOnSuccess,
+    onSettled: userOnSettled,
+    ...restOptions
+  } = options ?? {}
 
-  return useMutation<TResult, Error, TArgs>({
+  return useMutation<TResult, Error, TArgs, InternalMutationContext<TUserOnMutateResult>>({
     mutationFn: async (args: TArgs) => {
       try {
         return await invoke<TResult>(command, args as Record<string, unknown>)
@@ -30,6 +54,28 @@ export function useInvokeMutation<TArgs = void, TResult = void>(
       }
     },
     ...restOptions,
+    onMutate: async (variables, context) => {
+      const userOnMutateResult = (await userOnMutate?.(variables, context)) as TUserOnMutateResult
+      const rollback = optimisticUpdate
+        ? await optimisticUpdate({
+            queryClient,
+            variables,
+            queryDomain
+          })
+        : undefined
+
+      return {
+        rollback,
+        userOnMutateResult
+      }
+    },
+    onError: async (error, variables, onMutateResult, context) => {
+      if (onMutateResult?.rollback) {
+        await onMutateResult.rollback()
+      }
+
+      userOnError?.(error, variables, onMutateResult?.userOnMutateResult as TUserOnMutateResult, context)
+    },
     onSuccess: async (data, variables, onMutateResult, context) => {
       if (invalidateKeys) {
         await Promise.all(
@@ -47,7 +93,10 @@ export function useInvokeMutation<TArgs = void, TResult = void>(
           queryDomain
         })
       }
-      userOnSuccess?.(data, variables, onMutateResult, context)
+      userOnSuccess?.(data, variables, onMutateResult?.userOnMutateResult as TUserOnMutateResult, context)
+    },
+    onSettled: async (data, error, variables, onMutateResult, context) => {
+      userOnSettled?.(data, error, variables, onMutateResult?.userOnMutateResult as TUserOnMutateResult, context)
     }
   })
 }

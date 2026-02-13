@@ -53,3 +53,8 @@ export function updateAcceptanceCriterionText(criteria: string[], criterionIndex
   nextCriteria[criterionIndex] = formatAcceptanceCriterion(current, nextText)
   return nextCriteria
 }
+
+export function addAcceptanceCriterion(criteria: string[], nextText = ''): string[] {
+  const text = nextText.trim()
+  return [`[ ] ${text}`, ...criteria]
+}

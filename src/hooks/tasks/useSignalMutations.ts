@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { type InvokeQueryDomain, useInvokeMutation } from '@/hooks/api'
 import type { Task } from '@/types/generated'
-import { patchTaskInTasksCache } from './taskCache'
+import { buildTaskListItemFromTask, patchTaskInTaskDetailCache, patchTaskListItemInTaskListCache } from './taskCache'
 
 export function useSignalMutations(taskId: number, queryDomain: InvokeQueryDomain = 'app') {
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -12,12 +12,18 @@ export function useSignalMutations(taskId: number, queryDomain: InvokeQueryDomai
 
   const addSignalMutation = useInvokeMutation<{ taskId: number; body: string }, Task>('add_task_signal', {
     queryDomain,
-    updateCache: ({ queryClient, data, queryDomain }) => patchTaskInTasksCache(queryClient, data, queryDomain)
+    updateCache: ({ queryClient, data, queryDomain }) => {
+      patchTaskInTaskDetailCache(queryClient, data, queryDomain)
+      patchTaskListItemInTaskListCache(queryClient, buildTaskListItemFromTask(data), queryDomain)
+    }
   })
 
   const editSignal = useInvokeMutation<{ taskId: number; signalId: number; body: string }, Task>('update_task_signal', {
     queryDomain,
-    updateCache: ({ queryClient, data, queryDomain }) => patchTaskInTasksCache(queryClient, data, queryDomain),
+    updateCache: ({ queryClient, data, queryDomain }) => {
+      patchTaskInTaskDetailCache(queryClient, data, queryDomain)
+      patchTaskListItemInTaskListCache(queryClient, buildTaskListItemFromTask(data), queryDomain)
+    },
     onSuccess: () => {
       setEditingId(null)
       setEditBody('')
@@ -26,7 +32,10 @@ export function useSignalMutations(taskId: number, queryDomain: InvokeQueryDomai
 
   const deleteSignal = useInvokeMutation<{ taskId: number; signalId: number }, Task>('delete_task_signal', {
     queryDomain,
-    updateCache: ({ queryClient, data, queryDomain }) => patchTaskInTasksCache(queryClient, data, queryDomain)
+    updateCache: ({ queryClient, data, queryDomain }) => {
+      patchTaskInTaskDetailCache(queryClient, data, queryDomain)
+      patchTaskListItemInTaskListCache(queryClient, buildTaskListItemFromTask(data), queryDomain)
+    }
   })
 
   const replyToSignalMutation = useInvokeMutation<
@@ -39,7 +48,10 @@ export function useSignalMutations(taskId: number, queryDomain: InvokeQueryDomai
     Task
   >('add_reply_to_comment', {
     queryDomain,
-    updateCache: ({ queryClient, data, queryDomain }) => patchTaskInTasksCache(queryClient, data, queryDomain),
+    updateCache: ({ queryClient, data, queryDomain }) => {
+      patchTaskInTaskDetailCache(queryClient, data, queryDomain)
+      patchTaskListItemInTaskListCache(queryClient, buildTaskListItemFromTask(data), queryDomain)
+    },
     onSuccess: () => {
       setReplyingToId(null)
       setReplyBody('')

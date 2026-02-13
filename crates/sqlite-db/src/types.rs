@@ -223,6 +223,35 @@ pub struct Task {
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct TaskListItem {
+    pub id: u32,
+    pub subsystem: String,
+    pub discipline: String,
+    pub title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    pub status: TaskStatus,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub priority: Option<Priority>,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    #[serde(default)]
+    pub depends_on: Vec<u32>,
+    pub acceptance_criteria_count: u32,
+    pub signal_count: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub provenance: Option<TaskProvenance>,
+    pub subsystem_display_name: String,
+    pub subsystem_acronym: String,
+    pub discipline_display_name: String,
+    pub discipline_acronym: String,
+    pub discipline_icon: String,
+    pub discipline_color: String,
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TaskTemplate {
     pub id: u32,
     pub discipline_id: u32,

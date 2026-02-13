@@ -4,7 +4,8 @@ import {
   removeListItemFromArray,
   removeListItemFromQueryCache,
   replaceListItemInArray,
-  replaceListItemInQueryCache
+  replaceListItemInQueryCache,
+  replaceListItemInQueryCacheOptimistically
 } from './listCache'
 import { buildInvokeQueryKey } from './useInvoke'
 
@@ -100,5 +101,35 @@ describe('listCache', () => {
     })
 
     expect(queryClient.getQueryData<Item[]>(queryKey)).toEqual([{ id: 2, name: 'two-updated' }])
+  })
+
+  it('returns rollback when optimistically replacing a list item in query cache', () => {
+    const queryClient = new QueryClient()
+    const queryKey = buildInvokeQueryKey('get_items', undefined, 'workspace')
+    queryClient.setQueryData<Item[]>(queryKey, [
+      { id: 1, name: 'one' },
+      { id: 2, name: 'two' }
+    ])
+
+    const rollback = replaceListItemInQueryCacheOptimistically({
+      queryClient,
+      queryDomain: 'workspace',
+      command: 'get_items',
+      item: { id: 2, name: 'two-optimistic' },
+      getKey: item => item.id,
+      entityLabel: 'Item'
+    })
+
+    expect(queryClient.getQueryData<Item[]>(queryKey)).toEqual([
+      { id: 1, name: 'one' },
+      { id: 2, name: 'two-optimistic' }
+    ])
+
+    rollback()
+
+    expect(queryClient.getQueryData<Item[]>(queryKey)).toEqual([
+      { id: 1, name: 'one' },
+      { id: 2, name: 'two' }
+    ])
   })
 })

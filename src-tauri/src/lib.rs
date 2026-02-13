@@ -167,6 +167,8 @@ pub fn run() {
             commands::tasks::update_task_signal,
             commands::tasks::delete_task_signal,
             commands::tasks::get_tasks,
+            commands::tasks::get_task,
+            commands::tasks::get_task_list_items,
             commands::tasks::get_signal_summaries,
             commands::tasks::answer_ask,
             commands::tasks::add_reply_to_comment,

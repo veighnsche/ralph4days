@@ -1,4 +1,4 @@
-import type { Task, TaskStatus } from '@/types/generated'
+import type { TaskStatus } from '@/types/generated'
 
 export type InferredTaskStatus =
   | 'draft'
@@ -9,7 +9,13 @@ export type InferredTaskStatus =
   | 'done'
   | 'skipped'
 
-export function computeInferredStatus(task: Task, allTasks: Task[]): InferredTaskStatus {
+type TaskDependencyStatus = { id: number; status: TaskStatus }
+type TaskWithDependencies = { status: TaskStatus; dependsOn: number[] }
+
+export function computeInferredStatus(
+  task: TaskWithDependencies,
+  allTasks: TaskDependencyStatus[]
+): InferredTaskStatus {
   switch (task.status) {
     case 'draft':
       return 'draft'

@@ -1,16 +1,16 @@
 import { useMemo } from 'react'
 import { type InvokeQueryDomain, useInvoke } from '@/hooks/api'
 import { computeDisciplineStats, computeProjectProgress } from '@/lib/stats'
-import type { Task } from '@/types/generated'
+import type { TaskListItem } from '@/types/generated'
 import { useDisciplines } from './useDisciplines'
 
-export function useDisciplineStats(queryDomain: InvokeQueryDomain = 'app') {
+export function useDisciplineStats(queryDomain: InvokeQueryDomain = 'workspace') {
   const { disciplines, error: disciplinesError, isLoading: disciplinesLoading } = useDisciplines(queryDomain)
   const {
     data: tasks = [],
     isLoading: tasksLoading,
     error: tasksError
-  } = useInvoke<Task[]>('get_tasks', undefined, {
+  } = useInvoke<TaskListItem[]>('get_task_list_items', undefined, {
     queryDomain
   })
 

@@ -201,6 +201,26 @@ export type Task = {
   disciplineIcon: string
   disciplineColor: string
 }
+export type TaskListItem = {
+  id: number
+  subsystem: string
+  discipline: string
+  title: string
+  description?: string
+  status: TaskStatus
+  priority?: Priority
+  tags: string[]
+  dependsOn: number[]
+  acceptanceCriteriaCount: number
+  signalCount: number
+  provenance?: TaskProvenance
+  subsystemDisplayName: string
+  subsystemAcronym: string
+  disciplineDisplayName: string
+  disciplineAcronym: string
+  disciplineIcon: string
+  disciplineColor: string
+}
 export type TaskProvenance = 'agent' | 'human' | 'system'
 export type TaskSignal = {
   id: number

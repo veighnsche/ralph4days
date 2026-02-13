@@ -131,6 +131,39 @@ describe('TaskCardContent', () => {
     expect(updateTaskMutateMock).toHaveBeenCalledTimes(1)
   })
 
+  it('keeps criterion toggle enabled while mutation is pending for optimistic clicks', () => {
+    vi.useFakeTimers()
+    useInvokeMutationMock.mockReturnValue({
+      mutate: updateTaskMutateMock,
+      isPending: true,
+      error: null,
+      reset: vi.fn()
+    })
+
+    render(
+      <TaskCardContent
+        task={createTask({
+          acceptanceCriteria: ['[ ] Confirm workspace update']
+        })}
+      />
+    )
+
+    const toggle = screen.getByLabelText('Toggle acceptance criterion 1')
+    expect(toggle).not.toBeDisabled()
+
+    fireEvent.click(toggle)
+    act(() => {
+      vi.advanceTimersByTime(200)
+    })
+
+    expect(updateTaskMutateMock).toHaveBeenCalledWith({
+      params: expect.objectContaining({
+        id: 101,
+        acceptance_criteria: ['[x] Confirm workspace update']
+      })
+    })
+  })
+
   it('renders criterion text as read-only input by default', () => {
     render(
       <TaskCardContent
@@ -143,5 +176,63 @@ describe('TaskCardContent', () => {
     const criterionInput = screen.getByDisplayValue('Cache updates must avoid full task list refetches')
     expect(criterionInput).toHaveAttribute('readonly')
     expect(screen.queryByRole('button', { name: 'Save acceptance criterion 1 edit' })).not.toBeInTheDocument()
+  })
+
+  it('adds a new acceptance criterion at the top from the section header action', () => {
+    render(
+      <TaskCardContent
+        task={createTask({
+          acceptanceCriteria: ['[ ] Existing criterion']
+        })}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add acceptance criterion' }))
+
+    expect(updateTaskMutateMock).toHaveBeenCalledWith({
+      params: expect.objectContaining({
+        id: 101,
+        acceptance_criteria: ['[ ] ', '[ ] Existing criterion']
+      })
+    })
+  })
+
+  it('keeps add-criterion action hidden until acceptance section hover/focus', () => {
+    render(
+      <TaskCardContent
+        task={createTask({
+          acceptanceCriteria: ['[ ] First criterion']
+        })}
+      />
+    )
+
+    const addCriterionButton = screen.getByRole('button', { name: 'Add acceptance criterion' })
+    expect(addCriterionButton.className).toContain('opacity-0')
+    expect(addCriterionButton.className).toContain('group-hover/criteria:opacity-100')
+  })
+
+  it('auto-starts editing for the newly added top criterion when updated task data arrives', () => {
+    const { rerender } = render(
+      <TaskCardContent
+        task={createTask({
+          acceptanceCriteria: ['[ ] Existing criterion']
+        })}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add acceptance criterion' }))
+
+    rerender(
+      <TaskCardContent
+        task={createTask({
+          acceptanceCriteria: ['[ ] ', '[ ] Existing criterion']
+        })}
+      />
+    )
+
+    expect(screen.getByRole('button', { name: 'Save acceptance criterion 1 edit' })).toBeInTheDocument()
+    const editingInput = screen.getByPlaceholderText('New acceptance criterion')
+    expect(editingInput).toHaveValue('')
+    expect(editingInput).not.toHaveAttribute('readonly')
   })
 })

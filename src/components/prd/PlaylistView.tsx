@@ -4,16 +4,16 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ItemGroup, ItemSeparator } from '@/components/ui/item'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useSignalSummaries } from '@/hooks/tasks'
-import type { DisciplineCropsData, Task } from '@/types/generated'
+import type { DisciplineCropsData, TaskListItem } from '@/types/generated'
 import { PlaylistItem } from './PlaylistItem'
 
 interface PlaylistViewProps {
-  tasks: Task[]
+  tasks: TaskListItem[]
   cropsStore: Map<string, DisciplineCropsData>
-  onTaskClick: (task: Task) => void
+  onTaskClick: (task: TaskListItem) => void
 }
 
-function countUnresolvedDeps(task: Task, statusById: Map<number, string>): number {
+function countUnresolvedDeps(task: TaskListItem, statusById: Map<number, string>): number {
   if (!task.dependsOn || task.dependsOn.length === 0) return 0
   return task.dependsOn.filter(id => {
     const s = statusById.get(id)
@@ -31,10 +31,10 @@ export function PlaylistView({ tasks, cropsStore, onTaskClick }: PlaylistViewPro
 
   const { blockedSkipped, done, inProgress, pending } = (() => {
     const result = {
-      blockedSkipped: [] as Task[],
-      done: [] as Task[],
-      inProgress: [] as Task[],
-      pending: [] as Task[]
+      blockedSkipped: [] as TaskListItem[],
+      done: [] as TaskListItem[],
+      inProgress: [] as TaskListItem[],
+      pending: [] as TaskListItem[]
     }
 
     tasks.forEach(task => {

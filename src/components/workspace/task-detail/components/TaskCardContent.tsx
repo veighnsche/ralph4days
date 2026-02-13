@@ -1,6 +1,7 @@
-import { AlertCircle, FileCode } from 'lucide-react'
-import { Fragment } from 'react'
+import { AlertCircle, FileCode, Plus } from 'lucide-react'
+import { Fragment, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import {
   createDisciplineDetailTab,
@@ -9,16 +10,23 @@ import {
   useWorkspaceTabContext
 } from '@/components/workspace/tabs'
 import { STATUS_CONFIG } from '@/constants/prd'
-import { useInvoke, useInvokeMutation } from '@/hooks/api'
+import { buildInvokeQueryKey, useInvoke, useInvokeMutation } from '@/hooks/api'
 import { useDisciplines } from '@/hooks/disciplines'
-import { patchTaskInTasksCache } from '@/hooks/tasks/taskCache'
+import {
+  patchTaskInTaskDetailCache,
+  patchTaskInTaskDetailCacheOptimistically,
+  patchTaskListItemInTaskListCache,
+  patchTaskListItemInTaskListCacheOptimistically
+} from '@/hooks/tasks/taskCache'
+import { buildOptimisticTaskFromUpdateTask, type UpdateTaskVariables } from '@/hooks/tasks/updateTaskMutation'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
-import type { SubsystemData, Task } from '@/types/generated'
+import type { SubsystemData, Task, TaskListItem } from '@/types/generated'
 import { TaskIdDisplay } from '../../../prd/TaskIdDisplay'
 import { AcceptanceCriterionItem } from './AcceptanceCriterionItem'
-import { toggleAcceptanceCriterion, updateAcceptanceCriterionText } from './acceptanceCriteria'
+import { addAcceptanceCriterion, toggleAcceptanceCriterion, updateAcceptanceCriterionText } from './acceptanceCriteria'
 
 export function TaskCardContent({ task }: { task: Task }) {
+  const [pendingAutoEditCriteria, setPendingAutoEditCriteria] = useState<string[] | null>(null)
   const currentTab = useWorkspaceTabContext()
   const openTabAfter = useWorkspaceStore(s => s.openTabAfter)
   const { disciplines } = useDisciplines()
@@ -30,33 +38,44 @@ export function TaskCardContent({ task }: { task: Task }) {
   const openRelatedTabAfterCurrent = (tab: ReturnType<typeof createTaskDetailTab>) => {
     openTabAfter(currentTab.id, tab)
   }
-  const updateTaskMutation = useInvokeMutation<
-    {
-      params: {
-        id: number
-        subsystem: string
-        discipline: string
-        title: string
-        description?: string
-        priority?: Task['priority']
-        tags: string[]
-        depends_on: number[]
-        acceptance_criteria: string[]
-        context_files: string[]
-        output_artifacts: string[]
-        hints?: string
-        estimated_turns?: number
-        provenance?: Task['provenance']
-        agent?: string
-        model?: string
-        effort?: string
-        thinking?: boolean
+  const updateTaskMutation = useInvokeMutation<UpdateTaskVariables, Task>('update_task', {
+    queryDomain: 'workspace',
+    optimisticUpdate: ({ queryClient, variables, queryDomain }) => {
+      const optimisticTask = buildOptimisticTaskFromUpdateTask(task, variables.params)
+      const rollbackDetail = patchTaskInTaskDetailCacheOptimistically(queryClient, optimisticTask, queryDomain)
+
+      const listQueryKey = buildInvokeQueryKey('get_task_list_items', undefined, queryDomain)
+      const listItems = queryClient.getQueryData<TaskListItem[]>(listQueryKey)
+      const listItem = listItems?.find(item => item.id === task.id)
+
+      const nextCount = optimisticTask.acceptanceCriteria.length
+      const rollbackList =
+        !listItem || listItem.acceptanceCriteriaCount === nextCount
+          ? undefined
+          : patchTaskListItemInTaskListCacheOptimistically(
+              queryClient,
+              { ...listItem, acceptanceCriteriaCount: nextCount },
+              queryDomain
+            )
+
+      return () => {
+        rollbackList?.()
+        rollbackDetail()
       }
     },
-    Task
-  >('update_task', {
-    queryDomain: 'workspace',
-    updateCache: ({ queryClient, data, queryDomain }) => patchTaskInTasksCache(queryClient, data, queryDomain)
+    updateCache: ({ queryClient, data, queryDomain }) => {
+      patchTaskInTaskDetailCache(queryClient, data, queryDomain)
+
+      const listQueryKey = buildInvokeQueryKey('get_task_list_items', undefined, queryDomain)
+      const listItems = queryClient.getQueryData<TaskListItem[]>(listQueryKey)
+      const listItem = listItems?.find(item => item.id === data.id)
+      if (!listItem) return
+
+      const nextCount = data.acceptanceCriteria.length
+      if (listItem.acceptanceCriteriaCount === nextCount) return
+
+      patchTaskListItemInTaskListCache(queryClient, { ...listItem, acceptanceCriteriaCount: nextCount }, queryDomain)
+    }
   })
 
   const submitCriteriaUpdate = (nextCriteria: string[]) => {
@@ -97,6 +116,19 @@ export function TaskCardContent({ task }: { task: Task }) {
     const nextCriteria = updateAcceptanceCriterionText(task.acceptanceCriteria, criterionIndex, nextText)
     submitCriteriaUpdate(nextCriteria)
   }
+
+  const handleCriterionAdd = () => {
+    if (task.status === 'done') return
+
+    const nextCriteria = addAcceptanceCriterion(task.acceptanceCriteria)
+    setPendingAutoEditCriteria(nextCriteria)
+    submitCriteriaUpdate(nextCriteria)
+  }
+
+  const shouldAutoEditNewCriterion =
+    pendingAutoEditCriteria !== null &&
+    pendingAutoEditCriteria.length === task.acceptanceCriteria.length &&
+    pendingAutoEditCriteria.every((criterion, criterionIndex) => criterion === task.acceptanceCriteria[criterionIndex])
 
   const sections: Array<{ id: string; node: React.ReactNode }> = []
 
@@ -151,12 +183,24 @@ export function TaskCardContent({ task }: { task: Task }) {
     )
   })
 
-  if (task.acceptanceCriteria && task.acceptanceCriteria.length > 0) {
-    sections.push({
-      id: 'criteria',
-      node: (
-        <div className="px-6 space-y-2">
+  sections.push({
+    id: 'criteria',
+    node: (
+      <div className="group/criteria px-6 space-y-2">
+        <div className="flex items-center gap-1">
           <h2 className="text-sm font-medium text-muted-foreground">Acceptance Criteria</h2>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleCriterionAdd}
+            aria-label="Add acceptance criterion"
+            disabled={task.status === 'done' || updateTaskMutation.isPending}
+            className="h-5 w-5 p-0 text-muted-foreground opacity-0 pointer-events-none transition-opacity group-hover/criteria:opacity-100 group-hover/criteria:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto disabled:opacity-40 disabled:pointer-events-none">
+            <Plus className="h-3 w-3" />
+          </Button>
+        </div>
+        {task.acceptanceCriteria.length > 0 && (
           <ul className="space-y-1.5">
             {task.acceptanceCriteria.map((criterion, criterionIndex) => (
               <AcceptanceCriterionItem
@@ -167,13 +211,15 @@ export function TaskCardContent({ task }: { task: Task }) {
                 isPending={updateTaskMutation.isPending}
                 onToggle={handleCriterionToggle}
                 onSaveText={handleCriterionTextSave}
+                autoStartEditing={shouldAutoEditNewCriterion && criterionIndex === 0}
+                onAutoStartEditConsumed={() => setPendingAutoEditCriteria(null)}
               />
             ))}
           </ul>
-        </div>
-      )
-    })
-  }
+        )}
+      </div>
+    )
+  })
 
   if (
     (task.contextFiles && task.contextFiles.length > 0) ||

@@ -5,12 +5,12 @@ import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { INFERRED_STATUS_CONFIG, STATUS_CONFIG } from '@/constants/prd'
 import { FLAG_SEVERITY_CONFIG, type FlagSeverity } from '@/constants/signals'
-import type { DisciplineCropsData, Task, TaskSignalSummary } from '@/types/generated'
+import type { DisciplineCropsData, TaskListItem, TaskSignalSummary } from '@/types/generated'
 import { DisciplineHeadshot } from './DisciplineHeadshot'
 import { DisciplineLabel } from './DisciplineLabel'
 
 interface PlaylistItemProps {
-  task: Task
+  task: TaskListItem
   crops?: DisciplineCropsData
   unresolvedDeps?: number
   isNowPlaying?: boolean
@@ -52,28 +52,24 @@ function PlaylistItemIndicators({
   unresolvedDeps,
   signalSummary
 }: {
-  task: Task
+  task: TaskListItem
   unresolvedDeps: number
   signalSummary?: TaskSignalSummary
 }) {
   const totalDeps = task.dependsOn?.length ?? 0
   const hasSignals = signalSummary && (signalSummary.pendingAsks > 0 || signalSummary.flagCount > 0)
   const hasAny =
-    (task.signals?.length ?? 0) > 0 ||
-    totalDeps > 0 ||
-    (task.acceptanceCriteria?.length ?? 0) > 0 ||
-    task.priority ||
-    hasSignals
+    task.signalCount > 0 || totalDeps > 0 || task.acceptanceCriteriaCount > 0 || task.priority || hasSignals
 
   if (!hasAny) return null
 
   return (
     <div className="flex items-center gap-2 text-muted-foreground">
       {signalSummary && <SignalIndicators summary={signalSummary} />}
-      {task.signals && task.signals.length > 0 && (
+      {task.signalCount > 0 && (
         <div className="flex items-center gap-1">
           <MessageSquare className="h-3 w-3" />
-          <span className="text-xs">{task.signals.length}</span>
+          <span className="text-xs">{task.signalCount}</span>
         </div>
       )}
       {totalDeps > 0 && (
@@ -86,10 +82,10 @@ function PlaylistItemIndicators({
           </span>
         </div>
       )}
-      {task.acceptanceCriteria && task.acceptanceCriteria.length > 0 && (
+      {task.acceptanceCriteriaCount > 0 && (
         <div className="flex items-center gap-1">
           <ListChecks className="h-3 w-3" />
-          <span className="text-xs">{task.acceptanceCriteria.length}</span>
+          <span className="text-xs">{task.acceptanceCriteriaCount}</span>
         </div>
       )}
       {task.priority && <PriorityIcon priority={task.priority} />}

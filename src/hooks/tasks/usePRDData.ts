@@ -1,23 +1,41 @@
 import { type InvokeQueryDomain, useInvoke } from '@/hooks/api'
-import type { Task } from '@/types/generated'
+import type { TaskListItem } from '@/types/generated'
 
-function isTaskShape(value: unknown): value is Task {
+function isTaskListItemShape(value: unknown): value is TaskListItem {
   if (!value || typeof value !== 'object') return false
-  const candidate = value as Partial<Task>
+  const candidate = value as Partial<TaskListItem>
   return (
     typeof candidate.id === 'number' &&
     typeof candidate.title === 'string' &&
     typeof candidate.subsystem === 'string' &&
     typeof candidate.discipline === 'string' &&
-    Array.isArray(candidate.tags)
+    Array.isArray(candidate.tags) &&
+    Array.isArray(candidate.dependsOn) &&
+    typeof candidate.acceptanceCriteriaCount === 'number' &&
+    typeof candidate.signalCount === 'number'
   )
 }
 
-export function usePRDData(queryDomain: InvokeQueryDomain = 'app') {
-  const { data, isLoading, error, refetch } = useInvoke<Task[]>('get_tasks', undefined, {
-    queryDomain
-  })
-  const tasks = Array.isArray(data) ? data.filter(isTaskShape) : null
+export function usePRDData(queryDomain: InvokeQueryDomain = 'workspace') {
+  const { data, isLoading, error, refetch } = useInvoke<TaskListItem[], TaskListItem[]>(
+    'get_task_list_items',
+    undefined,
+    {
+      queryDomain,
+      select: nextData => {
+        if (!Array.isArray(nextData)) {
+          throw new Error('Expected task list to be an array')
+        }
+        for (const [index, task] of nextData.entries()) {
+          if (!isTaskListItemShape(task)) {
+            throw new Error(`Invalid task list item payload at index ${index.toString()}`)
+          }
+        }
+        return nextData
+      }
+    }
+  )
+  const tasks = data ?? null
 
   return {
     tasks,

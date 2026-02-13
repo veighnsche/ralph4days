@@ -1,14 +1,14 @@
 import { Brain, FileX } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
-import type { DisciplineCropsData, Task } from '@/types/generated'
+import type { DisciplineCropsData, TaskListItem } from '@/types/generated'
 import { PlaylistView } from './PlaylistView'
 
 interface PRDBodyProps {
-  filteredTasks: Task[]
+  filteredTasks: TaskListItem[]
   totalTasks: number
   cropsStore: Map<string, DisciplineCropsData>
-  onTaskClick: (task: Task) => void
+  onTaskClick: (task: TaskListItem) => void
   onClearFilters: () => void
 }
 

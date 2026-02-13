@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Task } from '@/types/generated'
+import type { TaskListItem } from '@/types/generated'
 
 export type StatusFilter =
   | 'all'
@@ -27,7 +27,7 @@ export interface FilterSetters {
   setTagFilter: (tag: string) => void
 }
 
-export function usePRDFilters(tasks: Task[] | null, allTags: string[]) {
+export function usePRDFilters(tasks: TaskListItem[] | null, allTags: string[]) {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all')

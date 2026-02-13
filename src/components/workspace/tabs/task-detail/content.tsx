@@ -1,11 +1,13 @@
 import { CheckCircle2 } from 'lucide-react'
 import { CroppedImage } from '@/components/ui/cropped-image'
 import { STATUS_CONFIG } from '@/constants/prd'
+import { useInvoke } from '@/hooks/api'
 import { useDisciplines } from '@/hooks/disciplines'
 import { usePRDData } from '@/hooks/tasks'
 import { useTabMeta } from '@/hooks/workspace'
 import { computeInferredStatus } from '@/lib/taskStatus'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
+import type { Task } from '@/types/generated'
 import { DetailPageLayout } from '../../DetailPageLayout'
 import { CommentsSection } from '../../task-detail'
 import { TaskCardContent } from '../../task-detail/components/TaskCardContent'
@@ -20,11 +22,42 @@ import type { TaskDetailTabParams } from './schema'
 export function TaskDetailTabContent({ tab, params }: { tab: WorkspaceTab; params: TaskDetailTabParams }) {
   const { entityId } = params
 
-  const { tasks } = usePRDData('workspace')
-  const task = entityId != null ? tasks?.find(t => t.id === entityId) : undefined
+  const { tasks: taskListItems } = usePRDData('workspace')
+  const {
+    data: task,
+    isLoading: taskLoading,
+    error: taskError
+  } = useInvoke<Task>('get_task', entityId != null ? { id: entityId } : undefined, {
+    queryDomain: 'workspace',
+    enabled: entityId != null
+  })
   const { disciplines } = useDisciplines('workspace')
 
   useTabMeta(tab.id, task?.title ?? TASK_DETAIL_TAB_FALLBACK_TITLE, CheckCircle2)
+
+  if (entityId == null) {
+    return (
+      <div className="h-full flex items-center justify-center text-muted-foreground">
+        <span>{TASK_DETAIL_TAB_EMPTY_MESSAGE}</span>
+      </div>
+    )
+  }
+
+  if (taskLoading) {
+    return (
+      <div className="h-full flex items-center justify-center text-muted-foreground">
+        <span>Loading task...</span>
+      </div>
+    )
+  }
+
+  if (taskError) {
+    return (
+      <div className="h-full flex items-center justify-center text-muted-foreground">
+        <span>{`Failed to load task: ${taskError.message}`}</span>
+      </div>
+    )
+  }
 
   if (!task) {
     return (
@@ -57,7 +90,7 @@ export function TaskDetailTabContent({ tab, params }: { tab: WorkspaceTab; param
         )
       }
       mainContent={<TaskCardContent task={task} />}
-      sidebar={<TaskSidebar task={task} inferredStatus={computeInferredStatus(task, tasks ?? [])} />}>
+      sidebar={<TaskSidebar task={task} inferredStatus={computeInferredStatus(task, taskListItems ?? [])} />}>
       <CommentsSection task={task} />
     </DetailPageLayout>
   )

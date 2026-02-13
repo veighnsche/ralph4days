@@ -1,7 +1,7 @@
 use crate::types::*;
 use crate::SqliteDb;
 use ralph_errors::{codes, ralph_err, RalphResultExt};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 impl SqliteDb {
     fn delete_task_related_rows(&self, table: &str, task_id: u32) -> Result<(), String> {
@@ -502,6 +502,114 @@ impl SqliteDb {
         Some(task)
     }
 
+    pub fn get_task_list_items(&self) -> Result<Vec<TaskListItem>, String> {
+        let mut stmt = self
+            .conn
+            .prepare(
+                "SELECT t.id, \
+                 f.name, \
+                 d.name, \
+                 td.title, \
+                 td.description, \
+                 t.status, \
+                 td.priority, \
+                 t.provenance, \
+                 f.display_name, \
+                 f.acronym, \
+                 d.display_name, \
+                 d.acronym, \
+                 d.icon, \
+                 d.color \
+                 FROM runtime_tasks t \
+                 JOIN task_details td ON t.details_id = td.id \
+                 JOIN subsystems f ON t.subsystem_id = f.id \
+                 JOIN disciplines d ON td.discipline_id = d.id \
+                 ORDER BY t.id",
+            )
+            .ralph_err(codes::DB_READ, "Failed to prepare task list query")?;
+
+        let rows = stmt
+            .query_map([], |row| self.row_to_task_list_item(row))
+            .ralph_err(codes::DB_READ, "Failed to query task list rows")?;
+
+        let mut tasks: Vec<TaskListItem> = Vec::new();
+        for row in rows {
+            let task = row.ralph_err(codes::DB_READ, "Failed to read task list row")?;
+            tasks.push(task);
+        }
+
+        let mut tags_stmt = self
+            .conn
+            .prepare("SELECT task_id, tag FROM task_tags ORDER BY task_id, id")
+            .ralph_err(codes::DB_READ, "Failed to prepare task tags query")?;
+        let tag_rows = tags_stmt
+            .query_map([], |row| {
+                Ok((row.get::<_, u32>(0)?, row.get::<_, String>(1)?))
+            })
+            .ralph_err(codes::DB_READ, "Failed to query task tags")?;
+        let mut tags_by_task: HashMap<u32, Vec<String>> = HashMap::new();
+        for row in tag_rows {
+            let (task_id, tag) = row.ralph_err(codes::DB_READ, "Failed to read task tag row")?;
+            tags_by_task.entry(task_id).or_default().push(tag);
+        }
+
+        let mut deps_stmt = self
+            .conn
+            .prepare(
+                "SELECT task_id, depends_on_task_id FROM task_dependencies ORDER BY task_id, id",
+            )
+            .ralph_err(codes::DB_READ, "Failed to prepare task dependencies query")?;
+        let dep_rows = deps_stmt
+            .query_map([], |row| Ok((row.get::<_, u32>(0)?, row.get::<_, u32>(1)?)))
+            .ralph_err(codes::DB_READ, "Failed to query task dependencies")?;
+        let mut deps_by_task: HashMap<u32, Vec<u32>> = HashMap::new();
+        for row in dep_rows {
+            let (task_id, depends_on) =
+                row.ralph_err(codes::DB_READ, "Failed to read task dependency row")?;
+            deps_by_task.entry(task_id).or_default().push(depends_on);
+        }
+
+        let mut criteria_stmt = self
+            .conn
+            .prepare("SELECT task_id, COUNT(*) FROM task_acceptance_criteria GROUP BY task_id")
+            .ralph_err(
+                codes::DB_READ,
+                "Failed to prepare acceptance criteria count query",
+            )?;
+        let criteria_rows = criteria_stmt
+            .query_map([], |row| Ok((row.get::<_, u32>(0)?, row.get::<_, u32>(1)?)))
+            .ralph_err(codes::DB_READ, "Failed to query acceptance criteria counts")?;
+        let mut criteria_count_by_task: HashMap<u32, u32> = HashMap::new();
+        for row in criteria_rows {
+            let (task_id, count) =
+                row.ralph_err(codes::DB_READ, "Failed to read criteria count row")?;
+            criteria_count_by_task.insert(task_id, count);
+        }
+
+        let mut signal_stmt = self
+            .conn
+            .prepare("SELECT task_id, COUNT(*) FROM task_signals GROUP BY task_id")
+            .ralph_err(codes::DB_READ, "Failed to prepare signals count query")?;
+        let signal_rows = signal_stmt
+            .query_map([], |row| Ok((row.get::<_, u32>(0)?, row.get::<_, u32>(1)?)))
+            .ralph_err(codes::DB_READ, "Failed to query signal counts")?;
+        let mut signal_count_by_task: HashMap<u32, u32> = HashMap::new();
+        for row in signal_rows {
+            let (task_id, count) =
+                row.ralph_err(codes::DB_READ, "Failed to read signal count row")?;
+            signal_count_by_task.insert(task_id, count);
+        }
+
+        for task in &mut tasks {
+            task.tags = tags_by_task.remove(&task.id).unwrap_or_default();
+            task.depends_on = deps_by_task.remove(&task.id).unwrap_or_default();
+            task.acceptance_criteria_count = *criteria_count_by_task.get(&task.id).unwrap_or(&0);
+            task.signal_count = *signal_count_by_task.get(&task.id).unwrap_or(&0);
+        }
+
+        Ok(tasks)
+    }
+
     pub fn get_tasks(&self) -> Vec<Task> {
         let Ok(mut stmt) = self.conn.prepare(
             "SELECT t.id, t.subsystem_id, td.discipline_id, td.title, td.description, t.status, \
@@ -635,6 +743,74 @@ impl SqliteDb {
             discipline_icon: row.get(25).unwrap_or_else(|_| "Circle".to_owned()),
             discipline_color: row.get(26).unwrap_or_else(|_| "#94a3b8".to_owned()),
         }
+    }
+
+    #[allow(clippy::unused_self)]
+    fn row_to_task_list_item(&self, row: &rusqlite::Row) -> rusqlite::Result<TaskListItem> {
+        let status_str: String = row.get(5)?;
+        let status = TaskStatus::parse(&status_str).ok_or_else(|| {
+            rusqlite::Error::FromSqlConversionFailure(
+                5,
+                rusqlite::types::Type::Text,
+                Box::new(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!("Invalid task status: {status_str}"),
+                )),
+            )
+        })?;
+
+        let priority_str: Option<String> = row.get(6)?;
+        let priority = priority_str
+            .map(|p| {
+                Priority::parse(&p).ok_or_else(|| {
+                    rusqlite::Error::FromSqlConversionFailure(
+                        6,
+                        rusqlite::types::Type::Text,
+                        Box::new(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            format!("Invalid task priority: {p}"),
+                        )),
+                    )
+                })
+            })
+            .transpose()?;
+
+        let provenance_str: Option<String> = row.get(7)?;
+        let provenance = provenance_str
+            .map(|p| {
+                TaskProvenance::parse(&p).ok_or_else(|| {
+                    rusqlite::Error::FromSqlConversionFailure(
+                        7,
+                        rusqlite::types::Type::Text,
+                        Box::new(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            format!("Invalid task provenance: {p}"),
+                        )),
+                    )
+                })
+            })
+            .transpose()?;
+
+        Ok(TaskListItem {
+            id: row.get(0)?,
+            subsystem: row.get(1)?,
+            discipline: row.get(2)?,
+            title: row.get(3)?,
+            description: row.get(4)?,
+            status,
+            priority,
+            tags: vec![],
+            depends_on: vec![],
+            acceptance_criteria_count: 0,
+            signal_count: 0,
+            provenance,
+            subsystem_display_name: row.get(8)?,
+            subsystem_acronym: row.get(9)?,
+            discipline_display_name: row.get(10)?,
+            discipline_acronym: row.get(11)?,
+            discipline_icon: row.get(12)?,
+            discipline_color: row.get(13)?,
+        })
     }
 
     fn read_task_dependencies(&self, task_id: u32) -> Vec<u32> {

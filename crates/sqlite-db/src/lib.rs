@@ -25,7 +25,7 @@ pub use subsystem_comments::AddSubsystemCommentInput;
 pub use types::{
     AgentSession, AgentSessionCreateInput, AgentSessionUpdateInput, Discipline, DisciplineInput,
     McpServerConfig, Priority, ProjectMetadata, Subsystem, SubsystemComment, SubsystemInput,
-    SubsystemStatus, Task, TaskInput, TaskProvenance, TaskSignal, TaskSignalComment,
+    SubsystemStatus, Task, TaskInput, TaskListItem, TaskProvenance, TaskSignal, TaskSignalComment,
     TaskSignalCommentCreateInput, TaskSignalSummary, TaskStatus, TaskTemplate,
 };
 
