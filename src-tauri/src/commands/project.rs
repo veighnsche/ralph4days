@@ -111,7 +111,10 @@ fn seed_disciplines_for_stack(
     }
 
     for d in &defs {
-        let skills_json = serde_json::to_string(&d.skills).unwrap_or_else(|_| "[]".to_owned());
+        let skills_json =
+            serde_json::to_string(&d.skills).map_err(|error| {
+                format!("Failed to serialize skills for discipline '{}': {error}", d.name)
+            })?;
 
         let image_path = ralph_dir.and_then(|ralph_dir| {
             predefined_disciplines::get_discipline_image(stack, &d.name).and_then(|bytes| {
@@ -121,11 +124,28 @@ fn seed_disciplines_for_stack(
             })
         });
 
-        let crops_json = d.crops.as_ref().and_then(|c| serde_json::to_string(c).ok());
-        let image_prompt_json = d
-            .image_prompt
-            .as_ref()
-            .and_then(|p| serde_json::to_string(p).ok());
+        let crops_json = d.crops.as_ref().and_then(|crops| {
+            serde_json::to_string(crops)
+                .ok()
+                .or_else(|| {
+                    tracing::warn!(
+                        discipline = %d.name,
+                        "Failed to serialize crops; storing no crops"
+                    );
+                    None
+                })
+        });
+        let image_prompt_json = d.image_prompt.as_ref().and_then(|prompt| {
+            serde_json::to_string(prompt)
+                .ok()
+                .or_else(|| {
+                    tracing::warn!(
+                        discipline = %d.name,
+                        "Failed to serialize image_prompt; storing no prompt"
+                    );
+                    None
+                })
+        });
 
         db.create_discipline(sqlite_db::DisciplineInput {
             name: d.name.clone(),
