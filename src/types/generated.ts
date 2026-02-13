@@ -168,6 +168,10 @@ export type Task = {
   hints?: string
   estimatedTurns?: number
   provenance?: TaskProvenance
+  agent?: string
+  model?: string
+  effort?: string
+  thinking?: boolean
   pseudocode?: string
   enrichedAt?: string
   signals: TaskSignal[]

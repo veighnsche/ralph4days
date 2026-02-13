@@ -1375,6 +1375,10 @@ fn test_export_yaml_escapes_special_chars() {
             hints: None,
             estimated_turns: None,
             provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
         })
         .unwrap();
     db.add_signal(

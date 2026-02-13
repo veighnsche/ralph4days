@@ -69,8 +69,8 @@ impl SqliteDb {
         self.conn
             .execute(
                 "INSERT INTO tasks (feature_id, discipline_id, title, description, status, priority, \
-                 created, hints, estimated_turns, provenance) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+                 created, hints, estimated_turns, provenance, agent, model, effort, thinking) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
                 rusqlite::params![
                     feature_id,
                     discipline_id,
@@ -82,6 +82,10 @@ impl SqliteDb {
                     input.hints,
                     input.estimated_turns,
                     input.provenance.map(|p| p.as_str().to_owned()),
+                    input.agent,
+                    input.model,
+                    input.effort,
+                    input.thinking,
                 ],
             )
             .ralph_err(codes::DB_WRITE, "Failed to insert task")?;
@@ -196,8 +200,8 @@ impl SqliteDb {
         self.conn
             .execute(
                 "UPDATE tasks SET feature_id = ?1, discipline_id = ?2, title = ?3, description = ?4, \
-                 priority = ?5, updated = ?6, hints = ?7, estimated_turns = ?8 \
-                 WHERE id = ?9",
+                 priority = ?5, updated = ?6, hints = ?7, estimated_turns = ?8, agent = ?9, \
+                 model = ?10, effort = ?11, thinking = ?12 WHERE id = ?13",
                 rusqlite::params![
                     feature_id,
                     discipline_id,
@@ -207,6 +211,10 @@ impl SqliteDb {
                     now,
                     update.hints,
                     update.estimated_turns,
+                    update.agent,
+                    update.model,
+                    update.effort,
+                    update.thinking,
                     id,
                 ],
             )
@@ -403,7 +411,7 @@ impl SqliteDb {
             .prepare(
                 "SELECT t.id, t.feature_id, t.discipline_id, t.title, t.description, t.status, \
                  t.priority, t.created, t.updated, t.completed, t.hints, t.estimated_turns, \
-                 t.provenance, t.pseudocode, t.enriched_at, \
+                 t.provenance, t.agent, t.model, t.effort, t.thinking, t.pseudocode, t.enriched_at, \
                  f.name, f.display_name, f.acronym, \
                  d.name, d.display_name, d.acronym, d.icon, d.color \
                  FROM tasks t \
@@ -439,7 +447,7 @@ impl SqliteDb {
         let Ok(mut stmt) = self.conn.prepare(
             "SELECT t.id, t.feature_id, t.discipline_id, t.title, t.description, t.status, \
              t.priority, t.created, t.updated, t.completed, t.hints, t.estimated_turns, \
-             t.provenance, t.pseudocode, t.enriched_at, \
+             t.provenance, t.agent, t.model, t.effort, t.thinking, t.pseudocode, t.enriched_at, \
              f.name, f.display_name, f.acronym, \
              d.name, d.display_name, d.acronym, d.icon, d.color \
              FROM tasks t \
@@ -493,8 +501,8 @@ impl SqliteDb {
 
         Task {
             id: row.get(0).unwrap_or(0),
-            feature: row.get(15).unwrap_or_default(),
-            discipline: row.get(18).unwrap_or_default(),
+            feature: row.get(19).unwrap_or_default(),
+            discipline: row.get(22).unwrap_or_default(),
             title: row.get(3).unwrap_or_default(),
             description: row.get(4).unwrap_or_default(),
             status: TaskStatus::parse(&status_str).unwrap_or(TaskStatus::Pending),
@@ -510,15 +518,19 @@ impl SqliteDb {
             hints: row.get(10).ok(),
             estimated_turns: row.get(11).ok(),
             provenance: provenance_str.and_then(|s| TaskProvenance::parse(&s)),
-            pseudocode: row.get(13).ok(),
-            enriched_at: row.get(14).ok(),
+            agent: row.get(13).ok(),
+            model: row.get(14).ok(),
+            effort: row.get(15).ok(),
+            thinking: row.get(16).ok(),
+            pseudocode: row.get(17).ok(),
+            enriched_at: row.get(18).ok(),
             signals: vec![],
-            feature_display_name: row.get(16).unwrap_or_default(),
-            feature_acronym: row.get(17).unwrap_or_default(),
-            discipline_display_name: row.get(19).unwrap_or_default(),
-            discipline_acronym: row.get(20).unwrap_or_default(),
-            discipline_icon: row.get(21).unwrap_or_else(|_| "Circle".to_owned()),
-            discipline_color: row.get(22).unwrap_or_else(|_| "#94a3b8".to_owned()),
+            feature_display_name: row.get(20).unwrap_or_default(),
+            feature_acronym: row.get(21).unwrap_or_default(),
+            discipline_display_name: row.get(23).unwrap_or_default(),
+            discipline_acronym: row.get(24).unwrap_or_default(),
+            discipline_icon: row.get(25).unwrap_or_else(|_| "Circle".to_owned()),
+            discipline_color: row.get(26).unwrap_or_else(|_| "#94a3b8".to_owned()),
         }
     }
 

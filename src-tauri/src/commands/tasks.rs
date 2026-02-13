@@ -18,6 +18,10 @@ pub struct CreateTaskParams {
     pub hints: Option<String>,
     pub estimated_turns: Option<u32>,
     pub provenance: Option<sqlite_db::TaskProvenance>,
+    pub agent: Option<String>,
+    pub model: Option<String>,
+    pub effort: Option<String>,
+    pub thinking: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -36,6 +40,10 @@ pub struct UpdateTaskParams {
     pub hints: Option<String>,
     pub estimated_turns: Option<u32>,
     pub provenance: Option<sqlite_db::TaskProvenance>,
+    pub agent: Option<String>,
+    pub model: Option<String>,
+    pub effort: Option<String>,
+    pub thinking: Option<bool>,
 }
 
 #[tauri::command]
@@ -56,6 +64,10 @@ pub fn create_task(state: State<'_, AppState>, params: CreateTaskParams) -> Resu
         hints: params.hints,
         estimated_turns: params.estimated_turns,
         provenance: params.provenance,
+        agent: params.agent,
+        model: params.model,
+        effort: params.effort,
+        thinking: params.thinking,
     };
 
     let task_id = ctx.db(|db| db.create_task(task_input))?;
@@ -80,6 +92,10 @@ pub fn update_task(state: State<'_, AppState>, params: UpdateTaskParams) -> Resu
         hints: params.hints,
         estimated_turns: params.estimated_turns,
         provenance: params.provenance,
+        agent: params.agent,
+        model: params.model,
+        effort: params.effort,
+        thinking: params.thinking,
     };
 
     ctx.db(|db| db.update_task(params.id, task_input))

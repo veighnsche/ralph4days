@@ -199,6 +199,14 @@ pub struct Task {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub provenance: Option<TaskProvenance>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub agent: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub effort: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub thinking: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub pseudocode: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enriched_at: Option<String>,
@@ -402,6 +410,10 @@ pub struct TaskInput {
     pub hints: Option<String>,
     pub estimated_turns: Option<u32>,
     pub provenance: Option<TaskProvenance>,
+    pub agent: Option<String>,
+    pub model: Option<String>,
+    pub effort: Option<String>,
+    pub thinking: Option<bool>,
 }
 
 #[ipc_type]

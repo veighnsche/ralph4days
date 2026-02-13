@@ -473,6 +473,10 @@ just dev-mock 03-desktop-tasks
         hints: Some("Use bcrypt for password hashing, not SHA256. Check existing middleware pattern in src/middleware/".to_owned()),
         estimated_turns: Some(3),
         provenance: Some(sqlite_db::TaskProvenance::Agent),
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
     })
     .unwrap();
 
@@ -500,6 +504,10 @@ just dev-mock 03-desktop-tasks
         hints: None,
         estimated_turns: Some(2),
         provenance: Some(sqlite_db::TaskProvenance::Human),
+        agent: None,
+        model: None,
+        effort: None,
+        thinking: None,
     })
     .unwrap();
 
@@ -518,6 +526,10 @@ just dev-mock 03-desktop-tasks
         hints: None,
         estimated_turns: None,
         provenance: Some(sqlite_db::TaskProvenance::System),
+        agent: None,
+        model: None,
+        effort: None,
+        thinking: None,
     })
     .unwrap();
 
@@ -838,6 +850,10 @@ just dev-mock 04-desktop-dev
             hints: None,
             estimated_turns: None,
             provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
         })
         .unwrap();
 
@@ -865,6 +881,10 @@ just dev-mock 04-desktop-dev
             hints: None,
             estimated_turns: None,
             provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
         })
         .unwrap();
 
@@ -892,6 +912,10 @@ just dev-mock 04-desktop-dev
             hints: None,
             estimated_turns: None,
             provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
         })
         .unwrap();
 
@@ -918,6 +942,10 @@ just dev-mock 04-desktop-dev
             hints: None,
             estimated_turns: None,
             provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
         })
         .unwrap();
 
@@ -943,6 +971,10 @@ just dev-mock 04-desktop-dev
             hints: None,
             estimated_turns: None,
             provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
         })
         .unwrap();
 
@@ -968,6 +1000,10 @@ just dev-mock 04-desktop-dev
             hints: None,
             estimated_turns: None,
             provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
         })
         .unwrap();
 
@@ -994,6 +1030,10 @@ just dev-mock 04-desktop-dev
             hints: None,
             estimated_turns: None,
             provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
         })
         .unwrap();
 
@@ -1020,6 +1060,10 @@ just dev-mock 04-desktop-dev
             hints: None,
             estimated_turns: None,
             provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
         })
         .unwrap();
 
@@ -1035,6 +1079,10 @@ just dev-mock 04-desktop-dev
         depends_on: vec![8],
         acceptance_criteria: Some(vec!["Sidebar lists all collections with bookmark counts".to_owned(), "Click collection filters bookmark list".to_owned(), "Collapse/expand sidebar on mobile".to_owned()]),
         context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
     }).unwrap();
 
     // Task 10: collections / frontend / pending / medium (depends on 9)
@@ -1059,6 +1107,10 @@ just dev-mock 04-desktop-dev
             hints: None,
             estimated_turns: None,
             provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
         })
         .unwrap();
 
@@ -1081,6 +1133,10 @@ just dev-mock 04-desktop-dev
             hints: None,
             estimated_turns: None,
             provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
         })
         .unwrap();
 
@@ -1106,6 +1162,10 @@ just dev-mock 04-desktop-dev
             hints: None,
             estimated_turns: None,
             provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
         })
         .unwrap();
 
@@ -1121,6 +1181,10 @@ just dev-mock 04-desktop-dev
         depends_on: vec![3],
         acceptance_criteria: Some(vec!["Index updates on bookmark create/update/delete".to_owned(), "Search returns results in under 50ms for 10k bookmarks".to_owned(), "Supports partial word matching".to_owned(), "Ranks results by relevance".to_owned()]),
         context_files: vec![], output_artifacts: vec![], hints: None, estimated_turns: None, provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
     }).unwrap();
 
     // Task 14: search / frontend / blocked / high (depends on 13)
@@ -1147,6 +1211,10 @@ just dev-mock 04-desktop-dev
             hints: None,
             estimated_turns: None,
             provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
         })
         .unwrap();
 
@@ -1173,6 +1241,10 @@ just dev-mock 04-desktop-dev
             hints: None,
             estimated_turns: None,
             provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
         })
         .unwrap();
 
@@ -1200,6 +1272,10 @@ just dev-mock 04-desktop-dev
             hints: None,
             estimated_turns: None,
             provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
         })
         .unwrap();
 
@@ -1226,6 +1302,10 @@ just dev-mock 04-desktop-dev
             hints: None,
             estimated_turns: None,
             provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
         })
         .unwrap();
 
@@ -1251,6 +1331,10 @@ just dev-mock 04-desktop-dev
             hints: None,
             estimated_turns: None,
             provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
         })
         .unwrap();
 
@@ -1273,6 +1357,10 @@ just dev-mock 04-desktop-dev
             hints: None,
             estimated_turns: None,
             provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
         })
         .unwrap();
 
@@ -1295,6 +1383,10 @@ just dev-mock 04-desktop-dev
             hints: None,
             estimated_turns: None,
             provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
         })
         .unwrap();
 
@@ -1320,6 +1412,10 @@ just dev-mock 04-desktop-dev
             hints: Some("This is a fixture-only reference task. Delete before production.".to_owned()),
             estimated_turns: None,
             provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
         })
         .unwrap();
 
