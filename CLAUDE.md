@@ -344,11 +344,11 @@ let s = "hello".to_string();
 
 **Frontend:** React 19 (with React Compiler — never use manual useMemo/useCallback/React.memo), TypeScript, Vite, Tailwind v4, Zustand, Lucide Icons
 **Backend:** Tauri 2.5, Rust, Tokio
-**Testing:** Vitest, Playwright, Gremlins.js (unit/e2e/visual/chaos)
+**Testing:** Vitest and Rust tests; Gremlins.js for chaos checks when explicitly requested.
 **Build:** bun, Cargo
 **MCP:** shadcn-ui, tailwindcss (CSS converter broken but irrelevant), sequential-thinking
 
-Specs in `.specs/` (read `000_SPECIFICATION_FORMAT.md` first). Tests: `just test` or specific `test-{rust,frontend,e2e,visual,monkey}`.
+Specs in `.specs/` (read `000_SPECIFICATION_FORMAT.md` first). Tests: `just test` or specific `test-{rust,frontend}`.
 
 ## UI Components
 

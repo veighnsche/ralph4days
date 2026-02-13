@@ -4,6 +4,7 @@ import { Terminal as XTerm } from '@xterm/xterm'
 import { useEffect, useRef } from 'react'
 import '@xterm/xterm/css/xterm.css'
 import { TERMINAL_BG } from '@/constants/terminal'
+import { WORKSPACE_SELECTORS } from '@/test/selectors'
 
 interface TerminalProps {
   onReady?: (terminal: XTerm) => void
@@ -90,6 +91,7 @@ export function Terminal({ onReady, onResize }: TerminalProps) {
   return (
     <div
       ref={containerRef}
+      data-testid={WORKSPACE_SELECTORS.terminalHost}
       className="h-full w-full overflow-hidden ml-[11px]"
       style={{ backgroundColor: TERMINAL_BG }}
     />

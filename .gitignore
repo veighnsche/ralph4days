@@ -44,7 +44,6 @@ Thumbs.db
 
 # Test outputs
 test-results/
-playwright-report/
 coverage/
 *.spec.ts-snapshots/
 

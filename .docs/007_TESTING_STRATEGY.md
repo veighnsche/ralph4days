@@ -1,4 +1,4 @@
-# TESTING STRATEGY - PLAYWRIGHT vs TAURI WEBDRIVER
+# TESTING STRATEGY - AUTOMATION vs TAURI WEBDRIVER
 
 ## Current State (NEEDS REFACTORING)
 
@@ -8,14 +8,14 @@ Ralph4days has **three test types** with misaligned tooling:
 |-----------|-------------|---------|---------|
 | **Rust Backend** | `cargo test` | ✅ Works | Unit tests for Rust logic |
 | **Frontend Unit** | Vitest | ✅ Works | React components/hooks |
-| **E2E Tests** | Playwright → localhost:1420 | ⚠️ WRONG | Tests web UI in browser |
+| **E2E Tests** | Automation runner → localhost:1420 | ⚠️ WRONG | Tests web UI in browser |
 
 ### The Problem
 
-**Playwright is testing the WRONG thing:**
+**Automation runner is testing the WRONG thing:**
 ```
 Current Setup:
-  Playwright → Chromium browser → http://localhost:1420 → Web UI only
+  Automation runner → Chromium browser → http://localhost:1420 → Web UI only
 
 What Gets Tested:
   ✅ React component rendering
@@ -33,7 +33,7 @@ Result: False confidence. Tests pass but real app could be broken.
 
 ## Future Architecture (TODO)
 
-### 1. Playwright → Storybook Only
+### 1. Automation runner → Storybook Only
 
 **Purpose:** Visual regression testing of isolated components
 
@@ -41,8 +41,8 @@ Result: False confidence. Tests pass but real app could be broken.
 # Storybook serves component stories
 npm run storybook
 
-# Playwright tests Storybook pages
-npx playwright test storybook/
+# Automation runner tests Storybook pages
+npx automation-runner test storybook/
 ```
 
 **What it tests:**
@@ -92,17 +92,17 @@ describe('Terminal PTY Session', () => {
 ## Implementation Plan (TODO)
 
 ### Phase 1: Fix Current Setup ✅ DONE
-- [x] Install Playwright browsers (for Storybook later)
+- [x] Install automation-runner browsers (for Storybook later)
 - [x] Keep Vitest for frontend unit tests
 - [x] Document this strategy
 
-### Phase 2: Configure Playwright for Storybook Only 🔜
+### Phase 2: Configure Automation runner for Storybook Only 🔜
 
 **Files to create:**
 ```
 .storybook/
-  └── test-runner.ts          # Playwright config for Storybook
-playwright-storybook.config.ts # Separate config from E2E
+  └── test-runner.ts          # Automation runner config for Storybook
+automation-runner-storybook.config.ts # Separate config from E2E
 package.json                   # New scripts
 ```
 
@@ -173,7 +173,7 @@ export const config = {
 just test              # Run all tests
 ├─ just test-rust      # Cargo test (backend unit)
 ├─ just test-frontend  # Vitest (React unit)
-├─ just test-storybook # Playwright → Storybook (visual)
+├─ just test-storybook # Automation runner → Storybook (visual)
 └─ just test-e2e       # Tauri WebDriver (full integration)
 ```
 
@@ -183,7 +183,7 @@ just test              # Run all tests
 |-----------------|--------|
 | Rust function | `cargo test` |
 | React hook | Vitest |
-| Component UI | Playwright → Storybook |
+| Component UI | Automation runner → Storybook |
 | IPC call | Tauri WebDriver |
 | PTY session | Tauri WebDriver |
 | File operations | Tauri WebDriver |
@@ -197,15 +197,15 @@ just test              # Run all tests
 
 ## Next Steps
 
-1. **Short term:** Use current Vitest + Rust tests (no Playwright)
-2. **Medium term:** Add Storybook visual tests with Playwright
+1. **Short term:** Use current Vitest + Rust tests (no Automation runner)
+2. **Medium term:** Add Storybook visual tests with Automation runner
 3. **Long term:** Implement Tauri WebDriver for real E2E coverage
 
 ## Related Files
 
 - `justfile` - Test commands
 - `vitest.config.ts` - Vitest configuration
-- `playwright.config.ts` - Currently misconfigured, will split into Storybook-only
+- `automation-runner.config.ts` - Currently misconfigured, will split into Storybook-only
 - `.storybook/` - Storybook configuration (for visual tests)
 
 ---

@@ -105,7 +105,6 @@ just fmt
 just test
 just test-rust
 just test-frontend
-just test-e2e
 ```
 
 ## Build

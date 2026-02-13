@@ -5,6 +5,7 @@ import { InlineError } from '@/components/shared'
 import { useTabMeta } from '@/hooks/workspace'
 import { Terminal, useTerminalSession } from '@/lib/terminal'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
+import { WORKSPACE_SELECTORS } from '@/test/selectors'
 import { useWorkspaceTabIsActive } from '../context'
 import type { TerminalTabParams } from './schema'
 
@@ -72,7 +73,11 @@ export function TerminalTabContent({ tab, params }: { tab: WorkspaceTab; params:
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div
+      className="h-full flex flex-col"
+      role="tabpanel"
+      data-testid={WORKSPACE_SELECTORS.terminalTabContent}
+      data-tab-id={tab.id}>
       <InlineError error={sessionError} onDismiss={() => setSessionError(null)} />
       <div className="flex-1 min-h-0">
         <Terminal onReady={handleReady} onResize={handleResize} />

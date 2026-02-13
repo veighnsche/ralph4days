@@ -223,13 +223,13 @@ Primary code:
 ## 14. Test and Dev Infrastructure
 
 - Frontend unit tests (Vitest + jsdom).
-- Playwright e2e and visual suites.
+- Automation runner e2e and visual suites.
 - Storybook support.
 - Dev bridge / MCP dev server tooling for automating Tauri interactions in development.
 
 Primary code:
 - `vitest.config.ts`
-- `playwright.config.ts`
+- `automation-runner.config.ts`
 - `e2e/*.spec.ts`
 - `src/test/setup.ts`
 - `mcp-dev-server.ts`

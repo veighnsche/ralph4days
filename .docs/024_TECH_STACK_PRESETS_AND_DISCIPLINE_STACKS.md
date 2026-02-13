@@ -729,7 +729,7 @@ pub use serde::{Serialize, Deserialize};
 ---
 
 #### 6. Testing (Rust + React) ✅
-**Focus:** Cargo test, Vitest, Playwright, Tauri WebDriver
+**Focus:** Cargo test, Vitest, Automation runner, Tauri WebDriver
 
 **System Prompt:**
 ```
@@ -739,7 +739,7 @@ You are a testing specialist for Tauri + React applications.
 1. Rust unit tests (per crate, #[test] modules)
 2. Rust integration tests (tests/ directory)
 3. React component tests (Vitest + Testing Library)
-4. E2E tests (Playwright with Tauri WebDriver)
+4. E2E tests (Automation runner with Tauri WebDriver)
 
 ## Tauri-Specific Patterns
 - Mock Tauri context for command tests (no actual window)
@@ -755,7 +755,7 @@ You are a testing specialist for Tauri + React applications.
 5. E2E only for critical user flows (slow but comprehensive)
 ```
 
-**Skills:** `["Cargo Test", "Vitest", "Testing Library", "Playwright", "Tauri Testing", "Mocking IPC", "In-Memory SQLite"]`
+**Skills:** `["Cargo Test", "Vitest", "Testing Library", "Automation runner", "Tauri Testing", "Mocking IPC", "In-Memory SQLite"]`
 
 **Conventions:**
 ```
@@ -786,7 +786,7 @@ test('renders tasks', async () => {
   expect(await screen.findByText('Task 1')).toBeInTheDocument()
 })
 
-## E2E Test (Playwright + Tauri)
+## E2E Test (Automation runner + Tauri)
 test('creates task', async () => {
   await page.click('button:has-text("New Task")')
   await page.fill('input[name="title"]', 'My Task')
@@ -1076,9 +1076,9 @@ project/
 ---
 
 #### 7. Testing ✅
-**Focus:** Vitest, Playwright, MSW, component/E2E tests
+**Focus:** Vitest, Automation runner, MSW, component/E2E tests
 
-**Skills:** `["Vitest", "Playwright", "Testing Library", "MSW", "E2E Testing", "API Mocking"]`
+**Skills:** `["Vitest", "Automation runner", "Testing Library", "MSW", "E2E Testing", "API Mocking"]`
 
 ---
 

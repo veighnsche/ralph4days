@@ -499,10 +499,10 @@ Connection::open(path)
          │ Chaos Tests  │  (Gremlins.js)
          └──────────────┘
        ┌────────────────────┐
-       │  E2E Tests         │  (Playwright)
+       │  E2E Tests         │  (Automation runner)
        └────────────────────┘
     ┌───────────────────────────┐
-    │  Visual Regression Tests  │  (Playwright snapshots)
+    │  Visual Regression Tests  │  (Automation runner snapshots)
     └───────────────────────────┘
   ┌─────────────────────────────────┐
   │  Integration Tests (Frontend)   │  (Vitest + Testing Library)
@@ -517,7 +517,7 @@ Connection::open(path)
 just test           # All tests
 just test-rust      # cargo test
 just test-frontend  # vitest
-just test-e2e       # playwright
+just test-e2e       # automation-runner
 just test-visual    # visual regression
 just test-monkey    # chaos testing
 ```

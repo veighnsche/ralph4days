@@ -91,13 +91,13 @@ Evidence:
 
 ### Test/dev tooling surfaces
 - Vitest unit setup.
-- Playwright e2e/visual harness.
+- Automation runner e2e/visual harness.
 - Storybook support.
 - Dev bridge tooling (`mcp-dev-server.ts` + browser bridge).
 
 Evidence:
 - `vitest.config.ts`
-- `playwright.config.ts`
+- `automation-runner.config.ts`
 - `src/test/setup.ts`
 - `mcp-dev-server.ts`
 - `src/lib/dev-bridge.ts`

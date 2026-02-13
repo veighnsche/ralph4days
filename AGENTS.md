@@ -14,7 +14,6 @@ This repository is a Tauri desktop app with a React frontend and Rust backend wo
 - `src/`: React 19 + TypeScript UI (pages, hooks, components, terminal client).
 - `src-tauri/`: Tauri entrypoint and command/terminal backends.
 - `crates/`: shared Rust crates (`sqlite-db`, `prompt-builder`, `ralph-errors`, `ralph-rag`, `ralph-external`, etc.).
-- `e2e/`: Playwright end-to-end, visual, and monkey tests.
 - `fixtures/`: read-only sample projects; disposable mock data is copied outside the repo (default: `/tmp/ralph4days-mock`).
 - `.docs/`: canonical location for implementation notes and design records.
   New docs must use the next chronological numeric prefix in the filename (for example `068_SOME_TITLE.md`).
@@ -26,7 +25,6 @@ Use `just` as the primary task runner (`just --list`).
 - `just dev-frontend`: run Vite frontend only.
 - `just refresh-tauri-fixtures-mock`: prepare fresh mocks for GUI.
 - `just test`: run Rust + frontend unit tests.
-- `just test-e2e` / `just test-visual`: run Playwright suites.
 - `just lint` / `just fmt-check`: lint and formatting checks.
 - `just check-all`: lint + formatting gate.
 - `just build`: production desktop build.
@@ -71,8 +69,14 @@ Use `just` as the primary task runner (`just --list`).
 ## Testing Guidelines
 - Frontend unit tests: Vitest (`bun test:run` or `just test-frontend`).
 - Rust tests: `cargo test --manifest-path src-tauri/Cargo.toml` (or `just test-rust`).
-- E2E/visual: Playwright in `e2e/`.
 - No fixed coverage threshold is currently enforced; all changed behavior should include or update tests.
+- Frontend runtime-debug rule: for debugging terminal/front-end regressions, use deterministic component and workspace-level tests plus direct app/runtime assertions through the Tauri process. Never use browser-only UI automation as the primary signal.
+
+## Auto-Generated Files Policy
+- Do not manually edit auto-generated files (for example `bun.lock`, lockfiles from package managers, compiled outputs, and build artifacts).
+- Update auto-generated files only through the owning tool or package manager command that produces them, and only when that update is explicitly requested and directly scoped to that change.
+- Treat generated-file diffs as high-cost noise during debugging: if a task does not require regeneration, avoid touching generated files entirely and avoid spending token/tooling cycles on them.
+- If an auto-generated file changes unexpectedly, fix the underlying workflow or dependency contract first; do not workaround by manual edits.
 
 ## Environment Notes
 - This system is Wayland-only for GUI runs.
@@ -83,7 +87,11 @@ Use `just` as the primary task runner (`just --list`).
 ## Commit & Pull Request Guidelines
 - Follow Conventional Commit-style prefixes seen in history: `feat(...)`, `fix(...)`, `refactor(...)`, `chore(...)`, `docs(...)`.
 - Keep commits scoped and functional; avoid mixing unrelated frontend/backend changes when possible.
-- Before opening a PR, run `just check-all` and `just test` (plus `just test-e2e` for UI-impacting changes).
+- Before opening a PR, run `just check-all` and `just test`.
+
+- Strict harness policy:
+  - Do not introduce browser-automation tooling or harnesses for production validation.
+  - Validate frontend/runtime behavior through native Tauri process assertions and unit/integration tests, never browser-side e2e automation.
 - PRs should include: clear summary, impacted areas, linked issue/task, and screenshots or recordings for UI changes.
 - PRs should include a short "Failure posture" note describing any assumptions and why no new silent fallbacks were introduced.
 

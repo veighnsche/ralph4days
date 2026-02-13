@@ -47,40 +47,40 @@ This specification covers:
 | **Rust Unit Tests** | `cargo test` | Built-in, fast, standard |
 | **Frontend Unit Tests** | Vitest + React Testing Library | Fast, ESM-native, Tauri mock support |
 | **Integration Tests** | Vitest + `@tauri-apps/api/mocks` | Official Tauri mocking support |
-| **E2E Tests** | Playwright | Cross-platform, reliable, built-in visual comparisons |
-| **Visual Regression** | Playwright Visual Comparisons | Integrated, no additional tooling |
-| **Monkey/Chaos Testing** | Gremlins.js + Playwright | Free, proven, web-native |
+| **E2E Tests** | Automation runner | Cross-platform, reliable, built-in visual comparisons |
+| **Visual Regression** | Automation runner Visual Comparisons | Integrated, no additional tooling |
+| **Monkey/Chaos Testing** | Gremlins.js + Automation runner | Free, proven, web-native |
 | **Mutation Testing** | `cargo-mutants` (Rust) | Verifies test quality |
 
 ### 4.2 Tool Selection Rationale
 
-#### E2E Testing: Playwright over WebdriverIO
+#### E2E Testing: Automation runner over WebdriverIO
 
-| Consideration | Playwright | WebdriverIO + tauri-driver |
+| Consideration | Automation runner | WebdriverIO + tauri-driver |
 |--------------|------------|---------------------------|
 | macOS support | ✓ Full | ✗ Not supported |
 | Setup complexity | Low | High (requires tauri-driver) |
 | Visual testing | Built-in | Requires additional tools |
 | Cross-platform CI | ✓ | Linux/Windows only |
 
-**Decision:** Use **Playwright** for E2E testing. WebdriverIO with tauri-driver lacks macOS support due to missing WKWebView driver, making it unsuitable for cross-platform development.
+**Decision:** Use **Automation runner** for E2E testing. WebdriverIO with tauri-driver lacks macOS support due to missing WKWebView driver, making it unsuitable for cross-platform development.
 
-**Limitation:** Playwright tests the webview layer, not the full Rust binary. Use `@tauri-apps/api/mocks` to mock IPC calls for frontend testing. True full-stack E2E requires WebdriverIO on Linux/Windows CI runners.
+**Limitation:** Automation runner tests the webview layer, not the full Rust binary. Use `@tauri-apps/api/mocks` to mock IPC calls for frontend testing. True full-stack E2E requires WebdriverIO on Linux/Windows CI runners.
 
-#### Visual Testing: Playwright over Chromatic/Percy
+#### Visual Testing: Automation runner over Chromatic/Percy
 
-| Consideration | Playwright Visual | Chromatic/Percy |
+| Consideration | Automation runner Visual | Chromatic/Percy |
 |--------------|-------------------|-----------------|
 | Cost | Free | $$$$ (SaaS) |
 | Setup | Built-in | Requires account |
 | Integration | Native | Separate service |
 | Offline | ✓ | ✗ |
 
-**Decision:** Use **Playwright Visual Comparisons** for visual regression. It's free, built-in, and sufficient for desktop app testing. Consider Lost Pixel (open-source) if cloud-based comparison is needed later.
+**Decision:** Use **Automation runner Visual Comparisons** for visual regression. It's free, built-in, and sufficient for desktop app testing. Consider Lost Pixel (open-source) if cloud-based comparison is needed later.
 
 #### Monkey Testing: Gremlins.js
 
-**Decision:** Use **Gremlins.js** for chaos testing. It's specifically designed for frontend monkey testing, simulates random user actions, and integrates easily with Playwright.
+**Decision:** Use **Gremlins.js** for chaos testing. It's specifically designed for frontend monkey testing, simulates random user actions, and integrates easily with Automation runner.
 
 ## 5. Test Categories
 
@@ -198,13 +198,13 @@ describe('IPC Integration', () => {
 });
 ```
 
-### 5.3 E2E Tests (Playwright)
+### 5.3 E2E Tests (Automation runner)
 
 Test complete user flows through the UI.
 
 ```typescript
 // e2e/controls.spec.ts
-import { test, expect } from '@playwright/test';
+import { test, expect } from '@automation-runner/test';
 
 test.describe('Loop Controls', () => {
   test.beforeEach(async ({ page }) => {
@@ -228,13 +228,13 @@ test.describe('Loop Controls', () => {
 });
 ```
 
-### 5.4 Visual Tests (Playwright)
+### 5.4 Visual Tests (Automation runner)
 
 Test UI appearance against baseline screenshots.
 
 ```typescript
 // e2e/visual/states.spec.ts
-import { test, expect } from '@playwright/test';
+import { test, expect } from '@automation-runner/test';
 
 test.describe('Visual States', () => {
   test('idle state appearance', async ({ page }) => {
@@ -252,7 +252,7 @@ test.describe('Visual States', () => {
 
 **Visual test guidelines:**
 - Store baselines in `e2e/visual/*.spec.ts-snapshots/`
-- Update baselines with `bun exec playwright test --update-snapshots`
+- Update baselines with `bun exec automation-runner test --update-snapshots`
 - Use `maxDiffPixelRatio: 0.01` for tolerance
 - Disable animations before screenshots
 
@@ -262,7 +262,7 @@ Chaos testing with random user interactions.
 
 ```typescript
 // e2e/monkey.spec.ts
-import { test, expect } from '@playwright/test';
+import { test, expect } from '@automation-runner/test';
 
 test.describe('Chaos Testing', () => {
   test('app survives 500 random interactions', async ({ page }) => {
@@ -344,7 +344,7 @@ The following user flows MUST have E2E tests:
 | Output streaming | `e2e/output.spec.ts` |
 
 | Traces To | `e2e/*.spec.ts` |
-| Tested By | `bun exec playwright test` |
+| Tested By | `bun exec automation-runner test` |
 | Rationale | Verify user-facing functionality |
 
 ### REQ-060-04: Visual Regression for UI States
@@ -361,7 +361,7 @@ Visual tests MUST cover all loop states:
 | Aborted | `aborted-state.png` |
 
 | Traces To | `e2e/visual/*.spec.ts` |
-| Tested By | `bun exec playwright test e2e/visual/` |
+| Tested By | `bun exec automation-runner test e2e/visual/` |
 | Rationale | Prevent UI regressions |
 
 ### REQ-060-05: Monkey Test Before Release
@@ -369,7 +369,7 @@ Visual tests MUST cover all loop states:
 Monkey tests MUST pass with 500+ interactions before any release.
 
 | Traces To | `e2e/monkey.spec.ts` |
-| Tested By | `bun exec playwright test e2e/monkey.spec.ts` |
+| Tested By | `bun exec automation-runner test e2e/monkey.spec.ts` |
 | Rationale | Verify crash resistance |
 
 ### REQ-060-06: No Flaky Tests
@@ -419,9 +419,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: bun/action-setup@v2
       - run: bun install
-      - run: bun exec playwright install --with-deps
+      - run: bun exec automation-runner install --with-deps
       - run: bun build
-      - run: bun exec playwright test
+      - run: bun exec automation-runner test
 
   visual-tests:
     runs-on: ubuntu-latest
@@ -429,9 +429,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: bun/action-setup@v2
       - run: bun install
-      - run: bun exec playwright install --with-deps
+      - run: bun exec automation-runner install --with-deps
       - run: bun build
-      - run: bun exec playwright test e2e/visual/
+      - run: bun exec automation-runner test e2e/visual/
 ```
 
 ### 7.2 Required CI Checks
@@ -440,9 +440,9 @@ jobs:
 |-------|---------|----------|
 | Rust tests | `cargo test` | Yes |
 | Frontend tests | `bun test:run` | Yes |
-| E2E tests | `playwright test` | Yes |
-| Visual tests | `playwright test e2e/visual/` | Yes |
-| Monkey tests | `playwright test e2e/monkey.spec.ts` | No (warning) |
+| E2E tests | `automation-runner test` | Yes |
+| Visual tests | `automation-runner test e2e/visual/` | Yes |
+| Monkey tests | `automation-runner test e2e/monkey.spec.ts` | No (warning) |
 
 ## 8. Project Setup
 
@@ -451,10 +451,10 @@ jobs:
 ```bash
 # Frontend testing
 bun add -D vitest @testing-library/react @testing-library/jest-dom jsdom
-bun add -D @playwright/test
+bun add -D @automation-runner/test
 
-# Install Playwright browsers
-bun exec playwright install
+# Install Automation runner browsers
+bun exec automation-runner install
 ```
 
 ### 8.2 Vitest Configuration
@@ -480,11 +480,11 @@ export default defineConfig({
 });
 ```
 
-### 8.3 Playwright Configuration
+### 8.3 Automation runner Configuration
 
 ```typescript
-// playwright.config.ts
-import { defineConfig, devices } from '@playwright/test';
+// automation-runner.config.ts
+import { defineConfig, devices } from '@automation-runner/test';
 
 export default defineConfig({
   testDir: './e2e',
@@ -518,9 +518,9 @@ export default defineConfig({
   "scripts": {
     "test": "vitest",
     "test:run": "vitest run",
-    "test:e2e": "playwright test",
-    "test:visual": "playwright test e2e/visual/",
-    "test:monkey": "playwright test e2e/monkey.spec.ts",
+    "test:e2e": "automation-runner test",
+    "test:visual": "automation-runner test e2e/visual/",
+    "test:monkey": "automation-runner test e2e/monkey.spec.ts",
     "test:all": "bun test:run && bun test:e2e"
   }
 }
@@ -555,7 +555,7 @@ ralph4days/
 │       ├── states.spec.ts   # Visual tests
 │       └── states.spec.ts-snapshots/
 ├── vitest.config.ts
-└── playwright.config.ts
+└── automation-runner.config.ts
 ```
 
 ## 10. Traceability Matrix
@@ -564,9 +564,9 @@ ralph4days/
 |--------|---------------------|----------------|------|--------|
 | REQ-060-01 | Rust unit test coverage | `src-tauri/src/**/*.rs` | `cargo test` | ◐ |
 | REQ-060-02 | Frontend unit test coverage | `src/**/*.test.ts` | `bun test` | ✗ |
-| REQ-060-03 | E2E tests for critical paths | `e2e/*.spec.ts` | `playwright test` | ✗ |
-| REQ-060-04 | Visual regression for states | `e2e/visual/*.spec.ts` | `playwright test` | ✗ |
-| REQ-060-05 | Monkey test before release | `e2e/monkey.spec.ts` | `playwright test` | ✗ |
+| REQ-060-03 | E2E tests for critical paths | `e2e/*.spec.ts` | `automation-runner test` | ✗ |
+| REQ-060-04 | Visual regression for states | `e2e/visual/*.spec.ts` | `automation-runner test` | ✗ |
+| REQ-060-05 | Monkey test before release | `e2e/monkey.spec.ts` | `automation-runner test` | ✗ |
 | REQ-060-06 | No flaky tests | All test files | CI runs | — |
 | REQ-060-07 | Test independence | All test files | Parallel runs | — |
 

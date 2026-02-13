@@ -119,22 +119,6 @@ test-terminal-bridge-backend:
 test-frontend:
     bun test:run
 
-# Run E2E tests (requires built frontend)
-test-e2e:
-    bun test:e2e
-
-# Run visual regression tests
-test-visual:
-    bun test:visual
-
-# Run chaos/monkey tests
-test-monkey:
-    bun test:monkey
-
-# Update visual test snapshots
-test-visual-update:
-    bunx playwright test e2e/visual/ --update-snapshots
-
 # === Building ===
 
 # Build release binary (optimized for Alder Lake)
@@ -169,10 +153,6 @@ get-codex-models:
 # Temporary: best-effort model discovery for Claude CLI
 get-claude-models:
     cargo run --manifest-path src-tauri/Cargo.toml --bin provider-models -- claude
-
-# Install Playwright browsers
-playwright-install:
-    bunx playwright install --with-deps
 
 # Check if mold linker is installed
 check-mold:

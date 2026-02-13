@@ -94,13 +94,41 @@ describe('terminalBridgeClient', () => {
     })
     expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_replay_output', {
       sessionId: 's1',
-      afterSeq: 42n,
+      afterSeq: 42,
       limit: 64
     })
     expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_emit_system_message', {
       sessionId: 's1',
       text: '[session started]\r\n'
     })
+  })
+
+  it('accepts numeric afterSeq payloads in replay requests', async () => {
+    await terminalBridgeReplayOutput('s1', 123, 16)
+
+    expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_replay_output', {
+      sessionId: 's1',
+      afterSeq: 123,
+      limit: 16
+    })
+  })
+
+  it('accepts string afterSeq payloads in replay requests', async () => {
+    await terminalBridgeReplayOutput('s1', '123')
+
+    expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_replay_output', {
+      sessionId: 's1',
+      afterSeq: 123,
+      limit: 256
+    })
+  })
+
+  it('rejects malformed string afterSeq payloads in replay requests', async () => {
+    await expect(terminalBridgeReplayOutput('s1', 'bad')).rejects.toThrow(
+      '[terminal_bridge] Invalid afterSeq value: bad'
+    )
+
+    expect(mockInvoke).not.toHaveBeenCalled()
   })
 
   it('maps model-form-tree command', async () => {

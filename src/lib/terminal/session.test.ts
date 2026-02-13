@@ -162,6 +162,78 @@ describe('useTerminalSession', () => {
     expect(handlers.onOutput).not.toHaveBeenCalled()
   })
 
+  it('accepts numeric seq values from event payloads', async () => {
+    const handlers = {
+      ...defaultHandlers,
+      onOutput: vi.fn()
+    }
+
+    let outputCallback: ((event: { payload: { session_id: string; seq: unknown; data: string } }) => void) | undefined
+
+    mockListen.mockImplementation((eventName: string, callback: unknown) => {
+      if (eventName === 'terminal_bridge:output') {
+        outputCallback = callback as typeof outputCallback
+      }
+      return Promise.resolve(mockUnlisten)
+    })
+
+    const { result } = renderHook(() => useTerminalSession(defaultConfig, handlers))
+
+    await waitFor(() => expect(outputCallback).toBeDefined())
+
+    result.current.markReady()
+    act(() => {
+      outputCallback?.({
+        payload: {
+          session_id: 'test-session',
+          seq: 7,
+          data: btoa('hello')
+        }
+      })
+    })
+
+    await waitFor(() => {
+      expect(handlers.onOutput).toHaveBeenCalledWith(new TextEncoder().encode('hello'))
+    })
+  })
+
+  it('reports invalid seq payload values instead of dropping output', async () => {
+    const handlers = {
+      ...defaultHandlers,
+      onOutput: vi.fn(),
+      onError: vi.fn()
+    }
+
+    let outputCallback: ((event: { payload: { session_id: string; seq: unknown; data: string } }) => void) | undefined
+
+    mockListen.mockImplementation((eventName: string, callback: unknown) => {
+      if (eventName === 'terminal_bridge:output') {
+        outputCallback = callback as typeof outputCallback
+      }
+      return Promise.resolve(mockUnlisten)
+    })
+
+    const { result } = renderHook(() => useTerminalSession(defaultConfig, handlers))
+
+    await waitFor(() => expect(outputCallback).toBeDefined())
+
+    result.current.markReady()
+    act(() => {
+      outputCallback?.({
+        payload: {
+          session_id: 'test-session',
+          seq: 'not-a-number',
+          data: btoa('oops')
+        }
+      })
+    })
+
+    await waitFor(() => {
+      expect(handlers.onError).toHaveBeenCalledTimes(1)
+      expect(handlers.onOutput).not.toHaveBeenCalled()
+    })
+  })
+
   it('flushes buffered output when markReady is called', async () => {
     const handlers = {
       ...defaultHandlers,
@@ -375,6 +447,89 @@ describe('useTerminalSession', () => {
         sessionId: 'test-session',
         mode: 'live'
       })
+    })
+  })
+
+  it('normalizes numeric seq values in replayed chunks', async () => {
+    mockInvoke.mockImplementation((command: string) => {
+      if (command === 'terminal_bridge_replay_output') {
+        return Promise.resolve({
+          chunks: [{ seq: 5 as unknown as bigint, data: btoa('Hi') }],
+          hasMore: false,
+          truncated: false,
+          truncatedUntilSeq: null
+        })
+      }
+      return Promise.resolve(undefined)
+    })
+
+    const handlers = {
+      ...defaultHandlers,
+      onOutput: vi.fn()
+    }
+
+    const { result } = renderHook(() => useTerminalSession(defaultConfig, handlers))
+
+    result.current.markReady()
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_set_stream_mode', {
+        sessionId: 'test-session',
+        mode: 'buffered'
+      })
+    })
+
+    await waitFor(() => {
+      expect(handlers.onOutput).toHaveBeenCalledWith(new TextEncoder().encode('Hi'))
+    })
+  })
+
+  it('restores live stream mode when replay fails', async () => {
+    mockInvoke.mockImplementation((command: string) => {
+      if (command === 'terminal_bridge_replay_output') {
+        return Promise.reject(new Error('[terminal_bridge] failed to replay output'))
+      }
+      return Promise.resolve(undefined)
+    })
+
+    const handlers = {
+      ...defaultHandlers,
+      onError: vi.fn()
+    }
+
+    const { rerender } = renderHook(
+      ({ isActive }: { isActive: boolean }) =>
+        useTerminalSession(
+          {
+            ...defaultConfig,
+            isActive
+          },
+          handlers
+        ),
+      {
+        initialProps: { isActive: false }
+      }
+    )
+
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_set_stream_mode', {
+        sessionId: 'test-session',
+        mode: 'buffered'
+      })
+    })
+
+    rerender({ isActive: true })
+
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_set_stream_mode', {
+        sessionId: 'test-session',
+        mode: 'live'
+      })
+    })
+
+    await waitFor(() => {
+      expect(handlers.onError).toHaveBeenCalledWith(
+        expect.stringContaining('[terminal_bridge] failed to replay output')
+      )
     })
   })
 

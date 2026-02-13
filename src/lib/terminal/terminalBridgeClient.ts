@@ -5,7 +5,6 @@ import type {
   PtyOutputEvent,
   TerminalBridgeEmitSystemMessageArgs,
   TerminalBridgeListModelFormTreeResult,
-  TerminalBridgeReplayOutputArgs,
   TerminalBridgeReplayOutputResult,
   TerminalBridgeResizeArgs,
   TerminalBridgeSendInputArgs,
@@ -42,6 +41,40 @@ function decodeBase64Payload(data: string): string {
 function previewText(text: string, maxChars = 220): string {
   if (text.length <= maxChars) return text
   return `${text.slice(0, maxChars)}…`
+}
+
+function toReplayAfterSeq(afterSeq: bigint): number {
+  if (afterSeq > BigInt(Number.MAX_SAFE_INTEGER)) {
+    throw new Error(`[terminal_bridge] afterSeq out of JSON-safe range: ${afterSeq}`)
+  }
+  return Number(afterSeq)
+}
+
+function toReplayAfterSeqRequest(afterSeq: bigint | number | string): number {
+  if (typeof afterSeq === 'bigint') {
+    if (afterSeq < 0n) {
+      throw new Error(`[terminal_bridge] Invalid afterSeq value: ${afterSeq}`)
+    }
+    return toReplayAfterSeq(afterSeq)
+  }
+
+  if (typeof afterSeq === 'string') {
+    try {
+      const parsed = BigInt(afterSeq)
+      if (parsed < 0n) {
+        throw new Error()
+      }
+      return toReplayAfterSeq(parsed)
+    } catch {
+      throw new Error(`[terminal_bridge] Invalid afterSeq value: ${afterSeq}`)
+    }
+  }
+
+  if (!Number.isSafeInteger(afterSeq) || afterSeq < 0) {
+    throw new Error(`[terminal_bridge] Invalid afterSeq value: ${afterSeq}`)
+  }
+
+  return afterSeq
 }
 
 export type TerminalBridgeStartHumanSessionArgs = {
@@ -132,12 +165,13 @@ export async function terminalBridgeSetStreamMode(sessionId: string, mode: 'live
 
 export async function terminalBridgeReplayOutput(
   sessionId: string,
-  afterSeq: bigint,
+  afterSeq: bigint | number | string,
   limit = 256
 ): Promise<TerminalBridgeReplayOutputResult> {
-  const params: TerminalBridgeReplayOutputArgs = {
+  const normalizedAfterSeq = toReplayAfterSeqRequest(afterSeq)
+  const params: { sessionId: string; afterSeq: number; limit: number } = {
     sessionId,
-    afterSeq,
+    afterSeq: normalizedAfterSeq,
     limit
   }
   terminalBridgeDebugLog('tx.replayOutput', params)
@@ -160,7 +194,7 @@ export async function terminalBridgeListenSessionOutput(
     const decoded = decodeBase64Payload(event.payload.data)
     terminalBridgeDebugLog('rx.output', {
       sessionId: event.payload.session_id,
-      seq: event.payload.seq,
+      seq: String(event.payload.seq),
       byteCount: decoded.length,
       preview: previewText(decoded)
     })

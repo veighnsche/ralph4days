@@ -309,7 +309,7 @@ Then:
 These were mentioned in the plan but not required for initial implementation:
 
 1. **Feature autocomplete** - Wire `get_existing_features` to form
-2. **E2E tests** - Playwright test for full workflow
+2. **E2E tests** - Automation runner test for full workflow
 3. **Frontend unit tests** - Vitest tests for components
 4. **Spec documentation** - Update `.specs/035_PRD_FORMAT.md` with 3-tier format
 5. **CLAUDE.md update** - Document task creation workflow

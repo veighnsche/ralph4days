@@ -4,6 +4,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useAgentSessionLaunchPreferences } from '@/hooks/preferences'
 import type { AgentSessionLaunchConfig, Model } from '@/lib/agent-session-launch-config'
 import { cn } from '@/lib/utils'
+import { WORKSPACE_SELECTORS } from '@/test/selectors'
 import { resolveLaunchConfigAgainstCatalog } from './resolveLaunchConfig'
 
 export type { Model }
@@ -42,7 +43,8 @@ export function AgentSessionLaunchButton({ onNewTab, onOpenRunForm }: AgentSessi
               className={cn(
                 'h-7 px-2 rounded-md rounded-r-none',
                 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
-              )}>
+              )}
+              data-testid={WORKSPACE_SELECTORS.plusButton}>
               <Plus className="h-4 w-4" />
               <span className="sr-only">New terminal</span>
             </Button>

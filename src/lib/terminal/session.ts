@@ -49,6 +49,33 @@ function encodeSystemMessage(text: string): Uint8Array {
   return new TextEncoder().encode(text)
 }
 
+function normalizeSeq(rawSeq: unknown): bigint {
+  if (typeof rawSeq === 'bigint') {
+    return rawSeq
+  }
+
+  if (typeof rawSeq === 'number') {
+    if (!Number.isSafeInteger(rawSeq) || rawSeq < 0) {
+      throw new Error(`[terminal_session] Invalid seq value: ${rawSeq}`)
+    }
+    return BigInt(rawSeq)
+  }
+
+  if (typeof rawSeq === 'string') {
+    try {
+      const parsed = BigInt(rawSeq)
+      if (parsed < 0n) {
+        throw new Error()
+      }
+      return parsed
+    } catch {
+      throw new Error(`[terminal_session] Invalid seq value: ${rawSeq}`)
+    }
+  }
+
+  throw new Error(`[terminal_session] Invalid seq type: ${typeof rawSeq}`)
+}
+
 export function useTerminalSession(config: TerminalSessionConfig, handlers: TerminalSessionHandlers) {
   const isReadyRef = useRef(false)
   const outputBufferRef = useRef<Uint8Array[]>([])
@@ -161,8 +188,8 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
         }
 
         for (const chunk of replayResult.chunks) {
-          deliverOutputChunk(chunk.seq, chunk.data)
-          cursor = chunk.seq
+          deliverOutputChunk(normalizeSeq(chunk.seq), chunk.data)
+          cursor = normalizeSeq(chunk.seq)
         }
 
         if (!replayResult.hasMore) {
@@ -253,15 +280,34 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
 
     Promise.all([
       terminalBridgeListenSessionOutput(sessionId, payload => {
+        let seq: bigint
+        try {
+          seq = normalizeSeq(payload.seq)
+        } catch (error) {
+          handlersRef.current.onError?.(String(error))
+          return
+        }
+
+        try {
+          decodeOutputBytes(payload.data)
+        } catch (error) {
+          handlersRef.current.onError?.(String(error))
+          return
+        }
+
         markSessionStarted()
         flushPendingInput()
 
         if (isResumingRef.current) {
-          queuedLiveOutputRef.current.push({ seq: payload.seq, data: payload.data })
+          queuedLiveOutputRef.current.push({ seq, data: payload.data })
           return
         }
 
-        deliverOutputChunk(payload.seq, payload.data)
+        try {
+          deliverOutputChunk(seq, payload.data)
+        } catch (error) {
+          handlersRef.current.onError?.(String(error))
+        }
       }),
       terminalBridgeListenSessionClosed(sessionId, payload => {
         if (!sessionStartedRef.current) return
@@ -303,36 +349,49 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     let cancelled = false
 
     const syncRuntimeMode = async () => {
-      if (!isActive) {
+      try {
+        if (!isActive) {
+          await terminalBridgeSetStreamMode(sessionId, 'buffered')
+          return
+        }
+
+        isResumingRef.current = true
+        queuedLiveOutputRef.current = []
+
         await terminalBridgeSetStreamMode(sessionId, 'buffered')
-        return
+        let cursor = await replayBufferedOutput(lastDeliveredSeqRef.current)
+        await terminalBridgeSetStreamMode(sessionId, 'live')
+        cursor = await replayBufferedOutput(cursor, 1024)
+
+        const queued = [...queuedLiveOutputRef.current].sort((left, right) => {
+          if (left.seq < right.seq) return -1
+          if (left.seq > right.seq) return 1
+          return 0
+        })
+        queuedLiveOutputRef.current = []
+        for (const chunk of queued) {
+          deliverOutputChunk(chunk.seq, chunk.data)
+        }
+      } catch (error) {
+        if (!cancelled && isActive) {
+          try {
+            await terminalBridgeSetStreamMode(sessionId, 'live')
+          } catch (restoreError) {
+            handlersRef.current.onError?.(
+              `[terminal_session] Failed to restore stream mode to live: ${String(restoreError)}`
+            )
+          }
+        }
+        throw error
+      } finally {
+        if (cancelled) return
+        isResumingRef.current = false
+        queuedLiveOutputRef.current = []
       }
-
-      isResumingRef.current = true
-      queuedLiveOutputRef.current = []
-
-      await terminalBridgeSetStreamMode(sessionId, 'buffered')
-      let cursor = await replayBufferedOutput(lastDeliveredSeqRef.current)
-      await terminalBridgeSetStreamMode(sessionId, 'live')
-      cursor = await replayBufferedOutput(cursor, 1024)
-
-      const queued = [...queuedLiveOutputRef.current].sort((left, right) => {
-        if (left.seq < right.seq) return -1
-        if (left.seq > right.seq) return 1
-        return 0
-      })
-      queuedLiveOutputRef.current = []
-      for (const chunk of queued) {
-        deliverOutputChunk(chunk.seq, chunk.data)
-      }
-
-      if (cancelled) return
-      isResumingRef.current = false
     }
 
     syncRuntimeMode().catch(err => {
-      isResumingRef.current = false
-      queuedLiveOutputRef.current = []
+      if (cancelled) return
       handlersRef.current.onError?.(String(err))
     })
 
