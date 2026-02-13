@@ -97,7 +97,12 @@ impl SqliteDb {
 
         let mut stmt = self
             .conn
-            .prepare("SELECT id, title FROM tasks WHERE feature_id = ?1")
+            .prepare(
+                "SELECT rt.id, td.title \
+                 FROM runtime_tasks rt \
+                 JOIN task_details td ON rt.details_id = td.id \
+                 WHERE rt.feature_id = ?1",
+            )
             .ralph_err(codes::DB_READ, "Failed to prepare query")?;
 
         let tasks: Vec<(u32, String)> = stmt

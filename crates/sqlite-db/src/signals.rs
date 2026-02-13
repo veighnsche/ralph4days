@@ -125,7 +125,7 @@ impl SqliteDb {
         let exists: bool = self
             .conn
             .query_row(
-                "SELECT COUNT(*) > 0 FROM tasks WHERE id = ?1",
+                "SELECT COUNT(*) > 0 FROM runtime_tasks WHERE id = ?1",
                 [task_id],
                 |row| row.get(0),
             )
@@ -162,7 +162,7 @@ impl SqliteDb {
         let task_exists: bool = self
             .conn
             .query_row(
-                "SELECT COUNT(*) > 0 FROM tasks WHERE id = ?1",
+                "SELECT COUNT(*) > 0 FROM runtime_tasks WHERE id = ?1",
                 [task_id],
                 |row| row.get(0),
             )
@@ -193,7 +193,7 @@ impl SqliteDb {
         let task_exists: bool = self
             .conn
             .query_row(
-                "SELECT COUNT(*) > 0 FROM tasks WHERE id = ?1",
+                "SELECT COUNT(*) > 0 FROM runtime_tasks WHERE id = ?1",
                 [task_id],
                 |row| row.get(0),
             )

@@ -100,17 +100,35 @@ CREATE TABLE discipline_mcp_server_env (
   UNIQUE(server_id, key)
 ) STRICT;
 
--- Tasks
-CREATE TABLE tasks (
+-- Shared task definitions (DRY source for templates and runtime tasks)
+CREATE TABLE task_details (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  feature_id INTEGER NOT NULL REFERENCES features(id) ON DELETE RESTRICT,
   discipline_id INTEGER NOT NULL REFERENCES disciplines(id) ON DELETE RESTRICT,
   title TEXT NOT NULL,
   description TEXT,
-  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('draft','pending','in_progress','done','blocked','skipped','needs_input','failed')),
   priority TEXT CHECK(priority IN ('low','medium','high','critical') OR priority IS NULL),
   hints TEXT,
   estimated_turns INTEGER,
+  created TEXT,
+  updated TEXT
+) STRICT;
+
+-- Task templates (pull-based registry over shared task details)
+CREATE TABLE task_templates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  details_id INTEGER NOT NULL REFERENCES task_details(id) ON DELETE RESTRICT,
+  is_active INTEGER NOT NULL DEFAULT 1 CHECK(is_active IN (0,1)),
+  created TEXT,
+  updated TEXT
+) STRICT;
+
+-- Runtime tasks (actual task instances)
+CREATE TABLE runtime_tasks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  feature_id INTEGER NOT NULL REFERENCES features(id) ON DELETE RESTRICT,
+  details_id INTEGER NOT NULL REFERENCES task_details(id) ON DELETE RESTRICT,
+  template_id INTEGER REFERENCES task_templates(id) ON DELETE SET NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('draft','pending','in_progress','done','blocked','skipped','needs_input','failed')),
   provenance TEXT CHECK(provenance IN ('agent','human','system') OR provenance IS NULL),
   agent TEXT CHECK(agent IN ('claude','codex') OR agent IS NULL),
   model TEXT,
@@ -125,34 +143,34 @@ CREATE TABLE tasks (
 
 CREATE TABLE task_tags (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  task_id INTEGER NOT NULL REFERENCES runtime_tasks(id) ON DELETE CASCADE,
   tag TEXT NOT NULL
 ) STRICT;
 
 CREATE TABLE task_dependencies (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-  depends_on_task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  task_id INTEGER NOT NULL REFERENCES runtime_tasks(id) ON DELETE CASCADE,
+  depends_on_task_id INTEGER NOT NULL REFERENCES runtime_tasks(id) ON DELETE CASCADE,
   CHECK (task_id != depends_on_task_id),
   UNIQUE(task_id, depends_on_task_id)
 ) STRICT;
 
 CREATE TABLE task_acceptance_criteria (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  task_id INTEGER NOT NULL REFERENCES runtime_tasks(id) ON DELETE CASCADE,
   criterion TEXT NOT NULL,
   criterion_order INTEGER NOT NULL
 ) STRICT;
 
 CREATE TABLE task_context_files (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  task_id INTEGER NOT NULL REFERENCES runtime_tasks(id) ON DELETE CASCADE,
   file_path TEXT NOT NULL
 ) STRICT;
 
 CREATE TABLE task_output_artifacts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  task_id INTEGER NOT NULL REFERENCES runtime_tasks(id) ON DELETE CASCADE,
   artifact_path TEXT NOT NULL
 ) STRICT;
 
@@ -162,7 +180,7 @@ CREATE TABLE agent_sessions (
   session_number INTEGER NOT NULL UNIQUE CHECK(session_number > 0),
   kind TEXT NOT NULL CHECK(kind IN ('task_execution','human_braindump','manual','review')),
   started_by TEXT NOT NULL CHECK(started_by IN ('agent','human','system')),
-  task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL,
+  task_id INTEGER REFERENCES runtime_tasks(id) ON DELETE SET NULL,
   agent TEXT, -- claude, codex, etc.
   model TEXT,
   launch_command TEXT,
@@ -182,7 +200,7 @@ CREATE TABLE agent_sessions (
 -- Task signals (flat columns, no payload JSON)
 CREATE TABLE task_signals (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  task_id INTEGER NOT NULL REFERENCES runtime_tasks(id) ON DELETE CASCADE,
   session_id TEXT NOT NULL,
 
   verb TEXT NOT NULL CHECK(verb IN ('done','partial','stuck','ask','flag','learned','suggest','blocked')),
@@ -298,10 +316,14 @@ CREATE TABLE prompt_builder_configs (
 CREATE INDEX idx_features_name ON features(name);
 CREATE INDEX idx_disciplines_name ON disciplines(name);
 
-CREATE INDEX idx_tasks_feature ON tasks(feature_id);
-CREATE INDEX idx_tasks_discipline ON tasks(discipline_id);
-CREATE INDEX idx_tasks_status ON tasks(status);
-CREATE INDEX idx_tasks_priority ON tasks(priority);
+CREATE INDEX idx_task_details_discipline ON task_details(discipline_id);
+CREATE INDEX idx_task_templates_details ON task_templates(details_id);
+CREATE INDEX idx_task_templates_active ON task_templates(is_active);
+
+CREATE INDEX idx_runtime_tasks_feature ON runtime_tasks(feature_id);
+CREATE INDEX idx_runtime_tasks_details ON runtime_tasks(details_id);
+CREATE INDEX idx_runtime_tasks_template ON runtime_tasks(template_id);
+CREATE INDEX idx_runtime_tasks_status ON runtime_tasks(status);
 
 CREATE INDEX idx_task_tags_task ON task_tags(task_id);
 CREATE INDEX idx_task_deps_task ON task_dependencies(task_id);
@@ -327,10 +349,10 @@ CREATE INDEX idx_feature_comments_discipline ON feature_comments(discipline_id);
 CREATE INDEX idx_prompt_builder_configs_name ON prompt_builder_configs(name);
 
 -- Auto-update timestamp trigger
-CREATE TRIGGER update_task_timestamp
-AFTER UPDATE ON tasks
+CREATE TRIGGER update_runtime_task_timestamp
+AFTER UPDATE ON runtime_tasks
 FOR EACH ROW
 WHEN NEW.updated IS NULL OR OLD.updated = NEW.updated
 BEGIN
-  UPDATE tasks SET updated = datetime('now') WHERE id = NEW.id;
+  UPDATE runtime_tasks SET updated = datetime('now') WHERE id = NEW.id;
 END;
