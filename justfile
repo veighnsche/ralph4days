@@ -81,7 +81,7 @@ check:
 # Run lints (Rust + TypeScript)
 lint:
     cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
-    oxlint src
+    bunx oxlint src
     bunx biome lint src
 
 # Fix linting issues automatically

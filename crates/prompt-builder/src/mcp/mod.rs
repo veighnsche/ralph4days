@@ -43,13 +43,13 @@ fn generate_bash_tools(ctx: &PromptContext, tools: &[McpTool]) -> (Vec<McpScript
 
 /// Generate config for the TypeScript signal server.
 fn generate_signal_server(ctx: &PromptContext) -> (Vec<McpScript>, String) {
-    let task_id = match ctx.target_task_id {
-        Some(task_id) => Some(task_id),
-        None => {
+    let task_id = ctx.target_task_id.map_or_else(
+        || {
             tracing::warn!("SignalServer mode requested without target_task_id; skipping ralph-signals MCP server");
             None
-        }
-    };
+        },
+        Some,
+    );
     let session_id = uuid::Uuid::new_v4().to_string();
 
     let server_path = std::env::current_exe()

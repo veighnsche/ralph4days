@@ -1,4 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { type Page, expect, test } from '@playwright/test';
+
+async function hasNoBackend(page: Page): Promise<boolean> {
+  return await page.getByRole('heading', { name: 'No Backend Connection' }).isVisible();
+}
 
 test.describe('Chaos Testing', () => {
   test('app survives 500 random interactions', async ({ page }) => {
@@ -10,6 +14,11 @@ test.describe('Chaos Testing', () => {
     });
 
     await page.goto('/');
+    if (await hasNoBackend(page)) {
+      await expect(page.getByRole('heading', { name: 'No Backend Connection' })).toBeVisible();
+      return;
+    }
+
     await page.waitForSelector('[class*="card"]');
 
     // Inject Gremlins.js
