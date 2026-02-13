@@ -35,8 +35,9 @@ impl SqliteDb {
         self.conn
             .execute(
                 "INSERT INTO disciplines (name, display_name, acronym, icon, color, \
-                 description, system_prompt, conventions, stack_id, image_path, crops, image_prompt) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, NULL, ?9, ?10, ?11)",
+                 description, system_prompt, agent, model, effort, thinking, conventions, \
+                 stack_id, image_path, crops, image_prompt) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, NULL, ?13, ?14, ?15)",
                 rusqlite::params![
                     input.name,
                     input.display_name,
@@ -45,6 +46,10 @@ impl SqliteDb {
                     input.color,
                     input.description,
                     input.system_prompt,
+                    input.agent,
+                    input.model,
+                    input.effort,
+                    input.thinking,
                     input.conventions,
                     input.image_path,
                     input.crops,
@@ -115,8 +120,9 @@ impl SqliteDb {
         self.conn
             .execute(
                 "UPDATE disciplines SET display_name = ?1, acronym = ?2, icon = ?3, color = ?4, \
-                 description = ?5, system_prompt = ?6, conventions = ?7, image_path = ?8, \
-                 crops = ?9, image_prompt = ?10 WHERE name = ?11",
+                 description = ?5, system_prompt = ?6, agent = ?7, model = ?8, effort = ?9, \
+                 thinking = ?10, conventions = ?11, image_path = ?12, \
+                 crops = ?13, image_prompt = ?14 WHERE name = ?15",
                 rusqlite::params![
                     input.display_name,
                     input.acronym,
@@ -124,6 +130,10 @@ impl SqliteDb {
                     input.color,
                     input.description,
                     input.system_prompt,
+                    input.agent,
+                    input.model,
+                    input.effort,
+                    input.thinking,
                     input.conventions,
                     input.image_path,
                     input.crops,
@@ -199,7 +209,7 @@ impl SqliteDb {
     pub fn get_disciplines(&self) -> Vec<Discipline> {
         let Ok(mut stmt) = self.conn.prepare(
             "SELECT id, name, display_name, acronym, icon, color, description, system_prompt, \
-             conventions, stack_id, image_path, crops, image_prompt \
+             agent, model, effort, thinking, conventions, stack_id, image_path, crops, image_prompt \
              FROM disciplines ORDER BY rowid",
         ) else {
             return vec![];
@@ -216,13 +226,17 @@ impl SqliteDb {
                     color: row.get(5)?,
                     description: row.get(6)?,
                     system_prompt: row.get(7)?,
+                    agent: row.get(8)?,
+                    model: row.get(9)?,
+                    effort: row.get(10)?,
+                    thinking: row.get(11)?,
                     skills: vec![],
-                    conventions: row.get(8)?,
+                    conventions: row.get(12)?,
                     mcp_servers: vec![],
-                    stack_id: row.get(9)?,
-                    image_path: row.get(10)?,
-                    crops: row.get(11)?,
-                    image_prompt: row.get(12)?,
+                    stack_id: row.get(13)?,
+                    image_path: row.get(14)?,
+                    crops: row.get(15)?,
+                    image_prompt: row.get(16)?,
                 },
             ))
         }) else {

@@ -8,6 +8,10 @@ interface CreateDisciplineParams {
   icon: string
   color: string
   systemPrompt?: string
+  agent?: 'claude' | 'codex'
+  model?: string
+  effort?: 'low' | 'medium' | 'high'
+  thinking?: boolean
   skills?: string[]
   conventions?: string
   mcpServers?: Array<{
@@ -25,6 +29,10 @@ interface UpdateDisciplineParams {
   icon: string
   color: string
   systemPrompt?: string
+  agent?: 'claude' | 'codex'
+  model?: string
+  effort?: 'low' | 'medium' | 'high'
+  thinking?: boolean
   skills?: string[]
   conventions?: string
   mcpServers?: Array<{
@@ -56,6 +64,10 @@ export function useDisciplineMutations() {
       icon: data.icon,
       color: data.color,
       systemPrompt: data.systemPrompt,
+      agent: data.agent,
+      model: data.model?.trim() ? data.model.trim() : undefined,
+      effort: data.effort,
+      thinking: data.thinking,
       skills: data.skills || [],
       conventions: data.conventions,
       mcpServers: data.mcpServers || []
@@ -70,6 +82,10 @@ export function useDisciplineMutations() {
       icon: data.icon,
       color: data.color,
       systemPrompt: data.systemPrompt,
+      agent: data.agent,
+      model: data.model?.trim() ? data.model.trim() : undefined,
+      effort: data.effort,
+      thinking: data.thinking,
       skills: data.skills || [],
       conventions: data.conventions,
       mcpServers: data.mcpServers || []

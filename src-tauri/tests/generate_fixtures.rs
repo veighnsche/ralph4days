@@ -14,6 +14,32 @@ use sqlite_db::{
 use std::fs;
 use std::path::{Path, PathBuf};
 
+fn stack_02_launch_defaults(
+    discipline_name: &str,
+) -> (Option<String>, Option<String>, Option<String>, Option<bool>) {
+    match discipline_name {
+        "frontend" | "backend" | "integration" | "platform" => (
+            Some("codex".to_owned()),
+            Some("gpt-5.3-codex".to_owned()),
+            None,
+            Some(true),
+        ),
+        "data" | "documentation" => (
+            Some("claude".to_owned()),
+            Some("sonnet".to_owned()),
+            None,
+            Some(true),
+        ),
+        "quality" | "security" => (
+            Some("claude".to_owned()),
+            Some("opus".to_owned()),
+            Some("high".to_owned()),
+            Some(true),
+        ),
+        _ => (None, None, None, None),
+    }
+}
+
 /// Helper to initialize a project (creates .undetect-ralph/ for fixtures)
 fn initialize_project_for_fixture(
     path: PathBuf,
@@ -72,6 +98,7 @@ fn initialize_project_for_fixture(
             };
 
         let crops_json = d.crops.as_ref().and_then(|c| serde_json::to_string(c).ok());
+        let (agent, model, effort, thinking) = stack_02_launch_defaults(&d.name);
 
         db.create_discipline(sqlite_db::DisciplineInput {
             name: d.name,
@@ -80,6 +107,10 @@ fn initialize_project_for_fixture(
             icon: d.icon,
             color: d.color,
             system_prompt: Some(d.system_prompt),
+            agent,
+            model,
+            effort,
+            thinking,
             skills: skills_json,
             conventions: Some(d.conventions),
             mcp_servers: "[]".to_owned(),

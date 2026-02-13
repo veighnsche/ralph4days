@@ -49,6 +49,7 @@ export function DisciplineFormFields({ disabled, isEditing }: { disabled?: boole
   const { control, watch } = useFormContext<DisciplineFormData>()
   const iconName = watch('icon')
   const colorValue = watch('color')
+  const selectedAgent = watch('agent')
   const skills = watch('skills')
   const mcpServers = watch('mcpServers')
 
@@ -56,9 +57,10 @@ export function DisciplineFormFields({ disabled, isEditing }: { disabled?: boole
 
   return (
     <Tabs defaultValue="basic" className="w-full">
-      <TabsList className="w-full grid grid-cols-5">
+      <TabsList className="w-full grid grid-cols-6">
         <TabsTrigger value="basic">Basic</TabsTrigger>
         <TabsTrigger value="prompt">System Prompt</TabsTrigger>
+        <TabsTrigger value="launch">Launch</TabsTrigger>
         <TabsTrigger value="skills">
           Skills
           {skills && skills.length > 0 && (
@@ -217,9 +219,7 @@ export function DisciplineFormFields({ disabled, isEditing }: { disabled?: boole
                 <Textarea
                   {...field}
                   value={field.value || ''}
-                  placeholder={
-                    'Enter the system prompt for Claude Code when using this discipline...\n\nExample:\nYou are a frontend specialist focused on React and TypeScript.\n\n## Your Expertise\n- React 19 with hooks\n- TypeScript strict mode\n- Component composition\n\n## Your Approach\n1. Start with user needs\n2. Build incrementally\n3. Test as you go'
-                  }
+                  placeholder="Enter the system prompt for Claude Code when using this discipline...\n\nExample:\nYou are a frontend specialist focused on React and TypeScript.\n\n## Your Expertise\n- React 19 with hooks\n- TypeScript strict mode\n- Component composition\n\n## Your Approach\n1. Start with user needs\n2. Build incrementally\n3. Test as you go"
                   className="min-h-[400px] font-mono text-xs"
                   disabled={disabled}
                 />
@@ -227,6 +227,106 @@ export function DisciplineFormFields({ disabled, isEditing }: { disabled?: boole
               <p className="text-xs text-muted-foreground">
                 The system prompt that Claude Code receives when executing tasks in this discipline
               </p>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </TabsContent>
+
+      <TabsContent value="launch" className="space-y-3 mt-4">
+        <FormField
+          control={control}
+          name="agent"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Agent</FormLabel>
+              <FormControl>
+                <NativeSelect
+                  value={field.value || ''}
+                  onChange={e => field.onChange(e.target.value || undefined)}
+                  disabled={disabled}>
+                  <option value="">Global default</option>
+                  <option value="claude">Claude</option>
+                  <option value="codex">Codex</option>
+                </NativeSelect>
+              </FormControl>
+              <p className="text-xs text-muted-foreground">Optional default agent for tasks in this discipline</p>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={control}
+          name="model"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Model</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  value={field.value || ''}
+                  onChange={e => field.onChange(e.target.value)}
+                  placeholder={
+                    selectedAgent === 'codex'
+                      ? 'gpt-5-codex (or another codex model)'
+                      : 'claude-sonnet-4 (or another claude model)'
+                  }
+                  disabled={disabled}
+                />
+              </FormControl>
+              <p className="text-xs text-muted-foreground">Optional default model override for this discipline</p>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={control}
+          name="effort"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Effort</FormLabel>
+              <FormControl>
+                <NativeSelect
+                  value={field.value || ''}
+                  onChange={e => field.onChange(e.target.value || undefined)}
+                  disabled={disabled}>
+                  <option value="">Model default</option>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </NativeSelect>
+              </FormControl>
+              <p className="text-xs text-muted-foreground">Optional default effort for selected model</p>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={control}
+          name="thinking"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Thinking</FormLabel>
+              <FormControl>
+                <NativeSelect
+                  value={field.value === undefined ? '' : field.value ? 'true' : 'false'}
+                  onChange={e => {
+                    if (!e.target.value) {
+                      field.onChange(undefined)
+                      return
+                    }
+                    field.onChange(e.target.value === 'true')
+                  }}
+                  disabled={disabled}>
+                  <option value="">Global default</option>
+                  <option value="true">On</option>
+                  <option value="false">Off</option>
+                </NativeSelect>
+              </FormControl>
+              <p className="text-xs text-muted-foreground">Optional default thinking mode for this discipline</p>
               <FormMessage />
             </FormItem>
           )}
@@ -251,9 +351,7 @@ export function DisciplineFormFields({ disabled, isEditing }: { disabled?: boole
                         .filter(Boolean)
                     )
                   }
-                  placeholder={
-                    'React 19\nTypeScript\nTailwind CSS v4\nComponent Composition\nState Management\nAccessibility\nPerformance Optimization'
-                  }
+                  placeholder="React 19\nTypeScript\nTailwind CSS v4\nComponent Composition\nState Management\nAccessibility\nPerformance Optimization"
                   className="min-h-[300px] font-mono text-xs"
                   disabled={disabled}
                 />

@@ -14,6 +14,10 @@ export const disciplineSchema = z.object({
   icon: z.string(),
   color: z.string(),
   systemPrompt: z.string().optional(),
+  agent: z.enum(['claude', 'codex']).optional(),
+  model: z.string().optional(),
+  effort: z.enum(['low', 'medium', 'high']).optional(),
+  thinking: z.boolean().optional(),
   skills: z.array(z.string()).optional(),
   conventions: z.string().optional(),
   mcpServers: z.array(mcpServerSchema).optional()

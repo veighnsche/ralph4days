@@ -28,6 +28,10 @@ export type DisciplineConfig = {
   acronym: string
   description?: string
   systemPrompt?: string
+  agent?: string
+  model?: string
+  effort?: string
+  thinking?: boolean
   skills: string[]
   conventions?: string
   mcpServers: McpServerConfigData[]

@@ -12,7 +12,7 @@ import { useDisciplineStats, useStackMetadata } from '@/hooks/disciplines'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
 export function DisciplinesPage() {
-  const { disciplines, statsMap, progress, isLoading: disciplinesLoading } = useDisciplineStats()
+  const { disciplines, progress, isLoading: disciplinesLoading } = useDisciplineStats()
   const { stacks, isLoading: stacksLoading } = useStackMetadata()
   const openTab = useWorkspaceStore(s => s.openTab)
 
@@ -94,15 +94,12 @@ export function DisciplinesPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {disciplines.map(discipline => {
               const Icon = discipline.icon
-              const stats = statsMap.get(discipline.name) || {
-                total: 0,
-                done: 0,
-                pending: 0,
-                inProgress: 0,
-                blocked: 0,
-                skipped: 0
-              }
               const stackName = discipline.stackId != null ? stackNameMap.get(discipline.stackId) : undefined
+              const modelSummary = discipline.model
+                ? discipline.effort
+                  ? `${discipline.model} (${discipline.effort})`
+                  : discipline.model
+                : 'No model set'
 
               return (
                 <button
@@ -146,9 +143,7 @@ export function DisciplinesPage() {
 
                     <div className="px-2.5 py-2 space-y-0.5">
                       <h4 className="font-bold text-sm leading-tight">{discipline.displayName}</h4>
-                      <p className="text-[11px] text-muted-foreground">
-                        {stats.total} tasks{stats.inProgress > 0 && ` \u2022 ${stats.inProgress} active`}
-                      </p>
+                      <p className="text-[11px] text-muted-foreground">{modelSummary}</p>
                     </div>
                   </div>
                 </button>

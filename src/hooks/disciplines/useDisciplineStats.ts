@@ -5,8 +5,8 @@ import type { Task } from '@/types/generated'
 import { useDisciplines } from './useDisciplines'
 
 export function useDisciplineStats() {
-  const { disciplines, error: disciplinesError } = useDisciplines()
-  const { data: tasks = [], isLoading: tasksLoading } = useInvoke<Task[]>('get_tasks')
+  const { disciplines, error: disciplinesError, isLoading: disciplinesLoading } = useDisciplines()
+  const { data: tasks = [], isLoading: tasksLoading, error: tasksError } = useInvoke<Task[]>('get_tasks')
 
   const statsMap = useMemo(() => computeDisciplineStats(tasks, disciplines), [tasks, disciplines])
   const progress = useMemo(() => computeProjectProgress(tasks), [tasks])
@@ -19,7 +19,7 @@ export function useDisciplineStats() {
       done: progress.doneTasks,
       percent: progress.progressPercent
     },
-    isLoading: disciplines.length === 0 || tasksLoading,
-    error: disciplinesError ? String(disciplinesError) : null
+    isLoading: disciplinesLoading || tasksLoading,
+    error: disciplinesError ?? (tasksError ? String(tasksError) : null)
   }
 }

@@ -315,6 +315,10 @@ pub struct DisciplineInput {
     pub color: String,
     pub description: Option<String>,
     pub system_prompt: Option<String>,
+    pub agent: Option<String>,
+    pub model: Option<String>,
+    pub effort: Option<String>,
+    pub thinking: Option<bool>,
     pub skills: String,
     pub conventions: Option<String>,
     pub mcp_servers: String,
@@ -335,6 +339,14 @@ pub struct Discipline {
     pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub system_prompt: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub effort: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thinking: Option<bool>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub skills: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

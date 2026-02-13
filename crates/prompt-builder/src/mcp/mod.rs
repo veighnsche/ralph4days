@@ -394,6 +394,10 @@ mod tests {
             color: "blue".to_owned(),
             acronym: "FE".to_owned(),
             system_prompt: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
             skills: vec![],
             conventions: None,
             mcp_servers: vec![McpServerConfig {
