@@ -4,6 +4,7 @@ import { resolveIcon } from '@/lib/iconRegistry'
 import type { DisciplineConfig as DisciplineConfigWire, DisciplineCropsData } from '@/types/generated'
 
 export interface DisciplineConfig {
+  id: number
   name: string
   displayName: string
   acronym: string
@@ -21,6 +22,7 @@ export interface DisciplineConfig {
 
 function resolveDisciplines(raw: DisciplineConfigWire[]): DisciplineConfig[] {
   return raw.map(d => ({
+    id: d.id,
     name: d.name,
     displayName: d.displayName,
     acronym: d.acronym,

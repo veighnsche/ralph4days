@@ -219,6 +219,7 @@ impl SqliteDb {
             Ok((
                 row.get::<_, i64>(0)?,
                 Discipline {
+                    id: row.get(0)?,
                     name: row.get(1)?,
                     display_name: row.get(2)?,
                     acronym: row.get(3)?,

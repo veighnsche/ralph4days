@@ -127,7 +127,7 @@ impl SqliteDb {
 
     pub fn get_features(&self) -> Vec<Feature> {
         let Ok(mut stmt) = self.conn.prepare(
-            "SELECT name, display_name, acronym, description, created, status \
+            "SELECT id, name, display_name, acronym, description, created, status \
              FROM features ORDER BY name",
         ) else {
             return vec![];
@@ -136,14 +136,15 @@ impl SqliteDb {
         let mut comments_map = self.get_all_comments_by_feature();
 
         stmt.query_map([], |row| {
-            let status_str: String = row.get(5)?;
-            let name: String = row.get(0)?;
+            let status_str: String = row.get(6)?;
+            let name: String = row.get(1)?;
             Ok(Feature {
+                id: row.get(0)?,
                 name,
-                display_name: row.get(1)?,
-                acronym: row.get(2)?,
-                description: row.get(3)?,
-                created: row.get(4)?,
+                display_name: row.get(2)?,
+                acronym: row.get(3)?,
+                description: row.get(4)?,
+                created: row.get(5)?,
                 status: FeatureStatus::parse(&status_str).unwrap_or(FeatureStatus::Active),
                 comments: vec![],
             })

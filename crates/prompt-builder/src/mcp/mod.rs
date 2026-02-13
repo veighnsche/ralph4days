@@ -392,6 +392,7 @@ mod tests {
         let mut env = HashMap::new();
         env.insert("NODE_ENV".to_owned(), "development".to_owned());
         ctx.disciplines = vec![Discipline {
+            id: 1,
             name: "frontend".to_owned(),
             display_name: "Frontend".to_owned(),
             icon: "code".to_owned(),

@@ -76,6 +76,7 @@ mod tests {
 
     fn test_feature(name: &str, display: &str, description: Option<&str>) -> Feature {
         Feature {
+            id: 1,
             name: name.to_owned(),
             display_name: display.to_owned(),
             acronym: "TEST".to_owned(),

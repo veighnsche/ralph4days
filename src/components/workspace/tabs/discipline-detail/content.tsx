@@ -195,14 +195,14 @@ function DisciplineSidebar({ discipline, stackName }: { discipline: DisciplineCo
 }
 
 export function DisciplineDetailTabContent({ tab, params }: { tab: WorkspaceTab; params: DisciplineDetailTabParams }) {
-  const { entityId: disciplineName } = params
+  const { entityId: disciplineId } = params
 
   const { data: disciplines, isLoading } = useInvoke<DisciplineConfig[]>('get_disciplines_config', undefined, {
     staleTime: 5 * 60 * 1000
   })
   const { stacks } = useStackMetadata()
 
-  const discipline = disciplines?.find(d => d.name === disciplineName)
+  const discipline = disciplines?.find(d => d.id === disciplineId)
   const stackName = discipline?.stackId != null ? stacks.find(s => s.stackId === discipline.stackId)?.name : undefined
 
   useTabMeta(tab.id, discipline?.displayName ?? DISCIPLINE_DETAIL_TAB_FALLBACK_TITLE, Layers)

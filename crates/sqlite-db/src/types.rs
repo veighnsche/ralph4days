@@ -293,6 +293,7 @@ pub struct FeatureComment {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Feature {
+    pub id: u32,
     pub name: String,
     pub display_name: String,
     #[serde(default)]
@@ -337,6 +338,7 @@ pub struct DisciplineInput {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Discipline {
+    pub id: u32,
     pub name: String,
     pub display_name: String,
     pub icon: String,

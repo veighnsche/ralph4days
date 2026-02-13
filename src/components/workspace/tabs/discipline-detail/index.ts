@@ -5,10 +5,7 @@ export {
   DISCIPLINE_DETAIL_TAB_FALLBACK_TITLE
 } from './constants'
 export { DisciplineDetailTabContent } from './content'
-export {
-  createDisciplineDetailTab,
-  type DisciplineDetailTabInput
-} from './factory'
+export { createDisciplineDetailTab } from './factory'
 export { disciplineDetailTabModule } from './module'
 export {
   type DisciplineDetailTabParams,

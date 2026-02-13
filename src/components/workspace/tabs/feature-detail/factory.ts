@@ -1,15 +1,14 @@
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
-import type { FeatureData } from '@/types/generated'
 import type { FeatureDetailTabParams } from './schema'
 
-export function createFeatureDetailTab(feature: FeatureData): Omit<WorkspaceTab, 'id'> {
+export function createFeatureDetailTab(featureId: number): Omit<WorkspaceTab, 'id'> {
   return {
     type: 'feature-detail',
-    title: feature.displayName,
-    key: feature.name,
+    title: `Feature #${featureId.toString().padStart(3, '0')}`,
+    key: String(featureId),
     closeable: true,
     params: {
-      entityId: feature.name
+      entityId: featureId
     } satisfies FeatureDetailTabParams
   }
 }

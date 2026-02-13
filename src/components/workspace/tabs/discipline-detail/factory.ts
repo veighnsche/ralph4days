@@ -1,19 +1,14 @@
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import type { DisciplineDetailTabParams } from './schema'
 
-export type DisciplineDetailTabInput = {
-  name: string
-  displayName: string
-}
-
-export function createDisciplineDetailTab(discipline: DisciplineDetailTabInput): Omit<WorkspaceTab, 'id'> {
+export function createDisciplineDetailTab(disciplineId: number): Omit<WorkspaceTab, 'id'> {
   return {
     type: 'discipline-detail',
-    title: discipline.displayName,
-    key: discipline.name,
+    title: `Discipline #${disciplineId.toString().padStart(3, '0')}`,
+    key: String(disciplineId),
     closeable: true,
     params: {
-      entityId: discipline.name
+      entityId: disciplineId
     } satisfies DisciplineDetailTabParams
   }
 }

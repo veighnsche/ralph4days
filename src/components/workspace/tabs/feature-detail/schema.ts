@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const featureDetailTabParamsSchema = z.object({
-  entityId: z.string().trim().min(1)
+  entityId: z.number().int().positive()
 })
 
 export type FeatureDetailTabParams = z.infer<typeof featureDetailTabParamsSchema>

@@ -21,6 +21,7 @@ export type AgentSession = {
 }
 export type CropBoxData = { x: number; y: number; w: number; h: number }
 export type DisciplineConfig = {
+  id: number
   name: string
   displayName: string
   icon: string
@@ -74,6 +75,7 @@ export type FeatureCommentData = {
   updated?: string
 }
 export type FeatureData = {
+  id: number
   name: string
   displayName: string
   acronym: string

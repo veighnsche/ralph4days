@@ -65,6 +65,7 @@ pub struct DisciplineImagePromptData {
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DisciplineConfig {
+    pub id: u32,
     pub name: String,
     pub display_name: String,
     pub icon: String,
@@ -92,6 +93,7 @@ pub fn get_disciplines_config(state: State<'_, AppState>) -> Result<Vec<Discipli
             .get_disciplines()
             .iter()
             .map(|d| DisciplineConfig {
+                id: d.id,
                 name: d.name.clone(),
                 display_name: d.display_name.clone(),
                 icon: d.icon.clone(),
@@ -157,6 +159,7 @@ pub struct FeatureCommentData {
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FeatureData {
+    pub id: u32,
     pub name: String,
     pub display_name: String,
     pub acronym: String,
@@ -188,6 +191,7 @@ pub fn get_features(state: State<'_, AppState>) -> Result<Vec<FeatureData>, Stri
             .get_features()
             .iter()
             .map(|f| FeatureData {
+                id: f.id,
                 name: f.name.clone(),
                 display_name: f.display_name.clone(),
                 acronym: f.acronym.clone(),

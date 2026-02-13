@@ -102,7 +102,7 @@ export function TasksPage() {
           filteredTasks={filteredTasks}
           totalTasks={totalTasks}
           cropsStore={cropsStore}
-          onTaskClick={task => openTab(createTaskDetailTab(task))}
+          onTaskClick={task => openTab(createTaskDetailTab(task.id))}
           onClearFilters={clearFilters}
         />
       </PageContent>

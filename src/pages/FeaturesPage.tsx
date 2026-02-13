@@ -124,8 +124,8 @@ export function FeaturesPage() {
                     className="cursor-pointer hover:bg-muted/50"
                     role="button"
                     tabIndex={0}
-                    onClick={() => openTab(createFeatureDetailTab(feature))}
-                    onKeyDown={e => e.key === 'Enter' && openTab(createFeatureDetailTab(feature))}>
+                    onClick={() => openTab(createFeatureDetailTab(feature.id))}
+                    onKeyDown={e => e.key === 'Enter' && openTab(createFeatureDetailTab(feature.id))}>
                     <ItemContent>
                       <ItemTitle>
                         {feature.displayName}

@@ -16,7 +16,6 @@ export {
 } from './contracts'
 export {
   createDisciplineDetailTab,
-  type DisciplineDetailTabInput,
   type DisciplineDetailTabParams
 } from './discipline-detail'
 export { createFeatureDetailTab, type FeatureDetailTabParams } from './feature-detail'

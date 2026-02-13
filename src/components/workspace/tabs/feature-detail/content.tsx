@@ -125,15 +125,15 @@ function FeatureSidebar({
 }
 
 export function FeatureDetailTabContent({ tab, params }: { tab: WorkspaceTab; params: FeatureDetailTabParams }) {
-  const { entityId: featureName } = params
+  const { entityId: featureId } = params
 
   const { data: features, isLoading } = useInvoke<FeatureData[]>('get_features', undefined, {
     staleTime: 5 * 60 * 1000
   })
   const { statsMap } = useFeatureStats()
 
-  const feature = features?.find(f => f.name === featureName)
-  const stats = statsMap.get(featureName) || {
+  const feature = features?.find(f => f.id === featureId)
+  const stats = statsMap.get(feature?.name ?? '') || {
     total: 0,
     done: 0,
     pending: 0,

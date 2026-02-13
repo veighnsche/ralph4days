@@ -1,16 +1,14 @@
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
-import type { Task } from '@/types/generated'
 import type { TaskDetailTabParams } from './schema'
 
-export function createTaskDetailTab(task: Task): Omit<WorkspaceTab, 'id'> {
+export function createTaskDetailTab(taskId: number): Omit<WorkspaceTab, 'id'> {
   return {
     type: 'task-detail',
-    title: task.title,
-    key: String(task.id),
+    title: `Task #${taskId.toString().padStart(3, '0')}`,
+    key: String(taskId),
     closeable: true,
     params: {
-      entityId: task.id,
-      entity: task
+      entityId: taskId
     } satisfies TaskDetailTabParams
   }
 }

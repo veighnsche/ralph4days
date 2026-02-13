@@ -111,7 +111,7 @@ export function DisciplinesPage() {
                       '--disc-color': discipline.color
                     } as React.CSSProperties
                   }
-                  onClick={() => openTab(createDisciplineDetailTab(discipline))}>
+                  onClick={() => openTab(createDisciplineDetailTab(discipline.id))}>
                   <div
                     className="h-full rounded-lg border-2 bg-card overflow-hidden cursor-pointer transition-shadow duration-200 hover:shadow-[0_0_12px_var(--disc-color)]"
                     style={{ borderColor: discipline.color }}>
