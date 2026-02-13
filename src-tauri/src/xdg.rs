@@ -13,6 +13,16 @@ pub struct XdgDirs {
 
 #[allow(dead_code)]
 impl XdgDirs {
+    pub fn fallback() -> Self {
+        let base = std::env::temp_dir().join(format!("{APP_NAME}-fallback"));
+        Self {
+            data: base.join("data"),
+            config: base.join("config"),
+            cache: base.join("cache"),
+            state: base.join("state"),
+        }
+    }
+
     pub fn resolve() -> Result<Self, String> {
         let data = dirs::data_dir()
             .ok_or_else(|| ralph_errors::err_string(codes::FILESYSTEM, "No XDG data directory"))?

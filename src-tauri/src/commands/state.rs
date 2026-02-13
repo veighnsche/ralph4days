@@ -19,13 +19,21 @@ pub struct AppState {
 
 impl Default for AppState {
     fn default() -> Self {
+        let xdg = match XdgDirs::resolve() {
+            Ok(xdg) => xdg,
+            Err(error) => {
+                tracing::warn!("Failed to resolve XDG directories: {error}. Using fallback temp directories.");
+                XdgDirs::fallback()
+            }
+        };
+
         Self {
             locked_project: Mutex::new(None),
             db: Mutex::new(None),
             codebase_snapshot: Mutex::new(None),
             pty_manager: PTYManager::new(),
             mcp_dir: std::env::temp_dir().join(format!("ralph-mcp-{}", std::process::id())),
-            xdg: XdgDirs::resolve().expect("Failed to resolve XDG directories"),
+            xdg,
             api_server_port: Mutex::new(None),
         }
     }
