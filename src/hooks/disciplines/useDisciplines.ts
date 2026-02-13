@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { useInvoke } from '@/hooks/api'
+import { type InvokeQueryDomain, useInvoke } from '@/hooks/api'
 import { resolveIcon } from '@/lib/iconRegistry'
 import { type Acronym, toAcronym } from '@/types/acronym'
 import type { DisciplineConfig as DisciplineConfigWire, DisciplineCropsData } from '@/types/generated'
@@ -40,11 +40,12 @@ function resolveDisciplines(raw: DisciplineConfigWire[]): DisciplineConfig[] {
   }))
 }
 
-export function useDisciplines() {
+export function useDisciplines(queryDomain: InvokeQueryDomain = 'app') {
   const { data, error, isLoading } = useInvoke<DisciplineConfigWire[], DisciplineConfig[]>(
     'get_disciplines_config',
     undefined,
     {
+      queryDomain,
       staleTime: 5 * 60 * 1000,
       select: resolveDisciplines
     }

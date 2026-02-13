@@ -105,15 +105,10 @@ export function DisciplinesPage() {
                 <button
                   key={discipline.name}
                   type="button"
-                  className="text-left transition-all duration-200 hover:scale-[1.03] rounded-lg"
-                  style={
-                    {
-                      '--disc-color': discipline.color
-                    } as React.CSSProperties
-                  }
+                  className="text-left rounded-lg transition-transform duration-150 ease-out hover:scale-[1.01] focus-visible:scale-[1.01] motion-reduce:transform-none"
                   onClick={() => openTab(createDisciplineDetailTab(discipline.id))}>
                   <div
-                    className="h-full rounded-lg border-2 bg-card overflow-hidden cursor-pointer transition-shadow duration-200 hover:shadow-[0_0_12px_var(--disc-color)]"
+                    className="h-full rounded-lg border-2 bg-card overflow-hidden cursor-pointer transition-colors duration-150"
                     style={{ borderColor: discipline.color }}>
                     <div className="flex items-center justify-between px-2.5 py-1.5">
                       <DisciplineLabel acronym={discipline.acronym} color={discipline.color} className="font-bold" />

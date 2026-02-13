@@ -1,4 +1,25 @@
-import * as LucideIcons from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import {
+  BookOpen,
+  Cable,
+  Cloud,
+  Code,
+  Cpu,
+  Database,
+  FileText,
+  FlaskConical,
+  Layers,
+  Monitor,
+  Package,
+  Palette,
+  Rocket,
+  Server,
+  Settings,
+  Shield,
+  Target,
+  TestTube,
+  Wrench
+} from 'lucide-react'
 import { useFormContext } from 'react-hook-form'
 import { Badge } from '@/components/ui/badge'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -8,7 +29,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import type { DisciplineFormData } from '@/lib/schemas'
 
-const COMMON_ICONS = [
+type DisciplineIconName =
+  | 'Code'
+  | 'Palette'
+  | 'Database'
+  | 'Shield'
+  | 'TestTube'
+  | 'BookOpen'
+  | 'Wrench'
+  | 'Rocket'
+  | 'Monitor'
+  | 'Cloud'
+  | 'Cpu'
+  | 'Settings'
+  | 'FileText'
+  | 'Layers'
+  | 'Package'
+  | 'Target'
+  | 'Server'
+  | 'Cable'
+  | 'FlaskConical'
+
+const COMMON_ICONS: readonly DisciplineIconName[] = [
   'Code',
   'Palette',
   'Database',
@@ -29,6 +71,28 @@ const COMMON_ICONS = [
   'Cable',
   'FlaskConical'
 ] as const
+
+const DISCIPLINE_ICONS: Record<DisciplineIconName, LucideIcon> = {
+  Code,
+  Palette,
+  Database,
+  Shield,
+  TestTube,
+  BookOpen,
+  Wrench,
+  Rocket,
+  Monitor,
+  Cloud,
+  Cpu,
+  Settings,
+  FileText,
+  Layers,
+  Package,
+  Target,
+  Server,
+  Cable,
+  FlaskConical
+}
 
 const COMMON_COLORS = [
   { name: 'Blue', value: '#3b82f6' },
@@ -53,7 +117,7 @@ export function DisciplineFormFields({ disabled, isEditing }: { disabled?: boole
   const skills = watch('skills')
   const mcpServers = watch('mcpServers')
 
-  const IconComponent = LucideIcons[iconName as keyof typeof LucideIcons] as LucideIcons.LucideIcon
+  const IconComponent = DISCIPLINE_ICONS[(iconName as DisciplineIconName) ?? 'Code'] ?? null
 
   return (
     <Tabs defaultValue="basic" className="w-full">

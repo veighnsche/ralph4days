@@ -14,6 +14,7 @@ export interface WorkspaceTabModule<TType extends string = string, TParams = unk
   parseParams: (params: unknown) => TParams
   createTab: (input: TInput) => Omit<WorkspaceTab, 'id'>
   lifecycle?: WorkspaceTabLifecycle
+  keepAliveOnDeactivate?: boolean
 }
 
 export function defineWorkspaceTabModule<TType extends string, TParams = unknown, TInput = unknown>(

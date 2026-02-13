@@ -2,8 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   terminalBridgeListenSessionClosed,
   terminalBridgeListenSessionOutput,
+  terminalBridgeReplayOutput,
   terminalBridgeResize,
   terminalBridgeSendInput,
+  terminalBridgeSetStreamMode,
   terminalBridgeStartHumanSession,
   terminalBridgeStartSession,
   terminalBridgeStartTaskSession,
@@ -20,6 +22,7 @@ export interface TerminalSessionConfig {
   thinking?: boolean | null
   permissionLevel?: 'safe' | 'balanced' | 'auto' | 'full_auto' | null
   enabled?: boolean
+  isActive?: boolean
   humanSession?: {
     kind: string
     agent?: string
@@ -42,6 +45,10 @@ function decodeOutputBytes(base64Data: string): Uint8Array {
   return bytes
 }
 
+function encodeSystemMessage(text: string): Uint8Array {
+  return new TextEncoder().encode(text)
+}
+
 export function useTerminalSession(config: TerminalSessionConfig, handlers: TerminalSessionHandlers) {
   const isReadyRef = useRef(false)
   const outputBufferRef = useRef<Uint8Array[]>([])
@@ -51,8 +58,14 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
   const startedNotifiedRef = useRef(false)
   const startRequestedRef = useRef(false)
   const handlersRef = useRef(handlers)
+  const lastDeliveredSeqRef = useRef<bigint>(0n)
+  const deliveredSystemSeqZeroRef = useRef(false)
+  const isResumingRef = useRef(false)
+  const queuedLiveOutputRef = useRef<Array<{ seq: bigint; data: string }>>([])
   handlersRef.current = handlers
+
   const isEnabled = config.enabled ?? true
+  const isActive = config.isActive ?? true
   const sessionId = config.sessionId
   const mcpMode = config.mcpMode
   const taskId = config.taskId
@@ -67,9 +80,45 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
   const humanPostStartPreamble = humanSession?.postStartPreamble
   const humanInitPrompt = humanSession?.initPrompt
   const [listenersReady, setListenersReady] = useState(false)
+  const [streamReady, setStreamReady] = useState(false)
+
+  const emitOutputBytes = useCallback((bytes: Uint8Array) => {
+    if (isReadyRef.current) {
+      handlersRef.current.onOutput?.(bytes)
+    } else {
+      outputBufferRef.current.push(bytes)
+    }
+  }, [])
+
+  const emitSystemMessage = useCallback(
+    (text: string) => {
+      emitOutputBytes(encodeSystemMessage(text))
+    },
+    [emitOutputBytes]
+  )
+
+  const deliverOutputChunk = useCallback(
+    (seq: bigint, base64Data: string) => {
+      if (seq === 0n) {
+        if (deliveredSystemSeqZeroRef.current) return
+        deliveredSystemSeqZeroRef.current = true
+      } else if (seq <= lastDeliveredSeqRef.current) {
+        return
+      }
+      const bytes = decodeOutputBytes(base64Data)
+      if (seq !== 0n) {
+        lastDeliveredSeqRef.current = seq
+      }
+      emitOutputBytes(bytes)
+    },
+    [emitOutputBytes]
+  )
 
   const markSessionStarted = useCallback(() => {
-    sessionStartedRef.current = true
+    if (!sessionStartedRef.current) {
+      sessionStartedRef.current = true
+      setStreamReady(true)
+    }
     if (pendingResizeRef.current) {
       const { cols, rows } = pendingResizeRef.current
       pendingResizeRef.current = null
@@ -95,6 +144,36 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     markSessionStarted()
     flushPendingInput()
   }, [markSessionStarted, flushPendingInput])
+
+  const replayBufferedOutput = useCallback(
+    async (afterSeq: bigint, limit = 256) => {
+      let cursor = afterSeq
+      let replayLoops = 0
+      let truncationNotified = false
+
+      while (replayLoops < 128) {
+        replayLoops += 1
+        const replayResult = await terminalBridgeReplayOutput(sessionId, cursor, limit)
+
+        if (replayResult.truncated && !truncationNotified) {
+          truncationNotified = true
+          emitSystemMessage('\r\n\x1b[2m[output replay truncated while inactive]\x1b[0m\r\n')
+        }
+
+        for (const chunk of replayResult.chunks) {
+          deliverOutputChunk(chunk.seq, chunk.data)
+          cursor = chunk.seq
+        }
+
+        if (!replayResult.hasMore) {
+          break
+        }
+      }
+
+      return cursor
+    },
+    [deliverOutputChunk, emitSystemMessage, sessionId]
+  )
 
   const startHumanSession = useCallback(() => {
     if (!humanKind) return null
@@ -156,26 +235,33 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     startRequestedRef.current = false
     sessionStartedRef.current = false
     startedNotifiedRef.current = false
+    isReadyRef.current = false
     outputBufferRef.current = []
     pendingInputRef.current = []
     pendingResizeRef.current = null
+    lastDeliveredSeqRef.current = 0n
+    deliveredSystemSeqZeroRef.current = false
+    isResumingRef.current = false
+    queuedLiveOutputRef.current = []
 
     let active = true
     let unlistenOutput: (() => void) | null = null
     let unlistenClosed: (() => void) | null = null
 
     setListenersReady(false)
+    setStreamReady(false)
 
     Promise.all([
       terminalBridgeListenSessionOutput(sessionId, payload => {
         markSessionStarted()
         flushPendingInput()
-        const bytes = decodeOutputBytes(payload.data)
-        if (isReadyRef.current) {
-          handlersRef.current.onOutput?.(bytes)
-        } else {
-          outputBufferRef.current.push(bytes)
+
+        if (isResumingRef.current) {
+          queuedLiveOutputRef.current.push({ seq: payload.seq, data: payload.data })
+          return
         }
+
+        deliverOutputChunk(payload.seq, payload.data)
       }),
       terminalBridgeListenSessionClosed(sessionId, payload => {
         if (!sessionStartedRef.current) return
@@ -192,10 +278,11 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     return () => {
       active = false
       setListenersReady(false)
+      setStreamReady(false)
       unlistenOutput?.()
       unlistenClosed?.()
     }
-  }, [flushPendingInput, isEnabled, markSessionStarted, sessionId])
+  }, [deliverOutputChunk, flushPendingInput, isEnabled, markSessionStarted, sessionId])
 
   useEffect(() => {
     if (!(isEnabled && listenersReady) || startRequestedRef.current) return
@@ -209,6 +296,52 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     const startPromise = startHumanSession() ?? startTaskSession() ?? startInteractiveSession()
     startPromise.then(notifyStartSuccess).catch(onStartFailed)
   }, [isEnabled, listenersReady, notifyStartSuccess, startHumanSession, startInteractiveSession, startTaskSession])
+
+  useEffect(() => {
+    if (!(isEnabled && listenersReady && streamReady)) return
+
+    let cancelled = false
+
+    const syncRuntimeMode = async () => {
+      if (!isActive) {
+        await terminalBridgeSetStreamMode(sessionId, 'buffered')
+        return
+      }
+
+      isResumingRef.current = true
+      queuedLiveOutputRef.current = []
+
+      await terminalBridgeSetStreamMode(sessionId, 'buffered')
+      let cursor = await replayBufferedOutput(lastDeliveredSeqRef.current)
+      await terminalBridgeSetStreamMode(sessionId, 'live')
+      cursor = await replayBufferedOutput(cursor, 1024)
+
+      const queued = [...queuedLiveOutputRef.current].sort((left, right) => {
+        if (left.seq < right.seq) return -1
+        if (left.seq > right.seq) return 1
+        return 0
+      })
+      queuedLiveOutputRef.current = []
+      for (const chunk of queued) {
+        deliverOutputChunk(chunk.seq, chunk.data)
+      }
+
+      if (cancelled) return
+      isResumingRef.current = false
+    }
+
+    syncRuntimeMode().catch(err => {
+      isResumingRef.current = false
+      queuedLiveOutputRef.current = []
+      handlersRef.current.onError?.(String(err))
+    })
+
+    return () => {
+      cancelled = true
+      isResumingRef.current = false
+      queuedLiveOutputRef.current = []
+    }
+  }, [deliverOutputChunk, isActive, isEnabled, listenersReady, replayBufferedOutput, sessionId, streamReady])
 
   useEffect(() => {
     if (!isEnabled) return

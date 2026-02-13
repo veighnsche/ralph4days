@@ -6,6 +6,8 @@ export const TERMINAL_BRIDGE_COMMANDS = {
   sendInput: 'terminal_bridge_send_input',
   resize: 'terminal_bridge_resize',
   terminate: 'terminal_bridge_terminate',
+  setStreamMode: 'terminal_bridge_set_stream_mode',
+  replayOutput: 'terminal_bridge_replay_output',
   emitSystemMessage: 'terminal_bridge_emit_system_message'
 } as const
 

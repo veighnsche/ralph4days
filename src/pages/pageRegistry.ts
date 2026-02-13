@@ -5,7 +5,7 @@ import { TasksPage } from './TasksPage'
 
 export type Page = 'tasks' | 'subsystems' | 'disciplines'
 
-export const pageRegistry: Record<string, ComponentType> = {
+export const pageRegistry: Record<Page, ComponentType> = {
   tasks: TasksPage,
   subsystems: SubsystemsPage,
   disciplines: DisciplinesPage

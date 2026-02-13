@@ -47,7 +47,7 @@ export function CroppedImage({
         setSrc(dataUrl)
       }
     })
-  }, [key])
+  }, [key, crop, disciplineName, label])
 
   if (!src) return <div className={className} style={style} />
 

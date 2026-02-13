@@ -5,8 +5,11 @@ import type {
   PtyOutputEvent,
   TerminalBridgeEmitSystemMessageArgs,
   TerminalBridgeListModelFormTreeResult,
+  TerminalBridgeReplayOutputArgs,
+  TerminalBridgeReplayOutputResult,
   TerminalBridgeResizeArgs,
   TerminalBridgeSendInputArgs,
+  TerminalBridgeSetStreamModeArgs,
   TerminalBridgeStartSessionArgs,
   TerminalBridgeStartTaskSessionArgs,
   TerminalBridgeTerminateArgs
@@ -121,6 +124,26 @@ export async function terminalBridgeTerminate(sessionId: string) {
   await invoke(TERMINAL_BRIDGE_COMMANDS.terminate, params)
 }
 
+export async function terminalBridgeSetStreamMode(sessionId: string, mode: 'live' | 'buffered') {
+  const params: TerminalBridgeSetStreamModeArgs = { sessionId, mode }
+  terminalBridgeDebugLog('tx.setStreamMode', params)
+  await invoke(TERMINAL_BRIDGE_COMMANDS.setStreamMode, params)
+}
+
+export async function terminalBridgeReplayOutput(
+  sessionId: string,
+  afterSeq: bigint,
+  limit = 256
+): Promise<TerminalBridgeReplayOutputResult> {
+  const params: TerminalBridgeReplayOutputArgs = {
+    sessionId,
+    afterSeq,
+    limit
+  }
+  terminalBridgeDebugLog('tx.replayOutput', params)
+  return invoke<TerminalBridgeReplayOutputResult>(TERMINAL_BRIDGE_COMMANDS.replayOutput, params)
+}
+
 export async function terminalBridgeEmitSystemMessage(sessionId: string, text: string) {
   const params: TerminalBridgeEmitSystemMessageArgs = { sessionId, text }
   terminalBridgeDebugLog('tx.emitSystemMessage', params)
@@ -137,6 +160,7 @@ export async function terminalBridgeListenSessionOutput(
     const decoded = decodeBase64Payload(event.payload.data)
     terminalBridgeDebugLog('rx.output', {
       sessionId: event.payload.session_id,
+      seq: event.payload.seq,
       byteCount: decoded.length,
       preview: previewText(decoded)
     })

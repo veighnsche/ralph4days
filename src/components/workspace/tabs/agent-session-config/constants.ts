@@ -22,7 +22,7 @@ export const PERMISSION_LEVEL_OPTIONS: Array<{ value: PermissionLevel; label: st
   { value: 'full_auto', label: 'Full Auto' }
 ]
 
-export const MODEL_FORM_TREE_QUERY_KEY = ['terminal', 'model-form-tree'] as const
+export const MODEL_FORM_TREE_QUERY_KEY = ['workspace', 'terminal', 'model-form-tree'] as const
 
 export function isPermissionLevel(value: string): value is PermissionLevel {
   return PERMISSION_LEVEL_OPTIONS.some(option => option.value === value)

@@ -29,10 +29,37 @@ interface WorkspaceStore {
   setTabMeta: (tabId: string, meta: { title?: string; icon?: LucideIcon }) => void
 }
 
+function hasTabId(tabs: WorkspaceTab[], tabId: string): boolean {
+  return tabs.some(tab => tab.id === tabId)
+}
+
+function ensureActiveTabId(tabs: WorkspaceTab[], candidate: string): string {
+  if (tabs.length === 0) return ''
+  if (candidate && hasTabId(tabs, candidate)) return candidate
+  return tabs[0]?.id ?? ''
+}
+
+function setTabsAndActive(
+  set: (updater: (state: WorkspaceStore) => WorkspaceStore | Partial<WorkspaceStore>) => void,
+  nextTabs: WorkspaceTab[],
+  activeCandidate: string
+) {
+  set(state => {
+    const nextActiveTabId = ensureActiveTabId(nextTabs, activeCandidate)
+    const tabsUnchanged =
+      state.tabs.length === nextTabs.length && state.tabs.every((tab, index) => tab.id === nextTabs[index]?.id)
+    if (tabsUnchanged && state.activeTabId === nextActiveTabId) return state
+    return { tabs: nextTabs, activeTabId: nextActiveTabId }
+  })
+}
+
 function generateTabId(tab: Omit<WorkspaceTab, 'id'> & { id?: string }): string {
   if (tab.id) return tab.id
   if (tab.key) return `${tab.type}-${tab.key}`
-  return `${tab.type}-${Date.now()}`
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `${tab.type}-${crypto.randomUUID()}`
+  }
+  return `${tab.type}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 }
 
 export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
@@ -45,7 +72,9 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
 
     const existing = tabs.find(t => t.id === id)
     if (existing) {
-      set({ activeTabId: id })
+      if (get().activeTabId !== id) {
+        set({ activeTabId: id })
+      }
       return id
     }
 
@@ -58,7 +87,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
       nextTabs = nextTabs.filter(t => t.id !== oldest.id)
     }
 
-    set({ tabs: nextTabs, activeTabId: id })
+    setTabsAndActive(set, nextTabs, id)
     return id
   },
 
@@ -68,7 +97,9 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
 
     const existing = tabs.find(t => t.id === id)
     if (existing) {
-      set({ activeTabId: id })
+      if (get().activeTabId !== id) {
+        set({ activeTabId: id })
+      }
       return id
     }
 
@@ -86,7 +117,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
       nextTabs = nextTabs.filter(t => t.id !== oldest.id)
     }
 
-    set({ tabs: nextTabs, activeTabId: id })
+    setTabsAndActive(set, nextTabs, id)
     return id
   },
 
@@ -104,11 +135,12 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
       nextActive = prev?.id ?? ''
     }
 
-    set({ tabs: nextTabs, activeTabId: nextActive })
+    setTabsAndActive(set, nextTabs, nextActive)
   },
 
   switchTab: tabId => {
     set(state => {
+      if (!hasTabId(state.tabs, tabId)) return state
       if (state.activeTabId === tabId) return state
       return { activeTabId: tabId }
     })
@@ -116,28 +148,24 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
 
   closeAllExcept: tabId => {
     const { tabs } = get()
-    set({
-      tabs: tabs.filter(t => t.id === tabId || !t.closeable),
-      activeTabId: tabId
-    })
+    const nextTabs = tabs.filter(t => t.id === tabId || !t.closeable)
+    setTabsAndActive(set, nextTabs, tabId)
   },
 
   closeAll: () => {
     const { tabs } = get()
     const nextTabs = tabs.filter(t => !t.closeable)
-    set({
-      tabs: nextTabs,
-      activeTabId: nextTabs[0]?.id ?? ''
-    })
+    setTabsAndActive(set, nextTabs, nextTabs[0]?.id ?? '')
   },
 
   closeToRight: tabId => {
-    const { tabs } = get()
+    const { tabs, activeTabId } = get()
     const targetIndex = tabs.findIndex(t => t.id === tabId)
     if (targetIndex === -1) return
 
     const nextTabs = tabs.filter((t, i) => i <= targetIndex || !t.closeable)
-    set({ tabs: nextTabs })
+    const nextActive = hasTabId(nextTabs, activeTabId) ? activeTabId : tabId
+    setTabsAndActive(set, nextTabs, nextActive)
   },
 
   reorderTabs: (fromIndex, toIndex) => {
@@ -148,7 +176,12 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
     const nextTabs = [...tabs]
     const [movedTab] = nextTabs.splice(fromIndex, 1)
     nextTabs.splice(toIndex, 0, movedTab)
-    set({ tabs: nextTabs })
+    set(state => {
+      const tabsUnchanged =
+        state.tabs.length === nextTabs.length && state.tabs.every((tab, index) => tab.id === nextTabs[index]?.id)
+      if (tabsUnchanged) return state
+      return { tabs: nextTabs }
+    })
   },
 
   setTabMeta: (tabId, meta) => {

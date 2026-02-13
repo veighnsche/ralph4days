@@ -5,6 +5,7 @@ import { InlineError } from '@/components/shared'
 import { useTabMeta } from '@/hooks/workspace'
 import { Terminal, useTerminalSession } from '@/lib/terminal'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
+import { useWorkspaceTabIsActive } from '../context'
 import type { TerminalTabParams } from './schema'
 
 // WHY: Claude Code welcome screen is left-aligned in PTY (upstream issue #5430)
@@ -12,6 +13,7 @@ import type { TerminalTabParams } from './schema'
 
 export function TerminalTabContent({ tab, params }: { tab: WorkspaceTab; params: TerminalTabParams }) {
   useTabMeta(tab.id, tab.title, TerminalSquare)
+  const isActive = useWorkspaceTabIsActive()
   const terminalRef = useRef<XTerm | null>(null)
   const [sessionError, setSessionError] = useState<string | null>(null)
 
@@ -25,6 +27,7 @@ export function TerminalTabContent({ tab, params }: { tab: WorkspaceTab; params:
       effort: params.effort,
       thinking: params.thinking,
       permissionLevel: params.permissionLevel,
+      isActive,
       humanSession: {
         kind: params.kind,
         agent: params.agent,

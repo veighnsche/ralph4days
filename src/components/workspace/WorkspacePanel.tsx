@@ -3,14 +3,21 @@ import type { AgentSessionLaunchConfig } from '@/components/agent-session-launch
 import { AgentSessionLaunchButton } from '@/components/agent-session-launch'
 import { Button } from '@/components/ui/button'
 import {
+  buildWorkspaceKernelSnapshot,
+  buildWorkspaceMountPlan,
+  computeWorkspaceLifecycleEvents
+} from '@/components/workspace/kernel'
+import {
   createAgentSessionConfigTab,
   createDefaultTerminalTab,
   createTerminalTabFromLaunch,
+  getTabKeepAliveOnDeactivate,
   getTabLifecycle,
   WorkspaceTabContentHost
 } from '@/components/workspace/tabs'
 import { useBrowserTabsActions } from '@/hooks/workspace'
-import { useWorkspaceStore, type WorkspaceTab } from '@/stores/useWorkspaceStore'
+import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { BrowserTab } from './BrowserTabs'
 import { BrowserTabs } from './BrowserTabs'
 
@@ -27,38 +34,20 @@ export function WorkspacePanel() {
   const activeTabId = useWorkspaceStore(s => s.activeTabId)
   const openTab = useWorkspaceStore(s => s.openTab)
   const tabActions = useBrowserTabsActions()
-  const previousTabsRef = useRef<Map<string, WorkspaceTab>>(new Map())
-  const previousActiveTabIdRef = useRef<string>('')
+  const previousSnapshotRef = useRef(
+    buildWorkspaceKernelSnapshot([], '', tabType => getTabKeepAliveOnDeactivate(tabType))
+  )
 
   useEffect(() => {
-    const previousTabs = previousTabsRef.current
-    const nextTabs = new Map(tabs.map(tab => [tab.id, tab]))
-
-    for (const tab of tabs) {
-      if (!previousTabs.has(tab.id)) {
-        runLifecycle(tab, 'onMount')
-      }
+    const previousSnapshot = previousSnapshotRef.current
+    const nextSnapshot = buildWorkspaceKernelSnapshot(tabs, activeTabId, tabType =>
+      getTabKeepAliveOnDeactivate(tabType)
+    )
+    const lifecycleEvents = computeWorkspaceLifecycleEvents(previousSnapshot, nextSnapshot)
+    for (const event of lifecycleEvents) {
+      runLifecycle(event.tab, event.hook)
     }
-    for (const [tabId, tab] of previousTabs) {
-      if (!nextTabs.has(tabId)) {
-        runLifecycle(tab, 'onUnmount')
-      }
-    }
-
-    previousTabsRef.current = nextTabs
-  }, [tabs])
-
-  useEffect(() => {
-    const previousActiveTabId = previousActiveTabIdRef.current
-    if (previousActiveTabId === activeTabId) return
-
-    const previousActiveTab = tabs.find(tab => tab.id === previousActiveTabId)
-    const nextActiveTab = tabs.find(tab => tab.id === activeTabId)
-
-    if (previousActiveTab) runLifecycle(previousActiveTab, 'onDeactivate')
-    if (nextActiveTab) runLifecycle(nextActiveTab, 'onActivate')
-
-    previousActiveTabIdRef.current = activeTabId
+    previousSnapshotRef.current = nextSnapshot
   }, [activeTabId, tabs])
 
   const handleNewTab = (config: AgentSessionLaunchConfig) => {
@@ -77,6 +66,9 @@ export function WorkspacePanel() {
   }))
 
   const newTabButton = <AgentSessionLaunchButton onNewTab={handleNewTab} onOpenRunForm={handleOpenRunForm} />
+  const { activeTab, inactiveKeepAliveTabs } = buildWorkspaceMountPlan(tabs, activeTabId, tabType =>
+    getTabKeepAliveOnDeactivate(tabType)
+  )
 
   return (
     <div className="flex h-full flex-col">
@@ -86,13 +78,18 @@ export function WorkspacePanel() {
         {tabs.length === 0 ? (
           <EmptyWorkspace />
         ) : (
-          tabs.map(tab => {
-            return (
-              <div key={tab.id} className={tab.id === activeTabId ? 'absolute inset-0' : 'absolute inset-0 hidden'}>
-                <WorkspaceTabContentHost tab={tab} />
+          <>
+            {inactiveKeepAliveTabs.map(tab => (
+              <div key={tab.id} className="absolute inset-0 hidden">
+                <WorkspaceTabContentHost tab={tab} isActive={false} />
               </div>
-            )
-          })
+            ))}
+            {activeTab && (
+              <div className="absolute inset-0">
+                <WorkspaceTabContentHost tab={activeTab} isActive />
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

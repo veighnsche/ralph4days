@@ -112,7 +112,7 @@ export type PromptBuilderConfigInput = {
 export type PromptPreview = { sections: PromptPreviewSection[]; fullPrompt: string }
 export type PromptPreviewSection = { name: string; content: string }
 export type PtyClosedEvent = { session_id: string; exit_code: number }
-export type PtyOutputEvent = { session_id: string; data: string }
+export type PtyOutputEvent = { session_id: string; seq: bigint; data: string }
 export type RalphProject = { name: string; path: string }
 export type SectionConfig = { name: string; enabled: boolean; instructionOverride?: string }
 export type SectionInfo = {
@@ -274,8 +274,17 @@ export type TerminalBridgeModelOption = {
   sessionModel?: string
   effortOptions: string[]
 }
+export type TerminalBridgeReplayOutputArgs = { sessionId: string; afterSeq: bigint; limit: number }
+export type TerminalBridgeReplayOutputChunk = { seq: bigint; data: string }
+export type TerminalBridgeReplayOutputResult = {
+  chunks: TerminalBridgeReplayOutputChunk[]
+  hasMore: boolean
+  truncated: boolean
+  truncatedUntilSeq?: bigint
+}
 export type TerminalBridgeResizeArgs = { sessionId: string; cols: number; rows: number }
 export type TerminalBridgeSendInputArgs = { sessionId: string; data: number[] }
+export type TerminalBridgeSetStreamModeArgs = { sessionId: string; mode: string }
 export type TerminalBridgeStartHumanSessionArgs = {
   terminalSessionId: string
   kind: string

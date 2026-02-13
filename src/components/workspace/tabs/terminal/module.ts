@@ -7,5 +7,6 @@ export const terminalTabModule = defineWorkspaceTabModule({
   type: 'terminal',
   component: TerminalTabContent,
   parseParams: parseTerminalTabParams,
-  createTab: createTerminalTab
+  createTab: createTerminalTab,
+  keepAliveOnDeactivate: true
 })

@@ -1,7 +1,6 @@
-import { Layers } from 'lucide-react'
+import { Eye, Layers, Play, Settings2 } from 'lucide-react'
 import { DisciplineLabel } from '@/components/prd/DisciplineLabel'
 import { Badge } from '@/components/ui/badge'
-import { Card } from '@/components/ui/card'
 import { CroppedImage } from '@/components/ui/cropped-image'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -133,11 +132,33 @@ function DisciplineContent({ discipline }: { discipline: DisciplineConfig }) {
   )
 }
 
-function DisciplineSidebar({ discipline, stackName }: { discipline: DisciplineConfig; stackName?: string }) {
+function DisciplineSidebar({
+  discipline,
+  stackName,
+  templates
+}: {
+  discipline: DisciplineConfig
+  stackName?: string
+  templates: DisciplineTemplate[]
+}) {
   const Icon = resolveIcon(discipline.icon)
 
   return (
-    <div className="px-4 py-4 space-y-0.5 overflow-y-auto h-full">
+    <div className="px-3 pt-0 pb-3 space-y-0.5 overflow-y-auto h-full">
+      <div className="-mx-3">
+        {templates.length === 0 ? (
+          <div className="px-3 text-xs text-muted-foreground">No active templates for this discipline yet.</div>
+        ) : (
+          <div className="space-y-1.5">
+            {templates.map(template => (
+              <TaskTemplateCard key={template.id} template={template} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <Separator bleed="md" />
+
       <PropertyRow label="Color">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded border" style={{ backgroundColor: discipline.color }} />
@@ -199,70 +220,35 @@ function DisciplineSidebar({ discipline, stackName }: { discipline: DisciplineCo
 
 function TaskTemplateCard({ template }: { template: DisciplineTemplate }) {
   return (
-    <Card className="p-4 space-y-3">
-      <div className="space-y-1">
-        <h3 className="text-sm font-medium leading-tight">{template.title}</h3>
+    <div className="rounded-md border border-border/60 bg-muted/20 overflow-hidden flex">
+      <div className="flex-1 min-w-0 px-2.5 py-2 space-y-1 bg-muted/20">
+        <h3 className="text-xs font-medium leading-tight">{template.title}</h3>
         {template.description && (
-          <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">{template.description}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{template.description}</p>
         )}
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
-        {template.priority && (
-          <Badge variant="outline" className="text-[10px] font-mono uppercase">
-            {template.priority}
-          </Badge>
-        )}
-        {template.estimatedTurns != null && (
-          <Badge variant="secondary" className="text-[10px] font-mono">
-            {template.estimatedTurns} turns
-          </Badge>
-        )}
-        <Badge variant="secondary" className="text-[10px] font-mono">
-          pulled {template.pulledCount}x
-        </Badge>
+      <div className="w-10 shrink-0 border-l border-border/60 flex flex-col bg-muted/25">
+        <button
+          type="button"
+          className="min-h-7 flex-1 px-1 flex items-center justify-center border-b border-border/60 text-muted-foreground bg-muted/25 hover:text-foreground hover:bg-muted/40 transition-colors"
+          aria-label={`Play template ${template.title}`}>
+          <Play className="h-3 w-3" />
+        </button>
+        <button
+          type="button"
+          className="min-h-7 flex-1 px-1 flex items-center justify-center border-b border-border/60 text-muted-foreground bg-muted/25 hover:text-foreground hover:bg-muted/40 transition-colors"
+          aria-label={`View template ${template.title}`}>
+          <Eye className="h-3 w-3" />
+        </button>
+        <button
+          type="button"
+          className="min-h-7 flex-1 px-1 flex items-center justify-center text-muted-foreground bg-muted/25 hover:text-foreground hover:bg-muted/40 transition-colors"
+          aria-label={`Template settings for ${template.title}`}>
+          <Settings2 className="h-3 w-3" />
+        </button>
       </div>
-
-      {(template.hints || template.agent || template.model || template.effort || template.thinking != null) && (
-        <div className="text-xs text-muted-foreground space-y-1">
-          {template.hints && <p className="leading-relaxed whitespace-pre-wrap">{template.hints}</p>}
-          {(template.agent || template.model || template.effort || template.thinking != null) && (
-            <p className="font-mono">
-              {[
-                template.agent,
-                template.model,
-                template.effort,
-                template.thinking != null ? `thinking:${template.thinking ? 'on' : 'off'}` : null
-              ]
-                .filter(Boolean)
-                .join(' · ')}
-            </p>
-          )}
-        </div>
-      )}
-    </Card>
-  )
-}
-
-function DisciplineTaskTemplatesSection({ discipline }: { discipline: DisciplineConfig }) {
-  const templates = discipline.taskTemplates ?? []
-  return (
-    <Card className="shadow-sm p-0">
-      <div className="px-4 py-3 border-b">
-        <h2 className="text-sm font-medium">Task Templates</h2>
-        <p className="text-xs text-muted-foreground mt-1">Reusable definitions this discipline can pull into tasks.</p>
-      </div>
-
-      {templates.length === 0 ? (
-        <div className="px-4 py-6 text-sm text-muted-foreground">No active templates for this discipline yet.</div>
-      ) : (
-        <div className="p-3 grid grid-cols-1 gap-3">
-          {templates.map(template => (
-            <TaskTemplateCard key={template.id} template={template} />
-          ))}
-        </div>
-      )}
-    </Card>
+    </div>
   )
 }
 
@@ -270,12 +256,14 @@ export function DisciplineDetailTabContent({ tab, params }: { tab: WorkspaceTab;
   const { entityId: disciplineId } = params
 
   const { data: disciplines, isLoading } = useInvoke<DisciplineConfig[]>('get_disciplines_config', undefined, {
+    queryDomain: 'workspace',
     staleTime: 5 * 60 * 1000
   })
-  const { stacks } = useStackMetadata()
+  const { stacks } = useStackMetadata('workspace')
 
   const discipline = disciplines?.find(d => d.id === disciplineId)
   const stackName = discipline?.stackId != null ? stacks.find(s => s.stackId === discipline.stackId)?.name : undefined
+  const taskTemplates = discipline?.taskTemplates ?? []
 
   useTabMeta(tab.id, discipline?.displayName ?? DISCIPLINE_DETAIL_TAB_FALLBACK_TITLE, Layers)
 
@@ -324,8 +312,7 @@ export function DisciplineDetailTabContent({ tab, params }: { tab: WorkspaceTab;
         )
       }
       mainContent={<DisciplineContent discipline={discipline} />}
-      sidebar={<DisciplineSidebar discipline={discipline} stackName={stackName} />}>
-      <DisciplineTaskTemplatesSection discipline={discipline} />
-    </DetailPageLayout>
+      sidebar={<DisciplineSidebar discipline={discipline} stackName={stackName} templates={taskTemplates} />}
+    />
   )
 }

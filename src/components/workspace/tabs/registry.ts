@@ -25,6 +25,10 @@ const TAB_LIFECYCLES = Object.fromEntries(
   workspaceTabModules.filter(module => module.lifecycle !== undefined).map(module => [module.type, module.lifecycle])
 ) as Partial<Record<string, WorkspaceTabLifecycle>>
 
+const TAB_KEEP_ALIVE_ON_DEACTIVATE = Object.fromEntries(
+  workspaceTabModules.map(module => [module.type, module.keepAliveOnDeactivate === true])
+) as Record<string, boolean>
+
 export function getTabComponent(type: string): ComponentType<{ tab: WorkspaceTab }> {
   const component = TAB_COMPONENTS[type]
   if (!component) {
@@ -35,4 +39,8 @@ export function getTabComponent(type: string): ComponentType<{ tab: WorkspaceTab
 
 export function getTabLifecycle(type: string): WorkspaceTabLifecycle {
   return TAB_LIFECYCLES[type] ?? NOOP_TAB_LIFECYCLE
+}
+
+export function getTabKeepAliveOnDeactivate(type: string): boolean {
+  return TAB_KEEP_ALIVE_ON_DEACTIVATE[type] ?? false
 }

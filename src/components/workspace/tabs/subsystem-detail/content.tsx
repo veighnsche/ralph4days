@@ -128,9 +128,10 @@ export function SubsystemDetailTabContent({ tab, params }: { tab: WorkspaceTab; 
   const { entityId: subsystemId } = params
 
   const { data: subsystems, isLoading } = useInvoke<SubsystemData[]>('get_subsystems', undefined, {
+    queryDomain: 'workspace',
     staleTime: 5 * 60 * 1000
   })
-  const { statsMap } = useSubsystemStats()
+  const { statsMap } = useSubsystemStats('workspace')
 
   const subsystem = subsystems?.find(f => f.id === subsystemId)
   const stats = statsMap.get(subsystem?.name ?? '') || {

@@ -3,12 +3,12 @@ import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import { WorkspaceTabProvider } from './context'
 import { getTabComponent } from './registry'
 
-export function WorkspaceTabContentHost({ tab }: { tab: WorkspaceTab }) {
+export function WorkspaceTabContentHost({ tab, isActive }: { tab: WorkspaceTab; isActive: boolean }) {
   const TabComponent = getTabComponent(tab.type)
 
   return (
     <ErrorBoundary>
-      <WorkspaceTabProvider tab={tab}>
+      <WorkspaceTabProvider tab={tab} isActive={isActive}>
         <TabComponent tab={tab} />
       </WorkspaceTabProvider>
     </ErrorBoundary>

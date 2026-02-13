@@ -20,9 +20,9 @@ import type { TaskDetailTabParams } from './schema'
 export function TaskDetailTabContent({ tab, params }: { tab: WorkspaceTab; params: TaskDetailTabParams }) {
   const { entityId } = params
 
-  const { tasks } = usePRDData()
+  const { tasks } = usePRDData('workspace')
   const task = entityId != null ? tasks?.find(t => t.id === entityId) : undefined
-  const { disciplines } = useDisciplines()
+  const { disciplines } = useDisciplines('workspace')
 
   useTabMeta(tab.id, task?.title ?? TASK_DETAIL_TAB_FALLBACK_TITLE, CheckCircle2)
 
