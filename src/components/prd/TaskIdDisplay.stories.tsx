@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import { type Acronym, acronym } from '@/types/acronym'
 import type { Task } from '@/types/generated'
 import { TaskIdDisplay } from './TaskIdDisplay'
 
@@ -15,37 +16,42 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /** Discipline defaults for story mocks */
-const DISCIPLINE_DEFAULTS: Record<string, { displayName: string; acronym: string; icon: string; color: string }> = {
-  frontend: { displayName: 'Frontend', acronym: 'FRNT', icon: 'code', color: '#3B82F6' },
-  backend: { displayName: 'Backend', acronym: 'BKND', icon: 'server', color: '#8B5CF6' },
-  database: { displayName: 'Database', acronym: 'DATA', icon: 'database', color: '#F59E0B' },
-  testing: { displayName: 'Testing', acronym: 'TEST', icon: 'flask-conical', color: '#10B981' },
-  infra: { displayName: 'Infrastructure', acronym: 'INFR', icon: 'cloud', color: '#6366F1' },
-  security: { displayName: 'Security', acronym: 'SECU', icon: 'shield', color: '#EF4444' },
-  docs: { displayName: 'Documentation', acronym: 'DOCS', icon: 'book-open', color: '#64748B' },
-  design: { displayName: 'Design', acronym: 'DSGN', icon: 'palette', color: '#EC4899' },
-  wiring: { displayName: 'Wiring', acronym: 'WIRE', icon: 'cable', color: '#A855F7' },
-  api: { displayName: 'API', acronym: 'API', icon: 'plug', color: '#14B8A6' }
+const DISCIPLINE_DEFAULTS: Record<string, { displayName: string; acronym: Acronym; icon: string; color: string }> = {
+  frontend: { displayName: 'Frontend', acronym: acronym('FRNT'), icon: 'code', color: '#3B82F6' },
+  backend: { displayName: 'Backend', acronym: acronym('BKND'), icon: 'server', color: '#8B5CF6' },
+  database: { displayName: 'Database', acronym: acronym('DATA'), icon: 'database', color: '#F59E0B' },
+  testing: { displayName: 'Testing', acronym: acronym('TEST'), icon: 'flask-conical', color: '#10B981' },
+  infra: { displayName: 'Infrastructure', acronym: acronym('INFR'), icon: 'cloud', color: '#6366F1' },
+  security: { displayName: 'Security', acronym: acronym('SECU'), icon: 'shield', color: '#EF4444' },
+  docs: { displayName: 'Documentation', acronym: acronym('DOCS'), icon: 'book-open', color: '#64748B' },
+  design: { displayName: 'Design', acronym: acronym('DSGN'), icon: 'palette', color: '#EC4899' },
+  wiring: { displayName: 'Wiring', acronym: acronym('WIRE'), icon: 'cable', color: '#A855F7' },
+  api: { displayName: 'API', acronym: acronym('APIS'), icon: 'plug', color: '#14B8A6' }
 }
 
-function subsystemDisplayName(subsystem: string): string {
-  return subsystem
-    .split('-')
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ')
-}
+const SUBSYSTEM_DEFAULTS = {
+  ui: { displayName: 'UI', acronym: acronym('UIUX') },
+  api: { displayName: 'API', acronym: acronym('APIS') },
+  data: { displayName: 'Data', acronym: acronym('DATA') },
+  tests: { displayName: 'Tests', acronym: acronym('TEST') },
+  authentication: { displayName: 'Authentication', acronym: acronym('AUTH') },
+  'user-profile': { displayName: 'User Profile', acronym: acronym('USER') },
+  payments: { displayName: 'Payments', acronym: acronym('PAYM') },
+  search: { displayName: 'Search', acronym: acronym('SRCH') },
+  notifications: { displayName: 'Notifications', acronym: acronym('NOTI') },
+  deploy: { displayName: 'Deploy', acronym: acronym('DEPL') },
+  sec: { displayName: 'Security', acronym: acronym('SECU') },
+  docs: { displayName: 'Docs', acronym: acronym('DOCS') },
+  campaign: { displayName: 'Campaign', acronym: acronym('CMGN') },
+  rest: { displayName: 'REST', acronym: acronym('REST') }
+} as const
 
-function subsystemAcronym(subsystem: string): string {
-  return subsystem.replace(/-/g, '').slice(0, 4).toUpperCase()
-}
+type StorySubsystem = keyof typeof SUBSYSTEM_DEFAULTS
+type StoryDiscipline = keyof typeof DISCIPLINE_DEFAULTS
 
-const createTask = (id: number, subsystem: string, discipline: string): Task => {
-  const disc = DISCIPLINE_DEFAULTS[discipline] ?? {
-    displayName: discipline.charAt(0).toUpperCase() + discipline.slice(1),
-    acronym: discipline.slice(0, 4).toUpperCase(),
-    icon: 'circle',
-    color: '#6B7280'
-  }
+const createTask = (id: number, subsystem: StorySubsystem, discipline: StoryDiscipline): Task => {
+  const subsystemDefaults = SUBSYSTEM_DEFAULTS[subsystem]
+  const disc = DISCIPLINE_DEFAULTS[discipline]
   return {
     id,
     subsystem,
@@ -57,9 +63,9 @@ const createTask = (id: number, subsystem: string, discipline: string): Task => 
     acceptanceCriteria: [],
     contextFiles: [],
     outputArtifacts: [],
-    subsystemDisplayName: subsystemDisplayName(subsystem),
+    subsystemDisplayName: subsystemDefaults.displayName,
     signals: [],
-    subsystemAcronym: subsystemAcronym(subsystem),
+    subsystemAcronym: subsystemDefaults.acronym,
     disciplineDisplayName: disc.displayName,
     disciplineAcronym: disc.acronym,
     disciplineIcon: disc.icon,

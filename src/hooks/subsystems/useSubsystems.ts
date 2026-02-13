@@ -1,11 +1,12 @@
 import { useMemo } from 'react'
 import { useInvoke } from '@/hooks/api'
+import { type Acronym, toAcronym } from '@/types/acronym'
 import type { SubsystemData } from '@/types/generated'
 
 export interface SubsystemConfig {
   name: string
   displayName: string
-  acronym: string
+  acronym: Acronym
 }
 
 export function useSubsystems() {
@@ -14,7 +15,7 @@ export function useSubsystems() {
   })
 
   const subsystems = useMemo(
-    () => data?.map(f => ({ name: f.name, displayName: f.displayName, acronym: f.acronym })) ?? [],
+    () => data?.map(f => ({ name: f.name, displayName: f.displayName, acronym: toAcronym(f.acronym) })) ?? [],
     [data]
   )
 

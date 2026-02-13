@@ -1,13 +1,14 @@
 import type { LucideIcon } from 'lucide-react'
 import { useInvoke } from '@/hooks/api'
 import { resolveIcon } from '@/lib/iconRegistry'
+import { type Acronym, toAcronym } from '@/types/acronym'
 import type { DisciplineConfig as DisciplineConfigWire, DisciplineCropsData } from '@/types/generated'
 
 export interface DisciplineConfig {
   id: number
   name: string
   displayName: string
-  acronym: string
+  acronym: Acronym
   icon: LucideIcon
   color: string
   bgColor: string
@@ -25,7 +26,7 @@ function resolveDisciplines(raw: DisciplineConfigWire[]): DisciplineConfig[] {
     id: d.id,
     name: d.name,
     displayName: d.displayName,
-    acronym: d.acronym,
+    acronym: toAcronym(d.acronym),
     icon: resolveIcon(d.icon),
     color: d.color,
     bgColor: `color-mix(in oklch, ${d.color} 15%, transparent)`,

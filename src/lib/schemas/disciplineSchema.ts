@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { acronymValidation } from './commonSchemas'
 
 const mcpServerSchema = z.object({
   name: z.string().min(1, 'Server name is required'),
@@ -10,7 +11,7 @@ const mcpServerSchema = z.object({
 export const disciplineSchema = z.object({
   name: z.string(),
   displayName: z.string().min(1, 'Display name is required'),
-  acronym: z.string().min(1, 'Acronym is required'),
+  acronym: acronymValidation,
   icon: z.string(),
   color: z.string(),
   systemPrompt: z.string().optional(),

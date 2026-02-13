@@ -5,6 +5,14 @@ interface GroupItem {
   displayName: string
 }
 
+function isTaskRecord(task: unknown): task is Task {
+  return Boolean(task && typeof task === 'object')
+}
+
+function getTaskTags(task: Task): string[] {
+  return Array.isArray(task.tags) ? task.tags : []
+}
+
 export function computeSubsystemStats(tasks: Task[], subsystems: SubsystemData[]): Map<string, GroupStats> {
   const statsMap = new Map<string, GroupStats>()
 
@@ -23,6 +31,7 @@ export function computeSubsystemStats(tasks: Task[], subsystems: SubsystemData[]
   }
 
   for (const task of tasks) {
+    if (!isTaskRecord(task)) continue
     const stats = statsMap.get(task.subsystem)
     if (!stats) continue
     stats.total++
@@ -69,6 +78,7 @@ export function computeDisciplineStats(tasks: Task[], disciplines: GroupItem[]):
   }
 
   for (const task of tasks) {
+    if (!isTaskRecord(task)) continue
     const stats = statsMap.get(task.discipline)
     if (!stats) continue
     stats.total++
@@ -98,7 +108,9 @@ export function computeDisciplineStats(tasks: Task[], disciplines: GroupItem[]):
 }
 
 export function computeProjectProgress(tasks: Task[]): ProjectProgress {
-  const actionableTasks = tasks.filter(t => t.status !== 'draft' && t.status !== 'skipped')
+  const actionableTasks = tasks.filter(
+    t => isTaskRecord(t) && typeof t.status === 'string' && t.status !== 'draft' && t.status !== 'skipped'
+  )
   const totalTasks = actionableTasks.length
   let doneTasks = 0
   for (const task of actionableTasks) {
@@ -113,7 +125,8 @@ export function getAllTags(tasks: Task[]): string[] {
   const tagsSet = new Set<string>()
 
   for (const task of tasks) {
-    for (const tag of task.tags) {
+    if (!isTaskRecord(task)) continue
+    for (const tag of getTaskTags(task)) {
       tagsSet.add(tag)
     }
   }
