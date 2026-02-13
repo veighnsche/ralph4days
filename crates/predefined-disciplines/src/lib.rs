@@ -186,16 +186,9 @@ const GLOBAL_IMAGE_PROMPTS: &str = include_str!("image_prompts.yaml");
 
 pub const DISCIPLINE_WORKFLOW: &str = include_str!("comfyui_workflows/generate_discipline.json");
 
-pub fn get_global_image_prompts() -> GlobalImagePrompts {
-    serde_yaml::from_str(GLOBAL_IMAGE_PROMPTS).unwrap_or_else(|error| {
-        eprintln!("Invalid embedded image_prompts.yaml: {error}");
-        GlobalImagePrompts {
-            global: GlobalPromptPair {
-                positive: String::new(),
-                negative: String::new(),
-            },
-        }
-    })
+pub fn get_global_image_prompts() -> Result<GlobalImagePrompts, String> {
+    serde_yaml::from_str(GLOBAL_IMAGE_PROMPTS)
+        .map_err(|error| format!("Invalid embedded image_prompts.yaml: {error}"))
 }
 
 include!(concat!(env!("OUT_DIR"), "/discipline_images.rs"));

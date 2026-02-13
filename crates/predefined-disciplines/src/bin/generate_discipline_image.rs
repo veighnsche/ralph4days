@@ -143,7 +143,10 @@ async fn main() {
         serde_json::from_str(DISCIPLINE_WORKFLOW).expect("embedded workflow is valid JSON");
     ralph_external::set_steps(&mut workflow, steps);
     ralph_external::set_dimensions(&mut workflow, width, height);
-    let global = get_global_image_prompts();
+    let global = get_global_image_prompts().unwrap_or_else(|error| {
+        eprintln!("Failed to load global image prompts: {error}");
+        std::process::exit(1);
+    });
 
     let stack_prompt = stack.image_prompt.unwrap_or_else(|| {
         eprintln!(
