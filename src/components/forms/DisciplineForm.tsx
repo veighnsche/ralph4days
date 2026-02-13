@@ -20,6 +20,7 @@ import {
   TestTube,
   Wrench
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { Badge } from '@/components/ui/badge'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -27,7 +28,7 @@ import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import type { DisciplineFormData } from '@/lib/schemas'
+import { type DisciplineFormData, mcpServersSchema } from '@/lib/schemas'
 
 type DisciplineIconName =
   | 'Code'
@@ -110,12 +111,17 @@ const COMMON_COLORS = [
 ] as const
 
 export function DisciplineFormFields({ disabled, isEditing }: { disabled?: boolean; isEditing?: boolean }) {
-  const { control, watch } = useFormContext<DisciplineFormData>()
+  const { clearErrors, control, setError, watch } = useFormContext<DisciplineFormData>()
   const iconName = watch('icon')
   const colorValue = watch('color')
   const selectedAgent = watch('agent')
   const skills = watch('skills')
   const mcpServers = watch('mcpServers')
+  const [mcpServersInput, setMcpServersInput] = useState(() => JSON.stringify(mcpServers ?? [], null, 2))
+
+  useEffect(() => {
+    setMcpServersInput(JSON.stringify(mcpServers ?? [], null, 2))
+  }, [mcpServers])
 
   const IconComponent = DISCIPLINE_ICONS[(iconName as DisciplineIconName) ?? 'Code'] ?? null
 
@@ -463,14 +469,34 @@ export function DisciplineFormFields({ disabled, isEditing }: { disabled?: boole
               <FormLabel>MCP Servers (JSON array)</FormLabel>
               <FormControl>
                 <Textarea
-                  value={field.value ? JSON.stringify(field.value, null, 2) : '[]'}
+                  value={mcpServersInput}
                   onChange={e => {
+                    const nextValue = e.target.value
+                    setMcpServersInput(nextValue)
+
+                    let parsedJson: unknown
                     try {
-                      const parsed = JSON.parse(e.target.value)
-                      field.onChange(parsed)
-                    } catch {
-                      // Invalid JSON, don't update
+                      parsedJson = JSON.parse(nextValue)
+                    } catch (error) {
+                      const message = error instanceof Error ? error.message : 'Invalid JSON'
+                      setError('mcpServers', {
+                        type: 'validate',
+                        message: `MCP servers must be valid JSON: ${message}`
+                      })
+                      return
                     }
+
+                    const parsedServers = mcpServersSchema.safeParse(parsedJson)
+                    if (!parsedServers.success) {
+                      setError('mcpServers', {
+                        type: 'validate',
+                        message: `Invalid MCP server configuration: ${parsedServers.error.issues[0]?.message ?? 'unknown error'}`
+                      })
+                      return
+                    }
+
+                    clearErrors('mcpServers')
+                    field.onChange(parsedServers.data)
                   }}
                   placeholder={`[\n  {\n    "name": "shadcn-ui",\n    "command": "npx",\n    "args": ["-y", "@modelcontextprotocol/server-shadcn"],\n    "env": {}\n  }\n]`}
                   className="min-h-[300px] font-mono text-xs"

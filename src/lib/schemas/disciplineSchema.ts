@@ -1,12 +1,14 @@
 import { z } from 'zod'
 import { acronymValidation } from './commonSchemas'
 
-const mcpServerSchema = z.object({
+export const mcpServerSchema = z.object({
   name: z.string().min(1, 'Server name is required'),
   command: z.string().min(1, 'Command is required'),
   args: z.array(z.string()),
   env: z.record(z.string(), z.string())
 })
+
+export const mcpServersSchema = z.array(mcpServerSchema)
 
 export const disciplineSchema = z.object({
   name: z.string(),
@@ -21,7 +23,7 @@ export const disciplineSchema = z.object({
   thinking: z.boolean().optional(),
   skills: z.array(z.string()).optional(),
   conventions: z.string().optional(),
-  mcpServers: z.array(mcpServerSchema).optional()
+  mcpServers: mcpServersSchema.optional()
 })
 
 export type DisciplineFormData = z.infer<typeof disciplineSchema>
