@@ -65,10 +65,10 @@ describe('useAgentSessionConfigController', () => {
       formTreeError: null
     })
     useModelConstraintsMock.mockReturnValue({
-      models: [{ name: 'gpt-5-codex', display: 'GPT-5 Codex' }],
+      models: [{ name: 'gpt-5.3-codex', display: 'GPT-5.3 Codex' }],
       loadingModels: false,
       error: null,
-      selectedModel: { name: 'gpt-5-codex', display: 'GPT-5 Codex' },
+      selectedModel: { name: 'gpt-5.3-codex', display: 'GPT-5.3 Codex' },
       selectedModelEffortValid: true
     })
     useRunSessionActionMock.mockReturnValue(runSession)
@@ -77,6 +77,6 @@ describe('useAgentSessionConfigController', () => {
 
     expect(result.current.canRun).toBe(true)
     expect(result.current.runSession).toBe(runSession)
-    expect(useRunSessionActionMock).toHaveBeenCalledWith(tab, { selectedModelDisplay: 'GPT-5 Codex', canRun: true })
+    expect(useRunSessionActionMock).toHaveBeenCalledWith(tab, { selectedModelDisplay: 'GPT-5.3 Codex', canRun: true })
   })
 })

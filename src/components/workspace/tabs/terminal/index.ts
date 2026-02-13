@@ -4,7 +4,8 @@ export {
   createDefaultTerminalTab,
   createTerminalTab,
   createTerminalTabFromLaunch,
-  createTerminalTabFromTask
+  createTerminalTabFromTask,
+  createTestingShellTerminalTab
 } from './factory'
 export { terminalTabModule } from './module'
 export { parseTerminalTabParams, type TerminalTabInput, type TerminalTabParams } from './schema'

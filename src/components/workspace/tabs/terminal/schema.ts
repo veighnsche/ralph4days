@@ -1,8 +1,12 @@
 import { z } from 'zod'
 import { optionalLaunchOptionsSchema } from '../launch-options-schema'
 
+const terminalTabAgentSchema = z.enum(['claude', 'codex', 'shell'])
+
 const terminalTabInputSchema = optionalLaunchOptionsSchema
+  .omit({ agent: true })
   .extend({
+    agent: terminalTabAgentSchema.optional(),
     taskId: z.number().int().positive().optional(),
     initPrompt: z.string().optional(),
     title: z.string().trim().min(1).optional()
@@ -10,7 +14,7 @@ const terminalTabInputSchema = optionalLaunchOptionsSchema
   .strict()
 export const terminalTabParamsSchema = terminalTabInputSchema.transform(params => ({
   ...params,
-  agent: params.agent ?? 'claude',
+  agent: params.agent ?? 'codex',
   permissionLevel: params.permissionLevel ?? 'balanced',
   kind: params.taskId != null ? 'task_execution' : 'manual'
 }))

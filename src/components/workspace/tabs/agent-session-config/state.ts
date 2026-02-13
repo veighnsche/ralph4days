@@ -20,7 +20,7 @@ export function buildInitialLaunchConfig(
   getDefaultModel: (agent: Agent) => string,
   defaults: LaunchPreferenceDefaults
 ): AgentSessionLaunchConfig {
-  const agent = initialParams.agent ?? 'claude'
+  const agent = initialParams.agent ?? 'codex'
   return {
     agent,
     model: initialParams.model ?? getDefaultModel(agent),

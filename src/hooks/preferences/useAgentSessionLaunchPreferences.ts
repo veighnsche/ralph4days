@@ -18,8 +18,8 @@ type AgentSessionLaunchPreferencesStore = AgentSessionLaunchConfig & {
 export const useAgentSessionLaunchPreferences = create<AgentSessionLaunchPreferencesStore>()(
   persist(
     set => ({
-      agent: 'claude',
-      model: getDefaultModel('claude'),
+      agent: 'codex',
+      model: getDefaultModel('codex'),
       effort: 'medium',
       thinking: true,
       permissionLevel: 'balanced',

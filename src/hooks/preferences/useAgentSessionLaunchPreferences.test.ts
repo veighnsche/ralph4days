@@ -36,7 +36,7 @@ describe('useAgentSessionLaunchPreferences', () => {
         useAgentSessionLaunchPreferences.getState().setLaunchConfig({
           ...BASE_CONFIG,
           agent: 'codex',
-          model: 'gpt-5-codex'
+          model: 'gpt-5.3-codex'
         })
       },
       1
@@ -44,7 +44,7 @@ describe('useAgentSessionLaunchPreferences', () => {
 
     expect(useAgentSessionLaunchPreferences.getState()).toMatchObject({
       agent: 'codex',
-      model: 'gpt-5-codex'
+      model: 'gpt-5.3-codex'
     })
   })
 })

@@ -107,7 +107,7 @@ describe('TerminalTabContent', () => {
     }
     expect(config.sessionId).toBe('test-terminal-1')
     expect(config.humanSession?.kind).toBe('manual')
-    expect(config.humanSession?.agent).toBe('claude')
+    expect(config.humanSession?.agent).toBe('codex')
   })
 
   it('supports codex agent launch metadata', async () => {
@@ -116,7 +116,7 @@ describe('TerminalTabContent', () => {
       id: 'test-terminal-codex',
       params: {
         agent: 'codex',
-        model: 'gpt-5-codex',
+        model: 'gpt-5.3-codex',
         thinking: true
       }
     }
@@ -130,6 +130,26 @@ describe('TerminalTabContent', () => {
     }
     expect(config.agent).toBe('codex')
     expect(config.humanSession?.agent).toBe('codex')
+  })
+
+  it('supports testing shell launch metadata', async () => {
+    const shellTab: WorkspaceTab = {
+      ...mockTab,
+      id: 'test-terminal-shell',
+      params: {
+        agent: 'shell'
+      }
+    }
+
+    renderTab(shellTab)
+    await waitFor(() => expect(useTerminalSessionMock).toHaveBeenCalled())
+
+    const config = useTerminalSessionMock.mock.calls[0][0] as {
+      agent?: string
+      humanSession?: { agent?: string }
+    }
+    expect(config.agent).toBe('shell')
+    expect(config.humanSession?.agent).toBe('shell')
   })
 
   it('passes tab active state into terminal session config', async () => {

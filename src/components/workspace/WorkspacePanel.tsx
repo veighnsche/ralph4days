@@ -11,6 +11,7 @@ import {
   createAgentSessionConfigTab,
   createDefaultTerminalTab,
   createTerminalTabFromLaunch,
+  createTestingShellTerminalTab,
   getTabKeepAliveOnDeactivate,
   getTabLifecycle,
   WorkspaceTabContentHost
@@ -57,6 +58,9 @@ export function WorkspacePanel() {
   const handleOpenRunForm = (config: AgentSessionLaunchConfig) => {
     openTab(createAgentSessionConfigTab(config))
   }
+  const handleNewTestingShellTab = () => {
+    openTab(createTestingShellTerminalTab())
+  }
 
   const workspaceTabs: WorkspaceTabDescriptor[] = tabs.map(t => ({
     id: t.id,
@@ -65,7 +69,13 @@ export function WorkspacePanel() {
     closeable: t.closeable
   }))
 
-  const newTabButton = <AgentSessionLaunchButton onNewTab={handleNewTab} onOpenRunForm={handleOpenRunForm} />
+  const newTabButton = (
+    <AgentSessionLaunchButton
+      onNewTab={handleNewTab}
+      onOpenRunForm={handleOpenRunForm}
+      onNewTestingShellTab={handleNewTestingShellTab}
+    />
+  )
   const { activeTab, inactiveKeepAliveTabs } = buildWorkspaceMountPlan(tabs, activeTabId, tabType =>
     getTabKeepAliveOnDeactivate(tabType)
   )

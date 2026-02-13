@@ -3,21 +3,29 @@ pub use super::session::SessionConfig;
 pub use claudecode::ClaudeCodeAdapter;
 pub use codex::CodexAdapter;
 pub use model_catalog::ModelEntry;
-pub use provider_trait::{AgentProvider, AGENT_CLAUDE, AGENT_CODEX};
+pub use provider_trait::{AgentProvider, AGENT_CLAUDE, AGENT_CODEX, AGENT_SHELL};
+pub use shell::ShellAdapter;
 
 mod claudecode;
 mod codex;
 mod model_catalog;
 #[path = "trait.rs"]
 mod provider_trait;
+mod shell;
 
 static CLAUDE_ADAPTER: ClaudeCodeAdapter = ClaudeCodeAdapter;
 static CODEX_ADAPTER: CodexAdapter = CodexAdapter;
+static SHELL_ADAPTER: ShellAdapter = ShellAdapter;
+
+pub fn shell_agent_enabled() -> bool {
+    cfg!(debug_assertions)
+}
 
 pub fn resolve_agent_provider(agent: Option<&str>) -> &'static dyn AgentProvider {
     match normalize_agent(agent).as_deref() {
-        Some(AGENT_CODEX) => &CODEX_ADAPTER,
-        _ => &CLAUDE_ADAPTER,
+        Some(AGENT_CLAUDE) => &CLAUDE_ADAPTER,
+        Some(AGENT_SHELL) => &SHELL_ADAPTER,
+        _ => &CODEX_ADAPTER,
     }
 }
 
@@ -27,8 +35,9 @@ pub fn list_models_for_agent(agent: Option<&str>) -> Vec<String> {
 
 pub fn list_model_entries_for_agent(agent: Option<&str>) -> Vec<ModelEntry> {
     match normalize_agent(agent).as_deref() {
-        Some(AGENT_CODEX) => model_catalog::codex_model_entries(),
-        _ => model_catalog::claudecode_model_entries(),
+        Some(AGENT_CLAUDE) => model_catalog::claudecode_model_entries(),
+        Some(AGENT_SHELL) => Vec::new(),
+        _ => model_catalog::codex_model_entries(),
     }
 }
 
@@ -147,9 +156,21 @@ mod tests {
     }
 
     #[test]
-    fn resolves_claude_provider_as_default() {
+    fn resolves_codex_provider_as_default() {
         let provider = resolve_agent_provider(None);
-        assert_eq!(provider.id(), AGENT_CLAUDE);
+        assert_eq!(provider.id(), AGENT_CODEX);
+    }
+
+    #[test]
+    fn resolves_shell_provider() {
+        let provider = resolve_agent_provider(Some("shell"));
+        assert_eq!(provider.id(), AGENT_SHELL);
+    }
+
+    #[test]
+    fn shell_agent_has_empty_model_catalog() {
+        let models = list_model_entries_for_agent(Some("shell"));
+        assert!(models.is_empty());
     }
 
     #[test]

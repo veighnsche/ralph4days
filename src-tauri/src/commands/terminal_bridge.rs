@@ -1,7 +1,8 @@
 use super::state::{AppState, CommandContext, ProjectSessionService};
 use crate::terminal::providers::{
     list_model_entries_for_agent, resolve_agent_provider, resolve_post_start_preamble,
-    resolve_session_effort_for_agent, resolve_session_model_for_agent, AGENT_CLAUDE, AGENT_CODEX,
+    resolve_session_effort_for_agent, resolve_session_model_for_agent, shell_agent_enabled,
+    AGENT_CLAUDE, AGENT_CODEX, AGENT_SHELL,
 };
 use crate::terminal::{
     PtyOutputEvent, SessionConfig, SessionInitSettings, SessionStreamMode,
@@ -72,6 +73,43 @@ fn build_session_config(
     permission_level: Option<String>,
     post_start_preamble: Option<String>,
 ) -> Result<SessionConfig, String> {
+    let provider_id = resolve_agent_provider(agent.as_deref()).id();
+    if provider_id == AGENT_SHELL {
+        if !shell_agent_enabled() {
+            return Err("Shell terminal sessions are disabled in production builds".to_owned());
+        }
+        if selected_model
+            .as_deref()
+            .map(str::trim)
+            .is_some_and(|value| !value.is_empty())
+        {
+            return Err("Shell terminal sessions do not support model selection".to_owned());
+        }
+        if effort
+            .as_deref()
+            .map(str::trim)
+            .is_some_and(|value| !value.is_empty())
+        {
+            return Err("Shell terminal sessions do not support effort selection".to_owned());
+        }
+        let resolved_preamble = resolve_session_post_start_preamble(
+            agent.as_deref(),
+            None,
+            None,
+            thinking,
+            post_start_preamble,
+        );
+        return Ok(SessionConfig {
+            agent,
+            model: None,
+            effort: None,
+            thinking,
+            permission_level,
+            init_settings: SessionInitSettings::default(),
+            post_start_preamble: resolved_preamble,
+        });
+    }
+
     let runtime_model = resolve_session_model_for_agent(agent.as_deref(), selected_model.clone())?;
     let runtime_effort =
         resolve_session_effort_for_agent(agent.as_deref(), selected_model.as_deref(), effort)?;
@@ -250,6 +288,10 @@ fn resolve_session_post_start_preamble(
 
 fn build_launch_command(config: &SessionConfig) -> String {
     let agent = resolve_agent_provider(config.agent.as_deref()).id();
+    if agent == AGENT_SHELL {
+        return "shell -i".to_owned();
+    }
+
     let mut parts = vec![agent.to_owned()];
 
     if let Some(model) = config.model.as_deref() {
@@ -596,12 +638,15 @@ fn list_models_for_agent(agent: &str) -> TerminalBridgeListModelsResult {
 
 #[tauri::command]
 pub fn terminal_bridge_list_model_form_tree() -> TerminalBridgeListModelFormTreeResult {
-    TerminalBridgeListModelFormTreeResult {
-        providers: vec![
-            list_models_for_agent(AGENT_CLAUDE),
-            list_models_for_agent(AGENT_CODEX),
-        ],
+    let mut providers = vec![
+        list_models_for_agent(AGENT_CODEX),
+        list_models_for_agent(AGENT_CLAUDE),
+    ];
+    if shell_agent_enabled() {
+        providers.push(list_models_for_agent(AGENT_SHELL));
     }
+
+    TerminalBridgeListModelFormTreeResult { providers }
 }
 
 #[cfg(test)]

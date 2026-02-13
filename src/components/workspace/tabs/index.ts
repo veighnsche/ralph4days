@@ -27,5 +27,6 @@ export {
   createTerminalTab,
   createTerminalTabFromLaunch,
   createTerminalTabFromTask,
+  createTestingShellTerminalTab,
   type TerminalTabParams
 } from './terminal'

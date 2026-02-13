@@ -339,7 +339,7 @@ export function DisciplineFormFields({ disabled, isEditing }: { disabled?: boole
                   onChange={e => field.onChange(e.target.value)}
                   placeholder={
                     selectedAgent === 'codex'
-                      ? 'gpt-5-codex (or another codex model)'
+                      ? 'gpt-5.3-codex (or another codex model)'
                       : 'claude-sonnet-4 (or another claude model)'
                   }
                   disabled={disabled}

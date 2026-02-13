@@ -1,4 +1,4 @@
-import { ChevronDown, Plus } from 'lucide-react'
+import { ChevronDown, Plus, TerminalSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAgentSessionLaunchPreferences } from '@/hooks/preferences'
@@ -12,9 +12,14 @@ export type { Model }
 interface AgentSessionLaunchButtonProps {
   onNewTab: (config: AgentSessionLaunchConfig) => void
   onOpenRunForm: (config: AgentSessionLaunchConfig) => void
+  onNewTestingShellTab?: () => void
 }
 
-export function AgentSessionLaunchButton({ onNewTab, onOpenRunForm }: AgentSessionLaunchButtonProps) {
+export function AgentSessionLaunchButton({
+  onNewTab,
+  onOpenRunForm,
+  onNewTestingShellTab
+}: AgentSessionLaunchButtonProps) {
   const { agent, model, effort, thinking, permissionLevel, setLaunchConfig } = useAgentSessionLaunchPreferences()
 
   const launchConfig: AgentSessionLaunchConfig = { agent, model, effort, thinking, permissionLevel }
@@ -34,6 +39,25 @@ export function AgentSessionLaunchButton({ onNewTab, onOpenRunForm }: AgentSessi
   return (
     <TooltipProvider>
       <div className="flex flex-none">
+        {import.meta.env.DEV && onNewTestingShellTab && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onNewTestingShellTab}
+                className={cn(
+                  'h-7 px-2 rounded-md mr-1',
+                  'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                )}>
+                <TerminalSquare className="h-4 w-4" />
+                <span className="sr-only">New shell terminal testing tab</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Open shell tab (testing only)</TooltipContent>
+          </Tooltip>
+        )}
+
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

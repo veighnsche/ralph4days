@@ -213,7 +213,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
       terminalSessionId: sessionId,
       kind: humanKind,
       taskId,
-      agent: humanAgent ?? 'claude',
+      agent: humanAgent ?? 'codex',
       model: model ?? undefined,
       effort: effort ?? undefined,
       ...(permissionLevel != null ? { permissionLevel } : {}),
@@ -241,7 +241,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     return terminalBridgeStartTaskSession({
       sessionId,
       taskId,
-      agent: agent ?? 'claude',
+      agent: agent ?? 'codex',
       model: model ?? undefined,
       effort: effort ?? undefined,
       ...(permissionLevel != null ? { permissionLevel } : {}),
@@ -252,7 +252,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
   const startInteractiveSession = useCallback(() => {
     return terminalBridgeStartSession({
       sessionId,
-      agent: agent ?? 'claude',
+      agent: agent ?? 'codex',
       mcpMode: mcpMode || 'interactive',
       model: model ?? undefined,
       effort: effort ?? undefined,
@@ -353,45 +353,62 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
 
     let cancelled = false
 
+    const clearResumeState = () => {
+      if (cancelled) return
+      isResumingRef.current = false
+      queuedLiveOutputRef.current = []
+    }
+
+    const flushQueuedLiveOutput = () => {
+      const queued = [...queuedLiveOutputRef.current].sort((left, right) => {
+        if (left.seq < right.seq) return -1
+        if (left.seq > right.seq) return 1
+        return 0
+      })
+      queuedLiveOutputRef.current = []
+      for (const chunk of queued) {
+        deliverOutputChunk(chunk.seq, chunk.data)
+      }
+    }
+
+    const syncInactiveRuntimeMode = async () => {
+      await terminalBridgeSetStreamMode(sessionId, 'buffered')
+    }
+
+    const syncActiveRuntimeMode = async () => {
+      isResumingRef.current = true
+      queuedLiveOutputRef.current = []
+
+      await terminalBridgeSetStreamMode(sessionId, 'buffered')
+      const cursor = await replayBufferedOutput(lastDeliveredSeqRef.current)
+      await terminalBridgeSetStreamMode(sessionId, 'live')
+      await replayBufferedOutput(cursor, 1024)
+      flushQueuedLiveOutput()
+    }
+
+    const restoreLiveModeOnSyncFailure = async () => {
+      if (cancelled || !isActive) return
+      try {
+        await terminalBridgeSetStreamMode(sessionId, 'live')
+      } catch (restoreError) {
+        handlersRef.current.onError?.(
+          `[terminal_session] Failed to restore stream mode to live: ${String(restoreError)}`
+        )
+      }
+    }
+
     const syncRuntimeMode = async () => {
       try {
-        if (!isActive) {
-          await terminalBridgeSetStreamMode(sessionId, 'buffered')
-          return
-        }
-
-        isResumingRef.current = true
-        queuedLiveOutputRef.current = []
-
-        await terminalBridgeSetStreamMode(sessionId, 'buffered')
-        let cursor = await replayBufferedOutput(lastDeliveredSeqRef.current)
-        await terminalBridgeSetStreamMode(sessionId, 'live')
-        cursor = await replayBufferedOutput(cursor, 1024)
-
-        const queued = [...queuedLiveOutputRef.current].sort((left, right) => {
-          if (left.seq < right.seq) return -1
-          if (left.seq > right.seq) return 1
-          return 0
-        })
-        queuedLiveOutputRef.current = []
-        for (const chunk of queued) {
-          deliverOutputChunk(chunk.seq, chunk.data)
+        if (isActive) {
+          await syncActiveRuntimeMode()
+        } else {
+          await syncInactiveRuntimeMode()
         }
       } catch (error) {
-        if (!cancelled && isActive) {
-          try {
-            await terminalBridgeSetStreamMode(sessionId, 'live')
-          } catch (restoreError) {
-            handlersRef.current.onError?.(
-              `[terminal_session] Failed to restore stream mode to live: ${String(restoreError)}`
-            )
-          }
-        }
+        await restoreLiveModeOnSyncFailure()
         throw error
       } finally {
-        if (cancelled) return
-        isResumingRef.current = false
-        queuedLiveOutputRef.current = []
+        clearResumeState()
       }
     }
 

@@ -140,7 +140,7 @@ function resetTerminalRuntimeState() {
 
   useAgentSessionLaunchPreferences.getState().setLaunchConfig({
     agent: 'codex',
-    model: 'gpt-5-codex',
+    model: 'gpt-5.3-codex',
     effort: 'medium',
     thinking: true,
     permissionLevel: 'balanced'

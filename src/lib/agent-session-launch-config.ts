@@ -1,4 +1,4 @@
-export const VALID_AGENTS = ['claude', 'codex'] as const
+export const VALID_AGENTS = ['codex', 'claude'] as const
 
 export type Agent = (typeof VALID_AGENTS)[number]
 export type Model = string
@@ -15,7 +15,7 @@ export type AgentSessionLaunchConfig = {
 
 export const DEFAULT_MODELS_BY_AGENT: Record<Agent, string> = {
   claude: 'claude-sonnet-4',
-  codex: 'gpt-5-codex'
+  codex: 'gpt-5.3-codex'
 }
 
 export function getDefaultModel(agent: Agent): Model {

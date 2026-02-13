@@ -5,6 +5,7 @@ use super::SessionConfig;
 
 pub const AGENT_CLAUDE: &str = "claude";
 pub const AGENT_CODEX: &str = "codex";
+pub const AGENT_SHELL: &str = "shell";
 
 pub trait AgentProvider: Send + Sync {
     fn id(&self) -> &'static str;

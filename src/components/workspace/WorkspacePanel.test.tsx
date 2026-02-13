@@ -47,7 +47,7 @@ vi.mock('@/lib/terminal', () => ({
 
 const CODEX_LAUNCH_CONFIG: AgentSessionLaunchConfig = {
   agent: 'codex',
-  model: 'gpt-5-codex',
+  model: 'gpt-5.3-codex',
   effort: 'medium',
   thinking: true,
   permissionLevel: 'balanced'
@@ -121,6 +121,36 @@ describe('WorkspacePanel', () => {
     expect(config.humanSession?.kind).toBe('manual')
     expect(config.humanSession?.agent).toBe('codex')
     expect(config.sessionId.startsWith('terminal-')).toBe(true)
+  })
+
+  it('opens a testing shell terminal tab from the shell shortcut button', async () => {
+    const user = userEvent.setup()
+    render(<WorkspacePanel />)
+
+    const shellButton = screen.queryByRole('button', { name: /new shell terminal testing tab/i })
+    if (!import.meta.env.DEV) {
+      expect(shellButton).toBeNull()
+      return
+    }
+    expect(shellButton).toBeTruthy()
+    await user.click(shellButton as HTMLButtonElement)
+
+    await waitFor(() => expect(sessionCalls.length).toBeGreaterThan(0))
+
+    const latestCall = sessionCalls[sessionCalls.length - 1]
+    expect(latestCall).toBeDefined()
+
+    const config = latestCall?.config as {
+      agent?: string
+      humanSession?: {
+        kind: string
+        agent?: string
+      }
+    }
+
+    expect(config.agent).toBe('shell')
+    expect(config.humanSession?.kind).toBe('manual')
+    expect(config.humanSession?.agent).toBe('shell')
   })
 
   it('surfaces terminal session errors in the UI', async () => {
