@@ -8,9 +8,9 @@ import {
   getActiveTabId,
   resetTerminalDiagnostics,
   waitForTabCount,
-  waitForTerminalDiagnosticPattern,
   waitForTerminalPipelineReady,
-  waitForVisibleTerminalHost
+  waitForVisibleTerminalHost,
+  waitForTerminalCanvasInk
 } from './workspace.harness.js'
 
 describe('Terminal e2e flow', () => {
@@ -44,6 +44,6 @@ describe('Terminal e2e flow', () => {
 
     await waitForTerminalPipelineReady(activeTabId)
     await waitForVisibleTerminalHost()
-    await waitForTerminalDiagnosticPattern(activeTabId, ['OpenAI Codex', 'model:'])
+    await waitForTerminalCanvasInk()
   })
 })

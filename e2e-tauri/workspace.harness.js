@@ -457,44 +457,6 @@ export async function waitForTerminalPipelineReady(sessionId, timeout = 45000) {
   }
 }
 
-function hasAnyPatternMatch(text, patterns) {
-  if (typeof text !== 'string' || text.length === 0) return false
-  const lowered = text.toLowerCase()
-  return patterns.some(pattern => lowered.includes(pattern.toLowerCase()))
-}
-
-export async function waitForTerminalDiagnosticPattern(sessionId, patterns, timeout = 45000) {
-  if (!Array.isArray(patterns) || patterns.length === 0) {
-    throw new Error('waitForTerminalDiagnosticPattern requires at least one pattern')
-  }
-
-  let lastDiag = null
-  try {
-    await browser.waitUntil(
-      async () => {
-        lastDiag = await getTerminalSessionDiagnostics(sessionId)
-        if (!lastDiag) return false
-
-        return (
-          hasAnyPatternMatch(lastDiag.lastRenderPreview, patterns) ||
-          hasAnyPatternMatch(lastDiag.lastPlainPreview, patterns) ||
-          hasAnyPatternMatch(lastDiag.lastPreview, patterns)
-        )
-      },
-      {
-        timeout,
-        interval: 300,
-        timeoutMsg: `Terminal diagnostics did not contain required text patterns for session: ${sessionId}`
-      }
-    )
-  } catch (error) {
-    throw new Error(
-      `Terminal diagnostics missing required text patterns for session ${sessionId}. Patterns: ${JSON.stringify(patterns)}. Diagnostics: ${JSON.stringify(lastDiag)}`,
-      { cause: error }
-    )
-  }
-}
-
 export async function waitForTerminalCanvasInk(timeout = 45000) {
   await browser.waitUntil(
     async () =>

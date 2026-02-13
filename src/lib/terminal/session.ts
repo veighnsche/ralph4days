@@ -353,64 +353,45 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
 
     let cancelled = false
 
-    const resetResumeState = () => {
-      isResumingRef.current = false
-      queuedLiveOutputRef.current = []
-    }
-
-    const drainQueuedLiveOutput = () => {
-      const queued = [...queuedLiveOutputRef.current].sort((left, right) => {
-        if (left.seq < right.seq) return -1
-        if (left.seq > right.seq) return 1
-        return 0
-      })
-      queuedLiveOutputRef.current = []
-      for (const chunk of queued) {
-        deliverOutputChunk(chunk.seq, chunk.data)
-      }
-    }
-
-    const syncActiveRuntimeMode = async () => {
-      isResumingRef.current = true
-      queuedLiveOutputRef.current = []
-
-      await terminalBridgeSetStreamMode(sessionId, 'buffered')
-      let cursor = await replayBufferedOutput(lastDeliveredSeqRef.current)
-      await terminalBridgeSetStreamMode(sessionId, 'live')
-      cursor = await replayBufferedOutput(cursor, 1024)
-      if (cursor < 0) {
-        throw new Error('[terminal_session] Replay cursor must be non-negative')
-      }
-      drainQueuedLiveOutput()
-    }
-
-    const restoreLiveMode = async () => {
-      try {
-        await terminalBridgeSetStreamMode(sessionId, 'live')
-      } catch (restoreError) {
-        handlersRef.current.onError?.(
-          `[terminal_session] Failed to restore stream mode to live: ${String(restoreError)}`
-        )
-      }
-    }
-
     const syncRuntimeMode = async () => {
-      if (!isActive) {
-        await terminalBridgeSetStreamMode(sessionId, 'buffered')
-        return
-      }
-
       try {
-        await syncActiveRuntimeMode()
+        if (!isActive) {
+          await terminalBridgeSetStreamMode(sessionId, 'buffered')
+          return
+        }
+
+        isResumingRef.current = true
+        queuedLiveOutputRef.current = []
+
+        await terminalBridgeSetStreamMode(sessionId, 'buffered')
+        let cursor = await replayBufferedOutput(lastDeliveredSeqRef.current)
+        await terminalBridgeSetStreamMode(sessionId, 'live')
+        cursor = await replayBufferedOutput(cursor, 1024)
+
+        const queued = [...queuedLiveOutputRef.current].sort((left, right) => {
+          if (left.seq < right.seq) return -1
+          if (left.seq > right.seq) return 1
+          return 0
+        })
+        queuedLiveOutputRef.current = []
+        for (const chunk of queued) {
+          deliverOutputChunk(chunk.seq, chunk.data)
+        }
       } catch (error) {
-        if (!cancelled) {
-          await restoreLiveMode()
+        if (!cancelled && isActive) {
+          try {
+            await terminalBridgeSetStreamMode(sessionId, 'live')
+          } catch (restoreError) {
+            handlersRef.current.onError?.(
+              `[terminal_session] Failed to restore stream mode to live: ${String(restoreError)}`
+            )
+          }
         }
         throw error
       } finally {
-        if (!cancelled) {
-          resetResumeState()
-        }
+        if (cancelled) return
+        isResumingRef.current = false
+        queuedLiveOutputRef.current = []
       }
     }
 

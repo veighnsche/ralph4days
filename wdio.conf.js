@@ -1,15 +1,18 @@
 import os from 'os'
 import path from 'path'
+import net from 'net'
 import { existsSync } from 'fs'
 import { spawn, spawnSync } from 'child_process'
 import { fileURLToPath } from 'url'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const projectRoot = path.resolve(__dirname)
-const srcTauriDir = path.resolve(projectRoot, 'src-tauri')
 const binaryName = process.platform === 'win32' ? 'ralph4days.exe' : 'ralph4days'
-const application = path.resolve(srcTauriDir, 'target', 'debug', binaryName)
+const application = path.resolve(projectRoot, 'target', 'debug', binaryName)
 const driverBinaryName = process.platform === 'win32' ? 'tauri-driver.exe' : 'tauri-driver'
+const tauriDriverHost = '127.0.0.1'
+const tauriDriverPort = 4444
+const tauriDriverReadyTimeoutMs = 10000
 
 let tauriDriver
 let shouldExit = false
@@ -87,7 +90,54 @@ function stopTauriDriver() {
   tauriDriver?.kill()
 }
 
-function startTauriDriver() {
+function waitForPortReady(hostname, port, timeoutMs) {
+  const deadline = Date.now() + timeoutMs
+  let lastError = null
+
+  const attemptConnect = () =>
+    new Promise((resolve, reject) => {
+      const socket = new net.Socket()
+
+      const finalize = callback => value => {
+        socket.removeAllListeners()
+        socket.destroy()
+        callback(value)
+      }
+
+      socket.setTimeout(250)
+      socket.once('connect', finalize(resolve))
+      socket.once('timeout', finalize(() => reject(new Error(`timeout connecting to ${hostname}:${port}`))))
+      socket.once('error', finalize(reject))
+      socket.connect(port, hostname)
+    })
+
+  const poll = async () => {
+    while (Date.now() < deadline) {
+      if (tauriDriver?.exitCode !== null) {
+        throw new Error(`tauri-driver exited before listening on ${hostname}:${port}`)
+      }
+
+      try {
+        await attemptConnect()
+        return
+      } catch (error) {
+        lastError = error
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+
+    const lastErrorMessage = lastError instanceof Error ? lastError.message : String(lastError)
+    throw new Error(
+      `tauri-driver failed to listen on ${hostname}:${port} within ${timeoutMs}ms. Last error: ${lastErrorMessage}`
+    )
+  }
+
+  return poll()
+}
+
+async function startTauriDriver() {
+  shouldExit = false
   const driverBinary = resolveTauriDriverBinary()
   tauriDriver = spawn(driverBinary, { stdio: [null, process.stdout, process.stderr] })
 
@@ -102,6 +152,13 @@ function startTauriDriver() {
       process.exit(1)
     }
   })
+
+  try {
+    await waitForPortReady(tauriDriverHost, tauriDriverPort, tauriDriverReadyTimeoutMs)
+  } catch (error) {
+    stopTauriDriver()
+    throw error
+  }
 }
 
 const projectPath = resolveTauriProjectPath()
@@ -109,8 +166,10 @@ const specOverride = process.env.TAURI_E2E_SPEC?.trim()
 
 export const config = {
   runner: 'local',
-  host: '127.0.0.1',
-  port: 4444,
+  protocol: 'http',
+  hostname: tauriDriverHost,
+  port: tauriDriverPort,
+  path: '/',
   specs: [specOverride || './e2e-tauri/**/*.spec.js'],
   maxInstances: 1,
   capabilities: [

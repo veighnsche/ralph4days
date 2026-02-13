@@ -88,6 +88,8 @@ Use `just` as the primary task runner (`just --list`).
 - Follow Conventional Commit-style prefixes seen in history: `feat(...)`, `fix(...)`, `refactor(...)`, `chore(...)`, `docs(...)`.
 - Keep commits scoped and functional; avoid mixing unrelated frontend/backend changes when possible.
 - Before opening a PR, run `just check-all` and `just test`.
+- `git commit --no-verify` is completely forbidden.
+- Never bypass git hooks. If hooks fail, stop, surface the failure, and fix the underlying issue before committing.
 
 - Strict harness policy:
 - Do not introduce native-window-automation tooling or harnesses for production validation.
