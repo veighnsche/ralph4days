@@ -8,10 +8,10 @@ interface GroupItem {
 export function computeSubsystemStats(tasks: Task[], subsystems: SubsystemData[]): Map<string, GroupStats> {
   const statsMap = new Map<string, GroupStats>()
 
-  for (const feature of subsystems) {
-    statsMap.set(feature.name, {
-      name: feature.name,
-      displayName: feature.displayName,
+  for (const subsystem of subsystems) {
+    statsMap.set(subsystem.name, {
+      name: subsystem.name,
+      displayName: subsystem.displayName,
       total: 0,
       draft: 0,
       done: 0,
@@ -23,7 +23,7 @@ export function computeSubsystemStats(tasks: Task[], subsystems: SubsystemData[]
   }
 
   for (const task of tasks) {
-    const stats = statsMap.get(task.feature)
+    const stats = statsMap.get(task.subsystem)
     if (!stats) continue
     stats.total++
     switch (task.status) {

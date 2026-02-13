@@ -50,18 +50,6 @@ export type DisciplineCropsData = {
   strip?: CropBoxData
 }
 export type DisciplineImagePromptData = { positive: string; negative: string }
-export type FeatureComment = {
-  id: number
-  category: string
-  discipline?: string
-  agent_task_id?: number
-  body: string
-  summary?: string
-  reason?: string
-  source_iteration?: number
-  created?: string
-  updated?: string
-}
 export type FeatureLearning = {
   text: string
   reason?: string
@@ -73,7 +61,6 @@ export type FeatureLearning = {
   reviewed: boolean
   review_count: number
 }
-export type FeatureStatus = 'active' | 'archived'
 export type GroupStats = {
   name: string
   displayName: string
@@ -129,6 +116,18 @@ export type StackMetadataData = {
   disciplineCount: number
   characteristics: string[]
 }
+export type SubsystemComment = {
+  id: number
+  category: string
+  discipline?: string
+  agent_task_id?: number
+  body: string
+  summary?: string
+  reason?: string
+  source_iteration?: number
+  created?: string
+  updated?: string
+}
 export type SubsystemCommentData = {
   id: number
   category: string
@@ -151,9 +150,10 @@ export type SubsystemData = {
   status: string
   comments: SubsystemCommentData[]
 }
+export type SubsystemStatus = 'active' | 'archived'
 export type Task = {
   id: number
-  feature: string
+  subsystem: string
   discipline: string
   title: string
   description?: string
@@ -177,8 +177,8 @@ export type Task = {
   pseudocode?: string
   enrichedAt?: string
   signals: TaskSignal[]
-  featureDisplayName: string
-  featureAcronym: string
+  subsystemDisplayName: string
+  subsystemAcronym: string
   disciplineDisplayName: string
   disciplineAcronym: string
   disciplineIcon: string

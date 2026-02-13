@@ -1,17 +1,48 @@
 import { AlertCircle, CheckCircle2, FileCode } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import {
+  createDisciplineDetailTab,
+  createSubsystemDetailTab,
+  createTaskDetailTab,
+  useWorkspaceTabContext
+} from '@/components/workspace/tabs'
 import { STATUS_CONFIG } from '@/constants/prd'
-import type { Task } from '@/types/generated'
+import { useInvoke } from '@/hooks/api'
+import { useDisciplines } from '@/hooks/disciplines'
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
+import type { SubsystemData, Task } from '@/types/generated'
 import { TaskIdDisplay } from '../../../prd/TaskIdDisplay'
 
 export function TaskCardContent({ task }: { task: Task }) {
+  const currentTab = useWorkspaceTabContext()
+  const openTabAfter = useWorkspaceStore(s => s.openTabAfter)
+  const { disciplines } = useDisciplines()
+  const { data: subsystems = [] } = useInvoke<SubsystemData[]>('get_subsystems', undefined, {
+    staleTime: 5 * 60 * 1000
+  })
+  const subsystemId = subsystems.find(subsystem => subsystem.name === task.subsystem)?.id
+  const disciplineId = disciplines.find(discipline => discipline.name === task.discipline)?.id
+  const openRelatedTabAfterCurrent = (tab: ReturnType<typeof createTaskDetailTab>) => {
+    openTabAfter(currentTab.id, tab)
+  }
+
   const sections: React.ReactNode[] = []
 
   sections.push(
     <div key="body" className="px-6 space-y-3">
       <div className="space-y-1.5">
-        <TaskIdDisplay task={task} variant="full" />
+        <TaskIdDisplay
+          task={task}
+          variant="full"
+          onTaskIdClick={() => openRelatedTabAfterCurrent(createTaskDetailTab(task.id))}
+          onSubsystemClick={
+            subsystemId != null ? () => openRelatedTabAfterCurrent(createSubsystemDetailTab(subsystemId)) : undefined
+          }
+          onDisciplineClick={
+            disciplineId != null ? () => openRelatedTabAfterCurrent(createDisciplineDetailTab(disciplineId)) : undefined
+          }
+        />
         <h1 className="text-xl font-semibold leading-tight">{task.title}</h1>
       </div>
 

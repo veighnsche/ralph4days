@@ -139,7 +139,7 @@ export const PlaylistItem = memo(function PlaylistItem({
       {/* Col 1: Task ID */}
       <div
         className={`row-span-full self-start relative z-10 flex flex-col items-start leading-tight font-mono ${hasHeadshot ? 'ml-22' : ''}`}>
-        <span className="text-xs text-muted-foreground">{task.featureAcronym}</span>
+        <span className="text-xs text-muted-foreground">{task.subsystemAcronym}</span>
         <DisciplineLabel acronym={task.disciplineAcronym} color={task.disciplineColor} />
         <span className="text-xs text-muted-foreground">
           {task.id > 999 ? task.id.toString() : `#${task.id.toString().padStart(3, '0')}`}

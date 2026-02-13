@@ -45,7 +45,7 @@ export function usePRDFilters(tasks: Task[] | null, allTags: string[]) {
           task.title.toLowerCase().includes(query) ||
           task.description?.toLowerCase().includes(query) ||
           task.id.toString().includes(query) ||
-          task.feature.toLowerCase().includes(query) ||
+          task.subsystem.toLowerCase().includes(query) ||
           task.discipline.toLowerCase().includes(query) ||
           task.tags?.some(tag => tag.toLowerCase().includes(query))
       )

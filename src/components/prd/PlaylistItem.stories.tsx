@@ -35,18 +35,18 @@ const DISCIPLINE_DEFAULTS: Record<string, { displayName: string; acronym: string
   api: { displayName: 'API', acronym: 'API', icon: 'plug', color: '#14B8A6' }
 }
 
-function featureDisplayName(feature: string): string {
-  return feature
+function subsystemDisplayName(subsystem: string): string {
+  return subsystem
     .split('-')
     .map(w => w.charAt(0).toUpperCase() + w.slice(1))
     .join(' ')
 }
 
-function featureAcronym(feature: string): string {
-  return feature.replace(/-/g, '').slice(0, 4).toUpperCase()
+function subsystemAcronym(subsystem: string): string {
+  return subsystem.replace(/-/g, '').slice(0, 4).toUpperCase()
 }
 
-function enrichFields(feature: string, discipline: string) {
+function enrichFields(subsystem: string, discipline: string) {
   const disc = DISCIPLINE_DEFAULTS[discipline] ?? {
     displayName: discipline.charAt(0).toUpperCase() + discipline.slice(1),
     acronym: discipline.slice(0, 4).toUpperCase(),
@@ -54,9 +54,9 @@ function enrichFields(feature: string, discipline: string) {
     color: '#6B7280'
   }
   return {
-    featureDisplayName: featureDisplayName(feature),
+    subsystemDisplayName: subsystemDisplayName(subsystem),
     signals: [],
-    featureAcronym: featureAcronym(feature),
+    subsystemAcronym: subsystemAcronym(subsystem),
     disciplineDisplayName: disc.displayName,
     disciplineAcronym: disc.acronym,
     disciplineIcon: disc.icon,
@@ -66,7 +66,7 @@ function enrichFields(feature: string, discipline: string) {
 
 const baseTask: Task = {
   id: 1,
-  feature: 'ui',
+  subsystem: 'ui',
   discipline: 'frontend',
   title: 'Design main dashboard layout',
   description: 'Create responsive dashboard with sidebar and main content area',
@@ -94,7 +94,7 @@ export const InProgress: Story = {
     task: {
       ...baseTask,
       id: 2,
-      feature: 'api',
+      subsystem: 'api',
       discipline: 'backend',
       title: 'Implement task list component',
       status: 'in_progress',
@@ -110,7 +110,7 @@ export const Done: Story = {
     task: {
       ...baseTask,
       id: 3,
-      feature: 'data',
+      subsystem: 'data',
       discipline: 'database',
       title: 'Setup REST API endpoints',
       status: 'done',
@@ -126,7 +126,7 @@ export const Blocked: Story = {
     task: {
       ...baseTask,
       id: 4,
-      feature: 'tests',
+      subsystem: 'tests',
       discipline: 'testing',
       title: 'Add authentication middleware',
       status: 'blocked',
@@ -141,7 +141,7 @@ export const Skipped: Story = {
     task: {
       ...baseTask,
       id: 5,
-      feature: 'deploy',
+      subsystem: 'deploy',
       discipline: 'infra',
       title: 'Deploy to staging environment',
       status: 'skipped',
@@ -167,7 +167,7 @@ export const CriticalPriority: Story = {
     task: {
       ...baseTask,
       id: 6,
-      feature: 'sec',
+      subsystem: 'sec',
       discipline: 'security',
       title: 'Fix critical security vulnerability',
       priority: 'critical',
@@ -195,7 +195,7 @@ export const NoDescription: Story = {
   args: {
     task: {
       id: 7,
-      feature: 'docs',
+      subsystem: 'docs',
       discipline: 'docs',
       title: 'Write API documentation',
       status: 'pending' as const,
@@ -222,7 +222,7 @@ export const AllDisciplines: Story = {
         task={{
           ...baseTask,
           id: 1,
-          feature: 'ui',
+          subsystem: 'ui',
           discipline: 'frontend',
           title: 'Frontend Task',
           ...enrichFields('ui', 'frontend')
@@ -233,7 +233,7 @@ export const AllDisciplines: Story = {
         task={{
           ...baseTask,
           id: 2,
-          feature: 'api',
+          subsystem: 'api',
           discipline: 'backend',
           title: 'Backend Task',
           ...enrichFields('api', 'backend')
@@ -244,7 +244,7 @@ export const AllDisciplines: Story = {
         task={{
           ...baseTask,
           id: 3,
-          feature: 'data',
+          subsystem: 'data',
           discipline: 'database',
           title: 'Database Task',
           ...enrichFields('data', 'database')
@@ -255,7 +255,7 @@ export const AllDisciplines: Story = {
         task={{
           ...baseTask,
           id: 4,
-          feature: 'tests',
+          subsystem: 'tests',
           discipline: 'testing',
           title: 'Testing Task',
           ...enrichFields('tests', 'testing')
@@ -266,7 +266,7 @@ export const AllDisciplines: Story = {
         task={{
           ...baseTask,
           id: 5,
-          feature: 'deploy',
+          subsystem: 'deploy',
           discipline: 'infra',
           title: 'Infrastructure Task',
           ...enrichFields('deploy', 'infra')
@@ -277,7 +277,7 @@ export const AllDisciplines: Story = {
         task={{
           ...baseTask,
           id: 6,
-          feature: 'sec',
+          subsystem: 'sec',
           discipline: 'security',
           title: 'Security Task',
           ...enrichFields('sec', 'security')
@@ -288,7 +288,7 @@ export const AllDisciplines: Story = {
         task={{
           ...baseTask,
           id: 7,
-          feature: 'docs',
+          subsystem: 'docs',
           discipline: 'docs',
           title: 'Documentation Task',
           ...enrichFields('docs', 'docs')
@@ -299,7 +299,7 @@ export const AllDisciplines: Story = {
         task={{
           ...baseTask,
           id: 8,
-          feature: 'ui',
+          subsystem: 'ui',
           discipline: 'design',
           title: 'Design Task',
           ...enrichFields('ui', 'design')
@@ -310,7 +310,7 @@ export const AllDisciplines: Story = {
         task={{
           ...baseTask,
           id: 9,
-          feature: 'campaign',
+          subsystem: 'campaign',
           discipline: 'promo',
           title: 'Marketing Task',
           ...enrichFields('campaign', 'promo')
@@ -321,7 +321,7 @@ export const AllDisciplines: Story = {
         task={{
           ...baseTask,
           id: 10,
-          feature: 'rest',
+          subsystem: 'rest',
           discipline: 'api',
           title: 'API Task',
           ...enrichFields('rest', 'api')

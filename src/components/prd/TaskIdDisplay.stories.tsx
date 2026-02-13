@@ -28,18 +28,18 @@ const DISCIPLINE_DEFAULTS: Record<string, { displayName: string; acronym: string
   api: { displayName: 'API', acronym: 'API', icon: 'plug', color: '#14B8A6' }
 }
 
-function featureDisplayName(feature: string): string {
-  return feature
+function subsystemDisplayName(subsystem: string): string {
+  return subsystem
     .split('-')
     .map(w => w.charAt(0).toUpperCase() + w.slice(1))
     .join(' ')
 }
 
-function featureAcronym(feature: string): string {
-  return feature.replace(/-/g, '').slice(0, 4).toUpperCase()
+function subsystemAcronym(subsystem: string): string {
+  return subsystem.replace(/-/g, '').slice(0, 4).toUpperCase()
 }
 
-const createTask = (id: number, feature: string, discipline: string): Task => {
+const createTask = (id: number, subsystem: string, discipline: string): Task => {
   const disc = DISCIPLINE_DEFAULTS[discipline] ?? {
     displayName: discipline.charAt(0).toUpperCase() + discipline.slice(1),
     acronym: discipline.slice(0, 4).toUpperCase(),
@@ -48,7 +48,7 @@ const createTask = (id: number, feature: string, discipline: string): Task => {
   }
   return {
     id,
-    feature,
+    subsystem,
     discipline,
     title: 'Example task',
     status: 'pending',
@@ -57,9 +57,9 @@ const createTask = (id: number, feature: string, discipline: string): Task => {
     acceptanceCriteria: [],
     contextFiles: [],
     outputArtifacts: [],
-    featureDisplayName: featureDisplayName(feature),
+    subsystemDisplayName: subsystemDisplayName(subsystem),
     signals: [],
-    featureAcronym: featureAcronym(feature),
+    subsystemAcronym: subsystemAcronym(subsystem),
     disciplineDisplayName: disc.displayName,
     disciplineAcronym: disc.acronym,
     disciplineIcon: disc.icon,

@@ -1,4 +1,5 @@
 import { Bot, Check, Cog, Play, Radio, Sparkles, User, WandSparkles } from 'lucide-react'
+import { InlineError } from '@/components/shared'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -7,7 +8,6 @@ import { INFERRED_STATUS_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from '@/consta
 import { type SignalVerb, VERB_CONFIG } from '@/constants/signals'
 import { useInvokeMutation } from '@/hooks/api'
 import { formatDate } from '@/lib/formatDate'
-import { resolveIcon } from '@/lib/iconRegistry'
 import type { InferredTaskStatus } from '@/lib/taskStatus'
 import { shouldShowInferredStatus } from '@/lib/taskStatus'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
@@ -15,6 +15,7 @@ import type { Task, TaskSignal } from '@/types/generated'
 import { PropertyRow } from '../../PropertyRow'
 import { createTerminalTab } from '../../tabs'
 import { type LaunchSource, useResolvedTaskLaunch } from '../hooks/useResolvedTaskLaunch'
+import { DisciplineSelect } from './DisciplineSelect'
 
 const PROVENANCE_CONFIG = {
   agent: { label: 'Agent', icon: Bot },
@@ -68,7 +69,6 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
   const statusConfig = STATUS_CONFIG[task.status]
   const StatusIcon = statusConfig.icon
   const priorityConfig = task.priority ? PRIORITY_CONFIG[task.priority] : null
-  const DisciplineIcon = resolveIcon(task.disciplineIcon)
   const openTab = useWorkspaceStore(state => state.openTab)
   const isDraftAgent = task.status === 'draft' && task.provenance === 'agent'
   const {
@@ -84,6 +84,33 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
   } = useResolvedTaskLaunch(task)
 
   const approveMutation = useInvokeMutation<{ id: number; status: string }>('set_task_status', {
+    invalidateKeys: QUERY_KEYS.TASKS
+  })
+  const updateTaskMutation = useInvokeMutation<
+    {
+      params: {
+        id: number
+        subsystem: string
+        discipline: string
+        title: string
+        description?: string
+        priority?: Task['priority']
+        tags: string[]
+        depends_on: number[]
+        acceptance_criteria: string[]
+        context_files: string[]
+        output_artifacts: string[]
+        hints?: string
+        estimated_turns?: number
+        provenance?: Task['provenance']
+        agent?: string
+        model?: string
+        effort?: string
+        thinking?: boolean
+      }
+    },
+    void
+  >('update_task', {
     invalidateKeys: QUERY_KEYS.TASKS
   })
 
@@ -102,6 +129,33 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
         thinking: resolvedThinking ?? undefined
       })
     )
+  }
+
+  const handleDisciplineSelect = (disciplineName: string) => {
+    if (disciplineName === task.discipline) return
+
+    updateTaskMutation.mutate({
+      params: {
+        id: task.id,
+        subsystem: task.subsystem,
+        discipline: disciplineName,
+        title: task.title,
+        description: task.description,
+        priority: task.priority,
+        tags: task.tags,
+        depends_on: task.dependsOn,
+        acceptance_criteria: task.acceptanceCriteria,
+        context_files: task.contextFiles,
+        output_artifacts: task.outputArtifacts,
+        hints: task.hints,
+        estimated_turns: task.estimatedTurns,
+        provenance: task.provenance,
+        agent: task.agent,
+        model: task.model,
+        effort: task.effort,
+        thinking: task.thinking
+      }
+    })
   }
 
   return (
@@ -232,17 +286,17 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
         <Separator bleed="md" className="my-2" />
 
         <PropertyRow label="Subsystem">
-          <span className="text-sm">{task.featureDisplayName}</span>
+          <span className="text-sm">{task.subsystemDisplayName}</span>
         </PropertyRow>
 
         <PropertyRow label="Discipline">
-          <div className="flex items-center gap-1.5">
-            <DisciplineIcon className="h-3.5 w-3.5" style={{ color: task.disciplineColor }} />
-            <span className="text-sm" style={{ color: task.disciplineColor }}>
-              {task.disciplineDisplayName}
-            </span>
-          </div>
+          <DisciplineSelect
+            value={task.discipline}
+            onSelect={handleDisciplineSelect}
+            disabled={updateTaskMutation.isPending}
+          />
         </PropertyRow>
+        <InlineError error={updateTaskMutation.error} onDismiss={updateTaskMutation.reset} className="mt-1 mb-2" />
         <PropertyRow label="Launch">
           <div className="space-y-1 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">

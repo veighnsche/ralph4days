@@ -9,6 +9,9 @@ interface TaskIdDisplayProps {
   className?: string
   imageUrl?: string
   faceCrop?: CropBoxData
+  onSubsystemClick?: () => void
+  onDisciplineClick?: () => void
+  onTaskIdClick?: () => void
 }
 
 function formatTaskId(id: number): string {
@@ -56,7 +59,16 @@ function ImageOrIcon({
   )
 }
 
-export function TaskIdDisplay({ task, variant = 'default', className = '', imageUrl, faceCrop }: TaskIdDisplayProps) {
+export function TaskIdDisplay({
+  task,
+  variant = 'default',
+  className = '',
+  imageUrl,
+  faceCrop,
+  onSubsystemClick,
+  onDisciplineClick,
+  onTaskIdClick
+}: TaskIdDisplayProps) {
   const DisciplineIcon = resolveIcon(task.disciplineIcon)
   const bgColor = `color-mix(in oklch, ${task.disciplineColor} 15%, transparent)`
   const formattedId = formatTaskId(task.id)
@@ -64,14 +76,43 @@ export function TaskIdDisplay({ task, variant = 'default', className = '', image
   if (variant === 'full') {
     return (
       <div className={`flex items-center gap-1.5 text-sm text-muted-foreground ${className}`}>
-        <span>{task.featureDisplayName}</span>
+        {onSubsystemClick ? (
+          <button
+            type="button"
+            onClick={onSubsystemClick}
+            className="cursor-pointer hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm">
+            {task.subsystemDisplayName}
+          </button>
+        ) : (
+          <span>{task.subsystemDisplayName}</span>
+        )}
         <span className="opacity-40">/</span>
-        <span className="inline-flex items-center gap-1" style={{ color: task.disciplineColor }}>
-          <DisciplineIcon className="w-3.5 h-3.5" />
-          {task.disciplineDisplayName}
-        </span>
+        {onDisciplineClick ? (
+          <button
+            type="button"
+            onClick={onDisciplineClick}
+            className="inline-flex items-center gap-1 cursor-pointer hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+            style={{ color: task.disciplineColor }}>
+            <DisciplineIcon className="w-3.5 h-3.5" />
+            {task.disciplineDisplayName}
+          </button>
+        ) : (
+          <span className="inline-flex items-center gap-1" style={{ color: task.disciplineColor }}>
+            <DisciplineIcon className="w-3.5 h-3.5" />
+            {task.disciplineDisplayName}
+          </span>
+        )}
         <span className="opacity-40">/</span>
-        <span className="font-mono">{formattedId}</span>
+        {onTaskIdClick ? (
+          <button
+            type="button"
+            onClick={onTaskIdClick}
+            className="font-mono cursor-pointer hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm">
+            {formattedId}
+          </button>
+        ) : (
+          <span className="font-mono">{formattedId}</span>
+        )}
       </div>
     )
   }
@@ -89,7 +130,7 @@ export function TaskIdDisplay({ task, variant = 'default', className = '', image
 
         <div className="flex flex-col items-start leading-tight">
           <Badge variant="outline" className="font-mono text-xs mb-0.5">
-            {task.featureAcronym}
+            {task.subsystemAcronym}
           </Badge>
           <DisciplineLabel acronym={task.disciplineAcronym} color={task.disciplineColor} className="mb-0.5" />
           <Badge variant="outline" className="font-mono text-xs mb-0.5">
@@ -111,7 +152,7 @@ export function TaskIdDisplay({ task, variant = 'default', className = '', image
       />
 
       <div className="flex flex-col items-start leading-tight font-mono">
-        <span className="text-xs text-muted-foreground">{task.featureAcronym}</span>
+        <span className="text-xs text-muted-foreground">{task.subsystemAcronym}</span>
         <DisciplineLabel acronym={task.disciplineAcronym} color={task.disciplineColor} />
         <span className="text-xs text-muted-foreground">{formattedId}</span>
       </div>
