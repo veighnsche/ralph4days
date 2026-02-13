@@ -29,6 +29,7 @@ pub async fn start_api_server(app_handle: AppHandle) -> Result<u16, String> {
         app_handle,
         db_path: Arc::new(RwLock::new(None)),
     };
+    let app_handle = state.app_handle.clone();
 
     let app = Router::new()
         .route("/api/task-signal", post(handle_signal))
@@ -45,9 +46,15 @@ pub async fn start_api_server(app_handle: AppHandle) -> Result<u16, String> {
         .port();
 
     tokio::spawn(async move {
-        axum::serve(listener, app)
-            .await
-            .expect("API server crashed");
+        if let Err(error) = axum::serve(listener, app).await {
+            let message = format!("API server crashed: {error}");
+            tracing::error!("{message}");
+            if let Err(event_error) =
+                app_handle.emit("api-server-error", &serde_json::json!({ "error": message }))
+            {
+                tracing::warn!("Failed to emit api-server-error event: {event_error}");
+            }
+        }
     });
 
     Ok(port)
