@@ -1,5 +1,6 @@
 import { AlertCircle, FileCode, Plus } from 'lucide-react'
 import { Fragment, useState } from 'react'
+import { TaskPriorityCorner } from '@/components/shared'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -260,13 +261,17 @@ export function TaskCardContent({ task }: { task: Task }) {
   }
 
   return (
-    <div className="space-y-6">
-      {sections.map(({ id, node }, index) => (
-        <Fragment key={id}>
-          {index > 0 && <Separator />}
-          {node}
-        </Fragment>
-      ))}
+    <div className="relative overflow-hidden">
+      <TaskPriorityCorner priority={task.priority} size="md" className="top-4 right-6" />
+
+      <div className="relative z-10 space-y-6">
+        {sections.map(({ id, node }, index) => (
+          <Fragment key={id}>
+            {index > 0 && <Separator />}
+            {node}
+          </Fragment>
+        ))}
+      </div>
     </div>
   )
 }

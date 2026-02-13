@@ -1,6 +1,6 @@
 import { Bot, CircleHelp, Cog, Flag, GitBranch, ListChecks, MessageSquare, User } from 'lucide-react'
 import { memo } from 'react'
-import { PriorityIcon, PriorityRadial } from '@/components/shared'
+import { TaskPriorityCorner } from '@/components/shared'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { INFERRED_STATUS_CONFIG, STATUS_CONFIG } from '@/constants/prd'
@@ -58,13 +58,12 @@ function PlaylistItemIndicators({
 }) {
   const totalDeps = task.dependsOn?.length ?? 0
   const hasSignals = signalSummary && (signalSummary.pendingAsks > 0 || signalSummary.flagCount > 0)
-  const hasAny =
-    task.signalCount > 0 || totalDeps > 0 || task.acceptanceCriteriaCount > 0 || task.priority || hasSignals
+  const hasAny = task.signalCount > 0 || totalDeps > 0 || task.acceptanceCriteriaCount > 0 || hasSignals
 
   if (!hasAny) return null
 
   return (
-    <div className="flex items-center gap-2 text-muted-foreground">
+    <div className={`flex items-center gap-2 text-muted-foreground${task.priority ? ' pr-4' : ''}`}>
       {signalSummary && <SignalIndicators summary={signalSummary} />}
       {task.signalCount > 0 && (
         <div className="flex items-center gap-1">
@@ -88,7 +87,6 @@ function PlaylistItemIndicators({
           <span className="text-xs">{task.acceptanceCriteriaCount}</span>
         </div>
       )}
-      {task.priority && <PriorityIcon priority={task.priority} />}
     </div>
   )
 }
@@ -126,7 +124,7 @@ export const PlaylistItem = memo(function PlaylistItem({
         opacity: task.status === 'done' || task.status === 'skipped' || task.status === 'draft' ? 0.5 : 1
       }}
       onClick={onClick}>
-      {task.priority && <PriorityRadial priority={task.priority} />}
+      <TaskPriorityCorner priority={task.priority} />
 
       {hasHeadshot && (
         <DisciplineHeadshot disciplineName={task.discipline} faceCrop={crops?.face ?? { x: 0, y: 0, w: 1, h: 1 }} />
