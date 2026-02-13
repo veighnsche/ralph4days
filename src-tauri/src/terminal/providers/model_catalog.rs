@@ -68,15 +68,18 @@ fn dedupe_valid_models(models: Vec<ModelSpec>) -> Vec<ModelSpec> {
 
 fn parse_codex_models_yaml(yaml: &str) -> Vec<ModelSpec> {
     let parsed = serde_yaml::from_str::<CodexModelCatalog>(yaml).unwrap_or_else(|err| {
-        panic!("Invalid model catalog YAML: {err}");
+        tracing::warn!("Invalid codex model catalog YAML: {err}");
+        return CodexModelCatalog { models: vec![] };
     });
     dedupe_valid_models(parsed.models)
 }
 
 fn parse_claudecode_models_yaml(yaml: &str) -> Vec<ModelSpec> {
-    let parsed = serde_yaml::from_str::<ClaudeCodeModelCatalog>(yaml).unwrap_or_else(|err| {
-        panic!("Invalid model catalog YAML: {err}");
-    });
+    let parsed =
+        serde_yaml::from_str::<ClaudeCodeModelCatalog>(yaml).unwrap_or_else(|err| {
+            tracing::warn!("Invalid claudecode model catalog YAML: {err}");
+            ClaudeCodeModelCatalog { models: vec![] }
+        });
     dedupe_valid_models(parsed.models)
 }
 
