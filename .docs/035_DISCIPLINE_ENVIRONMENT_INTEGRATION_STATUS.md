@@ -280,7 +280,7 @@ Claude executes task with full discipline environment
 **Current flags used:**
 - `--permission-mode bypassPermissions` - Skip permission prompts
 - `--verbose` - Detailed output
-- `--no-chrome` - No browser-based UI
+- `--no-chrome` - No GUI-based UI
 - `--model <model>` - Optional model selection
 - `--settings <json>` - JSON settings object
 - `--mcp-config <path>` - Path to MCP config file

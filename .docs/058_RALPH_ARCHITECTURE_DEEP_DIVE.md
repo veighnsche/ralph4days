@@ -302,7 +302,7 @@ claude \
 
 **Key Configuration**:
 - `--permission-mode bypassPermissions`: Skip prompts (headless execution)
-- `--no-chrome`: Disable browser UI
+- `--no-chrome`: Disable embedded Chromium UI
 - `--mcp-config`: Path to dynamically generated MCP server config
 - `--model`: haiku (default), sonnet, or opus
 - `--settings`: JSON with max_turns, thinking mode, etc.
@@ -398,7 +398,7 @@ interface WorkspaceStore {
 }
 ```
 
-**Design Pattern**: Browser-style tab management:
+**Design Pattern**: Window-style tab management:
 - Tabs can be reordered via drag-and-drop
 - Max 20 tabs (oldest closeable tab evicted)
 - Tab IDs generated from type + entity ID (deterministic)
@@ -499,7 +499,7 @@ Connection::open(path)
          │ Chaos Tests  │  (Gremlins.js)
          └──────────────┘
        ┌────────────────────┐
-       │  E2E Tests         │  (Automation runner)
+│  E2E Tests         │  (WebdriverIO + tauri-driver)
        └────────────────────┘
     ┌───────────────────────────┐
     │  Visual Regression Tests  │  (Automation runner snapshots)
@@ -517,8 +517,8 @@ Connection::open(path)
 just test           # All tests
 just test-rust      # cargo test
 just test-frontend  # vitest
-just test-e2e       # automation-runner
-just test-visual    # visual regression
+just test-e2e       # wdio + tauri-driver
+just test-visual    # storybook / visual checks
 just test-monkey    # chaos testing
 ```
 
@@ -827,7 +827,7 @@ McpServerConfig {
 }
 ```
 
-When a **Frontend** task runs, Claude gets access to browser automation. When a **Backend** task runs, Claude gets database tools. **The toolset is tailored to the role.**
+When a **Frontend** task runs, Claude gets access to UI automation tooling. When a **Backend** task runs, Claude gets database tools. **The toolset is tailored to the role.**
 
 **Key Insight**: Disciplines are **not** just metadata—they fundamentally change Claude's behavior by injecting identity, constraints, and tools.
 

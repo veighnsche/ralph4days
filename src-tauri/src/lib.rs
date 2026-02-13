@@ -63,6 +63,7 @@ pub fn run() {
             let app_handle = app.handle().clone();
             diagnostics::register_app_handle(&app_handle);
             let state: tauri::State<AppState> = app.state();
+            let mut skip_splash = false;
 
             tauri::async_runtime::block_on(async {
                 match api_server::start_api_server(app_handle).await {
@@ -80,6 +81,17 @@ pub fn run() {
             // visible(false) then shown via .show() has a stale CSD input region,
             // making decoration buttons unclickable. Both windows are created here
             // in order: main first (born visible), then splash on top.
+            if let Ok(matches) = app.cli().matches() {
+                if let Some(no_splash) = matches.args.get("no-splash") {
+                    if matches!(no_splash.value, serde_json::Value::Bool(true))
+                        || matches!(&no_splash.value, serde_json::Value::String(value) if value == "true" || value.is_empty())
+                    {
+                        skip_splash = true;
+                        tracing::info!("Skipping splash window via --no-splash");
+                    }
+                }
+            }
+
             let _main = tauri::WebviewWindowBuilder::new(
                 app,
                 "main",
@@ -92,23 +104,25 @@ pub fn run() {
             .resizable(true)
             .maximizable(true)
             .decorations(true)
-            .visible(true)
-            .focused(false)
-            .build()?;
+                .visible(true)
+                .focused(false)
+                .build()?;
 
-            let _splash = tauri::WebviewWindowBuilder::new(
-                app,
-                "splash",
-                tauri::WebviewUrl::App("splash.html".into()),
-            )
-            .inner_size(400.0, 250.0)
-            .center()
-            .decorations(false)
-            .skip_taskbar(true)
-            .resizable(false)
-            .always_on_top(true)
-            .focused(true)
-            .build()?;
+            if !skip_splash {
+                let _splash = tauri::WebviewWindowBuilder::new(
+                    app,
+                    "splash",
+                    tauri::WebviewUrl::App("splash.html".into()),
+                )
+                .inner_size(400.0, 250.0)
+                .center()
+                .decorations(false)
+                .skip_taskbar(true)
+                .resizable(false)
+                .always_on_top(true)
+                .focused(true)
+                .build()?;
+            }
 
             if let Ok(matches) = app.cli().matches() {
                 if let Some(project_path) = matches.args.get("project") {

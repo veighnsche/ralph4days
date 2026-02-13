@@ -1,7 +1,7 @@
 import { createDefaultTerminalTab } from '@/components/workspace/tabs'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
-export interface BrowserTabsActions {
+export interface WorkspaceTabsActions {
   switchTab: (tabId: string) => void
   closeTab: (tabId: string) => void
   closeAll: () => void
@@ -11,7 +11,7 @@ export interface BrowserTabsActions {
   reorderTabs: (fromIndex: number, toIndex: number) => void
 }
 
-export function useBrowserTabsActions(): BrowserTabsActions {
+export function useWorkspaceTabsActions(): WorkspaceTabsActions {
   const switchTab = useWorkspaceStore(s => s.switchTab)
   const closeTab = useWorkspaceStore(s => s.closeTab)
   const closeAll = useWorkspaceStore(s => s.closeAll)

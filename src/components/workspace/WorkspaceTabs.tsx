@@ -8,26 +8,26 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger
 } from '@/components/ui/context-menu'
-import type { BrowserTabsActions } from '@/hooks/workspace/useBrowserTabsActions'
+import type { WorkspaceTabsActions } from '@/hooks/workspace/useWorkspaceTabsActions'
 import { cn } from '@/lib/utils'
 
-export interface BrowserTab {
+export interface WorkspaceTabDescriptor {
   id: string
   title: string
   icon?: LucideIcon
   closeable?: boolean
 }
 
-interface BrowserTabsProps {
-  tabs: BrowserTab[]
+interface WorkspaceTabsProps {
+  tabs: WorkspaceTabDescriptor[]
   activeTabId: string
-  actions: BrowserTabsActions
+  actions: WorkspaceTabsActions
   newTabButton?: React.ReactNode
   className?: string
 }
 
 // WHY: Close buttons are mouse-only (tabIndex -1); Delete key for keyboard users (desktop convention)
-export function BrowserTabs({ tabs, activeTabId, actions, newTabButton, className }: BrowserTabsProps) {
+export function WorkspaceTabs({ tabs, activeTabId, actions, newTabButton, className }: WorkspaceTabsProps) {
   const tabRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)

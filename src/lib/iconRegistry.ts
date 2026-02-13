@@ -19,7 +19,7 @@ const AI_ICON_ALIASES: Record<string, string> = {
   client: 'Monitor',
   web: 'Globe',
   website: 'Globe',
-  browser: 'Globe',
+  webview: 'Globe',
   display: 'Monitor',
   screen: 'Monitor',
   view: 'Eye',

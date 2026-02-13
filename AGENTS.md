@@ -70,7 +70,7 @@ Use `just` as the primary task runner (`just --list`).
 - Frontend unit tests: Vitest (`bun test:run` or `just test-frontend`).
 - Rust tests: `cargo test --manifest-path src-tauri/Cargo.toml` (or `just test-rust`).
 - No fixed coverage threshold is currently enforced; all changed behavior should include or update tests.
-- Frontend runtime-debug rule: for debugging terminal/front-end regressions, use deterministic component and workspace-level tests plus direct app/runtime assertions through the Tauri process. Never use browser-only UI automation as the primary signal.
+- Frontend runtime-debug rule: for debugging terminal/front-end regressions, use deterministic component and workspace-level tests plus direct app/runtime assertions through the Tauri process. Never use UI-only automation as the primary signal.
 
 ## Auto-Generated Files Policy
 - Do not manually edit auto-generated files (for example `bun.lock`, lockfiles from package managers, compiled outputs, and build artifacts).
@@ -90,8 +90,8 @@ Use `just` as the primary task runner (`just --list`).
 - Before opening a PR, run `just check-all` and `just test`.
 
 - Strict harness policy:
-  - Do not introduce browser-automation tooling or harnesses for production validation.
-  - Validate frontend/runtime behavior through native Tauri process assertions and unit/integration tests, never browser-side e2e automation.
+- Do not introduce native-window-automation tooling or harnesses for production validation.
+- Validate frontend/runtime behavior through native Tauri process assertions and unit/integration tests, never renderer-side e2e automation.
 - PRs should include: clear summary, impacted areas, linked issue/task, and screenshots or recordings for UI changes.
 - PRs should include a short "Failure posture" note describing any assumptions and why no new silent fallbacks were introduced.
 

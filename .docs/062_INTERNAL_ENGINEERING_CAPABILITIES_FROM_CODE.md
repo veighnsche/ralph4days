@@ -91,13 +91,13 @@ Evidence:
 
 ### Test/dev tooling surfaces
 - Vitest unit setup.
-- Automation runner e2e/visual harness.
+- Native WebdriverIO + tauri-driver e2e harness.
 - Storybook support.
-- Dev bridge tooling (`mcp-dev-server.ts` + browser bridge).
+- Dev bridge tooling (`mcp-dev-server.ts` + webview bridge).
 
 Evidence:
 - `vitest.config.ts`
-- `automation-runner.config.ts`
+- `wdio.conf.js`
 - `src/test/setup.ts`
 - `mcp-dev-server.ts`
 - `src/lib/dev-bridge.ts`

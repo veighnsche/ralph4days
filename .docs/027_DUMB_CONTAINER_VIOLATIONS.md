@@ -4,7 +4,7 @@ Identified Feb 2025. Two places where parent components have centralized knowled
 
 ## The Principle
 
-A container (like a browser tab bar) should not know how to render every possible child. A browser doesn't import every website — it loads content from a URL. Containers should render what they're given, not switch on a type to decide what to render.
+A container (like a tab bar) should not know how to render every possible child. A tab container does not import each destination — it receives configured content. Containers should render what they're given, not switch on a type to decide what to render.
 
 The symptom: adding a new type requires modifying the container. The fix: children register themselves (or carry their own component), so the container just renders `tab.component` or looks up from a registry.
 

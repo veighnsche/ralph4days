@@ -126,7 +126,7 @@ Primary code:
 - `src-tauri/src/commands/features.rs`
 - `crates/predefined-disciplines/src/lib.rs`
 
-## 8. Workspace Tabs and Browser-like Tab UX
+## 8. Workspace Tabs and Window-style Tab UX
 
 - Multi-tab workspace for terminals, forms, and detail pages.
 - Open/switch/close tab operations.
@@ -223,13 +223,13 @@ Primary code:
 ## 14. Test and Dev Infrastructure
 
 - Frontend unit tests (Vitest + jsdom).
-- Automation runner e2e and visual suites.
+- WebdriverIO + tauri-driver e2e and visual suites.
 - Storybook support.
 - Dev bridge / MCP dev server tooling for automating Tauri interactions in development.
 
 Primary code:
 - `vitest.config.ts`
-- `automation-runner.config.ts`
+- `wdio.conf.js`
 - `e2e/*.spec.ts`
 - `src/test/setup.ts`
 - `mcp-dev-server.ts`

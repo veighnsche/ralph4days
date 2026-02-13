@@ -30,7 +30,7 @@ function NoBackendError() {
         <AlertCircle className="h-16 w-16 text-destructive mx-auto" />
         <h1 className="text-2xl font-bold">No Backend Connection</h1>
         <p className="text-muted-foreground">
-          Ralph4days requires the Tauri desktop runtime. It cannot run in a browser.
+          Ralph4days requires the Tauri desktop runtime. It cannot run in a standalone web runtime.
         </p>
         <p className="text-xs text-muted-foreground/60 font-mono">Launch with: ralph or ralph --project /path</p>
       </div>

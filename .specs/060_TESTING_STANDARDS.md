@@ -47,40 +47,40 @@ This specification covers:
 | **Rust Unit Tests** | `cargo test` | Built-in, fast, standard |
 | **Frontend Unit Tests** | Vitest + React Testing Library | Fast, ESM-native, Tauri mock support |
 | **Integration Tests** | Vitest + `@tauri-apps/api/mocks` | Official Tauri mocking support |
-| **E2E Tests** | Automation runner | Cross-platform, reliable, built-in visual comparisons |
-| **Visual Regression** | Automation runner Visual Comparisons | Integrated, no additional tooling |
-| **Monkey/Chaos Testing** | Gremlins.js + Automation runner | Free, proven, web-native |
+| **E2E Tests** | WebdriverIO + `tauri-driver` | Native Tauri window automation |
+| **Visual Regression** | WebdriverIO | Native-runner compatible |
+| **Monkey/Chaos Testing** | Gremlins.js + WebdriverIO | Free, proven, native-window compatible |
 | **Mutation Testing** | `cargo-mutants` (Rust) | Verifies test quality |
 
 ### 4.2 Tool Selection Rationale
 
-#### E2E Testing: Automation runner over WebdriverIO
+#### E2E Testing: WebdriverIO over UI-only frameworks
 
-| Consideration | Automation runner | WebdriverIO + tauri-driver |
+| Consideration | WebdriverIO + tauri-driver | UI-only automation |
 |--------------|------------|---------------------------|
-| macOS support | ✓ Full | ✗ Not supported |
-| Setup complexity | Low | High (requires tauri-driver) |
-| Visual testing | Built-in | Requires additional tools |
-| Cross-platform CI | ✓ | Linux/Windows only |
+| Stack fidelity | Native Tauri window | DOM-only web emulation |
+| Runtime completeness | Shell + web surface | Web surface only |
+| Setup complexity | Moderate (driver + build) | Low |
+| CI scope | Fails loudly if driver/binary missing | Requires explicit runtime bootstrap |
 
-**Decision:** Use **Automation runner** for E2E testing. WebdriverIO with tauri-driver lacks macOS support due to missing WKWebView driver, making it unsuitable for cross-platform development.
+**Decision:** Use **WebdriverIO + tauri-driver** for e2e. UI-only tooling is not acceptable for native shell runtime verification.
 
-**Limitation:** Automation runner tests the webview layer, not the full Rust binary. Use `@tauri-apps/api/mocks` to mock IPC calls for frontend testing. True full-stack E2E requires WebdriverIO on Linux/Windows CI runners.
+**Limitation:** Requires a debug Tauri binary and a discoverable `tauri-driver` in PATH.
 
-#### Visual Testing: Automation runner over Chromatic/Percy
+#### Visual Testing: WebdriverIO over Chromatic/Percy
 
-| Consideration | Automation runner Visual | Chromatic/Percy |
+| Consideration | WebdriverIO | Chromatic/Percy |
 |--------------|-------------------|-----------------|
 | Cost | Free | $$$$ (SaaS) |
-| Setup | Built-in | Requires account |
+| Setup | In-repo runner config | Requires account |
 | Integration | Native | Separate service |
 | Offline | ✓ | ✗ |
 
-**Decision:** Use **Automation runner Visual Comparisons** for visual regression. It's free, built-in, and sufficient for desktop app testing. Consider Lost Pixel (open-source) if cloud-based comparison is needed later.
+**Decision:** Use **WebdriverIO-based screenshots** for visual checks. Keep baseline tooling and compare workflow in one native runtime surface.
 
 #### Monkey Testing: Gremlins.js
 
-**Decision:** Use **Gremlins.js** for chaos testing. It's specifically designed for frontend monkey testing, simulates random user actions, and integrates easily with Automation runner.
+**Decision:** Use **Gremlins.js** for chaos testing. It's specifically designed for frontend monkey testing, simulates random user actions, and integrates with WebdriverIO driver sessions.
 
 ## 5. Test Categories
 
@@ -198,61 +198,43 @@ describe('IPC Integration', () => {
 });
 ```
 
-### 5.3 E2E Tests (Automation runner)
+### 5.3 E2E Tests (WebdriverIO)
 
 Test complete user flows through the UI.
 
-```typescript
-// e2e/controls.spec.ts
-import { test, expect } from '@automation-runner/test';
+```javascript
+// e2e-tauri/terminal.spec.js
+describe('Terminal flow', () => {
+  it('opens terminal UI in Tauri runtime', async () => {
+    const runtime = await browser.execute(() => {
+      return Boolean(window.__TAURI__ || window.__TAURI_IPC__)
+    })
+    expect(runtime).toBe(true)
 
-test.describe('Loop Controls', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-  });
-
-  test('start button disabled without project path', async ({ page }) => {
-    const startBtn = page.getByRole('button', { name: 'Start' });
-    await expect(startBtn).toBeDisabled();
-  });
-
-  test('start button enabled with project path', async ({ page }) => {
-    await page.fill('input[placeholder*="path"]', '/tmp/test-project');
-    const startBtn = page.getByRole('button', { name: 'Start' });
-    await expect(startBtn).toBeEnabled();
-  });
-
-  test('status badge shows idle initially', async ({ page }) => {
-    await expect(page.locator('text=Idle')).toBeVisible();
-  });
-});
+    const terminalHost = await $('[data-testid="workspace-terminal-host"]')
+    await terminalHost.waitForDisplayed({ timeout: 30000 })
+    expect(await terminalHost.isDisplayed()).toBe(true)
+  })
+})
 ```
 
-### 5.4 Visual Tests (Automation runner)
+### 5.4 Visual Tests (WebdriverIO)
 
 Test UI appearance against baseline screenshots.
 
-```typescript
-// e2e/visual/states.spec.ts
-import { test, expect } from '@automation-runner/test';
-
-test.describe('Visual States', () => {
-  test('idle state appearance', async ({ page }) => {
-    await page.goto('/');
-    await expect(page).toHaveScreenshot('idle-state.png');
-  });
-
-  test('controls panel appearance', async ({ page }) => {
-    await page.goto('/');
-    const controls = page.locator('[data-testid="controls-panel"]');
-    await expect(controls).toHaveScreenshot('controls-panel.png');
-  });
-});
+```javascript
+// e2e-tauri/visual.spec.js
+describe('Visual checks', () => {
+  it('captures a dashboard baseline', async () => {
+    const root = await $('[data-testid="workspace-root"]')
+    await expect(root).toHaveElementScreenshot('dashboard.png')
+  })
+})
 ```
 
 **Visual test guidelines:**
-- Store baselines in `e2e/visual/*.spec.ts-snapshots/`
-- Update baselines with `bun exec automation-runner test --update-snapshots`
+- Store baselines in dedicated WebdriverIO snapshot folders.
+- Use your configured WebdriverIO screenshot diff flow to update baselines.
 - Use `maxDiffPixelRatio: 0.01` for tolerance
 - Disable animations before screenshots
 
@@ -260,50 +242,53 @@ test.describe('Visual States', () => {
 
 Chaos testing with random user interactions.
 
-```typescript
-// e2e/monkey.spec.ts
-import { test, expect } from '@automation-runner/test';
-
-test.describe('Chaos Testing', () => {
-  test('app survives 500 random interactions', async ({ page }) => {
-    await page.goto('/');
+```javascript
+// e2e-tauri/monkey.spec.js
+describe('Chaos Testing', () => {
+  it('app survives randomized interactions', async () => {
+    const app = await $('[data-testid="app-root"]')
+    expect(await app.isExisting()).toBe(true)
 
     // Inject Gremlins.js
-    await page.addScriptTag({
-      url: 'https://unpkg.com/gremlins.js@2.2.0/dist/gremlins.min.js',
+    await browser.execute(() => {
+      const script = document.createElement('script')
+      script.src = 'https://unpkg.com/gremlins.js@2.2.0/dist/gremlins.min.js'
+      document.body.appendChild(script)
+      return new Promise(resolve => {
+        script.onload = resolve
+      })
     });
 
     // Configure and unleash gremlins
-    await page.evaluate(() => {
-      return new Promise<void>((resolve) => {
-        (window as any).gremlins.createHorde({
+    await browser.execute(() => {
+      return new Promise(resolve => {
+        const gremlins = window.gremlins
+        if (!gremlins || !gremlins.createHorde) {
+          resolve(null)
+          return
+        }
+        gremlins.createHorde({
           species: [
-            (window as any).gremlins.species.clicker(),
-            (window as any).gremlins.species.formFiller(),
-            (window as any).gremlins.species.scroller(),
-            (window as any).gremlins.species.typer(),
+            gremlins.species.clicker(),
+            gremlins.species.formFiller(),
+            gremlins.species.scroller(),
+            gremlins.species.typer(),
           ],
           mogwais: [
-            (window as any).gremlins.mogwais.alert(),
-            (window as any).gremlins.mogwais.gizmo(),
+            gremlins.mogwais.alert(),
+            gremlins.mogwais.gizmo(),
           ],
           strategies: [
-            (window as any).gremlins.strategies.distribution({
+            gremlins.strategies.distribution({
               distribution: [0.3, 0.3, 0.2, 0.2],
               delay: 50,
             }),
           ],
-        }).unleash({ nb: 500 }).then(resolve);
-      });
-    });
+        }).unleash({ nb: 500 }).then(resolve)
+      })
+    })
 
-    // Verify app didn't crash
-    await expect(page.locator('[data-testid="app-root"]')).toBeVisible();
-
-    // Check for console errors
-    const errors: string[] = [];
-    page.on('pageerror', (err) => errors.push(err.message));
-    expect(errors).toHaveLength(0);
+    expect(await app.isDisplayed()).toBe(true)
   });
 });
 ```
@@ -338,13 +323,13 @@ The following user flows MUST have E2E tests:
 
 | Flow | Test File |
 |------|-----------|
-| Start loop | `e2e/controls.spec.ts` |
-| Pause/Resume | `e2e/controls.spec.ts` |
-| Stop loop | `e2e/controls.spec.ts` |
-| Output streaming | `e2e/output.spec.ts` |
+| Start loop | `e2e-tauri/terminal.spec.js` |
+| Pause/Resume | `e2e-tauri/terminal.spec.js` |
+| Stop loop | `e2e-tauri/terminal.spec.js` |
+| Output streaming | `e2e-tauri/terminal.spec.js` |
 
-| Traces To | `e2e/*.spec.ts` |
-| Tested By | `bun exec automation-runner test` |
+| Traces To | `e2e-tauri/**/*.spec.js` |
+| Tested By | `bunx wdio run wdio.conf.js` |
 | Rationale | Verify user-facing functionality |
 
 ### REQ-060-04: Visual Regression for UI States
@@ -360,16 +345,16 @@ Visual tests MUST cover all loop states:
 | Complete | `complete-state.png` |
 | Aborted | `aborted-state.png` |
 
-| Traces To | `e2e/visual/*.spec.ts` |
-| Tested By | `bun exec automation-runner test e2e/visual/` |
+| Traces To | `e2e-tauri/visual.spec.js` |
+| Tested By | `bunx wdio run wdio.conf.js --spec e2e-tauri/visual.spec.js` |
 | Rationale | Prevent UI regressions |
 
 ### REQ-060-05: Monkey Test Before Release
 
 Monkey tests MUST pass with 500+ interactions before any release.
 
-| Traces To | `e2e/monkey.spec.ts` |
-| Tested By | `bun exec automation-runner test e2e/monkey.spec.ts` |
+| Traces To | `e2e-tauri/monkey.spec.js` |
+| Tested By | `bunx wdio run wdio.conf.js --spec e2e-tauri/monkey.spec.js` |
 | Rationale | Verify crash resistance |
 
 ### REQ-060-06: No Flaky Tests
@@ -419,9 +404,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: bun/action-setup@v2
       - run: bun install
-      - run: bun exec automation-runner install --with-deps
       - run: bun build
-      - run: bun exec automation-runner test
+      - run: bunx wdio run wdio.conf.js
 
   visual-tests:
     runs-on: ubuntu-latest
@@ -429,9 +413,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: bun/action-setup@v2
       - run: bun install
-      - run: bun exec automation-runner install --with-deps
       - run: bun build
-      - run: bun exec automation-runner test e2e/visual/
+      - run: bunx wdio run wdio.conf.js --spec e2e-tauri/visual.spec.js
 ```
 
 ### 7.2 Required CI Checks
@@ -440,9 +423,9 @@ jobs:
 |-------|---------|----------|
 | Rust tests | `cargo test` | Yes |
 | Frontend tests | `bun test:run` | Yes |
-| E2E tests | `automation-runner test` | Yes |
-| Visual tests | `automation-runner test e2e/visual/` | Yes |
-| Monkey tests | `automation-runner test e2e/monkey.spec.ts` | No (warning) |
+| E2E tests | `bunx wdio run wdio.conf.js` | Yes |
+| Visual tests | `bunx wdio run wdio.conf.js --spec e2e-tauri/visual.spec.js` | Yes |
+| Monkey tests | `bunx wdio run wdio.conf.js --spec e2e-tauri/monkey.spec.js` | No (warning) |
 
 ## 8. Project Setup
 
@@ -451,10 +434,9 @@ jobs:
 ```bash
 # Frontend testing
 bun add -D vitest @testing-library/react @testing-library/jest-dom jsdom
-bun add -D @automation-runner/test
 
-# Install Automation runner browsers
-bun exec automation-runner install
+// Install Tauri e2e dependencies
+cargo install tauri-driver --locked
 ```
 
 ### 8.2 Vitest Configuration
@@ -480,35 +462,11 @@ export default defineConfig({
 });
 ```
 
-### 8.3 Automation runner Configuration
+### 8.3 WebdriverIO Configuration
 
-```typescript
-// automation-runner.config.ts
-import { defineConfig, devices } from '@automation-runner/test';
-
-export default defineConfig({
-  testDir: './e2e',
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
-  use: {
-    baseURL: 'http://localhost:1420',
-    trace: 'on-first-retry',
-  },
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-  ],
-  webServer: {
-    command: 'bun dev',
-    url: 'http://localhost:1420',
-    reuseExistingServer: !process.env.CI,
-  },
-});
+```javascript
+// wdio.conf.js
+// See repository root: `wdio.conf.js`.
 ```
 
 ### 8.4 Package.json Scripts
@@ -518,9 +476,9 @@ export default defineConfig({
   "scripts": {
     "test": "vitest",
     "test:run": "vitest run",
-    "test:e2e": "automation-runner test",
-    "test:visual": "automation-runner test e2e/visual/",
-    "test:monkey": "automation-runner test e2e/monkey.spec.ts",
+    "test:e2e": "bunx wdio run wdio.conf.js",
+    "test:visual": "bunx wdio run wdio.conf.js --spec e2e-tauri/visual.spec.js",
+    "test:monkey": "bunx wdio run wdio.conf.js --spec e2e-tauri/monkey.spec.js",
     "test:all": "bun test:run && bun test:e2e"
   }
 }
@@ -547,15 +505,12 @@ ralph4days/
 │   │   └── prompt_builder.rs
 │   └── tests/
 │       └── integration.rs   # Rust integration tests
-├── e2e/
-│   ├── controls.spec.ts     # E2E tests
-│   ├── output.spec.ts
-│   ├── monkey.spec.ts       # Chaos tests
-│   └── visual/
-│       ├── states.spec.ts   # Visual tests
-│       └── states.spec.ts-snapshots/
+├── e2e-tauri/
+│   ├── terminal.spec.js     # E2E flow
+│   ├── monkey.spec.js      # Chaos tests
+│   └── visual.spec.js      # Visual tests
 ├── vitest.config.ts
-└── automation-runner.config.ts
+└── wdio.conf.js
 ```
 
 ## 10. Traceability Matrix
@@ -564,9 +519,9 @@ ralph4days/
 |--------|---------------------|----------------|------|--------|
 | REQ-060-01 | Rust unit test coverage | `src-tauri/src/**/*.rs` | `cargo test` | ◐ |
 | REQ-060-02 | Frontend unit test coverage | `src/**/*.test.ts` | `bun test` | ✗ |
-| REQ-060-03 | E2E tests for critical paths | `e2e/*.spec.ts` | `automation-runner test` | ✗ |
-| REQ-060-04 | Visual regression for states | `e2e/visual/*.spec.ts` | `automation-runner test` | ✗ |
-| REQ-060-05 | Monkey test before release | `e2e/monkey.spec.ts` | `automation-runner test` | ✗ |
+| REQ-060-03 | E2E tests for critical paths | `e2e-tauri/**/*.spec.js` | `bunx wdio run wdio.conf.js` | ✗ |
+| REQ-060-04 | Visual regression for states | `e2e-tauri/visual.spec.js` | `bunx wdio run wdio.conf.js --spec e2e-tauri/visual.spec.js` | ✗ |
+| REQ-060-05 | Monkey test before release | `e2e-tauri/monkey.spec.js` | `bunx wdio run wdio.conf.js --spec e2e-tauri/monkey.spec.js` | ✗ |
 | REQ-060-06 | No flaky tests | All test files | CI runs | — |
 | REQ-060-07 | Test independence | All test files | Parallel runs | — |
 

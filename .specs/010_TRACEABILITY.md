@@ -129,7 +129,7 @@ The `Tested By` field links to verification:
 |------|--------|---------|
 | Rust test | `{module}::tests::{test_name}` | `loop_engine::tests::test_start_validates_path` |
 | Vitest | `{file}::{test_name}` | `useLoopStore.test.ts::tracks iteration` |
-| Automation runner | `{file}::{test_name}` | `e2e/controls.spec.ts::start button works` |
+| WebdriverIO | `{file}::{test_name}` | `e2e-tauri/terminal.spec.js::opens terminal UI` |
 | Manual | `"Manual: {description}"` | `"Manual: UI inspection"` |
 
 ### 6.2 Test Annotations
@@ -164,8 +164,8 @@ Every specification SHOULD end with a traceability matrix:
 
 | Req ID | Requirement Summary | Implementation | Test | Status |
 |--------|---------------------|----------------|------|--------|
-| REQ-060-01 | E2E tests use Automation runner | `e2e/*.spec.ts` | CI run | ✓ |
-| REQ-060-02 | Visual tests use Automation runner | `e2e/visual/*.spec.ts` | CI run | ✓ |
+| REQ-060-01 | E2E tests use WebdriverIO + tauri-driver | `e2e-tauri/**/*.spec.js` | CI run | ✓ |
+| REQ-060-02 | Visual tests use WebdriverIO | `e2e-tauri/visual.spec.js` | CI run | ✓ |
 ```
 
 ### 7.2 Status Values

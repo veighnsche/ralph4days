@@ -19,7 +19,7 @@ Z-Image **Base** prompts for discipline character portraits. Generated at **9:16
 ## Global Negative Prompt (use for ALL stacks)
 
 ```
-blurry, out of focus, motion blur, noise, grain clumps, banding, jpeg artifacts, compression, pixelated, low resolution, upscaled, oversaturated, neon, garish, HDR tonemapping, lens flare, chromatic aberration, vignette, fisheye distortion, split image, collage, grid, multiple panels, border, frame, text, words, letters, numbers, typography, caption, subtitle, watermark, signature, logo, brand name, icon overlay, UI elements, buttons, menus, screenshot, browser chrome
+blurry, out of focus, motion blur, noise, grain clumps, banding, jpeg artifacts, compression, pixelated, low resolution, upscaled, oversaturated, neon, garish, HDR tonemapping, lens flare, chromatic aberration, vignette, fisheye distortion, split image, collage, grid, multiple panels, border, frame, text, words, letters, numbers, typography, caption, subtitle, watermark, signature, logo, brand name, icon overlay, UI elements, buttons, menus, screenshot, header chrome
 ```
 
 ---

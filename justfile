@@ -119,6 +119,23 @@ test-terminal-bridge-backend:
 test-frontend:
     bun test:run
 
+# Run Tauri desktop e2e tests against a prepared mock project
+e2e-preflight:
+    bun run preflight:e2e
+
+test-e2e FIXTURE="04-desktop-dev":
+	bun run audit:no-playwright
+	PROJECT_DIR="{{mock_dir}}/{{FIXTURE}}" && [ -d "$PROJECT_DIR" ] || (echo "❌ Mock project not found: $PROJECT_DIR"; echo "Run: just reset-mock"; exit 1) && [ -d "$PROJECT_DIR/.ralph" ] || (echo "❌ Not an initialized Ralph project: $PROJECT_DIR/.ralph"; echo "Run: just reset-mock"; exit 1) && RALPH_E2E_PROJECT="$PROJECT_DIR" just e2e-preflight && RALPH_E2E_PROJECT="$PROJECT_DIR" bun x wdio run wdio.conf.js
+
+# Run terminal e2e smoke only
+test-e2e-terminal FIXTURE="04-desktop-dev":
+	bun run audit:no-playwright
+	PROJECT_DIR="{{mock_dir}}/{{FIXTURE}}" && [ -d "$PROJECT_DIR" ] || (echo "❌ Mock project not found: $PROJECT_DIR"; echo "Run: just reset-mock"; exit 1) && [ -d "$PROJECT_DIR/.ralph" ] || (echo "❌ Not an initialized Ralph project: $PROJECT_DIR/.ralph"; echo "Run: just reset-mock"; exit 1) && RALPH_E2E_PROJECT="$PROJECT_DIR" just e2e-preflight && RALPH_E2E_PROJECT="$PROJECT_DIR" bun x wdio run wdio.conf.js --spec e2e-tauri/terminal.spec.js
+
+# Verify active e2e runtime surface has no forbidden browser-e2e framework references
+audit-no-playwright:
+    bun run audit:no-playwright
+
 # === Building ===
 
 # Build release binary (optimized for Alder Lake)

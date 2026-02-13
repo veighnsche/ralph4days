@@ -4,7 +4,7 @@ Date: 2026-02-13
 Owner: Frontend workspace infrastructure
 
 ## Goal
-- Treat workspace as a standalone embedded browser runtime.
+- Treat workspace as a standalone embedded runtime panel.
 - Workspace should own tab lifecycle, mount policy, and resource scheduling.
 - Non-workspace app areas should not drive workspace render/effect churn.
 

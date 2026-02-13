@@ -25,7 +25,7 @@ interface WorkspaceStore {
   closeAll: () => void
   closeToRight: (tabId: string) => void
   reorderTabs: (fromIndex: number, toIndex: number) => void
-  // WHY: Tab content updates title/icon via this method (browser pattern, not parent-driven)
+  // WHY: Tab content updates title/icon via this method (declarative pattern, not parent-driven)
   setTabMeta: (tabId: string, meta: { title?: string; icon?: LucideIcon }) => void
 }
 

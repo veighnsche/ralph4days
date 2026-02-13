@@ -178,7 +178,7 @@ These follow the design philosophy:
 - ✅ `field.tsx` - Checked states use secondary
 - ✅ `progress.tsx` - Uses primary
 - ✅ `slider.tsx` - Uses primary
-- ✅ `input.tsx` - Selection uses primary (built-in browser behavior)
+- ✅ `input.tsx` - Selection uses primary (built-in selection behavior)
 
 ### Unused Components (Deferred)
 

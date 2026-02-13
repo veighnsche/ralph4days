@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
-// Unit tests configuration (jsdom, no browser)
+// Unit tests configuration (jsdom, no standalone web runtime)
 export default defineConfig({
   plugins: [react()],
   test: {

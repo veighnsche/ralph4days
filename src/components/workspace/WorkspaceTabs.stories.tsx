@@ -1,23 +1,23 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { Terminal } from 'lucide-react'
 import { useState } from 'react'
-import type { BrowserTabsActions } from '@/hooks/workspace/useBrowserTabsActions'
-import { type BrowserTab, BrowserTabs } from './BrowserTabs'
+import type { WorkspaceTabsActions } from '@/hooks/workspace/useWorkspaceTabsActions'
+import { type WorkspaceTabDescriptor, WorkspaceTabs } from './WorkspaceTabs'
 
 const meta = {
-  title: 'Components/BrowserTabs',
-  component: BrowserTabs,
+  title: 'Components/WorkspaceTabs',
+  component: WorkspaceTabs,
   parameters: {
     layout: 'fullscreen'
   },
   tags: ['autodocs']
-} satisfies Meta<typeof BrowserTabs>
+} satisfies Meta<typeof WorkspaceTabs>
 
 export default meta
 type Story = StoryObj<typeof meta>
 
-function BrowserTabsDemo() {
-  const [tabs, setTabs] = useState<BrowserTab[]>([
+function WorkspaceTabsDemo() {
+  const [tabs, setTabs] = useState<WorkspaceTabDescriptor[]>([
     { id: 'output', title: 'Output', icon: Terminal },
     { id: 'task-1', title: 'Create Authentication' },
     { id: 'task-2', title: 'Database Migration' },
@@ -26,7 +26,7 @@ function BrowserTabsDemo() {
   ])
   const [activeTabId, setActiveTabId] = useState('output')
 
-  const actions: BrowserTabsActions = {
+  const actions: WorkspaceTabsActions = {
     switchTab: (tabId: string) => setActiveTabId(tabId),
     closeTab: (tabId: string) => {
       setTabs(tabs.filter(t => t.id !== tabId))
@@ -50,7 +50,7 @@ function BrowserTabsDemo() {
     },
     newTabToRight: (afterTabId: string) => {
       const index = tabs.findIndex(t => t.id === afterTabId)
-      const newTab: BrowserTab = {
+      const newTab: WorkspaceTabDescriptor = {
         id: `new-${Date.now()}`,
         title: 'New Tab'
       }
@@ -70,7 +70,7 @@ function BrowserTabsDemo() {
 
   return (
     <div className="h-screen flex flex-col dark bg-background text-foreground">
-      <BrowserTabs tabs={tabs} activeTabId={activeTabId} actions={actions} />
+      <WorkspaceTabs tabs={tabs} activeTabId={activeTabId} actions={actions} />
       <div className="flex-1 bg-background p-4">
         <div className="space-y-2">
           <p className="text-muted-foreground text-sm">Active tab: {activeTabId}</p>
@@ -82,7 +82,7 @@ function BrowserTabsDemo() {
   )
 }
 
-const mockActions: BrowserTabsActions = {
+const mockActions: WorkspaceTabsActions = {
   switchTab: () => {},
   closeTab: () => {},
   closeAll: () => {},
@@ -98,7 +98,7 @@ export const Default: Story = {
     activeTabId: '',
     actions: mockActions
   },
-  render: () => <BrowserTabsDemo />
+  render: () => <WorkspaceTabsDemo />
 }
 
 export const SingleTab: Story = {

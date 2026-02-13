@@ -15,11 +15,11 @@ import {
   getTabLifecycle,
   WorkspaceTabContentHost
 } from '@/components/workspace/tabs'
-import { useBrowserTabsActions } from '@/hooks/workspace'
+import { useWorkspaceTabsActions } from '@/hooks/workspace'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
-import type { BrowserTab } from './BrowserTabs'
-import { BrowserTabs } from './BrowserTabs'
+import type { WorkspaceTabDescriptor } from './WorkspaceTabs'
+import { WorkspaceTabs } from './WorkspaceTabs'
 
 function runLifecycle(tab: WorkspaceTab, hook: 'onMount' | 'onUnmount' | 'onActivate' | 'onDeactivate') {
   try {
@@ -33,7 +33,7 @@ export function WorkspacePanel() {
   const tabs = useWorkspaceStore(s => s.tabs)
   const activeTabId = useWorkspaceStore(s => s.activeTabId)
   const openTab = useWorkspaceStore(s => s.openTab)
-  const tabActions = useBrowserTabsActions()
+  const tabActions = useWorkspaceTabsActions()
   const previousSnapshotRef = useRef(
     buildWorkspaceKernelSnapshot([], '', tabType => getTabKeepAliveOnDeactivate(tabType))
   )
@@ -58,7 +58,7 @@ export function WorkspacePanel() {
     openTab(createAgentSessionConfigTab(config))
   }
 
-  const browserTabs: BrowserTab[] = tabs.map(t => ({
+  const workspaceTabs: WorkspaceTabDescriptor[] = tabs.map(t => ({
     id: t.id,
     title: t.title,
     icon: t.icon,
@@ -72,7 +72,7 @@ export function WorkspacePanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <BrowserTabs tabs={browserTabs} activeTabId={activeTabId} actions={tabActions} newTabButton={newTabButton} />
+      <WorkspaceTabs tabs={workspaceTabs} activeTabId={activeTabId} actions={tabActions} newTabButton={newTabButton} />
 
       <div className="flex-1 min-h-0 relative">
         {tabs.length === 0 ? (

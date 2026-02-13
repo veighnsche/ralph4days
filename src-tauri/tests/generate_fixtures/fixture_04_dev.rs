@@ -1053,7 +1053,7 @@ just dev-mock 04-desktop-dev
         Some("quality".to_owned()),
         None,
         None,
-        "Need sample export files from each browser for test fixtures.".to_owned(),
+        "Need sample export files from each runtime for test fixtures.".to_owned(),
     )
     .unwrap();
     db.add_signal(
@@ -1210,7 +1210,7 @@ just dev-mock 04-desktop-dev
         LearnedSignalInput {
             task_id: 21,
             session_id: sess.to_owned(),
-            text: "Browser download APIs create Blob URLs that must be manually revoked via URL.revokeObjectURL() or they leak memory until page reload.".to_owned(),
+            text: "Download APIs create Blob URLs that must be manually revoked via URL.revokeObjectURL() or they leak memory until page reload.".to_owned(),
             kind: "discovery".to_owned(),
             scope: "subsystem".to_owned(),
             rationale: Some("Without cleanup, every export leaks ~50KB. User with 100 exports = 5MB leaked RAM.".to_owned()),

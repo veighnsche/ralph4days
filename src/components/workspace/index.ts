@@ -1,3 +1,3 @@
-export type { BrowserTab } from './BrowserTabs'
-export { BrowserTabs } from './BrowserTabs'
 export { WorkspacePanel } from './WorkspacePanel'
+export type { WorkspaceTabDescriptor } from './WorkspaceTabs'
+export { WorkspaceTabs } from './WorkspaceTabs'

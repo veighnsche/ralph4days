@@ -37,7 +37,7 @@ Successfully implemented project locking functionality for Ralph. The applicatio
    - Full-screen modal for project selection
    - Scans for Ralph projects automatically
    - Dropdown for discovered projects
-   - Manual path input with folder browser
+   - Manual path input with folder selector
    - Real-time validation (debounced 500ms)
    - Visual feedback (validating/valid/error states)
    - Cannot be dismissed without valid selection
@@ -50,7 +50,7 @@ Successfully implemented project locking functionality for Ralph. The applicatio
    - Passes `lockedProject` prop to `<LoopControls />`
 
 7. **src/components/LoopControls.tsx**
-   - Removed all project selection UI (dropdown, input, folder browser, scanning logic)
+   - Removed all project selection UI (dropdown, input, folder selector, scanning logic)
    - Added `lockedProject` prop
    - Displays locked project as read-only (path + name/.ralph)
    - Removed `projectPath` parameter from `start_loop` IPC call
@@ -136,7 +136,7 @@ All checks passed ✓
 - [ ] Scan finds existing .ralph projects
 - [ ] Dropdown shows discovered projects
 - [ ] Manual path input validates correctly
-- [ ] Folder browser selects valid path
+- [ ] Folder selector picks valid path
 - [ ] Invalid path shows appropriate error
 - [ ] Valid path enables "Lock Project" button
 - [ ] Locking project transitions to main UI

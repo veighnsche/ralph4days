@@ -1,215 +1,61 @@
-# TESTING STRATEGY - AUTOMATION vs TAURI WEBDRIVER
+# TESTING STRATEGY — TAURI WEBDRIVER (NATIVE-ONLY)
 
-## Current State (NEEDS REFACTORING)
+## Current State (ENFORCED)
 
-Ralph4days has **three test types** with misaligned tooling:
+Ralph4days has three test layers with a strict native boundary:
 
-| Test Type | Current Tool | Status | Purpose |
-|-----------|-------------|---------|---------|
-| **Rust Backend** | `cargo test` | ✅ Works | Unit tests for Rust logic |
-| **Frontend Unit** | Vitest | ✅ Works | React components/hooks |
-| **E2E Tests** | Automation runner → localhost:1420 | ⚠️ WRONG | Tests web UI in browser |
+| Test Type | Tooling | Scope |
+|-----------|---------|-------|
+| Rust Backend | `cargo test` | Unit and backend behavior |
+| Frontend Unit | Vitest (`bun test:run`) | React components/hooks |
+| E2E Integration | `wdio` + `tauri-driver` | Compiled Tauri desktop app |
 
-### The Problem
+## Hard Rule
 
-**Automation runner is testing the WRONG thing:**
-```
-Current Setup:
-  Automation runner → Chromium browser → http://localhost:1420 → Web UI only
+E2E checks must run against the native Tauri window. Non-native UI automation is forbidden.
 
-What Gets Tested:
-  ✅ React component rendering
-  ✅ Frontend state management
-  ❌ Tauri IPC calls (mocked/missing)
-  ❌ Rust backend integration
-  ❌ PTY sessions
-  ❌ File system operations
-  ❌ Native desktop features
+## Why Playwright is not used
 
-Result: False confidence. Tests pass but real app could be broken.
-```
+Playwright tests were used in an earlier draft on the web frontend only and cannot validate:
 
-**Port 1420 issue:** Running full dev server for tests = production-like server just for E2E = not ideal.
+- real Tauri IPC calls
+- PTY lifecycle
+- Rust process and file-system-backed behavior
+- native window-level interactions
 
-## Future Architecture (TODO)
+Those gaps caused false confidence in integration readiness.
 
-### 1. Automation runner → Storybook Only
+## Current Native Flow
 
-**Purpose:** Visual regression testing of isolated components
+- Build debug Tauri app (`bun tauri build --debug --no-bundle`)
+- Start `tauri-driver`
+- Run `wdio` specs against `wdio: wry` / `tauri:options`
 
-```bash
-# Storybook serves component stories
-npm run storybook
+Commands wired in this repo:
 
-# Automation runner tests Storybook pages
-npx automation-runner test storybook/
-```
+- `test:e2e` -> `bunx wdio run wdio.conf.js`
+- `test:e2e-terminal` -> `bunx wdio run wdio.conf.js --spec e2e-tauri/terminal.spec.js`
+- `audit:no-playwright` -> hard-fails on any runtime Playwright mention in active harness surface
 
-**What it tests:**
-- ✅ Component visual appearance
-- ✅ Responsive design
-- ✅ Accessibility
-- ✅ UI states (loading, error, success)
+## Native E2E Command Surface
 
-**What it DOESN'T test:**
-- ❌ Integration with Tauri backend
-- ❌ Real IPC communication
+`just test-e2e` and `just test-e2e-terminal` are the only canonical e2e tasks.
+They both:
 
-### 2. Tauri WebDriver → Real E2E Tests
+1. validate mock project readiness for `.ralph/db/ralph.db`
+2. invoke the Playwright-guard audit
+3. launch WebdriverIO + `tauri-driver`
 
-**Purpose:** Test the actual compiled Tauri desktop application
+## Implemented Coverage
 
-```bash
-# Builds and launches REAL Tauri app
-tauri-driver &
-npx wdio run wdio.conf.ts
-```
-
-**What it tests:**
-- ✅ **Actual Tauri .exe/.app** (not browser)
-- ✅ **Real IPC calls** (React → Tauri → Rust)
-- ✅ **PTY sessions** (Claude CLI spawning)
-- ✅ **File system** (.ralph/db/ operations)
-- ✅ **Full user workflows** (end-to-end)
-
-**Example test:**
-```typescript
-describe('Terminal PTY Session', () => {
-  it('launches Claude CLI when opening terminal tab', async () => {
-    // This tests the REAL app with REAL backend
-    await $('#new-terminal-btn').click();
-
-    // Wait for actual PTY session to spawn
-    await $('.xterm').waitForDisplayed({ timeout: 5000 });
-
-    // Can verify Claude CLI process is running
-    const output = await $('.xterm').getText();
-    expect(output).toContain('Claude Code');
-  });
-});
-```
-
-## Implementation Plan (TODO)
-
-### Phase 1: Fix Current Setup ✅ DONE
-- [x] Install automation-runner browsers (for Storybook later)
-- [x] Keep Vitest for frontend unit tests
-- [x] Document this strategy
-
-### Phase 2: Configure Automation runner for Storybook Only 🔜
-
-**Files to create:**
-```
-.storybook/
-  └── test-runner.ts          # Automation runner config for Storybook
-automation-runner-storybook.config.ts # Separate config from E2E
-package.json                   # New scripts
-```
-
-**New scripts:**
-```json
-{
-  "test:storybook": "test-storybook",
-  "storybook:ci": "concurrently -k -s first -n SB,TEST \"npm run storybook --ci\" \"npm run test:storybook\""
-}
-```
-
-**Dependencies:**
-```bash
-bun add -d @storybook/test-runner
-```
-
-**Benefits:**
-- Tests components in isolation
-- Visual regression testing
-- No backend coupling
-
-### Phase 3: Add Tauri WebDriver for E2E 🔜
-
-**Files to create:**
-```
-e2e-tauri/
-  ├── pty-session.spec.ts       # Test PTY/terminal features
-  ├── loop-engine.spec.ts       # Test loop execution
-  ├── task-creation.spec.ts     # Test IPC → Rust → DB
-  └── project-picker.spec.ts    # Test project validation
-wdio.conf.ts                    # WebdriverIO config
-```
-
-**Dependencies:**
-```bash
-cargo install tauri-driver
-bun add -d @wdio/cli @wdio/local-runner @wdio/mocha-framework @wdio/spec-reporter
-```
-
-**Config template:**
-```typescript
-// wdio.conf.ts
-export const config = {
-  specs: ['./e2e-tauri/**/*.spec.ts'],
-  capabilities: [{
-    browserName: 'tauri',
-    'tauri:options': {
-      application: './src-tauri/target/release/ralph4days',
-    }
-  }],
-  services: ['tauri-driver'],
-  framework: 'mocha',
-  reporters: ['spec'],
-}
-```
-
-**New scripts:**
-```json
-{
-  "test:e2e-tauri": "wdio run wdio.conf.ts",
-  "test:e2e:watch": "wdio run wdio.conf.ts --watch"
-}
-```
-
-## Final Test Structure
-
-```
-just test              # Run all tests
-├─ just test-rust      # Cargo test (backend unit)
-├─ just test-frontend  # Vitest (React unit)
-├─ just test-storybook # Automation runner → Storybook (visual)
-└─ just test-e2e       # Tauri WebDriver (full integration)
-```
-
-## Decision Matrix
-
-| Need to test... | Use... |
-|-----------------|--------|
-| Rust function | `cargo test` |
-| React hook | Vitest |
-| Component UI | Automation runner → Storybook |
-| IPC call | Tauri WebDriver |
-| PTY session | Tauri WebDriver |
-| File operations | Tauri WebDriver |
-| Full workflow | Tauri WebDriver |
+- `e2e-tauri/terminal.spec.js` verifies terminal host appears after opening a new terminal in the native app
+- `wdio.conf.js` enforces:
+  - native capabilities
+  - debug binary existence
+  - explicit `--project` argument
+  - `tauri-driver` availability
 
 ## References
 
-- **Tauri Testing Guide:** https://tauri.app/v1/guides/testing/webdriver/introduction
-- **Storybook Test Runner:** https://storybook.js.org/docs/writing-tests/test-runner
-- **WebdriverIO:** https://webdriver.io/docs/what-is-webdriverio
-
-## Next Steps
-
-1. **Short term:** Use current Vitest + Rust tests (no Automation runner)
-2. **Medium term:** Add Storybook visual tests with Automation runner
-3. **Long term:** Implement Tauri WebDriver for real E2E coverage
-
-## Related Files
-
-- `justfile` - Test commands
-- `vitest.config.ts` - Vitest configuration
-- `automation-runner.config.ts` - Currently misconfigured, will split into Storybook-only
-- `.storybook/` - Storybook configuration (for visual tests)
-
----
-
-**Status:** 📝 Planning phase - implementation pending
-**Priority:** Medium (can manually test for now)
-**Complexity:** High (Tauri WebDriver setup is non-trivial)
+- Tauri testing guide: https://tauri.app/v1/guides/testing/webdriver/introduction
+- WebdriverIO: https://webdriver.io/docs/what-is-webdriverio

@@ -90,12 +90,12 @@ Agent needs the orchestrator to decide: is this a task for the agent to solve, o
 
 Agent reviews the offline-sync architecture. Previous task ("Implement local transaction cache") created an IndexedDB store that syncs on reconnect. Task ("Add timestamp-based conflict detection") implemented last-write-wins for conflicting transactions. Current task: implement better conflict resolution UI where users can choose which version to keep.
 
-Agent starts prototyping: when sync detects conflicts, queue them in a "conflicts queue" and render a modal for user resolution. Initial code works fine in single-tab testing. But then agent realizes: what if two browser tabs are open on the same transaction? Tab A edits transaction #42, goes offline. Tab B also edits transaction #42, goes offline. Both go online at the same time. Both try to sync. The local IndexedDB state could be read by both tabs simultaneously, both write their changes, and one write gets overwritten.
+Agent starts prototyping: when sync detects conflicts, queue them in a "conflicts queue" and render a modal for user resolution. Initial code works fine in single-tab testing. But then agent realizes: what if two session tabs are open on the same transaction? Tab A edits transaction #42, goes offline. Tab B also edits transaction #42, goes offline. Both go online at the same time. Both try to sync. The local IndexedDB state could be read by both tabs simultaneously, both write their changes, and one write gets overwritten.
 
 Agent checks the prior task ("Implement local transaction cache"). It uses simple IndexedDB writes without transactions. Reading the notes: "IndexedDB transactions seemed overkill; most users won't have multiple tabs." But the complication says they will, and it's not handled.
 
 Agent considers three options:
-1. Use IndexedDB transaction API (adds complexity, browser compatibility risk)
+1. Use IndexedDB transaction API (adds complexity, platform compatibility risk)
 2. Add a global lock at the app level (but tabs are separate contexts, can't share memory)
 3. Use shared worker or service worker to coordinate (significant architectural change)
 

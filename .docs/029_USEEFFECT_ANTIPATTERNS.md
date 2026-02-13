@@ -185,7 +185,7 @@ The deps array forces the entire listener to be unsubscribed and resubscribed wh
 
 ### DOM Measurement Before Paint
 
-`useEffect` runs **after** the browser paints. If you need to measure or mutate the DOM before the user sees it (tooltip positioning, scroll restoration), use `useLayoutEffect`. Using `useEffect` causes visible flicker.
+`useEffect` runs **after** the UI commit/render. If you need to measure or mutate the DOM before the user sees it (tooltip positioning, scroll restoration), use `useLayoutEffect`. Using `useEffect` causes visible flicker.
 
 ### External Store Subscriptions
 
