@@ -3,10 +3,11 @@ display_name: React Components
 acronym: RCMP
 icon: Code
 color: "#e20dda"
-description: TODO
-conventions: TODO
+description: Discipline-specific guidance for this workflow.
+conventions: Follow stack-aligned conventions and keep outputs implementation-ready.
 skills: []
-system_prompt: TODO
+system_prompt: |
+Use the discipline guidance as the source of truth for this task context, and align recommendations to this stack's constraints.
 image_prompt:
   positive: |
     Entirely magenta monochromatic image, magenta color wash over everything, magenta tinted lighting, Brazilian male, early 30s, with wavy medium-length dark hair, medium build, light stubble, wearing a fitted magenta vest with glowing pink geometric accents over a magenta shirt, magenta pants, magenta-tinted earpiece, one hand raised touching a floating translucent magenta UI panel beside him, facing the viewer head up eyes forward, magenta background, inside a magenta-tinted component assembly hall with floating magenta holographic UI panels.

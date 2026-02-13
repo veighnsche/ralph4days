@@ -3,10 +3,11 @@ display_name: Monorepo & Deploy
 acronym: DPLY
 icon: Code
 color: "#3cd2f4"
-description: TODO
-conventions: TODO
+description: Discipline-specific guidance for this workflow.
+conventions: Follow stack-aligned conventions and keep outputs implementation-ready.
 skills: []
-system_prompt: TODO
+system_prompt: |
+Use the discipline guidance as the source of truth for this task context, and align recommendations to this stack's constraints.
 image_prompt:
   positive: |
     Entirely silver monochromatic image, silver color wash over everything, chrome tinted lighting, Nigerian male, late 30s, with short tight curls, broad powerful build, trimmed goatee, wearing a chrome-plated silver longcoat with mirrored metallic panels across the chest and silver-lit seam detailing, heavy silver chain necklace, one hand gripping a massive chrome launch lever mounted on a silver console, facing the viewer head up eyes forward, silver background, inside a silver-tinted launch platform command deck with enormous chrome deployment pipeline tubes and parallel silver launch rails extending into the distance, metallic reflections across every surface.

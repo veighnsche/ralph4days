@@ -3,10 +3,11 @@ display_name: Next.js App Router
 acronym: ROUT
 icon: Code
 color: "#0269ff"
-description: TODO
-conventions: TODO
+description: Discipline-specific guidance for this workflow.
+conventions: Follow stack-aligned conventions and keep outputs implementation-ready.
 skills: []
-system_prompt: TODO
+system_prompt: |
+Use the discipline guidance as the source of truth for this task context, and align recommendations to this stack's constraints.
 image_prompt:
   positive: |
     Entirely electric blue monochromatic image, blue color wash over everything, blue tinted lighting, Korean female, mid 20s, with long straight black hair with electric blue streaks, tall lean build, standing upright facing the viewer head up eyes forward, wearing an electric blue trenchcoat with luminous blue piping along every seam over a blue shirt, blue-tinted visor across her eyes, one hand gripping the edge of a massive glowing blue archway door while the other holds a translucent blue holographic floor plan, blue background, inside a blue-tinted towering transit hub with rows of massive blue-lit archway gates receding into the distance and glowing blue route diagrams etched into the blue floor.

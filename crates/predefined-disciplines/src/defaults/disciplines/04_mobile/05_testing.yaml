@@ -3,10 +3,11 @@ display_name: Testing
 acronym: TEST
 icon: Code
 color: "#9a1fff"
-description: TODO
-conventions: TODO
+description: Discipline-specific guidance for this workflow.
+conventions: Follow stack-aligned conventions and keep outputs implementation-ready.
 skills: []
-system_prompt: TODO
+system_prompt: |
+Use the discipline guidance as the source of truth for this task context, and align recommendations to this stack's constraints.
 image_prompt:
   positive: |
     Entirely amethyst purple monochromatic image, purple color wash over everything, violet tinted lighting, Elvish female, early 40s, with short silver hair swept back, petite precise build, sharp perceptive features, wearing a fitted amethyst purple robe with luminous purple crystal-lattice embroidery along the bodice and sleeves, amethyst pendant hanging from a thin chain, one hand holding up a faceted amethyst crystalline prism to the light, facing the viewer head up eyes forward, purple background, inside a purple-tinted elvish chamber of truth with faceted amethyst crystal walls that refract purple light into prismatic patterns and polished purple stone truth-mirrors lining the curved walls.

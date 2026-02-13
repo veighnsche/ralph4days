@@ -3,10 +3,11 @@ display_name: Documentation
 acronym: DOCS
 icon: Code
 color: "#876330"
-description: TODO
-conventions: TODO
+description: Discipline-specific guidance for this workflow.
+conventions: Follow stack-aligned conventions and keep outputs implementation-ready.
 skills: []
-system_prompt: TODO
+system_prompt: |
+Use the discipline guidance as the source of truth for this task context, and align recommendations to this stack's constraints.
 image_prompt:
   positive: |
     Entirely ivory monochromatic image, ivory color wash over everything, warm white tinted lighting, Indigenous Australian male, late 50s, with long gray dreadlocks past shoulders, tall dignified build, full gray beard, wearing an elegant ivory ceremonial longcoat with luminous ivory thread detailing along every edge and ivory clasps down the front, ivory-tinted reading glasses perched on his nose, writing with a luminous ivory stylus into an enormous ivory tome held open in his other hand, facing the viewer head up eyes forward, ivory background, inside an ivory-tinted vast archive cathedral with towering shelves packed with glowing ivory document spines and ivory light cascading from the vaulted ceiling.

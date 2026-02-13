@@ -3,10 +3,11 @@ display_name: Firebase Backend
 acronym: FIRE
 icon: Code
 color: "#f46908"
-description: TODO
-conventions: TODO
+description: Discipline-specific guidance for this workflow.
+conventions: Follow stack-aligned conventions and keep outputs implementation-ready.
 skills: []
-system_prompt: TODO
+system_prompt: |
+Use the discipline guidance as the source of truth for this task context, and align recommendations to this stack's constraints.
 image_prompt:
   positive: |
     Entirely ember orange monochromatic image, orange color wash over everything, orange tinted lighting, Nord human female, late 20s, with long copper-red hair in a thick warrior braid over one shoulder, strong athletic broad-shouldered build, warm freckled features with a faint scar across one cheekbone, round human ears, standing upright facing the viewer head up eyes forward, wearing a fitted ember orange tunic with luminous flame-pattern embroidery along the sleeves and a burnished copper belt, amber crystal earrings, orange leather bracers on both forearms, one hand raised holding a living ember-orange flame hovering above her open palm, orange background, inside an orange-tinted elvish hearthhall with a massive stone hearth with orange eternal flames and orange amber-inlaid pillars.

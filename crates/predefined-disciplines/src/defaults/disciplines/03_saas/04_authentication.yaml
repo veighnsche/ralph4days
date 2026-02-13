@@ -3,10 +3,11 @@ display_name: Authentication
 acronym: AUTH
 icon: Code
 color: "#fa2422"
-description: TODO
-conventions: TODO
+description: Discipline-specific guidance for this workflow.
+conventions: Follow stack-aligned conventions and keep outputs implementation-ready.
 skills: []
-system_prompt: TODO
+system_prompt: |
+Use the discipline guidance as the source of truth for this task context, and align recommendations to this stack's constraints.
 image_prompt:
   positive: |
     Entirely crimson red monochromatic image, red color wash over everything, red tinted lighting, Japanese non-binary person, early 30s, with sharp asymmetric black bob with a single crimson streak, slim build, wearing a high-collar crimson red jacket with glowing red symbols etched into the stiff collar and red-lit buttons down the front, red-tinted monocle over one eye, holding up a glowing crimson keycard badge between two fingers while the other arm blocks the path forward palm-out, facing the viewer head up eyes forward, red background, inside a red-tinted access control chamber with massive red-lit security gates on both sides and columns of scrolling red authentication tokens projected on the red walls.

@@ -3,10 +3,11 @@ display_name: State Management
 acronym: STAT
 icon: Code
 color: "#159398"
-description: TODO
-conventions: TODO
+description: Discipline-specific guidance for this workflow.
+conventions: Follow stack-aligned conventions and keep outputs implementation-ready.
 skills: []
-system_prompt: TODO
+system_prompt: |
+Use the discipline guidance as the source of truth for this task context, and align recommendations to this stack's constraints.
 image_prompt:
   positive: |
     Entirely aquamarine monochromatic image, aquamarine color wash over everything, turquoise tinted lighting, Elvish non-binary person, mid 30s, with shoulder-length dark hair with aquamarine streaks flowing like water, medium serene build, calm knowing features, standing upright facing the viewer head up eyes forward, wearing a layered aquamarine robe with luminous wave-pattern embroidery, aquamarine crystal bracelet on one wrist, both hands held open at waist level with concentric ripples of turquoise light radiating outward from their palms, aquamarine background, inside an aquamarine-tinted elvish meditation grotto with crystalline aquamarine stalactites and aquamarine water channels carved into the aquamarine stone walls.

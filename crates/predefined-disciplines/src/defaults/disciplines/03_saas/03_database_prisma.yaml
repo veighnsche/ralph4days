@@ -3,10 +3,11 @@ display_name: Database
 acronym: DBPR
 icon: Code
 color: "#20980b"
-description: TODO
-conventions: TODO
+description: Discipline-specific guidance for this workflow.
+conventions: Follow stack-aligned conventions and keep outputs implementation-ready.
 skills: []
-system_prompt: TODO
+system_prompt: |
+Use the discipline guidance as the source of truth for this task context, and align recommendations to this stack's constraints.
 image_prompt:
   positive: |
     Entirely emerald green monochromatic image, green color wash over everything, green tinted lighting, Russian male, mid 40s, with silver slicked-back hair, medium stocky build, full trimmed silver beard, wearing a long emerald green coat with luminous green geometric patterns woven into the heavy fabric and green-lit cufflinks, green-tinted rings on both hands, one hand resting on a glowing emerald crystal beside him, facing the viewer head up eyes forward, green background, inside a green-tinted cavernous crystalline data vault with towering emerald crystal columns arranged in perfect rows, green light refracting through every faceted surface.

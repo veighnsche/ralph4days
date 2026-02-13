@@ -3,10 +3,11 @@ display_name: Dart Logic
 acronym: DART
 icon: Code
 color: "#1a61ff"
-description: TODO
-conventions: TODO
+description: Discipline-specific guidance for this workflow.
+conventions: Follow stack-aligned conventions and keep outputs implementation-ready.
 skills: []
-system_prompt: TODO
+system_prompt: |
+Use the discipline guidance as the source of truth for this task context, and align recommendations to this stack's constraints.
 image_prompt:
   positive: |
     Entirely sapphire blue monochromatic image, blue color wash over everything, sapphire tinted lighting, Elvish male, mid 40s, with close-cropped dark hair with deep sapphire blue streaks, lean angular build, sharp features, standing upright facing the viewer head up eyes forward, wearing a structured deep sapphire blue tunic with luminous blue runic patterns etched along the collar and cuffs over blue leather bracers, sapphire pendant at his throat, holding a glowing sapphire-tipped stylus in one hand and a blue crystal tablet in the other at his side, blue background, inside a blue-tinted elvish study carved from sapphire-veined stone with shelves of blue crystal tablets and glowing blue runic diagrams etched into the blue stone walls.
