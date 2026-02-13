@@ -358,7 +358,7 @@ mod tests {
         ctx.target_task_id = Some(1);
         ctx.tasks = vec![sqlite_db::Task {
             id: 1,
-            feature: "auth".to_owned(),
+            subsystem: "auth".to_owned(),
             discipline: "frontend".to_owned(),
             title: "Build login".to_owned(),
             description: None,
@@ -382,8 +382,8 @@ mod tests {
             pseudocode: None,
             enriched_at: None,
             signals: vec![],
-            feature_display_name: "Auth".to_owned(),
-            feature_acronym: "AU".to_owned(),
+            subsystem_display_name: "Auth".to_owned(),
+            subsystem_acronym: "AU".to_owned(),
             discipline_display_name: "Frontend".to_owned(),
             discipline_acronym: "FE".to_owned(),
             discipline_icon: "code".to_owned(),

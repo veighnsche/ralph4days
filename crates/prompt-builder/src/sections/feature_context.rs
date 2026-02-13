@@ -39,7 +39,7 @@ fn build(ctx: &PromptContext) -> Option<String> {
         // Fallback: inject all comments when RAG is unavailable
         out.push_str("\n\n### Feature Knowledge\n");
 
-        let mut by_category: std::collections::BTreeMap<&str, Vec<&sqlite_db::FeatureComment>> =
+        let mut by_category: std::collections::BTreeMap<&str, Vec<&sqlite_db::SubsystemComment>> =
             std::collections::BTreeMap::new();
         for c in &feature.comments {
             by_category.entry(&c.category).or_default().push(c);
@@ -72,7 +72,10 @@ pub fn feature_context() -> Section {
 mod tests {
     use super::*;
     use crate::context::{test_context, ScoredFeatureComment};
-    use sqlite_db::{Feature, FeatureComment, FeatureStatus, Task, TaskStatus};
+    use sqlite_db::{
+        Subsystem as Feature, SubsystemComment as FeatureComment, SubsystemStatus as FeatureStatus,
+        Task, TaskStatus,
+    };
 
     fn test_feature(name: &str, display: &str, description: Option<&str>) -> Feature {
         Feature {
@@ -90,7 +93,7 @@ mod tests {
     fn test_task(id: u32, feature: &str) -> Task {
         Task {
             id,
-            feature: feature.to_owned(),
+            subsystem: feature.to_owned(),
             discipline: "backend".to_owned(),
             title: "Test task".to_owned(),
             description: None,
@@ -114,8 +117,8 @@ mod tests {
             pseudocode: None,
             enriched_at: None,
             signals: vec![],
-            feature_display_name: "Test".to_owned(),
-            feature_acronym: "TEST".to_owned(),
+            subsystem_display_name: "Test".to_owned(),
+            subsystem_acronym: "TEST".to_owned(),
             discipline_display_name: "Backend".to_owned(),
             discipline_acronym: "BACK".to_owned(),
             discipline_icon: "Server".to_owned(),

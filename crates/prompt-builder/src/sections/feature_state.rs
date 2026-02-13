@@ -12,7 +12,7 @@ fn build(ctx: &PromptContext) -> Option<String> {
         |task| {
             ctx.tasks
                 .iter()
-                .filter(|t| t.feature == task.feature)
+                .filter(|t| t.subsystem == task.subsystem)
                 .collect()
         },
     );

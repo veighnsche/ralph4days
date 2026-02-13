@@ -7,7 +7,7 @@ use ralph_external::comment_embeddings::{
     build_embedding_text, embed_query, embed_text, CommentEmbeddingConfig,
 };
 use ralph_external::OllamaConfig;
-use sqlite_db::{AddFeatureCommentInput, FeatureInput, SqliteDb};
+use sqlite_db::{AddSubsystemCommentInput, SqliteDb, SubsystemInput};
 
 fn ollama() -> OllamaConfig {
     OllamaConfig {
@@ -37,7 +37,7 @@ async fn smoke_embed_store_search_render() {
     let cfg = config(&ollama);
 
     // 1. Create two features
-    db.create_feature(FeatureInput {
+    db.create_subsystem(SubsystemInput {
         name: "auth".to_owned(),
         display_name: "Auth".to_owned(),
         acronym: "AUTH".to_owned(),
@@ -45,7 +45,7 @@ async fn smoke_embed_store_search_render() {
         ..Default::default()
     })
     .unwrap();
-    db.create_feature(FeatureInput {
+    db.create_subsystem(SubsystemInput {
         name: "billing".to_owned(),
         display_name: "Billing".to_owned(),
         acronym: "BILL".to_owned(),
@@ -83,8 +83,8 @@ async fn smoke_embed_store_search_render() {
         ),
     ];
     for (feat, cat, body) in comments {
-        db.add_feature_comment(AddFeatureCommentInput {
-            feature_name: feat.to_owned(),
+        db.add_subsystem_comment(AddSubsystemCommentInput {
+            subsystem_name: feat.to_owned(),
             category: cat.to_owned(),
             discipline: None,
             agent_task_id: None,
@@ -97,7 +97,7 @@ async fn smoke_embed_store_search_render() {
     }
 
     // 3. Embed every comment (this is the real Ollama call)
-    let all_features = db.get_features();
+    let all_features = db.get_subsystems();
     for f in &all_features {
         for c in &f.comments {
             let text = build_embedding_text(&c.category, &c.body, c.reason.as_deref());
@@ -116,8 +116,8 @@ async fn smoke_embed_store_search_render() {
     let query_vec = embed_query(&cfg, "How should we hash passwords?")
         .await
         .unwrap();
-    let auth_hits = db.search_feature_comments("auth", &query_vec, 3, 0.3);
-    let billing_hits = db.search_feature_comments("billing", &query_vec, 3, 0.3);
+    let auth_hits = db.search_subsystem_comments("auth", &query_vec, 3, 0.3);
+    let billing_hits = db.search_subsystem_comments("billing", &query_vec, 3, 0.3);
 
     println!("\nQuery: 'How should we hash passwords?'");
     println!("  Auth hits:");
@@ -153,7 +153,7 @@ async fn smoke_embed_store_search_render() {
         features: vec![all_features.into_iter().find(|f| f.name == "auth").unwrap()],
         tasks: vec![sqlite_db::Task {
             id: 1,
-            feature: "auth".to_owned(),
+            subsystem: "auth".to_owned(),
             discipline: "backend".to_owned(),
             title: "Implement password hashing".to_owned(),
             description: None,
@@ -177,8 +177,8 @@ async fn smoke_embed_store_search_render() {
             pseudocode: None,
             enriched_at: None,
             signals: vec![],
-            feature_display_name: "Auth".to_owned(),
-            feature_acronym: "AUTH".to_owned(),
+            subsystem_display_name: "Auth".to_owned(),
+            subsystem_acronym: "AUTH".to_owned(),
             discipline_display_name: "Backend".to_owned(),
             discipline_acronym: "BACK".to_owned(),
             discipline_icon: "Server".to_owned(),

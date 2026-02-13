@@ -20,7 +20,7 @@ fn build(ctx: &PromptContext) -> Option<String> {
         out.push_str(&format!(
             "\n| {} | {} | {} | {} | {} |",
             task.id,
-            task.feature,
+            task.subsystem,
             task.title,
             task.status.as_str(),
             priority,

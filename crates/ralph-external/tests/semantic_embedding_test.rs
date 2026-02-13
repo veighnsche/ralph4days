@@ -5,7 +5,7 @@
 
 use ralph_external::comment_embeddings::{embed_query, embed_text, CommentEmbeddingConfig};
 use ralph_external::OllamaConfig;
-use sqlite_db::{AddFeatureCommentInput, FeatureInput, SqliteDb};
+use sqlite_db::{AddSubsystemCommentInput, SqliteDb, SubsystemInput};
 
 fn default_ollama() -> OllamaConfig {
     OllamaConfig {
@@ -28,7 +28,7 @@ fn embed_config(ollama: &OllamaConfig) -> CommentEmbeddingConfig<'_> {
 }
 
 fn seed_feature_with_comments(db: &SqliteDb) {
-    db.create_feature(FeatureInput {
+    db.create_subsystem(SubsystemInput {
         name: "auth".to_owned(),
         display_name: "Authentication".to_owned(),
         acronym: "AUTH".to_owned(),
@@ -71,8 +71,8 @@ fn seed_feature_with_comments(db: &SqliteDb) {
     ];
 
     for (category, body, reason) in comments {
-        db.add_feature_comment(AddFeatureCommentInput {
-            feature_name: "auth".to_owned(),
+        db.add_subsystem_comment(AddSubsystemCommentInput {
+            subsystem_name: "auth".to_owned(),
             category: category.to_owned(),
             discipline: None,
             agent_task_id: None,
@@ -84,7 +84,7 @@ fn seed_feature_with_comments(db: &SqliteDb) {
         .unwrap();
     }
 
-    db.create_feature(FeatureInput {
+    db.create_subsystem(SubsystemInput {
         name: "billing".to_owned(),
         display_name: "Billing".to_owned(),
         acronym: "BILL".to_owned(),
@@ -109,8 +109,8 @@ fn seed_feature_with_comments(db: &SqliteDb) {
     ];
 
     for (category, body) in billing_comments {
-        db.add_feature_comment(AddFeatureCommentInput {
-            feature_name: "billing".to_owned(),
+        db.add_subsystem_comment(AddSubsystemCommentInput {
+            subsystem_name: "billing".to_owned(),
             category: category.to_owned(),
             discipline: None,
             agent_task_id: None,
@@ -124,7 +124,7 @@ fn seed_feature_with_comments(db: &SqliteDb) {
 }
 
 async fn embed_all_comments(db: &SqliteDb, config: &CommentEmbeddingConfig<'_>) {
-    for feature in db.get_features() {
+    for feature in db.get_subsystems() {
         for comment in &feature.comments {
             let text = ralph_external::comment_embeddings::build_embedding_text(
                 &comment.category,
@@ -156,7 +156,7 @@ async fn semantic_search_surfaces_relevant_auth_comments() {
     .await
     .unwrap();
 
-    let results = db.search_feature_comments("auth", &query_vec, 3, 0.3);
+    let results = db.search_subsystem_comments("auth", &query_vec, 3, 0.3);
 
     println!("\n=== Query: password hashing ===");
     for r in &results {
@@ -187,8 +187,8 @@ async fn semantic_search_isolates_features() {
         .await
         .unwrap();
 
-    let auth_results = db.search_feature_comments("auth", &query_vec, 10, 0.3);
-    let billing_results = db.search_feature_comments("billing", &query_vec, 10, 0.3);
+    let auth_results = db.search_subsystem_comments("auth", &query_vec, 10, 0.3);
+    let billing_results = db.search_subsystem_comments("billing", &query_vec, 10, 0.3);
 
     println!("\n=== Query: credit card payments ===");
     println!("  Auth results: {}", auth_results.len());
@@ -224,7 +224,7 @@ async fn semantic_search_feeds_into_prompt_builder() {
         .await
         .unwrap();
 
-    let results = db.search_feature_comments("auth", &query_vec, 5, 0.3);
+    let results = db.search_subsystem_comments("auth", &query_vec, 5, 0.3);
 
     println!("\n=== Query: login endpoint with rate limiting ===");
     for r in &results {
@@ -250,7 +250,7 @@ async fn semantic_search_feeds_into_prompt_builder() {
         .collect();
 
     let feature = db
-        .get_features()
+        .get_subsystems()
         .into_iter()
         .find(|f| f.name == "auth")
         .unwrap();
@@ -281,7 +281,7 @@ async fn semantic_search_feeds_into_prompt_builder() {
     };
     ctx.tasks = vec![sqlite_db::Task {
         id: 1,
-        feature: "auth".to_owned(),
+        subsystem: "auth".to_owned(),
         discipline: "backend".to_owned(),
         title: "Implement login endpoint".to_owned(),
         description: None,
@@ -305,8 +305,8 @@ async fn semantic_search_feeds_into_prompt_builder() {
         pseudocode: None,
         enriched_at: None,
         signals: vec![],
-        feature_display_name: "Authentication".to_owned(),
-        feature_acronym: "AUTH".to_owned(),
+        subsystem_display_name: "Authentication".to_owned(),
+        subsystem_acronym: "AUTH".to_owned(),
         discipline_display_name: "Backend".to_owned(),
         discipline_acronym: "BACK".to_owned(),
         discipline_icon: "Server".to_owned(),

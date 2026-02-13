@@ -168,7 +168,7 @@ impl AppState {
         let api_port = *self.api_server_port.lock().err_str(codes::INTERNAL)?;
 
         Ok(PromptContext {
-            features: db.get_features(),
+            features: db.get_subsystems(),
             tasks: db.get_tasks(),
             disciplines: db.get_disciplines(),
             metadata: db.get_project_info(),

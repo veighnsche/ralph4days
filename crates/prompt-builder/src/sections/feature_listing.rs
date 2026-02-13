@@ -17,7 +17,7 @@ fn build(ctx: &PromptContext) -> Option<String> {
         let task_count = ctx
             .tasks
             .iter()
-            .filter(|t| t.feature == feature.name)
+            .filter(|t| t.subsystem == feature.name)
             .count();
         out.push_str(&format!(
             "\n| {} | {} | {} |",

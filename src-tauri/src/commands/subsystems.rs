@@ -169,7 +169,7 @@ pub struct SubsystemData {
     pub comments: Vec<SubsystemCommentData>,
 }
 
-fn to_comment_data(c: &sqlite_db::FeatureComment) -> SubsystemCommentData {
+fn to_comment_data(c: &sqlite_db::SubsystemComment) -> SubsystemCommentData {
     SubsystemCommentData {
         id: c.id,
         category: c.category.clone(),
@@ -188,7 +188,7 @@ fn to_comment_data(c: &sqlite_db::FeatureComment) -> SubsystemCommentData {
 pub fn get_subsystems(state: State<'_, AppState>) -> Result<Vec<SubsystemData>, String> {
     CommandContext::from_tauri_state(&state).db(|db| {
         Ok(db
-            .get_features()
+            .get_subsystems()
             .iter()
             .map(|f| SubsystemData {
                 id: f.id,
@@ -218,7 +218,7 @@ pub fn create_subsystem(
     params: CreateFeatureParams,
 ) -> Result<(), String> {
     CommandContext::from_tauri_state(&state).db(|db| {
-        db.create_feature(sqlite_db::FeatureInput {
+        db.create_subsystem(sqlite_db::SubsystemInput {
             name: params.name,
             display_name: params.display_name,
             acronym: params.acronym,
@@ -241,7 +241,7 @@ pub fn update_subsystem(
     params: UpdateFeatureParams,
 ) -> Result<(), String> {
     CommandContext::from_tauri_state(&state).db(|db| {
-        db.update_feature(sqlite_db::FeatureInput {
+        db.update_subsystem(sqlite_db::SubsystemInput {
             name: params.name,
             display_name: params.display_name,
             acronym: params.acronym,
@@ -271,8 +271,8 @@ pub async fn add_subsystem_comment(
     let command_ctx = CommandContext::from_tauri_state(&state);
     let path = db_path(&command_ctx)?;
     let (comment_id, embedding_text) = command_ctx.db_tx(|db| {
-        db.add_feature_comment(sqlite_db::AddFeatureCommentInput {
-            feature_name: params.subsystem_name.clone(),
+        db.add_subsystem_comment(sqlite_db::AddSubsystemCommentInput {
+            subsystem_name: params.subsystem_name.clone(),
             category: params.category.clone(),
             discipline: params.discipline.clone(),
             agent_task_id: params.agent_task_id,
@@ -282,7 +282,7 @@ pub async fn add_subsystem_comment(
             source_iteration: params.source_iteration,
         })?;
 
-        let subsystems = db.get_features();
+        let subsystems = db.get_subsystems();
         let cid = subsystems
             .iter()
             .find(|f| f.name == params.subsystem_name)
@@ -325,7 +325,7 @@ pub async fn update_subsystem_comment(
     let command_ctx = CommandContext::from_tauri_state(&state);
     let path = db_path(&command_ctx)?;
     let (embedding_text, needs_embed) = command_ctx.db_tx(|db| {
-        db.update_feature_comment(
+        db.update_subsystem_comment(
             &params.subsystem_name,
             params.comment_id,
             &params.body,
@@ -333,7 +333,7 @@ pub async fn update_subsystem_comment(
             params.reason.clone(),
         )?;
 
-        let subsystems = db.get_features();
+        let subsystems = db.get_subsystems();
         let category = subsystems
             .iter()
             .find(|f| f.name == params.subsystem_name)
@@ -388,7 +388,7 @@ pub fn delete_subsystem_comment(
     params: DeleteFeatureCommentParams,
 ) -> Result<(), String> {
     CommandContext::from_tauri_state(&state)
-        .db(|db| db.delete_feature_comment(&params.subsystem_name, params.comment_id))
+        .db(|db| db.delete_subsystem_comment(&params.subsystem_name, params.comment_id))
 }
 
 #[derive(Deserialize)]
@@ -525,7 +525,7 @@ pub fn update_discipline(
 
 #[tauri::command]
 pub fn delete_subsystem(state: State<'_, AppState>, name: String) -> Result<(), String> {
-    CommandContext::from_tauri_state(&state).db(|db| db.delete_feature(name))
+    CommandContext::from_tauri_state(&state).db(|db| db.delete_subsystem(name))
 }
 
 #[tauri::command]

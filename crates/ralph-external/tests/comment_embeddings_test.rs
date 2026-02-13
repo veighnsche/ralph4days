@@ -39,15 +39,15 @@ async fn mock_ollama_embed(embedding: Vec<f32>) -> MockServer {
 #[tokio::test]
 async fn should_embed_new_comment() {
     let db = sqlite_db::SqliteDb::open_in_memory(None).unwrap();
-    db.create_feature(sqlite_db::FeatureInput {
+    db.create_subsystem(sqlite_db::SubsystemInput {
         name: "auth".to_owned(),
         display_name: "Auth".to_owned(),
         acronym: "AUTH".to_owned(),
         ..Default::default()
     })
     .unwrap();
-    db.add_feature_comment(sqlite_db::AddFeatureCommentInput {
-        feature_name: "auth".to_owned(),
+    db.add_subsystem_comment(sqlite_db::AddSubsystemCommentInput {
+        subsystem_name: "auth".to_owned(),
         category: "gotcha".to_owned(),
         discipline: None,
         agent_task_id: None,
@@ -57,7 +57,7 @@ async fn should_embed_new_comment() {
         source_iteration: None,
     })
     .unwrap();
-    let comment_id = db.get_features()[0].comments[0].id;
+    let comment_id = db.get_subsystems()[0].comments[0].id;
 
     let result = should_embed(&db, comment_id, "gotcha", "Use JWT", None);
     assert!(result.is_some());
@@ -66,15 +66,15 @@ async fn should_embed_new_comment() {
 #[tokio::test]
 async fn should_embed_unchanged_comment() {
     let db = sqlite_db::SqliteDb::open_in_memory(None).unwrap();
-    db.create_feature(sqlite_db::FeatureInput {
+    db.create_subsystem(sqlite_db::SubsystemInput {
         name: "auth".to_owned(),
         display_name: "Auth".to_owned(),
         acronym: "AUTH".to_owned(),
         ..Default::default()
     })
     .unwrap();
-    db.add_feature_comment(sqlite_db::AddFeatureCommentInput {
-        feature_name: "auth".to_owned(),
+    db.add_subsystem_comment(sqlite_db::AddSubsystemCommentInput {
+        subsystem_name: "auth".to_owned(),
         category: "gotcha".to_owned(),
         discipline: None,
         agent_task_id: None,
@@ -84,7 +84,7 @@ async fn should_embed_unchanged_comment() {
         source_iteration: None,
     })
     .unwrap();
-    let comment_id = db.get_features()[0].comments[0].id;
+    let comment_id = db.get_subsystems()[0].comments[0].id;
 
     let text = build_embedding_text("gotcha", "Use JWT", None);
     let hash = ralph_rag::embedding::hash_text(&text);
@@ -98,15 +98,15 @@ async fn should_embed_unchanged_comment() {
 #[tokio::test]
 async fn should_embed_changed_comment() {
     let db = sqlite_db::SqliteDb::open_in_memory(None).unwrap();
-    db.create_feature(sqlite_db::FeatureInput {
+    db.create_subsystem(sqlite_db::SubsystemInput {
         name: "auth".to_owned(),
         display_name: "Auth".to_owned(),
         acronym: "AUTH".to_owned(),
         ..Default::default()
     })
     .unwrap();
-    db.add_feature_comment(sqlite_db::AddFeatureCommentInput {
-        feature_name: "auth".to_owned(),
+    db.add_subsystem_comment(sqlite_db::AddSubsystemCommentInput {
+        subsystem_name: "auth".to_owned(),
         category: "gotcha".to_owned(),
         discipline: None,
         agent_task_id: None,
@@ -116,7 +116,7 @@ async fn should_embed_changed_comment() {
         source_iteration: None,
     })
     .unwrap();
-    let comment_id = db.get_features()[0].comments[0].id;
+    let comment_id = db.get_subsystems()[0].comments[0].id;
 
     db.upsert_comment_embedding(comment_id, &[0.1; 768], "test", "old_stale_hash")
         .unwrap();

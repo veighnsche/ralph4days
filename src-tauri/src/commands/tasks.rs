@@ -5,7 +5,7 @@ use tauri::State;
 
 #[derive(Deserialize)]
 pub struct CreateTaskParams {
-    pub feature: String,
+    pub subsystem: String,
     pub discipline: String,
     pub title: String,
     pub description: Option<String>,
@@ -27,7 +27,7 @@ pub struct CreateTaskParams {
 #[derive(Deserialize)]
 pub struct UpdateTaskParams {
     pub id: u32,
-    pub feature: String,
+    pub subsystem: String,
     pub discipline: String,
     pub title: String,
     pub description: Option<String>,
@@ -50,7 +50,7 @@ pub struct UpdateTaskParams {
 pub fn create_task(state: State<'_, AppState>, params: CreateTaskParams) -> Result<String, String> {
     let ctx = CommandContext::from_tauri_state(&state);
     let task_input = sqlite_db::TaskInput {
-        feature: params.feature,
+        subsystem: params.subsystem,
         discipline: params.discipline,
         title: params.title,
         description: params.description,
@@ -78,7 +78,7 @@ pub fn create_task(state: State<'_, AppState>, params: CreateTaskParams) -> Resu
 pub fn update_task(state: State<'_, AppState>, params: UpdateTaskParams) -> Result<(), String> {
     let ctx = CommandContext::from_tauri_state(&state);
     let task_input = sqlite_db::TaskInput {
-        feature: params.feature,
+        subsystem: params.subsystem,
         discipline: params.discipline,
         title: params.title,
         description: params.description,

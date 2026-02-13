@@ -1,5 +1,5 @@
 use crate::snapshot::CodebaseSnapshot;
-use sqlite_db::{Discipline, Feature, ProjectMetadata, Task};
+use sqlite_db::{Discipline, ProjectMetadata, Subsystem as Feature, Task};
 use std::collections::HashMap;
 
 /// A feature comment scored by RAG relevance to the current task.
@@ -61,7 +61,7 @@ impl PromptContext {
     /// Find the feature for the target task.
     pub fn target_task_feature(&self) -> Option<&Feature> {
         let task = self.target_task()?;
-        self.features.iter().find(|f| f.name == task.feature)
+        self.features.iter().find(|f| f.name == task.subsystem)
     }
 
     /// Find the discipline for the target task.
