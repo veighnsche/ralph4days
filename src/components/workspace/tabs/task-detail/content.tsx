@@ -8,8 +8,8 @@ import { computeInferredStatus } from '@/lib/taskStatus'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import { DetailPageLayout } from '../../DetailPageLayout'
 import { CommentsSection } from '../../task-detail'
-import { TaskCardContent } from '../../task-detail/TaskCardContent'
-import { TaskSidebar } from '../../task-detail/TaskSidebar'
+import { TaskCardContent } from '../../task-detail/components/TaskCardContent'
+import { TaskSidebar } from '../../task-detail/components/TaskSidebar'
 import {
   TASK_DETAIL_TAB_EMPTY_MESSAGE,
   TASK_DETAIL_TAB_FALLBACK_EYELINE_PERCENT,

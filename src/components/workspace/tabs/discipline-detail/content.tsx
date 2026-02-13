@@ -83,40 +83,6 @@ function DisciplineContent({ discipline }: { discipline: DisciplineConfig }) {
     )
   }
 
-  if (discipline.agent || discipline.model || discipline.effort || discipline.thinking !== undefined) {
-    sections.push(
-      <div key="launch-defaults" className="px-6 space-y-2">
-        <h2 className="text-sm font-medium text-muted-foreground">Launch Defaults</h2>
-        <div className="space-y-1.5 text-xs">
-          {discipline.agent && (
-            <div>
-              <span className="text-muted-foreground">Agent:</span>{' '}
-              <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{discipline.agent}</code>
-            </div>
-          )}
-          {discipline.model && (
-            <div>
-              <span className="text-muted-foreground">Model:</span>{' '}
-              <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{discipline.model}</code>
-            </div>
-          )}
-          {discipline.effort && (
-            <div>
-              <span className="text-muted-foreground">Effort:</span>{' '}
-              <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{discipline.effort}</code>
-            </div>
-          )}
-          {discipline.thinking !== undefined && (
-            <div>
-              <span className="text-muted-foreground">Thinking:</span>{' '}
-              <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{discipline.thinking ? 'on' : 'off'}</code>
-            </div>
-          )}
-        </div>
-      </div>
-    )
-  }
-
   if (discipline.mcpServers && discipline.mcpServers.length > 0) {
     sections.push(
       <div key="mcp-servers" className="px-6 space-y-2">
@@ -193,6 +159,37 @@ function DisciplineSidebar({ discipline, stackName }: { discipline: DisciplineCo
           </PropertyRow>
         </>
       )}
+
+      <Separator bleed="md" />
+      <PropertyRow label="Launch Defaults">
+        <div className="space-y-1.5 text-xs">
+          {discipline.agent && (
+            <div>
+              <span className="text-muted-foreground">Agent:</span>{' '}
+              <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{discipline.agent}</code>
+            </div>
+          )}
+          {discipline.model && (
+            <div>
+              <span className="text-muted-foreground">Model:</span>{' '}
+              <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{discipline.model}</code>
+            </div>
+          )}
+          {discipline.effort && (
+            <div>
+              <span className="text-muted-foreground">Effort:</span>{' '}
+              <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{discipline.effort}</code>
+            </div>
+          )}
+          {discipline.model && discipline.thinking !== undefined && (
+            <div>
+              <span className="text-muted-foreground">Thinking:</span>{' '}
+              <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{discipline.thinking ? 'on' : 'off'}</code>
+            </div>
+          )}
+          {!discipline.model && <span className="text-muted-foreground">No model set</span>}
+        </div>
+      </PropertyRow>
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { Bot, Check, Cog, Play, Radio, User } from 'lucide-react'
+import { Bot, Check, Cog, Play, Radio, Sparkles, User, WandSparkles } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -12,14 +12,33 @@ import type { InferredTaskStatus } from '@/lib/taskStatus'
 import { shouldShowInferredStatus } from '@/lib/taskStatus'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { Task, TaskSignal } from '@/types/generated'
-import { PropertyRow } from '../PropertyRow'
-import { createTerminalTabFromTask } from '../tabs'
+import { PropertyRow } from '../../PropertyRow'
+import { createTerminalTab } from '../../tabs'
+import { type LaunchSource, useResolvedTaskLaunch } from '../hooks/useResolvedTaskLaunch'
 
 const PROVENANCE_CONFIG = {
   agent: { label: 'Agent', icon: Bot },
   human: { label: 'Human', icon: User },
   system: { label: 'System', icon: Cog }
 } as const
+
+function sourceIcon(source: LaunchSource) {
+  if (source === 'task') {
+    return (
+      <span title="Task override">
+        <Sparkles className="h-3 w-3 text-muted-foreground" />
+      </span>
+    )
+  }
+  if (source === 'default') {
+    return (
+      <span title="Model default fallback">
+        <WandSparkles className="h-3 w-3 text-muted-foreground" />
+      </span>
+    )
+  }
+  return null
+}
 
 function buildSignalSummaryText(signals: TaskSignal[]): string | null {
   if (signals.length === 0) return null
@@ -52,6 +71,17 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
   const DisciplineIcon = resolveIcon(task.disciplineIcon)
   const openTab = useWorkspaceStore(state => state.openTab)
   const isDraftAgent = task.status === 'draft' && task.provenance === 'agent'
+  const {
+    resolvedAgent,
+    resolvedModel,
+    resolvedEffort,
+    resolvedThinking,
+    resolvedModelSupportsEffort,
+    agentSource,
+    modelSource,
+    effortSource,
+    thinkingSource
+  } = useResolvedTaskLaunch(task)
 
   const approveMutation = useInvokeMutation<{ id: number; status: string }>('set_task_status', {
     invalidateKeys: QUERY_KEYS.TASKS
@@ -62,7 +92,16 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
   }
 
   const handleExecute = () => {
-    openTab(createTerminalTabFromTask(task.id))
+    openTab(
+      createTerminalTab({
+        taskId: task.id,
+        title: `Task #${task.id.toString().padStart(3, '0')}`,
+        agent: resolvedAgent ?? undefined,
+        model: resolvedModel ?? undefined,
+        effort: resolvedEffort ?? undefined,
+        thinking: resolvedThinking ?? undefined
+      })
+    )
   }
 
   return (
@@ -202,6 +241,34 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
             <span className="text-sm" style={{ color: task.disciplineColor }}>
               {task.disciplineDisplayName}
             </span>
+          </div>
+        </PropertyRow>
+        <PropertyRow label="Launch">
+          <div className="space-y-1 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <span>Agent:</span>
+              <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{resolvedAgent ?? 'unset'}</code>
+              {sourceIcon(agentSource)}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span>Model:</span>
+              <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{resolvedModel ?? 'No model set'}</code>
+              {sourceIcon(modelSource)}
+            </div>
+            {resolvedModelSupportsEffort && (
+              <div className="flex items-center gap-1.5">
+                <span>Effort:</span>
+                <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{resolvedEffort ?? 'unset'}</code>
+                {sourceIcon(effortSource)}
+              </div>
+            )}
+            <div className="flex items-center gap-1.5">
+              <span>Thinking:</span>
+              <code className="font-mono bg-muted px-1.5 py-0.5 rounded">
+                {resolvedThinking === undefined ? 'unset' : resolvedThinking ? 'on' : 'off'}
+              </code>
+              {sourceIcon(thinkingSource)}
+            </div>
           </div>
         </PropertyRow>
 
