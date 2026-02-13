@@ -8,7 +8,8 @@ This repository is a Tauri desktop app with a React frontend and Rust backend wo
 - `crates/`: shared Rust crates (`sqlite-db`, `prompt-builder`, `ralph-errors`, `ralph-rag`, `ralph-external`, etc.).
 - `e2e/`: Playwright end-to-end, visual, and monkey tests.
 - `fixtures/`: read-only sample projects; disposable mock data is copied outside the repo (default: `/tmp/ralph4days-mock`).
-- `docs/` and `.docs/`: implementation notes and design records.
+- `.docs/`: canonical location for implementation notes and design records.
+  New docs must use the next chronological numeric prefix in the filename (for example `068_SOME_TITLE.md`).
 
 ## Build, Test, and Development Commands
 Use `just` as the primary task runner (`just --list`).
@@ -42,6 +43,14 @@ Use `just` as the primary task runner (`just --list`).
 - This masks contract violations and creates silent-error paths that accumulate over time.
 - Default standard: fail loud on broken invariants and boundary contract mismatches.
 - Allow defensive handling only for genuinely unreliable external edges, with explicit error surfacing.
+
+## Global Constraint Policy (All Domains)
+- Treat DRY as a hard invariant: every fact must have exactly one canonical owner.
+- Before editing schema/state/contracts, define and preserve ownership boundaries (source-of-truth map).
+- Do not duplicate semantically equivalent fields across entities/tables/stores unless explicit snapshot or override behavior is requested.
+- If duplication is required, document the canonical owner and synchronization/override rules in the same change.
+- When requirements conflict, prioritize invariants over convenience and ask for clarification rather than introducing parallel ownership.
+- Under uncertainty, default to stricter normalization and explicit ownership, not defensive duplication.
 
 ## Testing Guidelines
 - Frontend unit tests: Vitest (`bun test:run` or `just test-frontend`).
