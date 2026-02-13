@@ -34,11 +34,19 @@ pub struct GenerationProgress {
 }
 
 pub async fn check_available(config: &ComfyConfig) -> ComfyStatus {
-    let client = reqwest::Client::builder()
+    let client = match reqwest::Client::builder()
         .connect_timeout(Duration::from_secs(5))
         .timeout(Duration::from_secs(10))
         .build()
-        .expect("Failed to build HTTP client");
+    {
+        Ok(client) => client,
+        Err(error) => {
+            return ComfyStatus {
+                available: false,
+                error: Some(format!("Failed to build HTTP client: {error}")),
+            };
+        }
+    };
 
     let url = format!("{}/system_stats", config.api_url);
 

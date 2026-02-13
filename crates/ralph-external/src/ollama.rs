@@ -44,10 +44,19 @@ struct ModelInfo {
 }
 
 pub async fn check_available(config: &OllamaConfig) -> OllamaStatus {
-    let client = reqwest::Client::builder()
+    let client = match reqwest::Client::builder()
         .timeout(Duration::from_secs(2))
         .build()
-        .expect("Failed to build HTTP client");
+    {
+        Ok(client) => client,
+        Err(error) => {
+            return OllamaStatus {
+                available: false,
+                models: vec![],
+                error: Some(format!("Failed to build HTTP client: {error}")),
+            };
+        }
+    };
 
     match client
         .get(format!("{}/api/tags", config.api_url))
