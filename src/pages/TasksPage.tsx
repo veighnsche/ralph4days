@@ -12,10 +12,6 @@ import { computeProjectProgress, getAllTags } from '@/lib/stats'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { DisciplineCropsData, ProjectInfo } from '@/types/generated'
 
-// TODO: Implement task-bound terminal system (POC tested 2026-02-06)
-// - Add play button to tasks, bind to terminal, generate task prompt
-// - Listen for PTY close, update task status, clear binding
-
 export function TasksPage() {
   const { tasks, isLoading: tasksLoading, error } = usePRDData()
   const { data: projectInfo } = useInvoke<ProjectInfo>('get_project_info')
