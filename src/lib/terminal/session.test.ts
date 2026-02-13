@@ -193,7 +193,11 @@ describe('useTerminalSession', () => {
     })
 
     await waitFor(() => {
-      expect(handlers.onOutput).toHaveBeenCalledWith(new TextEncoder().encode('hello'))
+      expect(handlers.onOutput).toHaveBeenCalled()
+      const calls = handlers.onOutput.mock.calls
+      const lastChunk = calls[calls.length - 1]?.[0] as Uint8Array | undefined
+      expect(lastChunk).toBeInstanceOf(Uint8Array)
+      expect(new TextDecoder().decode(lastChunk)).toBe('hello')
     })
   })
 
@@ -479,7 +483,11 @@ describe('useTerminalSession', () => {
     })
 
     await waitFor(() => {
-      expect(handlers.onOutput).toHaveBeenCalledWith(new TextEncoder().encode('Hi'))
+      expect(handlers.onOutput).toHaveBeenCalled()
+      const calls = handlers.onOutput.mock.calls
+      const lastChunk = calls[calls.length - 1]?.[0] as Uint8Array | undefined
+      expect(lastChunk).toBeInstanceOf(Uint8Array)
+      expect(new TextDecoder().decode(lastChunk)).toBe('Hi')
     })
   })
 

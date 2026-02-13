@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { InlineError } from '@/components/shared'
 import { useTabMeta } from '@/hooks/workspace'
 import { Terminal, useTerminalSession } from '@/lib/terminal'
+import { recordTerminalRender, recordTerminalWrite } from '@/lib/terminal/diagnostics'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
 import { WORKSPACE_SELECTORS } from '@/test/selectors'
 import { useWorkspaceTabIsActive } from '../context'
@@ -36,7 +37,10 @@ export function TerminalTabContent({ tab, params }: { tab: WorkspaceTab; params:
       }
     },
     {
-      onOutput: data => terminalRef.current?.write(data),
+      onOutput: data => {
+        recordTerminalWrite(tab.id, data)
+        terminalRef.current?.write(data)
+      },
       onClosed: () => {
         terminalRef.current?.writeln('\r\n\x1b[2m[Session ended]\x1b[0m')
       },
@@ -47,9 +51,14 @@ export function TerminalTabContent({ tab, params }: { tab: WorkspaceTab; params:
   // WHY: Callbacks use refs (invoked once at mount), so memoization unnecessary
   const handleReady = (terminal: XTerm) => {
     terminalRef.current = terminal
-    requestAnimationFrame(() => session.resize(terminal.cols, terminal.rows))
-    session.markReady()
+    requestAnimationFrame(() => {
+      session.resize(terminal.cols, terminal.rows)
+      session.markReady()
+    })
     terminal.onData(data => session.sendInput(data))
+    terminal.onRender(() => {
+      recordTerminalRender(tab.id, terminal)
+    })
 
     // WHY: xterm.js doesn't implement kitty protocol for Shift+Enter; need CSI u seq \x1b[13;2u
     terminal.attachCustomKeyEventHandler(event => {

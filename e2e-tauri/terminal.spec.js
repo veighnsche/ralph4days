@@ -1,46 +1,49 @@
-async function switchToMainWindow() {
-  const handles = await browser.getWindowHandles()
-  for (const handle of handles) {
-    await browser.switchToWindow(handle)
-    const hasMainRoot = await browser.execute(() => document.getElementById('root') !== null)
-    if (hasMainRoot) return true
-  }
-
-  return false
-}
-
-async function waitForMainWindow() {
-  await browser.waitUntil(
-    async () => {
-      const matched = await switchToMainWindow()
-      if (!matched) return false
-
-      const hasWorkspaceMarkup = await $('[data-testid="workspace-new-terminal"]').isExisting()
-      return hasWorkspaceMarkup
-    },
-    {
-      timeout: 30000,
-      interval: 250,
-      timeoutMsg: 'Main workspace window did not initialize within timeout.'
-    }
-  )
-}
+import {
+  closeAllTabsIfAny,
+  clickButtonByAccessibleName,
+  clickElementWithDomClick,
+  clickEnabledButtonByText,
+  clickRoleElementByText,
+  ensureWorkspaceReady,
+  getActiveTabId,
+  resetTerminalDiagnostics,
+  waitForTabCount,
+  waitForTerminalDiagnosticPattern,
+  waitForTerminalPipelineReady,
+  waitForVisibleTerminalHost
+} from './workspace.harness.js'
 
 describe('Terminal e2e flow', () => {
-  it('opens terminal UI in the native Tauri window', async () => {
-    await waitForMainWindow()
+  beforeEach(async () => {
+    await ensureWorkspaceReady()
+    await closeAllTabsIfAny()
+    await waitForTabCount(0)
+    await resetTerminalDiagnostics()
+  })
 
+  it('opens terminal UI in the native Tauri window', async () => {
     const isTauriRuntime = await browser.execute(() => {
       return typeof window.__TAURI__ !== 'undefined' || typeof window.__TAURI_IPC__ !== 'undefined'
     })
     expect(isTauriRuntime).toBe(true)
 
-    const plusButton = await $('[data-testid="workspace-new-terminal"]')
-    await plusButton.waitForDisplayed({ timeout: 30000 })
-    await plusButton.click()
+    await clickElementWithDomClick('[data-testid="workspace-new-terminal"]')
 
     const terminalHost = await $('[data-testid="workspace-terminal-host"]')
     await terminalHost.waitForDisplayed({ timeout: 30000 })
     expect(await terminalHost.isDisplayed()).toBe(true)
+  })
+
+  it('renders codex cli content to the terminal screen (not blank)', async () => {
+    await clickButtonByAccessibleName('Open run form')
+    await clickRoleElementByText('radio', 'Codex')
+    await clickEnabledButtonByText('Run')
+
+    const activeTabId = await getActiveTabId()
+    expect(activeTabId).not.toBe('')
+
+    await waitForTerminalPipelineReady(activeTabId)
+    await waitForVisibleTerminalHost()
+    await waitForTerminalDiagnosticPattern(activeTabId, ['OpenAI Codex', 'model:'])
   })
 })

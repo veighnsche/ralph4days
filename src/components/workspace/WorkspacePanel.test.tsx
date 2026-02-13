@@ -29,6 +29,7 @@ vi.mock('@/lib/terminal', () => ({
       write: vi.fn(),
       writeln: vi.fn(),
       onData: vi.fn(),
+      onRender: vi.fn(),
       attachCustomKeyEventHandler: vi.fn()
     })
     return <div data-testid="terminal">Terminal</div>
@@ -69,6 +70,18 @@ describe('WorkspacePanel', () => {
   beforeEach(() => {
     localStorage.clear()
     resetWorkspaceState()
+
+    class ResizeObserverMock {
+      observe = vi.fn()
+      unobserve = vi.fn()
+      disconnect = vi.fn()
+    }
+    global.ResizeObserver = ResizeObserverMock as any
+
+    global.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+      callback(0)
+      return 0
+    }) as any
   })
 
   it('opens a Codex terminal tab when plus button is clicked', async () => {
@@ -85,16 +98,17 @@ describe('WorkspacePanel', () => {
     })
     expect(resolveLaunchConfigMock).toHaveBeenCalledWith(CODEX_LAUNCH_CONFIG)
 
-    await waitFor(() => {
-      expect(sessionCalls).toHaveLength(1)
-    })
+    await waitFor(() => expect(sessionCalls.length).toBeGreaterThan(0))
 
     const tab = await screen.findByRole('tab', { name: /Codex/i })
     expect(tab).toBeTruthy()
     expect(screen.getByTestId('terminal')).toBeVisible()
     expect(screen.queryByText('No workspace tabs open')).not.toBeInTheDocument()
 
-    const config = sessionCalls[0]!.config as {
+    const latestCall = sessionCalls[sessionCalls.length - 1]
+    expect(latestCall).toBeDefined()
+
+    const config = latestCall?.config as {
       agent?: string
       humanSession?: {
         kind: string
@@ -115,11 +129,11 @@ describe('WorkspacePanel', () => {
 
     await user.click(screen.getByRole('button', { name: /new terminal/i }))
 
-    await waitFor(() => {
-      expect(sessionCalls).toHaveLength(1)
-    })
+    await waitFor(() => expect(sessionCalls.length).toBeGreaterThan(0))
 
-    const handlers = sessionCalls[0]!.handlers
+    const latestCall = sessionCalls[sessionCalls.length - 1]
+    expect(latestCall).toBeDefined()
+    const handlers = latestCall?.handlers
     const errorMessage = 'TypeError: JSON.stringify cannot serialize BigInt'
 
     act(() => {

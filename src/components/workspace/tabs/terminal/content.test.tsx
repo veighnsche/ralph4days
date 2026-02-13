@@ -17,6 +17,7 @@ vi.mock('@/lib/terminal', () => ({
       write: vi.fn(),
       writeln: vi.fn(),
       onData: vi.fn(),
+      onRender: vi.fn(),
       attachCustomKeyEventHandler: vi.fn()
     })
     return <div data-testid="terminal">Terminal</div>
