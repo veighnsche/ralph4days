@@ -43,9 +43,13 @@ fn generate_bash_tools(ctx: &PromptContext, tools: &[McpTool]) -> (Vec<McpScript
 
 /// Generate config for the TypeScript signal server.
 fn generate_signal_server(ctx: &PromptContext) -> (Vec<McpScript>, String) {
-    let task_id = ctx
-        .target_task_id
-        .expect("SignalServer mode requires target_task_id");
+    let task_id = match ctx.target_task_id {
+        Some(task_id) => Some(task_id),
+        None => {
+            tracing::warn!("SignalServer mode requested without target_task_id; skipping ralph-signals MCP server");
+            None
+        }
+    };
     let session_id = uuid::Uuid::new_v4().to_string();
 
     let server_path = std::env::current_exe()
@@ -68,22 +72,24 @@ fn generate_signal_server(ctx: &PromptContext) -> (Vec<McpScript>, String) {
 
     let mut servers = Vec::new();
 
-    let env_vars = ctx.api_server_port.map_or_else(
-        || {
-            format!(
-                "\"RALPH_TASK_ID\":\"{task_id}\",\"RALPH_SESSION_ID\":\"{session_id}\",\"RALPH_DB_PATH\":\"{escaped_db}\""
-            )
-        },
-        |port| {
-            format!(
-                "\"RALPH_TASK_ID\":\"{task_id}\",\"RALPH_SESSION_ID\":\"{session_id}\",\"RALPH_DB_PATH\":\"{escaped_db}\",\"RALPH_API_PORT\":\"{port}\""
-            )
-        },
-    );
+    if let Some(task_id) = task_id {
+        let env_vars = ctx.api_server_port.map_or_else(
+            || {
+                format!(
+                    "\"RALPH_TASK_ID\":\"{task_id}\",\"RALPH_SESSION_ID\":\"{session_id}\",\"RALPH_DB_PATH\":\"{escaped_db}\""
+                )
+            },
+            |port| {
+                format!(
+                    "\"RALPH_TASK_ID\":\"{task_id}\",\"RALPH_SESSION_ID\":\"{session_id}\",\"RALPH_DB_PATH\":\"{escaped_db}\",\"RALPH_API_PORT\":\"{port}\""
+                )
+            },
+        );
 
-    servers.push(format!(
-        "\"ralph-signals\":{{\"command\":\"bun\",\"args\":[\"{escaped_path}\"],\"env\":{{{env_vars}}}}}"
-    ));
+        servers.push(format!(
+            "\"ralph-signals\":{{\"command\":\"bun\",\"args\":[\"{escaped_path}\"],\"env\":{{{env_vars}}}}}"
+        ));
+    }
 
     if let Some(discipline) = ctx.target_task_discipline() {
         for mcp in &discipline.mcp_servers {
