@@ -1,6 +1,7 @@
 import { Layers } from 'lucide-react'
 import { DisciplineLabel } from '@/components/prd/DisciplineLabel'
 import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
 import { CroppedImage } from '@/components/ui/cropped-image'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -19,6 +20,8 @@ import {
   DISCIPLINE_DETAIL_TAB_FALLBACK_TITLE
 } from './constants'
 import type { DisciplineDetailTabParams } from './schema'
+
+type DisciplineTemplate = DisciplineConfig['taskTemplates'][number]
 
 function DisciplineContent({ discipline }: { discipline: DisciplineConfig }) {
   const Icon = resolveIcon(discipline.icon)
@@ -194,6 +197,75 @@ function DisciplineSidebar({ discipline, stackName }: { discipline: DisciplineCo
   )
 }
 
+function TaskTemplateCard({ template }: { template: DisciplineTemplate }) {
+  return (
+    <Card className="p-4 space-y-3">
+      <div className="space-y-1">
+        <h3 className="text-sm font-medium leading-tight">{template.title}</h3>
+        {template.description && (
+          <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">{template.description}</p>
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {template.priority && (
+          <Badge variant="outline" className="text-[10px] font-mono uppercase">
+            {template.priority}
+          </Badge>
+        )}
+        {template.estimatedTurns != null && (
+          <Badge variant="secondary" className="text-[10px] font-mono">
+            {template.estimatedTurns} turns
+          </Badge>
+        )}
+        <Badge variant="secondary" className="text-[10px] font-mono">
+          pulled {template.pulledCount}x
+        </Badge>
+      </div>
+
+      {(template.hints || template.agent || template.model || template.effort || template.thinking != null) && (
+        <div className="text-xs text-muted-foreground space-y-1">
+          {template.hints && <p className="leading-relaxed whitespace-pre-wrap">{template.hints}</p>}
+          {(template.agent || template.model || template.effort || template.thinking != null) && (
+            <p className="font-mono">
+              {[
+                template.agent,
+                template.model,
+                template.effort,
+                template.thinking != null ? `thinking:${template.thinking ? 'on' : 'off'}` : null
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
+          )}
+        </div>
+      )}
+    </Card>
+  )
+}
+
+function DisciplineTaskTemplatesSection({ discipline }: { discipline: DisciplineConfig }) {
+  const templates = discipline.taskTemplates ?? []
+  return (
+    <Card className="shadow-sm p-0">
+      <div className="px-4 py-3 border-b">
+        <h2 className="text-sm font-medium">Task Templates</h2>
+        <p className="text-xs text-muted-foreground mt-1">Reusable definitions this discipline can pull into tasks.</p>
+      </div>
+
+      {templates.length === 0 ? (
+        <div className="px-4 py-6 text-sm text-muted-foreground">No active templates for this discipline yet.</div>
+      ) : (
+        <div className="p-3 grid grid-cols-1 gap-3">
+          {templates.map(template => (
+            <TaskTemplateCard key={template.id} template={template} />
+          ))}
+        </div>
+      )}
+    </Card>
+  )
+}
+
 export function DisciplineDetailTabContent({ tab, params }: { tab: WorkspaceTab; params: DisciplineDetailTabParams }) {
   const { entityId: disciplineId } = params
 
@@ -252,7 +324,8 @@ export function DisciplineDetailTabContent({ tab, params }: { tab: WorkspaceTab;
         )
       }
       mainContent={<DisciplineContent discipline={discipline} />}
-      sidebar={<DisciplineSidebar discipline={discipline} stackName={stackName} />}
-    />
+      sidebar={<DisciplineSidebar discipline={discipline} stackName={stackName} />}>
+      <DisciplineTaskTemplatesSection discipline={discipline} />
+    </DetailPageLayout>
   )
 }

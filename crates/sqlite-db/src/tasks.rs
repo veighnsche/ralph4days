@@ -553,6 +553,49 @@ impl SqliteDb {
             .collect()
     }
 
+    pub fn get_active_task_templates_for_discipline(
+        &self,
+        discipline_id: u32,
+    ) -> Vec<TaskTemplate> {
+        let Ok(mut stmt) = self.conn.prepare(
+            "SELECT tt.id, td.discipline_id, td.title, td.description, td.priority, td.hints, \
+             td.estimated_turns, td.agent, td.model, td.effort, td.thinking, td.pseudocode, \
+             td.created, td.updated, \
+             (SELECT COUNT(*) FROM runtime_tasks rt WHERE rt.template_id = tt.id) AS pulled_count \
+             FROM task_templates tt \
+             JOIN task_details td ON tt.details_id = td.id \
+             WHERE tt.is_active = 1 AND td.discipline_id = ?1 \
+             ORDER BY tt.id",
+        ) else {
+            return vec![];
+        };
+
+        let Ok(rows) = stmt.query_map([discipline_id], |row| {
+            let priority_str: Option<String> = row.get(4).ok();
+            Ok(TaskTemplate {
+                id: row.get(0)?,
+                discipline_id: row.get(1)?,
+                title: row.get(2)?,
+                description: row.get(3)?,
+                priority: priority_str.and_then(|s| Priority::parse(&s)),
+                hints: row.get(5)?,
+                estimated_turns: row.get(6)?,
+                agent: row.get(7)?,
+                model: row.get(8)?,
+                effort: row.get(9)?,
+                thinking: row.get(10)?,
+                pseudocode: row.get(11)?,
+                created: row.get(12)?,
+                updated: row.get(13)?,
+                pulled_count: row.get(14)?,
+            })
+        }) else {
+            return vec![];
+        };
+
+        rows.filter_map(std::result::Result::ok).collect()
+    }
+
     #[allow(clippy::unused_self)]
     fn row_to_task(&self, row: &rusqlite::Row) -> Task {
         let status_str: String = row.get(5).unwrap_or_else(|_| "pending".to_owned());

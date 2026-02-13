@@ -40,6 +40,7 @@ export type DisciplineConfig = {
   imagePath?: string
   crops?: DisciplineCropsData
   imagePrompt?: DisciplineImagePromptData
+  taskTemplates: DisciplineTaskTemplateData[]
 }
 export type DisciplineCropsData = {
   face: CropBoxData
@@ -50,6 +51,22 @@ export type DisciplineCropsData = {
   strip?: CropBoxData
 }
 export type DisciplineImagePromptData = { positive: string; negative: string }
+export type DisciplineTaskTemplateData = {
+  id: number
+  title: string
+  description?: string
+  priority?: string
+  hints?: string
+  estimatedTurns?: number
+  agent?: string
+  model?: string
+  effort?: string
+  thinking?: boolean
+  pseudocode?: string
+  created?: string
+  updated?: string
+  pulledCount: number
+}
 export type FeatureLearning = {
   text: string
   reason?: string
@@ -230,6 +247,23 @@ export type TaskSignalSummary = {
   learnedCount: number
 }
 export type TaskStatus = 'draft' | 'pending' | 'in_progress' | 'done' | 'blocked' | 'skipped'
+export type TaskTemplate = {
+  id: number
+  disciplineId: number
+  title: string
+  description?: string
+  priority?: Priority
+  hints?: string
+  estimatedTurns?: number
+  agent?: string
+  model?: string
+  effort?: string
+  thinking?: boolean
+  pseudocode?: string
+  created?: string
+  updated?: string
+  pulledCount: number
+}
 export type TerminalBridgeEmitSystemMessageArgs = { sessionId: string; text: string }
 export type TerminalBridgeListModelFormTreeResult = { providers: TerminalBridgeListModelsResult[] }
 export type TerminalBridgeListModelsResult = { agent: string; models: TerminalBridgeModelOption[] }

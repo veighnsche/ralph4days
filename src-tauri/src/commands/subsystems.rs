@@ -64,6 +64,26 @@ pub struct DisciplineImagePromptData {
 #[ipc_type]
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct DisciplineTaskTemplateData {
+    pub id: u32,
+    pub title: String,
+    pub description: Option<String>,
+    pub priority: Option<String>,
+    pub hints: Option<String>,
+    pub estimated_turns: Option<u32>,
+    pub agent: Option<String>,
+    pub model: Option<String>,
+    pub effort: Option<String>,
+    pub thinking: Option<bool>,
+    pub pseudocode: Option<String>,
+    pub created: Option<String>,
+    pub updated: Option<String>,
+    pub pulled_count: u32,
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DisciplineConfig {
     pub id: u32,
     pub name: String,
@@ -84,6 +104,7 @@ pub struct DisciplineConfig {
     pub image_path: Option<String>,
     pub crops: Option<DisciplineCropsData>,
     pub image_prompt: Option<DisciplineImagePromptData>,
+    pub task_templates: Vec<DisciplineTaskTemplateData>,
 }
 
 #[tauri::command]
@@ -127,6 +148,26 @@ pub fn get_disciplines_config(state: State<'_, AppState>) -> Result<Vec<Discipli
                     .image_prompt
                     .as_deref()
                     .and_then(|s| serde_json::from_str::<DisciplineImagePromptData>(s).ok()),
+                task_templates: db
+                    .get_active_task_templates_for_discipline(d.id)
+                    .into_iter()
+                    .map(|template| DisciplineTaskTemplateData {
+                        id: template.id,
+                        title: template.title,
+                        description: template.description,
+                        priority: template.priority.map(|p| p.as_str().to_owned()),
+                        hints: template.hints,
+                        estimated_turns: template.estimated_turns,
+                        agent: template.agent,
+                        model: template.model,
+                        effort: template.effort,
+                        thinking: template.thinking,
+                        pseudocode: template.pseudocode,
+                        created: template.created,
+                        updated: template.updated,
+                        pulled_count: template.pulled_count,
+                    })
+                    .collect(),
             })
             .collect())
     })

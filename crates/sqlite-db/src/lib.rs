@@ -26,7 +26,7 @@ pub use types::{
     AgentSession, AgentSessionCreateInput, AgentSessionUpdateInput, Discipline, DisciplineInput,
     McpServerConfig, Priority, ProjectMetadata, Subsystem, SubsystemComment, SubsystemInput,
     SubsystemStatus, Task, TaskInput, TaskProvenance, TaskSignal, TaskSignalComment,
-    TaskSignalCommentCreateInput, TaskSignalSummary, TaskStatus,
+    TaskSignalCommentCreateInput, TaskSignalSummary, TaskStatus, TaskTemplate,
 };
 
 use ralph_errors::{codes, RalphResultExt};
