@@ -1,8 +1,9 @@
-import { Field, FieldLabel } from '@/components/ui/field'
+import { Field } from '@/components/ui/field'
 import { SelectableCard } from '@/components/ui/selectable-card'
 import type { Agent } from '@/hooks/preferences'
 import { AGENT_OPTIONS, AGENT_PROVIDER_META } from '../constants'
 import { useAgentSessionConfigActions, useAgentSessionConfigLaunchState } from '../hooks/useAgentSessionConfigTabState'
+import { PickerSectionHeader } from './PickerSectionHeader'
 
 function AgentProviderCard({
   agentOption,
@@ -57,8 +58,8 @@ export function AgentProviderPicker() {
   const { setAgent } = useAgentSessionConfigActions()
 
   return (
-    <Field className="gap-0">
-      <FieldLabel>Agent Provider</FieldLabel>
+    <Field className="gap-2">
+      <PickerSectionHeader title="Agent Provider" />
       <div className="flex items-center justify-start gap-3" role="radiogroup" aria-label="Agent provider">
         {AGENT_OPTIONS.map(agentOption => (
           <AgentProviderCard

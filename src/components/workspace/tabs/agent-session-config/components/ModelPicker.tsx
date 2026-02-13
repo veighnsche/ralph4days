@@ -7,6 +7,7 @@ import type { Effort } from '@/hooks/preferences'
 import type { TerminalBridgeModelOption } from '@/types/generated'
 import { useAgentSessionConfigActions, useAgentSessionConfigLaunchState } from '../hooks/useAgentSessionConfigTabState'
 import { asEffort } from '../state'
+import { PickerSectionHeader } from './PickerSectionHeader'
 
 function ModelCard({
   modelOption,
@@ -74,37 +75,6 @@ function ModelEffortRow({
   )
 }
 
-function ModelSectionHeader({
-  thinking,
-  onThinkingChange
-}: {
-  thinking: boolean
-  onThinkingChange: (value: boolean) => void
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="text-sm font-semibold leading-none">Model</div>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <SelectableCard
-              selected={thinking}
-              variant="icon"
-              role="switch"
-              aria-checked={thinking}
-              aria-label="Extended Thinking"
-              onClick={() => onThinkingChange(!thinking)}
-              className="shrink-0 text-muted-foreground data-[selected=true]:text-foreground">
-              <Brain className="h-4 w-4" aria-hidden="true" />
-            </SelectableCard>
-          </TooltipTrigger>
-          <TooltipContent side="top">Extended Thinking</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </div>
-  )
-}
-
 export function ModelPicker({
   models,
   loadingModels
@@ -116,8 +86,29 @@ export function ModelPicker({
   const { setModel, setEffort, setThinking } = useAgentSessionConfigActions()
 
   return (
-    <div className="flex flex-col gap-1" role="radiogroup" aria-label="Model">
-      <ModelSectionHeader thinking={thinking} onThinkingChange={setThinking} />
+    <div className="flex flex-col gap-2" role="radiogroup" aria-label="Model">
+      <PickerSectionHeader
+        title="Model"
+        action={
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <SelectableCard
+                  selected={thinking}
+                  variant="icon"
+                  role="switch"
+                  aria-checked={thinking}
+                  aria-label="Extended Thinking"
+                  onClick={() => setThinking(!thinking)}
+                  className="text-muted-foreground data-[selected=true]:text-foreground">
+                  <Brain className="h-4 w-4" aria-hidden="true" />
+                </SelectableCard>
+              </TooltipTrigger>
+              <TooltipContent side="top">Extended Thinking</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        }
+      />
       {models.map(modelOption => {
         const selected = model === modelOption.name
         return (

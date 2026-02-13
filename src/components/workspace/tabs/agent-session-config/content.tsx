@@ -28,9 +28,13 @@ function AgentSessionConfigTabBody({ tab }: { tab: WorkspaceTab }) {
       </div>
       <Separator />
       <ScrollArea className="flex-1 min-h-0">
-        <div className="px-4 py-4 space-y-4">
-          <AgentProviderPicker />
-          <ModelPicker models={models} loadingModels={loadingModels} />
+        <div className="grid grid-cols-1 gap-4 px-4 py-4 md:grid-cols-2">
+          <div className="min-h-[26rem] min-w-0">
+            <AgentProviderPicker />
+          </div>
+          <div className="min-h-[26rem] min-w-0">
+            <ModelPicker models={models} loadingModels={loadingModels} />
+          </div>
         </div>
       </ScrollArea>
       <Separator />
