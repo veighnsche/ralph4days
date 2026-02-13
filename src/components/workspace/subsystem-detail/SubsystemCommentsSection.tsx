@@ -18,9 +18,9 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { SignalEditor } from '@/components/workspace/task-detail/components/SignalEditor'
-import { useFeatureCommentMutations } from '@/hooks/features'
+import { useSubsystemCommentMutations } from '@/hooks/subsystems'
 import { formatDate } from '@/lib/formatDate'
-import type { FeatureData } from '@/types/generated'
+import type { SubsystemData } from '@/types/generated'
 
 const CATEGORY_CONFIG: Record<string, { icon: LucideIcon; color: string; activeClass: string }> = {
   'design-decision': {
@@ -69,11 +69,11 @@ function CategoryBadge({ category }: { category: string }) {
 }
 
 function AddCommentForm({
-  featureName,
+  subsystemName,
   mutations
 }: {
-  featureName: string
-  mutations: ReturnType<typeof useFeatureCommentMutations>
+  subsystemName: string
+  mutations: ReturnType<typeof useSubsystemCommentMutations>
 }) {
   const [category, setCategory] = useState('')
   const [body, setBody] = useState('')
@@ -88,7 +88,7 @@ function AddCommentForm({
     if (!canSubmit) return
     mutations.addComment.mutate(
       {
-        featureName,
+        subsystemName,
         category: category.trim(),
         body: body.trim(),
         reason: reason.trim() || undefined
@@ -189,9 +189,9 @@ function AddCommentForm({
   )
 }
 
-export function FeatureCommentsSection({ feature }: { feature: FeatureData }) {
-  const comments = feature.comments ?? []
-  const mutations = useFeatureCommentMutations(feature.name)
+export function SubsystemCommentsSection({ subsystem }: { subsystem: SubsystemData }) {
+  const comments = subsystem.comments ?? []
+  const mutations = useSubsystemCommentMutations(subsystem.name)
 
   return (
     <div className="px-3 pb-1">
@@ -205,7 +205,7 @@ export function FeatureCommentsSection({ feature }: { feature: FeatureData }) {
       <InlineError error={mutations.error} onDismiss={mutations.resetError} className="mb-3" />
 
       <div className="mb-4">
-        <AddCommentForm featureName={feature.name} mutations={mutations} />
+        <AddCommentForm subsystemName={subsystem.name} mutations={mutations} />
       </div>
 
       {comments.length > 0 && (

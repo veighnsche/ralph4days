@@ -57,10 +57,10 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
             Tasks
             {currentPage === 'tasks' && <span className="ml-2 text-xs text-muted-foreground">•</span>}
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onPageChange('features')}>
+          <DropdownMenuItem onClick={() => onPageChange('subsystems')}>
             <Target className="mr-2 h-4 w-4" />
-            Features
-            {currentPage === 'features' && <span className="ml-2 text-xs text-muted-foreground">•</span>}
+            Subsystems
+            {currentPage === 'subsystems' && <span className="ml-2 text-xs text-muted-foreground">•</span>}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onPageChange('disciplines')}>
             <Layers className="mr-2 h-4 w-4" />

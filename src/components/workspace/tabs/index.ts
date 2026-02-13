@@ -18,8 +18,8 @@ export {
   createDisciplineDetailTab,
   type DisciplineDetailTabParams
 } from './discipline-detail'
-export { createFeatureDetailTab, type FeatureDetailTabParams } from './feature-detail'
 export { getTabComponent, getTabLifecycle } from './registry'
+export { createSubsystemDetailTab, type SubsystemDetailTabParams } from './subsystem-detail'
 export { createTaskDetailTab, type TaskDetailTabParams } from './task-detail'
 export {
   createDefaultTerminalTab,

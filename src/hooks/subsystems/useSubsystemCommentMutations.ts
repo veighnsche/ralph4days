@@ -2,30 +2,30 @@ import { useState } from 'react'
 import { QUERY_KEYS } from '@/constants/cache'
 import { useInvokeMutation } from '@/hooks/api'
 
-export function useFeatureCommentMutations(featureName: string) {
+export function useSubsystemCommentMutations(subsystemName: string) {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editBody, setEditBody] = useState('')
   const [editSummary, setEditSummary] = useState('')
   const [editReason, setEditReason] = useState('')
 
   const addCommentMutation = useInvokeMutation<{
-    featureName: string
+    subsystemName: string
     category: string
     body: string
     summary?: string
     reason?: string
-  }>('add_feature_comment', {
-    invalidateKeys: QUERY_KEYS.FEATURES
+  }>('add_subsystem_comment', {
+    invalidateKeys: QUERY_KEYS.SUBSYSTEMS
   })
 
   const editComment = useInvokeMutation<{
-    featureName: string
+    subsystemName: string
     commentId: number
     body: string
     summary?: string
     reason?: string
-  }>('update_feature_comment', {
-    invalidateKeys: QUERY_KEYS.FEATURES,
+  }>('update_subsystem_comment', {
+    invalidateKeys: QUERY_KEYS.SUBSYSTEMS,
     onSuccess: () => {
       setEditingId(null)
       setEditBody('')
@@ -35,10 +35,10 @@ export function useFeatureCommentMutations(featureName: string) {
   })
 
   const deleteComment = useInvokeMutation<{
-    featureName: string
+    subsystemName: string
     commentId: number
-  }>('delete_feature_comment', {
-    invalidateKeys: QUERY_KEYS.FEATURES
+  }>('delete_subsystem_comment', {
+    invalidateKeys: QUERY_KEYS.SUBSYSTEMS
   })
 
   const error = addCommentMutation.error ?? editComment.error ?? deleteComment.error
@@ -65,14 +65,14 @@ export function useFeatureCommentMutations(featureName: string) {
     submitEdit: () => {
       if (editingId === null || !editBody.trim()) return
       editComment.mutate({
-        featureName,
+        subsystemName,
         commentId: editingId,
         body: editBody.trim(),
         summary: editSummary.trim() || undefined,
         reason: editReason.trim() || undefined
       })
     },
-    deleteComment: (commentId: number) => deleteComment.mutate({ featureName, commentId }),
+    deleteComment: (commentId: number) => deleteComment.mutate({ subsystemName, commentId }),
     editingId,
     editBody,
     setEditBody,

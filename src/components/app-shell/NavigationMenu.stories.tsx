@@ -19,9 +19,9 @@ export const TasksPage: Story = {
   }
 }
 
-export const FeaturesPage: Story = {
+export const SubsystemsPage: Story = {
   args: {
-    currentPage: 'features'
+    currentPage: 'subsystems'
   }
 }
 

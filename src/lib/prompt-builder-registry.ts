@@ -1,4 +1,4 @@
-export type SectionCategory = 'project' | 'feature' | 'task' | 'discipline' | 'state' | 'user' | 'instructions'
+export type SectionCategory = 'project' | 'subsystem' | 'task' | 'discipline' | 'state' | 'user' | 'instructions'
 
 export interface SectionMeta {
   name: string
@@ -49,30 +49,30 @@ export const SECTION_REGISTRY: SectionMeta[] = [
   },
   {
     name: 'feature_listing',
-    displayName: 'Feature Listing',
-    description: 'All features with descriptions and stats',
-    category: 'feature',
+    displayName: 'Subsystem Listing',
+    description: 'All subsystems with descriptions and stats',
+    category: 'subsystem',
     isInstruction: false
   },
   {
     name: 'feature_context',
-    displayName: 'Feature Context',
-    description: 'Target feature details, architecture, and learnings',
-    category: 'feature',
+    displayName: 'Subsystem Context',
+    description: 'Target subsystem details, architecture, and learnings',
+    category: 'subsystem',
     isInstruction: false
   },
   {
     name: 'feature_files',
-    displayName: 'Feature Files',
-    description: 'Inlined contents of feature context files',
-    category: 'feature',
+    displayName: 'Subsystem Files',
+    description: 'Inlined contents of subsystem context files',
+    category: 'subsystem',
     isInstruction: false
   },
   {
     name: 'feature_state',
-    displayName: 'Feature State',
-    description: 'Tasks grouped by status for the target feature',
-    category: 'feature',
+    displayName: 'Subsystem State',
+    description: 'Tasks grouped by status for the target subsystem',
+    category: 'subsystem',
     isInstruction: false
   },
   {
@@ -155,7 +155,7 @@ export const SECTION_REGISTRY: SectionMeta[] = [
   {
     name: 'ramble_instructions',
     displayName: 'Ramble Instructions',
-    description: 'Instructions for creating/updating features from user input',
+    description: 'Instructions for creating/updating subsystems from user input',
     category: 'instructions',
     isInstruction: true
   },
@@ -265,11 +265,11 @@ You are receiving a raw braindump from the user. Your job is to analyze it and c
 
 ### What to do
 
-1. **Read the braindump carefully.** Identify distinct features, areas of work, and concrete tasks.
-2. **Create features** using the \`create_feature\` MCP tool. Group related work into cohesive features. Each feature should have a clear name, display name, and description.
-3. **Create or update disciplines** using the \`create_discipline\` MCP tool if the work requires disciplines beyond the defaults. Configure system_prompt, skills, and conventions for each.
-4. **Create tasks** using the \`create_task\` MCP tool. Each task should:
-   - Belong to exactly one feature and one discipline
+1. **Read the braindump carefully.** Identify distinct subsystems, areas of work, and concrete tasks.
+2. **Create subsystems** using the available subsystem-management MCP tools in this session. Group related work into cohesive subsystems. Each subsystem should have a clear name, display name, and description.
+3. **Create or update disciplines** using the available discipline-management MCP tools if the work requires disciplines beyond the defaults. Configure system_prompt, skills, and conventions for each.
+4. **Create tasks** using the available task-management MCP tools. Each task should:
+   - Belong to exactly one subsystem and one discipline
    - Have a clear, actionable title
    - Include a description explaining what needs to be done
    - List specific acceptance criteria
@@ -293,10 +293,10 @@ You are receiving additional input from the user about tasks. Review the existin
 ### What to do
 
 1. **Review existing tasks** listed above to understand current project state.
-2. **Interpret the user's input** in the context of existing features and tasks.
-3. **Create new tasks** using the \`create_task\` MCP tool where the user describes new work.
-4. **Update existing tasks** using the \`update_task\` MCP tool where the user wants changes to current tasks (status, description, priority, acceptance criteria, etc.).
-5. **Maintain consistency** with the existing feature and discipline structure.
+2. **Interpret the user's input** in the context of existing subsystems and tasks.
+3. **Create new tasks** using the available task-management MCP tools where the user describes new work.
+4. **Update existing tasks** using the available task-management MCP tools where the user wants changes to current tasks (status, description, priority, acceptance criteria, etc.).
+5. **Maintain consistency** with the existing subsystem and discipline structure.
 
 ### Guidelines
 
@@ -309,24 +309,24 @@ You are receiving additional input from the user about tasks. Review the existin
 
   ramble_instructions: `## Instructions
 
-You are receiving input from the user about features. Review the existing features and the user's input, then create or update features as needed.
+You are receiving input from the user about subsystems. Review the existing subsystems and the user's input, then create or update subsystems as needed.
 
 ### What to do
 
-1. **Review existing features** listed above to understand current project structure.
-2. **Interpret the user's input** about new or changed features.
-3. **Create new features** using the \`create_feature\` MCP tool where the user describes new areas of work.
-4. **Update existing features** using the \`update_feature\` MCP tool where the user wants changes.
-5. **Consider dependencies** between features and how tasks should be organized.
+1. **Review existing subsystems** listed above to understand current project structure.
+2. **Interpret the user's input** about new or changed subsystems.
+3. **Create new subsystems** using the available subsystem-management MCP tools where the user describes new areas of work.
+4. **Update existing subsystems** using the available subsystem-management MCP tools where the user wants changes.
+5. **Consider dependencies** between subsystems and how tasks should be organized.
 
 ### Guidelines
 
-- Each feature should represent a cohesive area of work
-- Use clear, descriptive names that convey the feature's purpose
+- Each subsystem should represent a cohesive area of work
+- Use clear, descriptive names that convey the subsystem's purpose
 - Set \`knowledge_paths\` to point at reference documents (specs, designs, docs)
-- Set \`context_files\` to point at the key source files for the feature
-- If a feature is being split or merged, update associated tasks accordingly
-- Keep feature descriptions concise but informative`,
+- Set \`context_files\` to point at the key source files for the subsystem
+- If a subsystem is being split or merged, update associated tasks accordingly
+- Keep subsystem descriptions concise but informative`,
 
   discuss_instructions: `## Instructions
 
@@ -404,7 +404,7 @@ You are reviewing recent work for quality. Focus on correctness, code quality, a
 
 export const CATEGORY_COLORS: Record<string, string> = {
   project: 'bg-blue-500/15 text-blue-700 dark:text-blue-400',
-  feature: 'bg-violet-500/15 text-violet-700 dark:text-violet-400',
+  subsystem: 'bg-violet-500/15 text-violet-700 dark:text-violet-400',
   task: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
   discipline: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
   state: 'bg-slate-500/15 text-slate-700 dark:text-slate-400',
@@ -414,7 +414,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
 
 export const CATEGORY_GRADIENT_COLORS: Record<string, string> = {
   project: 'rgba(59, 130, 246, 0.12)',
-  feature: 'rgba(139, 92, 246, 0.12)',
+  subsystem: 'rgba(139, 92, 246, 0.12)',
   task: 'rgba(245, 158, 11, 0.12)',
   discipline: 'rgba(16, 185, 129, 0.12)',
   state: 'rgba(100, 116, 139, 0.12)',

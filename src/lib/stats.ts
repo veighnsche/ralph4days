@@ -1,14 +1,14 @@
-import type { FeatureData, GroupStats, ProjectProgress, Task } from '@/types/generated'
+import type { GroupStats, ProjectProgress, SubsystemData, Task } from '@/types/generated'
 
 interface GroupItem {
   name: string
   displayName: string
 }
 
-export function computeFeatureStats(tasks: Task[], features: FeatureData[]): Map<string, GroupStats> {
+export function computeSubsystemStats(tasks: Task[], subsystems: SubsystemData[]): Map<string, GroupStats> {
   const statsMap = new Map<string, GroupStats>()
 
-  for (const feature of features) {
+  for (const feature of subsystems) {
     statsMap.set(feature.name, {
       name: feature.name,
       displayName: feature.displayName,

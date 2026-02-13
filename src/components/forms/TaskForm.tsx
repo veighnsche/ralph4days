@@ -10,12 +10,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { useInvoke } from '@/hooks/api'
 import { useDisciplines } from '@/hooks/disciplines'
 import type { TaskFormData } from '@/lib/schemas'
-import type { FeatureData as Feature } from '@/types/generated'
+import type { SubsystemData as Subsystem } from '@/types/generated'
 
 export function TaskFormFields({ disabled }: { disabled?: boolean }) {
   const { control, getValues, setValue } = useFormContext<TaskFormData>()
   const { disciplines } = useDisciplines()
-  const { data: features = [] } = useInvoke<Feature[]>('get_features')
+  const { data: subsystems = [] } = useInvoke<Subsystem[]>('get_subsystems')
 
   const [newTag, setNewTag] = useState('')
   const [newCriterion, setNewCriterion] = useState('')
@@ -58,20 +58,20 @@ export function TaskFormFields({ disabled }: { disabled?: boolean }) {
         render={({ field }) => (
           <FormItem>
             <FormLabel>
-              Feature <span className="text-destructive">*</span>
+              Subsystem <span className="text-destructive">*</span>
             </FormLabel>
             <FormControl>
-              {features.length > 0 ? (
+              {subsystems.length > 0 ? (
                 <NativeSelect {...field} required disabled={disabled}>
-                  <option value="">Select a feature...</option>
-                  {features.map(feature => (
+                  <option value="">Select a subsystem...</option>
+                  {subsystems.map(feature => (
                     <option key={feature.name} value={feature.name}>
                       {feature.displayName}
                     </option>
                   ))}
                 </NativeSelect>
               ) : (
-                <Input {...field} placeholder="Enter feature name" required disabled={disabled} />
+                <Input {...field} placeholder="Enter subsystem name" required disabled={disabled} />
               )}
             </FormControl>
             <FormMessage />

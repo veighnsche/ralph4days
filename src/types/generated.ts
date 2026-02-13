@@ -62,28 +62,6 @@ export type FeatureComment = {
   created?: string
   updated?: string
 }
-export type FeatureCommentData = {
-  id: number
-  category: string
-  discipline?: string
-  agentTaskId?: number
-  body: string
-  summary?: string
-  reason?: string
-  sourceIteration?: number
-  created?: string
-  updated?: string
-}
-export type FeatureData = {
-  id: number
-  name: string
-  displayName: string
-  acronym: string
-  description?: string
-  created?: string
-  status: string
-  comments: FeatureCommentData[]
-}
 export type FeatureLearning = {
   text: string
   reason?: string
@@ -150,6 +128,28 @@ export type StackMetadataData = {
   whenToUse: string[]
   disciplineCount: number
   characteristics: string[]
+}
+export type SubsystemCommentData = {
+  id: number
+  category: string
+  discipline?: string
+  agentTaskId?: number
+  body: string
+  summary?: string
+  reason?: string
+  sourceIteration?: number
+  created?: string
+  updated?: string
+}
+export type SubsystemData = {
+  id: number
+  name: string
+  displayName: string
+  acronym: string
+  description?: string
+  created?: string
+  status: string
+  comments: SubsystemCommentData[]
 }
 export type Task = {
   id: number

@@ -15,12 +15,12 @@ import {
 } from '@/components/ui/item'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
-import { createFeatureDetailTab } from '@/components/workspace/tabs'
-import { useFeatureStats } from '@/hooks/features'
+import { createSubsystemDetailTab } from '@/components/workspace/tabs'
+import { useSubsystemStats } from '@/hooks/subsystems'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
-export function FeaturesPage() {
-  const { features, statsMap, progress, isLoading, error } = useFeatureStats()
+export function SubsystemsPage() {
+  const { subsystems, statsMap, progress, isLoading, error } = useSubsystemStats()
   const openTab = useWorkspaceStore(s => s.openTab)
 
   if (isLoading) {
@@ -60,12 +60,12 @@ export function FeaturesPage() {
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2 flex-1">
                 <Target className="h-4 w-4" />
-                <CardTitle className="text-base">Features</CardTitle>
+                <CardTitle className="text-base">Subsystems</CardTitle>
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <div className="text-sm font-medium">
-                    Total: <span className="text-muted-foreground">{features.length}</span>
+                    Total: <span className="text-muted-foreground">{subsystems.length}</span>
                   </div>
                 </div>
                 <div className="text-right">
@@ -85,29 +85,30 @@ export function FeaturesPage() {
               </div>
             </div>
             <Progress value={progress.percent} className="h-1.5" />
-            <CardDescription className="text-xs">Product features and their associated tasks</CardDescription>
+            <CardDescription className="text-xs">Product subsystems and their associated tasks</CardDescription>
           </CardContent>
         </Card>
       </PageHeader>
 
       <PageContent>
-        {features.length === 0 ? (
+        {subsystems.length === 0 ? (
           <Empty>
             <EmptyHeader>
               <EmptyMedia variant="icon">
                 <Brain />
               </EmptyMedia>
-              <EmptyTitle>No features yet</EmptyTitle>
+              <EmptyTitle>No subsystems yet</EmptyTitle>
               <EmptyDescription>
-                Features appear as work is captured in the project. Run an agent session to generate initial structure.
+                Subsystems appear as work is captured in the project. Run an agent session to generate initial
+                structure.
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent />
           </Empty>
         ) : (
           <ItemGroup className="rounded-md border">
-            {features.map((feature, index) => {
-              const stats = statsMap.get(feature.name) || {
+            {subsystems.map((subsystem, index) => {
+              const stats = statsMap.get(subsystem.name) || {
                 total: 0,
                 done: 0,
                 pending: 0,
@@ -118,22 +119,22 @@ export function FeaturesPage() {
               const featureProgress = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0
 
               return (
-                <div key={feature.name}>
+                <div key={subsystem.name}>
                   <Item
                     size="sm"
                     className="cursor-pointer hover:bg-muted/50"
                     role="button"
                     tabIndex={0}
-                    onClick={() => openTab(createFeatureDetailTab(feature.id))}
-                    onKeyDown={e => e.key === 'Enter' && openTab(createFeatureDetailTab(feature.id))}>
+                    onClick={() => openTab(createSubsystemDetailTab(subsystem.id))}
+                    onKeyDown={e => e.key === 'Enter' && openTab(createSubsystemDetailTab(subsystem.id))}>
                     <ItemContent>
                       <ItemTitle>
-                        {feature.displayName}
+                        {subsystem.displayName}
                         <Badge variant="outline" className="font-mono text-xs">
-                          {feature.acronym}
+                          {subsystem.acronym}
                         </Badge>
                       </ItemTitle>
-                      {feature.description && <ItemDescription>{feature.description}</ItemDescription>}
+                      {subsystem.description && <ItemDescription>{subsystem.description}</ItemDescription>}
                     </ItemContent>
                     <ItemActions>
                       <div className="flex items-center gap-3 shrink-0">
@@ -151,7 +152,7 @@ export function FeaturesPage() {
                       </div>
                     </ItemActions>
                   </Item>
-                  {index < features.length - 1 && <ItemSeparator />}
+                  {index < subsystems.length - 1 && <ItemSeparator />}
                 </div>
               )
             })}

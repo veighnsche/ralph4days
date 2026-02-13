@@ -9,10 +9,10 @@ You are receiving additional input from the user about tasks. Review the existin
 ### What to do
 
 1. **Review existing tasks** listed above to understand current project state.
-2. **Interpret the user's input** in the context of existing features and tasks.
-3. **Create new tasks** using the `create_task` MCP tool where the user describes new work.
-4. **Update existing tasks** using the `update_task` MCP tool where the user wants changes to current tasks (status, description, priority, acceptance criteria, etc.).
-5. **Maintain consistency** with the existing feature and discipline structure.
+2. **Interpret the user's input** in the context of existing subsystems and tasks.
+3. **Create new tasks** using the available task-management MCP tools where the user describes new work.
+4. **Update existing tasks** using the available task-management MCP tools where the user wants changes to current tasks (status, description, priority, acceptance criteria, etc.).
+5. **Maintain consistency** with the existing subsystem and discipline structure.
 
 ### Guidelines
 

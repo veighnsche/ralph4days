@@ -2,10 +2,10 @@ import { useFormContext } from 'react-hook-form'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import type { FeatureFormData } from '@/lib/schemas'
+import type { SubsystemFormData } from '@/lib/schemas'
 
-export function FeatureFormFields({ disabled, isEditing }: { disabled?: boolean; isEditing?: boolean }) {
-  const { control } = useFormContext<FeatureFormData>()
+export function SubsystemFormFields({ disabled, isEditing }: { disabled?: boolean; isEditing?: boolean }) {
+  const { control } = useFormContext<SubsystemFormData>()
 
   return (
     <div className="space-y-3">
@@ -18,7 +18,7 @@ export function FeatureFormFields({ disabled, isEditing }: { disabled?: boolean;
               Display Name <span className="text-destructive">*</span>
             </FormLabel>
             <FormControl>
-              <Input {...field} placeholder="Enter feature display name" required disabled={disabled} />
+              <Input {...field} placeholder="Enter subsystem display name" required disabled={disabled} />
             </FormControl>
             <p className="text-xs text-muted-foreground">Human-readable name shown in the UI</p>
             <FormMessage />
@@ -75,7 +75,7 @@ export function FeatureFormFields({ disabled, isEditing }: { disabled?: boolean;
           <FormItem>
             <FormLabel>Description</FormLabel>
             <FormControl>
-              <Textarea {...field} placeholder="Enter feature description" rows={4} disabled={disabled} />
+              <Textarea {...field} placeholder="Enter subsystem description" rows={4} disabled={disabled} />
             </FormControl>
             <FormMessage />
           </FormItem>

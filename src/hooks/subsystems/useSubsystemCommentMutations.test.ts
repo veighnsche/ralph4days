@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { createElement, type ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useFeatureCommentMutations } from './useFeatureCommentMutations'
+import { useSubsystemCommentMutations } from './useSubsystemCommentMutations'
 
 const mockInvoke = vi.fn()
 
@@ -18,20 +18,20 @@ function createWrapper() {
     createElement(QueryClientProvider, { client: queryClient }, children)
 }
 
-describe('useFeatureCommentMutations', () => {
+describe('useSubsystemCommentMutations', () => {
   beforeEach(() => {
     mockInvoke.mockReset()
     mockInvoke.mockResolvedValue(undefined)
   })
 
   it('addComment.mutate calls invoke with correct params', async () => {
-    const { result } = renderHook(() => useFeatureCommentMutations('auth'), {
+    const { result } = renderHook(() => useSubsystemCommentMutations('auth'), {
       wrapper: createWrapper()
     })
 
     act(() => {
       result.current.addComment.mutate({
-        featureName: 'auth',
+        subsystemName: 'auth',
         category: 'gotcha',
         body: 'Watch out for XSS',
         reason: 'OWASP top 10'
@@ -39,8 +39,8 @@ describe('useFeatureCommentMutations', () => {
     })
 
     await waitFor(() =>
-      expect(mockInvoke).toHaveBeenCalledWith('add_feature_comment', {
-        featureName: 'auth',
+      expect(mockInvoke).toHaveBeenCalledWith('add_subsystem_comment', {
+        subsystemName: 'auth',
         category: 'gotcha',
         body: 'Watch out for XSS',
         reason: 'OWASP top 10'
@@ -49,7 +49,7 @@ describe('useFeatureCommentMutations', () => {
   })
 
   it('startEdit / cancelEdit state management', () => {
-    const { result } = renderHook(() => useFeatureCommentMutations('auth'), {
+    const { result } = renderHook(() => useSubsystemCommentMutations('auth'), {
       wrapper: createWrapper()
     })
 
@@ -78,7 +78,7 @@ describe('useFeatureCommentMutations', () => {
   })
 
   it('submitEdit calls invoke with trimmed values', async () => {
-    const { result } = renderHook(() => useFeatureCommentMutations('auth'), {
+    const { result } = renderHook(() => useSubsystemCommentMutations('auth'), {
       wrapper: createWrapper()
     })
 
@@ -91,8 +91,8 @@ describe('useFeatureCommentMutations', () => {
     })
 
     await waitFor(() =>
-      expect(mockInvoke).toHaveBeenCalledWith('update_feature_comment', {
-        featureName: 'auth',
+      expect(mockInvoke).toHaveBeenCalledWith('update_subsystem_comment', {
+        subsystemName: 'auth',
         commentId: 7,
         body: 'trimmed body',
         summary: 'trimmed summary',
@@ -102,7 +102,7 @@ describe('useFeatureCommentMutations', () => {
   })
 
   it('submitEdit no-op when editingId is null', () => {
-    const { result } = renderHook(() => useFeatureCommentMutations('auth'), {
+    const { result } = renderHook(() => useSubsystemCommentMutations('auth'), {
       wrapper: createWrapper()
     })
 
@@ -113,8 +113,8 @@ describe('useFeatureCommentMutations', () => {
     expect(mockInvoke).not.toHaveBeenCalled()
   })
 
-  it('deleteComment calls invoke with featureName and commentId', async () => {
-    const { result } = renderHook(() => useFeatureCommentMutations('auth'), {
+  it('deleteComment calls invoke with subsystemName and commentId', async () => {
+    const { result } = renderHook(() => useSubsystemCommentMutations('auth'), {
       wrapper: createWrapper()
     })
 
@@ -123,20 +123,20 @@ describe('useFeatureCommentMutations', () => {
     })
 
     await waitFor(() =>
-      expect(mockInvoke).toHaveBeenCalledWith('delete_feature_comment', { featureName: 'auth', commentId: 99 })
+      expect(mockInvoke).toHaveBeenCalledWith('delete_subsystem_comment', { subsystemName: 'auth', commentId: 99 })
     )
   })
 
   it('error aggregation and reset', async () => {
     mockInvoke.mockRejectedValueOnce('Add failed')
 
-    const { result } = renderHook(() => useFeatureCommentMutations('auth'), {
+    const { result } = renderHook(() => useSubsystemCommentMutations('auth'), {
       wrapper: createWrapper()
     })
 
     act(() => {
       result.current.addComment.mutate({
-        featureName: 'auth',
+        subsystemName: 'auth',
         category: 'gotcha',
         body: 'test'
       })

@@ -1,6 +1,6 @@
 import { agentSessionConfigTabModule } from './agent-session-config'
 import { disciplineDetailTabModule } from './discipline-detail'
-import { featureDetailTabModule } from './feature-detail'
+import { subsystemDetailTabModule } from './subsystem-detail'
 import { taskDetailTabModule } from './task-detail'
 import { terminalTabModule } from './terminal'
 
@@ -8,6 +8,6 @@ export const workspaceTabModules = [
   terminalTabModule,
   agentSessionConfigTabModule,
   taskDetailTabModule,
-  featureDetailTabModule,
+  subsystemDetailTabModule,
   disciplineDetailTabModule
 ] as const

@@ -3,7 +3,7 @@ import { normalizeFeatureName } from '@/lib/acronym'
 import { featureNameValidation } from './commonSchemas'
 
 export const taskSchema = z.object({
-  feature: featureNameValidation.min(1, 'Feature is required').transform(normalizeFeatureName),
+  feature: featureNameValidation.min(1, 'Subsystem is required').transform(normalizeFeatureName),
   discipline: z.string().min(1, 'Discipline is required'),
   title: z.string().min(1, 'Title is required'),
   description: z.string(),

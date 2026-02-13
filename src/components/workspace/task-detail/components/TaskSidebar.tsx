@@ -231,7 +231,7 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
 
         <Separator bleed="md" className="my-2" />
 
-        <PropertyRow label="Feature">
+        <PropertyRow label="Subsystem">
           <span className="text-sm">{task.featureDisplayName}</span>
         </PropertyRow>
 

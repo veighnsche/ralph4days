@@ -1,12 +1,12 @@
 import type { ComponentType } from 'react'
 import { DisciplinesPage } from './DisciplinesPage'
-import { FeaturesPage } from './FeaturesPage'
+import { SubsystemsPage } from './SubsystemsPage'
 import { TasksPage } from './TasksPage'
 
-export type Page = 'tasks' | 'features' | 'disciplines'
+export type Page = 'tasks' | 'subsystems' | 'disciplines'
 
 export const pageRegistry: Record<string, ComponentType> = {
   tasks: TasksPage,
-  features: FeaturesPage,
+  subsystems: SubsystemsPage,
   disciplines: DisciplinesPage
 }

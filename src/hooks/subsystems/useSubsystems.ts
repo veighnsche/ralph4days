@@ -1,25 +1,25 @@
 import { useMemo } from 'react'
 import { useInvoke } from '@/hooks/api'
-import type { FeatureData } from '@/types/generated'
+import type { SubsystemData } from '@/types/generated'
 
-export interface FeatureConfig {
+export interface SubsystemConfig {
   name: string
   displayName: string
   acronym: string
 }
 
-export function useFeatures() {
-  const { data, error } = useInvoke<FeatureData[]>('get_features', undefined, {
+export function useSubsystems() {
+  const { data, error } = useInvoke<SubsystemData[]>('get_subsystems', undefined, {
     staleTime: 5 * 60 * 1000
   })
 
-  const features = useMemo(
+  const subsystems = useMemo(
     () => data?.map(f => ({ name: f.name, displayName: f.displayName, acronym: f.acronym })) ?? [],
     [data]
   )
 
   return {
-    features,
+    subsystems,
     error: error ? String(error) : null
   }
 }

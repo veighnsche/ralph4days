@@ -135,7 +135,7 @@ pub fn get_disciplines_config(state: State<'_, AppState>) -> Result<Vec<Discipli
 #[ipc_type]
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct FeatureCommentData {
+pub struct SubsystemCommentData {
     pub id: u32,
     pub category: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -158,7 +158,7 @@ pub struct FeatureCommentData {
 #[ipc_type]
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct FeatureData {
+pub struct SubsystemData {
     pub id: u32,
     pub name: String,
     pub display_name: String,
@@ -166,11 +166,11 @@ pub struct FeatureData {
     pub description: Option<String>,
     pub created: Option<String>,
     pub status: String,
-    pub comments: Vec<FeatureCommentData>,
+    pub comments: Vec<SubsystemCommentData>,
 }
 
-fn to_comment_data(c: &sqlite_db::FeatureComment) -> FeatureCommentData {
-    FeatureCommentData {
+fn to_comment_data(c: &sqlite_db::FeatureComment) -> SubsystemCommentData {
+    SubsystemCommentData {
         id: c.id,
         category: c.category.clone(),
         discipline: c.discipline.clone(),
@@ -185,12 +185,12 @@ fn to_comment_data(c: &sqlite_db::FeatureComment) -> FeatureCommentData {
 }
 
 #[tauri::command]
-pub fn get_features(state: State<'_, AppState>) -> Result<Vec<FeatureData>, String> {
+pub fn get_subsystems(state: State<'_, AppState>) -> Result<Vec<SubsystemData>, String> {
     CommandContext::from_tauri_state(&state).db(|db| {
         Ok(db
             .get_features()
             .iter()
-            .map(|f| FeatureData {
+            .map(|f| SubsystemData {
                 id: f.id,
                 name: f.name.clone(),
                 display_name: f.display_name.clone(),
@@ -213,7 +213,7 @@ pub struct CreateFeatureParams {
 }
 
 #[tauri::command]
-pub fn create_feature(
+pub fn create_subsystem(
     state: State<'_, AppState>,
     params: CreateFeatureParams,
 ) -> Result<(), String> {
@@ -236,7 +236,7 @@ pub struct UpdateFeatureParams {
 }
 
 #[tauri::command]
-pub fn update_feature(
+pub fn update_subsystem(
     state: State<'_, AppState>,
     params: UpdateFeatureParams,
 ) -> Result<(), String> {
@@ -253,7 +253,7 @@ pub fn update_feature(
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AddFeatureCommentParams {
-    pub feature_name: String,
+    pub subsystem_name: String,
     pub category: String,
     pub discipline: Option<String>,
     pub agent_task_id: Option<u32>,
@@ -264,7 +264,7 @@ pub struct AddFeatureCommentParams {
 }
 
 #[tauri::command]
-pub async fn add_feature_comment(
+pub async fn add_subsystem_comment(
     state: State<'_, AppState>,
     params: AddFeatureCommentParams,
 ) -> Result<(), String> {
@@ -272,7 +272,7 @@ pub async fn add_feature_comment(
     let path = db_path(&command_ctx)?;
     let (comment_id, embedding_text) = command_ctx.db_tx(|db| {
         db.add_feature_comment(sqlite_db::AddFeatureCommentInput {
-            feature_name: params.feature_name.clone(),
+            feature_name: params.subsystem_name.clone(),
             category: params.category.clone(),
             discipline: params.discipline.clone(),
             agent_task_id: params.agent_task_id,
@@ -282,10 +282,10 @@ pub async fn add_feature_comment(
             source_iteration: params.source_iteration,
         })?;
 
-        let features = db.get_features();
-        let cid = features
+        let subsystems = db.get_features();
+        let cid = subsystems
             .iter()
-            .find(|f| f.name == params.feature_name)
+            .find(|f| f.name == params.subsystem_name)
             .and_then(|f| f.comments.last())
             .map(|c| c.id)
             .ok_or("Failed to get new comment ID")?;
@@ -310,7 +310,7 @@ pub async fn add_feature_comment(
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateFeatureCommentParams {
-    pub feature_name: String,
+    pub subsystem_name: String,
     pub comment_id: u32,
     pub body: String,
     pub summary: Option<String>,
@@ -318,7 +318,7 @@ pub struct UpdateFeatureCommentParams {
 }
 
 #[tauri::command]
-pub async fn update_feature_comment(
+pub async fn update_subsystem_comment(
     state: State<'_, AppState>,
     params: UpdateFeatureCommentParams,
 ) -> Result<(), String> {
@@ -326,17 +326,17 @@ pub async fn update_feature_comment(
     let path = db_path(&command_ctx)?;
     let (embedding_text, needs_embed) = command_ctx.db_tx(|db| {
         db.update_feature_comment(
-            &params.feature_name,
+            &params.subsystem_name,
             params.comment_id,
             &params.body,
             params.summary.clone(),
             params.reason.clone(),
         )?;
 
-        let features = db.get_features();
-        let category = features
+        let subsystems = db.get_features();
+        let category = subsystems
             .iter()
-            .find(|f| f.name == params.feature_name)
+            .find(|f| f.name == params.subsystem_name)
             .and_then(|f| f.comments.iter().find(|c| c.id == params.comment_id))
             .map(|c| c.category.clone())
             .ok_or("Comment not found after update")?;
@@ -378,17 +378,17 @@ pub async fn update_feature_comment(
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DeleteFeatureCommentParams {
-    pub feature_name: String,
+    pub subsystem_name: String,
     pub comment_id: u32,
 }
 
 #[tauri::command]
-pub fn delete_feature_comment(
+pub fn delete_subsystem_comment(
     state: State<'_, AppState>,
     params: DeleteFeatureCommentParams,
 ) -> Result<(), String> {
     CommandContext::from_tauri_state(&state)
-        .db(|db| db.delete_feature_comment(&params.feature_name, params.comment_id))
+        .db(|db| db.delete_feature_comment(&params.subsystem_name, params.comment_id))
 }
 
 #[derive(Deserialize)]
@@ -524,7 +524,7 @@ pub fn update_discipline(
 }
 
 #[tauri::command]
-pub fn delete_feature(state: State<'_, AppState>, name: String) -> Result<(), String> {
+pub fn delete_subsystem(state: State<'_, AppState>, name: String) -> Result<(), String> {
     CommandContext::from_tauri_state(&state).db(|db| db.delete_feature(name))
 }
 

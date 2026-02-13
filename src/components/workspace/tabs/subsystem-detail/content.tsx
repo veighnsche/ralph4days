@@ -3,23 +3,23 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useInvoke } from '@/hooks/api'
-import { useFeatureStats } from '@/hooks/features'
+import { useSubsystemStats } from '@/hooks/subsystems'
 import { useTabMeta } from '@/hooks/workspace'
 import { formatDate } from '@/lib/formatDate'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
-import type { FeatureData } from '@/types/generated'
+import type { SubsystemData } from '@/types/generated'
 import { DetailPageLayout } from '../../DetailPageLayout'
-import { FeatureCommentsSection } from '../../feature-detail/FeatureCommentsSection'
 import { PropertyRow } from '../../PropertyRow'
+import { SubsystemCommentsSection } from '../../subsystem-detail/SubsystemCommentsSection'
 import {
-  FEATURE_DETAIL_EMPTY_DETAILS_MESSAGE,
-  FEATURE_DETAIL_EMPTY_STATE_DESCRIPTION,
-  FEATURE_DETAIL_EMPTY_STATE_TITLE,
-  FEATURE_DETAIL_TAB_FALLBACK_TITLE
+  SUBSYSTEM_DETAIL_EMPTY_DETAILS_MESSAGE,
+  SUBSYSTEM_DETAIL_EMPTY_STATE_DESCRIPTION,
+  SUBSYSTEM_DETAIL_EMPTY_STATE_TITLE,
+  SUBSYSTEM_DETAIL_TAB_FALLBACK_TITLE
 } from './constants'
-import type { FeatureDetailTabParams } from './schema'
+import type { SubsystemDetailTabParams } from './schema'
 
-function FeatureContent({ feature }: { feature: FeatureData }) {
+function SubsystemContent({ subsystem }: { subsystem: SubsystemData }) {
   const sections: React.ReactNode[] = []
 
   sections.push(
@@ -29,24 +29,24 @@ function FeatureContent({ feature }: { feature: FeatureData }) {
           <Puzzle className="h-6 w-6" />
         </div>
         <div>
-          <h1 className="text-xl font-semibold">{feature.displayName}</h1>
+          <h1 className="text-xl font-semibold">{subsystem.displayName}</h1>
           <div className="flex items-center gap-2 mt-1">
             <Badge variant="outline" className="font-mono">
-              {feature.acronym}
+              {subsystem.acronym}
             </Badge>
             <span className="text-xs text-muted-foreground">·</span>
-            <span className="text-xs text-muted-foreground font-mono">{feature.name}</span>
+            <span className="text-xs text-muted-foreground font-mono">{subsystem.name}</span>
           </div>
         </div>
       </div>
     </div>
   )
 
-  if (feature.description) {
+  if (subsystem.description) {
     sections.push(
       <div key="description" className="px-6 space-y-2">
         <h2 className="text-sm font-medium text-muted-foreground">Description</h2>
-        <p className="text-sm leading-relaxed whitespace-pre-wrap">{feature.description}</p>
+        <p className="text-sm leading-relaxed whitespace-pre-wrap">{subsystem.description}</p>
       </div>
     )
   }
@@ -56,7 +56,7 @@ function FeatureContent({ feature }: { feature: FeatureData }) {
       <div className="space-y-6">
         {sections}
         {sections.length <= 1 && (
-          <p className="px-6 text-sm text-muted-foreground">{FEATURE_DETAIL_EMPTY_DETAILS_MESSAGE}</p>
+          <p className="px-6 text-sm text-muted-foreground">{SUBSYSTEM_DETAIL_EMPTY_DETAILS_MESSAGE}</p>
         )}
       </div>
     )
@@ -71,35 +71,35 @@ function FeatureContent({ feature }: { feature: FeatureData }) {
   )
 }
 
-function FeatureSidebar({
-  feature,
+function SubsystemSidebar({
+  subsystem,
   stats,
   featureProgress
 }: {
-  feature: FeatureData
+  subsystem: SubsystemData
   stats: { total: number; done: number; pending: number; inProgress: number; blocked: number; skipped: number }
   featureProgress: number
 }) {
   return (
     <div className="px-4 py-4 space-y-0.5 overflow-y-auto h-full">
       <PropertyRow label="Status">
-        <Badge variant={feature.status === 'active' ? 'default' : 'secondary'} className="text-xs px-1.5 py-0 h-5">
-          {feature.status}
+        <Badge variant={subsystem.status === 'active' ? 'default' : 'secondary'} className="text-xs px-1.5 py-0 h-5">
+          {subsystem.status}
         </Badge>
       </PropertyRow>
       <Separator bleed="md" />
       <PropertyRow label="Acronym">
-        <span className="font-mono text-sm">{feature.acronym}</span>
+        <span className="font-mono text-sm">{subsystem.acronym}</span>
       </PropertyRow>
       <Separator bleed="md" />
       <PropertyRow label="Internal Name">
-        <span className="font-mono text-xs">{feature.name}</span>
+        <span className="font-mono text-xs">{subsystem.name}</span>
       </PropertyRow>
-      {feature.created && (
+      {subsystem.created && (
         <>
           <Separator bleed="md" />
           <PropertyRow label="Created">
-            <span className="text-xs text-muted-foreground">{formatDate(feature.created)}</span>
+            <span className="text-xs text-muted-foreground">{formatDate(subsystem.created)}</span>
           </PropertyRow>
         </>
       )}
@@ -112,11 +112,11 @@ function FeatureSidebar({
           <span className="text-xs text-muted-foreground">({featureProgress}%)</span>
         </div>
       </PropertyRow>
-      {feature.comments.length > 0 && (
+      {subsystem.comments.length > 0 && (
         <>
           <Separator bleed="md" />
           <PropertyRow label="Comments">
-            <span className="text-sm">{feature.comments.length}</span>
+            <span className="text-sm">{subsystem.comments.length}</span>
           </PropertyRow>
         </>
       )}
@@ -124,16 +124,16 @@ function FeatureSidebar({
   )
 }
 
-export function FeatureDetailTabContent({ tab, params }: { tab: WorkspaceTab; params: FeatureDetailTabParams }) {
-  const { entityId: featureId } = params
+export function SubsystemDetailTabContent({ tab, params }: { tab: WorkspaceTab; params: SubsystemDetailTabParams }) {
+  const { entityId: subsystemId } = params
 
-  const { data: features, isLoading } = useInvoke<FeatureData[]>('get_features', undefined, {
+  const { data: subsystems, isLoading } = useInvoke<SubsystemData[]>('get_subsystems', undefined, {
     staleTime: 5 * 60 * 1000
   })
-  const { statsMap } = useFeatureStats()
+  const { statsMap } = useSubsystemStats()
 
-  const feature = features?.find(f => f.id === featureId)
-  const stats = statsMap.get(feature?.name ?? '') || {
+  const subsystem = subsystems?.find(f => f.id === subsystemId)
+  const stats = statsMap.get(subsystem?.name ?? '') || {
     total: 0,
     done: 0,
     pending: 0,
@@ -143,7 +143,7 @@ export function FeatureDetailTabContent({ tab, params }: { tab: WorkspaceTab; pa
   }
   const featureProgress = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0
 
-  useTabMeta(tab.id, feature?.displayName ?? FEATURE_DETAIL_TAB_FALLBACK_TITLE, Puzzle)
+  useTabMeta(tab.id, subsystem?.displayName ?? SUBSYSTEM_DETAIL_TAB_FALLBACK_TITLE, Puzzle)
 
   if (isLoading) {
     return (
@@ -155,13 +155,13 @@ export function FeatureDetailTabContent({ tab, params }: { tab: WorkspaceTab; pa
     )
   }
 
-  if (!feature) {
+  if (!subsystem) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
           <Puzzle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-lg font-semibold mb-2">{FEATURE_DETAIL_EMPTY_STATE_TITLE}</h2>
-          <p className="text-sm text-muted-foreground">{FEATURE_DETAIL_EMPTY_STATE_DESCRIPTION}</p>
+          <h2 className="text-lg font-semibold mb-2">{SUBSYSTEM_DETAIL_EMPTY_STATE_TITLE}</h2>
+          <p className="text-sm text-muted-foreground">{SUBSYSTEM_DETAIL_EMPTY_STATE_DESCRIPTION}</p>
         </div>
       </div>
     )
@@ -170,9 +170,9 @@ export function FeatureDetailTabContent({ tab, params }: { tab: WorkspaceTab; pa
   return (
     <DetailPageLayout
       accentColor="hsl(var(--muted-foreground))"
-      mainContent={<FeatureContent feature={feature} />}
-      sidebar={<FeatureSidebar feature={feature} stats={stats} featureProgress={featureProgress} />}>
-      <FeatureCommentsSection feature={feature} />
+      mainContent={<SubsystemContent subsystem={subsystem} />}
+      sidebar={<SubsystemSidebar subsystem={subsystem} stats={stats} featureProgress={featureProgress} />}>
+      <SubsystemCommentsSection subsystem={subsystem} />
     </DetailPageLayout>
   )
 }
