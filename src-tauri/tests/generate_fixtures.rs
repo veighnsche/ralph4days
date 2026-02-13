@@ -24,19 +24,20 @@ fn stack_02_launch_defaults(
             None,
             Some(true),
         ),
-        "data" | "documentation" => (
+        "data" => (
             Some("claude".to_owned()),
             Some("sonnet".to_owned()),
             None,
             Some(true),
         ),
+        "documentation" => (None, None, None, None),
         "quality" | "security" => (
             Some("claude".to_owned()),
             Some("opus".to_owned()),
             Some("high".to_owned()),
             Some(true),
         ),
-        _ => (None, None, None, None),
+        _ => panic!("Unexpected stack-02 discipline: {discipline_name}"),
     }
 }
 
@@ -850,10 +851,10 @@ just dev-mock 04-desktop-dev
             hints: None,
             estimated_turns: None,
             provenance: None,
-            agent: None,
-            model: None,
+            agent: Some("claude".to_owned()),
+            model: Some("sonnet".to_owned()),
             effort: None,
-            thinking: None,
+            thinking: Some(true),
         })
         .unwrap();
 
@@ -881,10 +882,10 @@ just dev-mock 04-desktop-dev
             hints: None,
             estimated_turns: None,
             provenance: None,
-            agent: None,
-            model: None,
-            effort: None,
-            thinking: None,
+            agent: Some("claude".to_owned()),
+            model: Some("opus".to_owned()),
+            effort: Some("high".to_owned()),
+            thinking: Some(true),
         })
         .unwrap();
 
