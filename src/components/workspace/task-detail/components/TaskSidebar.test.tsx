@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Task } from '@/types/generated'
 import { TaskSidebar } from './TaskSidebar'
@@ -54,13 +54,29 @@ function createTask(overrides: Partial<Task> = {}): Task {
 }
 
 describe('TaskSidebar', () => {
+  const approveMutate = vi.fn()
+  const updateMutate = vi.fn()
+
   beforeEach(() => {
     vi.clearAllMocks()
-    useInvokeMutationMock.mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-      error: null,
-      reset: vi.fn()
+    useInvokeMutationMock.mockImplementation((command: string) => {
+      if (command === 'set_task_status') {
+        return {
+          mutate: approveMutate,
+          isPending: false,
+          error: null,
+          reset: vi.fn()
+        }
+      }
+      if (command === 'update_task') {
+        return {
+          mutate: updateMutate,
+          isPending: false,
+          error: null,
+          reset: vi.fn()
+        }
+      }
+      throw new Error(`Unexpected command ${command}`)
     })
     useResolvedTaskLaunchMock.mockReturnValue({
       resolvedAgent: 'codex',
@@ -84,5 +100,44 @@ describe('TaskSidebar', () => {
 
     expect(separators.length).toBe(3)
     expect(hasAdjacentSeparators).toBe(false)
+  })
+
+  it('updates task priority when a different priority button is clicked', () => {
+    render(<TaskSidebar task={createTask({ priority: 'medium' })} inferredStatus="ready" />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'High' }))
+
+    expect(updateMutate).toHaveBeenCalledTimes(1)
+    expect(updateMutate).toHaveBeenCalledWith({
+      params: expect.objectContaining({
+        id: 101,
+        priority: 'high',
+        discipline: 'frontend',
+        subsystem: 'core-platform'
+      })
+    })
+  })
+
+  it('does not update task priority when clicking the current priority button', () => {
+    render(<TaskSidebar task={createTask({ priority: 'medium' })} inferredStatus="ready" />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Medium' }))
+
+    expect(updateMutate).not.toHaveBeenCalled()
+  })
+
+  it('uses workspace query domain for task mutations', () => {
+    render(<TaskSidebar task={createTask({ priority: 'medium' })} inferredStatus="ready" />)
+
+    expect(useInvokeMutationMock).toHaveBeenNthCalledWith(
+      1,
+      'set_task_status',
+      expect.objectContaining({ queryDomain: 'workspace' })
+    )
+    expect(useInvokeMutationMock).toHaveBeenNthCalledWith(
+      2,
+      'update_task',
+      expect.objectContaining({ queryDomain: 'workspace' })
+    )
   })
 })

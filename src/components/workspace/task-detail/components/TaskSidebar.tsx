@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { InlineError } from '@/components/shared'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { ButtonGroup } from '@/components/ui/button-group'
 import { Separator } from '@/components/ui/separator'
 import { QUERY_KEYS } from '@/constants/cache'
 import { INFERRED_STATUS_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from '@/constants/prd'
@@ -23,6 +24,7 @@ const PROVENANCE_CONFIG = {
   human: { label: 'Human', icon: User },
   system: { label: 'System', icon: Cog }
 } as const
+const PRIORITY_OPTIONS = ['low', 'medium', 'high'] as const satisfies ReadonlyArray<keyof typeof PRIORITY_CONFIG>
 
 function sourceIcon(source: LaunchSource) {
   if (source === 'task') {
@@ -208,13 +210,11 @@ function buildCreatedSection(task: Task) {
   return rows
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Layout assembly requires many conditional sections in a single component.
 export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStatus: InferredTaskStatus }) {
   const { id: taskId, status, subsystemDisplayName, tags, subsystem, discipline, title, description } = task
   const signals = (task.signals ?? []).filter(signal => signal.signal_verb != null)
   const shouldShowSignals = signals.length > 0
   const statusConfig = STATUS_CONFIG[status]
-  const priorityConfig = task.priority ? PRIORITY_CONFIG[task.priority] : null
   const openTab = useWorkspaceStore(state => state.openTab)
   const isDraftAgent = status === 'draft' && task.provenance === 'agent'
   const dependsOn = task.dependsOn ?? []
@@ -232,7 +232,8 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
   } = useResolvedTaskLaunch(task)
 
   const approveMutation = useInvokeMutation<{ id: number; status: string }>('set_task_status', {
-    invalidateKeys: QUERY_KEYS.TASKS
+    invalidateKeys: QUERY_KEYS.TASKS,
+    queryDomain: 'workspace'
   })
   const updateTaskMutation = useInvokeMutation<
     {
@@ -259,7 +260,8 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
     },
     void
   >('update_task', {
-    invalidateKeys: QUERY_KEYS.TASKS
+    invalidateKeys: QUERY_KEYS.TASKS,
+    queryDomain: 'workspace'
   })
 
   const handleApprove = () => {
@@ -304,6 +306,31 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
       }
     })
 
+  const handlePrioritySelect = (priority: keyof typeof PRIORITY_CONFIG) =>
+    priority !== task.priority &&
+    updateTaskMutation.mutate({
+      params: {
+        id: taskId,
+        subsystem,
+        discipline,
+        title,
+        description,
+        priority,
+        tags,
+        depends_on: dependsOn,
+        acceptance_criteria: task.acceptanceCriteria,
+        context_files: task.contextFiles,
+        output_artifacts: task.outputArtifacts,
+        hints: task.hints,
+        estimated_turns: task.estimatedTurns,
+        provenance: task.provenance,
+        agent: task.agent,
+        model: task.model,
+        effort: task.effort,
+        thinking: task.thinking
+      }
+    })
+
   const sections: ReactNode[] = []
   sections.push(
     buildStatusSection(task, statusConfig, inferredStatus, dependsOn),
@@ -321,13 +348,25 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
       )}
     </div>,
     <PropertyRow key="priority" label="Priority">
-      {priorityConfig ? (
-        <span className="text-sm" style={{ color: priorityConfig.color }}>
-          {priorityConfig.label}
-        </span>
-      ) : (
-        <span className="text-sm text-muted-foreground">None</span>
-      )}
+      <ButtonGroup className="w-full [&>[data-slot=button]]:flex-1">
+        {PRIORITY_OPTIONS.map(priority => {
+          const config = PRIORITY_CONFIG[priority]
+          const isSelected = task.priority === priority
+          return (
+            <Button
+              key={priority}
+              type="button"
+              size="sm"
+              variant={isSelected ? 'secondary' : 'outline'}
+              disabled={updateTaskMutation.isPending}
+              aria-pressed={isSelected}
+              onClick={() => handlePrioritySelect(priority)}
+              style={isSelected ? { color: config.color } : undefined}>
+              {config.label}
+            </Button>
+          )
+        })}
+      </ButtonGroup>
     </PropertyRow>,
     <Separator key="priority-sep" bleed="md" className="my-2" />,
     <PropertyRow key="subsystem" label="Subsystem">
