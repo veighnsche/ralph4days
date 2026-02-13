@@ -75,7 +75,7 @@ fn parse_codex_models_yaml(yaml: &str) -> Vec<ModelSpec> {
             &format!("Invalid codex model catalog YAML: {err}"),
         );
         tracing::warn!("Invalid codex model catalog YAML: {err}");
-        return CodexModelCatalog { models: vec![] };
+        CodexModelCatalog { models: vec![] }
     });
     dedupe_valid_models(parsed.models)
 }

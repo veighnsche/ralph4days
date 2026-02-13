@@ -189,6 +189,8 @@ pub fn run() {
             commands::terminal_bridge::terminal_bridge_send_input,
             commands::terminal_bridge::terminal_bridge_resize,
             commands::terminal_bridge::terminal_bridge_terminate,
+            commands::terminal_bridge::terminal_bridge_set_stream_mode,
+            commands::terminal_bridge::terminal_bridge_replay_output,
             commands::terminal_bridge::terminal_bridge_emit_system_message,
             commands::terminal_bridge::terminal_bridge_start_human_session,
             commands::terminal_bridge::terminal_bridge_list_model_form_tree,

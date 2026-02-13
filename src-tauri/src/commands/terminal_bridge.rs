@@ -4,12 +4,13 @@ use crate::terminal::providers::{
     resolve_session_effort_for_agent, resolve_session_model_for_agent, AGENT_CLAUDE, AGENT_CODEX,
 };
 use crate::terminal::{
-    PtyOutputEvent, SessionConfig, SessionInitSettings, TerminalBridgeEmitSystemMessageArgs,
-    TerminalBridgeListModelFormTreeResult, TerminalBridgeListModelsResult,
-    TerminalBridgeModelOption, TerminalBridgeResizeArgs, TerminalBridgeSendInputArgs,
-    TerminalBridgeStartHumanSessionArgs, TerminalBridgeStartHumanSessionResult,
-    TerminalBridgeStartSessionArgs, TerminalBridgeStartTaskSessionArgs,
-    TerminalBridgeTerminateArgs, TERMINAL_BRIDGE_OUTPUT_EVENT,
+    PtyOutputEvent, SessionConfig, SessionInitSettings, SessionStreamMode,
+    TerminalBridgeEmitSystemMessageArgs, TerminalBridgeListModelFormTreeResult,
+    TerminalBridgeListModelsResult, TerminalBridgeModelOption, TerminalBridgeReplayOutputArgs,
+    TerminalBridgeReplayOutputResult, TerminalBridgeResizeArgs, TerminalBridgeSendInputArgs,
+    TerminalBridgeSetStreamModeArgs, TerminalBridgeStartHumanSessionArgs,
+    TerminalBridgeStartHumanSessionResult, TerminalBridgeStartSessionArgs,
+    TerminalBridgeStartTaskSessionArgs, TerminalBridgeTerminateArgs, TERMINAL_BRIDGE_OUTPUT_EVENT,
 };
 use base64::{engine::general_purpose::STANDARD, Engine};
 use std::path::PathBuf;
@@ -26,6 +27,7 @@ fn locked_project_path(state: &AppState) -> Result<PathBuf, String> {
 fn build_system_message_event(session_id: String, text: String) -> PtyOutputEvent {
     PtyOutputEvent {
         session_id,
+        seq: 0,
         data: STANDARD.encode(text.as_bytes()),
     }
 }
@@ -177,6 +179,34 @@ fn resize_impl(state: &AppState, args: TerminalBridgeResizeArgs) -> Result<(), S
 fn terminate_impl(state: &AppState, args: TerminalBridgeTerminateArgs) -> Result<(), String> {
     tracing::debug!(session_id = %args.session_id, "terminal_bridge_terminate");
     state.pty_manager.terminate(&args.session_id)
+}
+
+fn set_stream_mode_impl(
+    state: &AppState,
+    args: TerminalBridgeSetStreamModeArgs,
+) -> Result<(), String> {
+    let mode = SessionStreamMode::parse(&args.mode)?;
+    tracing::debug!(
+        session_id = %args.session_id,
+        mode = %args.mode,
+        "terminal_bridge_set_stream_mode"
+    );
+    state.pty_manager.set_stream_mode(&args.session_id, mode)
+}
+
+fn replay_output_impl(
+    state: &AppState,
+    args: TerminalBridgeReplayOutputArgs,
+) -> Result<TerminalBridgeReplayOutputResult, String> {
+    tracing::trace!(
+        session_id = %args.session_id,
+        after_seq = args.after_seq,
+        limit = args.limit,
+        "terminal_bridge_replay_output"
+    );
+    state
+        .pty_manager
+        .replay_output(&args.session_id, args.after_seq, args.limit as usize)
 }
 
 fn emit_system_message_impl<R: tauri::Runtime>(
@@ -333,6 +363,35 @@ pub fn terminal_bridge_terminate(
     session_id: String,
 ) -> Result<(), String> {
     terminate_impl(state.inner(), TerminalBridgeTerminateArgs { session_id })
+}
+
+#[tauri::command]
+pub fn terminal_bridge_set_stream_mode(
+    state: State<'_, AppState>,
+    session_id: String,
+    mode: String,
+) -> Result<(), String> {
+    set_stream_mode_impl(
+        state.inner(),
+        TerminalBridgeSetStreamModeArgs { session_id, mode },
+    )
+}
+
+#[tauri::command]
+pub fn terminal_bridge_replay_output(
+    state: State<'_, AppState>,
+    session_id: String,
+    after_seq: u64,
+    limit: u32,
+) -> Result<TerminalBridgeReplayOutputResult, String> {
+    replay_output_impl(
+        state.inner(),
+        TerminalBridgeReplayOutputArgs {
+            session_id,
+            after_seq,
+            limit,
+        },
+    )
 }
 
 #[tauri::command]
@@ -576,6 +635,7 @@ mod tests {
         let event =
             build_system_message_event("session-1".to_owned(), "[session started]\r\n".to_owned());
         assert_eq!(event.session_id, "session-1");
+        assert_eq!(event.seq, 0);
         let decoded = STANDARD.decode(event.data).unwrap();
         assert_eq!(String::from_utf8(decoded).unwrap(), "[session started]\r\n");
     }
@@ -607,6 +667,7 @@ mod tests {
         let payload_json = rx.recv_timeout(Duration::from_secs(1)).unwrap();
         let payload: serde_json::Value = serde_json::from_str(&payload_json).unwrap();
         assert_eq!(payload["session_id"], "session-emission");
+        assert_eq!(payload["seq"], 0);
         let decoded = STANDARD.decode(payload["data"].as_str().unwrap()).unwrap();
         assert_eq!(String::from_utf8(decoded).unwrap(), "[session started]\r\n");
 
@@ -652,6 +713,49 @@ mod tests {
             }
         )
         .is_ok());
+    }
+
+    #[test]
+    fn set_stream_mode_impl_returns_missing_session_error() {
+        let state = AppState::default();
+        let err = set_stream_mode_impl(
+            &state,
+            TerminalBridgeSetStreamModeArgs {
+                session_id: "missing-session".to_owned(),
+                mode: "buffered".to_owned(),
+            },
+        )
+        .unwrap_err();
+        assert!(err.contains("No terminal bridge session: missing-session"));
+    }
+
+    #[test]
+    fn set_stream_mode_impl_rejects_invalid_mode() {
+        let state = AppState::default();
+        let err = set_stream_mode_impl(
+            &state,
+            TerminalBridgeSetStreamModeArgs {
+                session_id: "missing-session".to_owned(),
+                mode: "invalid".to_owned(),
+            },
+        )
+        .unwrap_err();
+        assert!(err.contains("Invalid stream mode"));
+    }
+
+    #[test]
+    fn replay_output_impl_returns_missing_session_error() {
+        let state = AppState::default();
+        let err = replay_output_impl(
+            &state,
+            TerminalBridgeReplayOutputArgs {
+                session_id: "missing-session".to_owned(),
+                after_seq: 0,
+                limit: 64,
+            },
+        )
+        .unwrap_err();
+        assert!(err.contains("No terminal bridge session: missing-session"));
     }
 
     fn app_state_with_locked_project(path: PathBuf) -> AppState {

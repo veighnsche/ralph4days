@@ -2,13 +2,15 @@
 
 pub use contract::{
     TerminalBridgeEmitSystemMessageArgs, TerminalBridgeListModelFormTreeResult,
-    TerminalBridgeListModelsResult, TerminalBridgeModelOption, TerminalBridgeResizeArgs,
-    TerminalBridgeSendInputArgs, TerminalBridgeStartHumanSessionArgs,
-    TerminalBridgeStartHumanSessionResult, TerminalBridgeStartSessionArgs,
-    TerminalBridgeStartTaskSessionArgs, TerminalBridgeTerminateArgs,
+    TerminalBridgeListModelsResult, TerminalBridgeModelOption, TerminalBridgeReplayOutputArgs,
+    TerminalBridgeReplayOutputChunk, TerminalBridgeReplayOutputResult, TerminalBridgeResizeArgs,
+    TerminalBridgeSendInputArgs, TerminalBridgeSetStreamModeArgs,
+    TerminalBridgeStartHumanSessionArgs, TerminalBridgeStartHumanSessionResult,
+    TerminalBridgeStartSessionArgs, TerminalBridgeStartTaskSessionArgs,
+    TerminalBridgeTerminateArgs,
 };
 pub use events::{PtyOutputEvent, TERMINAL_BRIDGE_OUTPUT_EVENT};
-pub use manager::PTYManager;
+pub use manager::{PTYManager, SessionStreamMode};
 pub use session::{SessionConfig, SessionInitSettings};
 
 mod contract;

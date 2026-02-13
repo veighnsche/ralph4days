@@ -82,6 +82,41 @@ pub struct TerminalBridgeTerminateArgs {
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct TerminalBridgeSetStreamModeArgs {
+    pub session_id: String,
+    pub mode: String,
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TerminalBridgeReplayOutputArgs {
+    pub session_id: String,
+    pub after_seq: u64,
+    pub limit: u32,
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TerminalBridgeReplayOutputChunk {
+    pub seq: u64,
+    pub data: String,
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TerminalBridgeReplayOutputResult {
+    pub chunks: Vec<TerminalBridgeReplayOutputChunk>,
+    pub has_more: bool,
+    pub truncated: bool,
+    pub truncated_until_seq: Option<u64>,
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TerminalBridgeEmitSystemMessageArgs {
     pub session_id: String,
     pub text: String,

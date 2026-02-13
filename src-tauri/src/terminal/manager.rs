@@ -1,6 +1,6 @@
 use base64::{engine::general_purpose::STANDARD, Engine};
 use portable_pty::{native_pty_system, PtySize};
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -11,8 +11,11 @@ use super::events::{
 };
 use super::providers::resolve_agent_provider;
 use super::session::{PTYSession, SessionConfig};
+use super::{TerminalBridgeReplayOutputChunk, TerminalBridgeReplayOutputResult};
 
 use ralph_errors::{codes, RalphResultExt, ToStringErr};
+
+const DEFAULT_REPLAY_BUFFER_BYTES: usize = 8 * 1024 * 1024;
 
 fn preview_text(bytes: &[u8], max_chars: usize) -> String {
     let escaped = String::from_utf8_lossy(bytes).escape_debug().to_string();
@@ -23,8 +26,111 @@ fn preview_text(bytes: &[u8], max_chars: usize) -> String {
     format!("{preview}…")
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SessionStreamMode {
+    Live,
+    Buffered,
+}
+
+impl SessionStreamMode {
+    pub fn parse(mode: &str) -> Result<Self, String> {
+        match mode.trim().to_ascii_lowercase().as_str() {
+            "live" => Ok(Self::Live),
+            "buffered" => Ok(Self::Buffered),
+            _ => Err(ralph_errors::err_string(
+                codes::TERMINAL,
+                format!("Invalid stream mode: {mode}. Expected 'live' or 'buffered'"),
+            )),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct BufferedOutputChunk {
+    seq: u64,
+    data: String,
+    byte_len: usize,
+}
+
+#[derive(Debug)]
+struct SessionStreamState {
+    mode: SessionStreamMode,
+    next_seq: u64,
+    dropped_until_seq: u64,
+    buffered_bytes: usize,
+    chunks: VecDeque<BufferedOutputChunk>,
+}
+
+impl SessionStreamState {
+    fn new() -> Self {
+        Self {
+            mode: SessionStreamMode::Live,
+            next_seq: 1,
+            dropped_until_seq: 0,
+            buffered_bytes: 0,
+            chunks: VecDeque::new(),
+        }
+    }
+
+    fn append_chunk(&mut self, data: String, byte_len: usize, max_buffer_bytes: usize) -> u64 {
+        let seq = self.next_seq;
+        self.next_seq += 1;
+
+        self.chunks.push_back(BufferedOutputChunk {
+            seq,
+            data,
+            byte_len,
+        });
+        self.buffered_bytes += byte_len;
+
+        while self.buffered_bytes > max_buffer_bytes {
+            if let Some(removed) = self.chunks.pop_front() {
+                self.buffered_bytes = self.buffered_bytes.saturating_sub(removed.byte_len);
+                self.dropped_until_seq = self.dropped_until_seq.max(removed.seq);
+            } else {
+                break;
+            }
+        }
+
+        seq
+    }
+
+    fn replay_after(&self, after_seq: u64, limit: usize) -> TerminalBridgeReplayOutputResult {
+        let capped_limit = limit.max(1);
+        let truncated = after_seq < self.dropped_until_seq;
+        let cursor = after_seq.max(self.dropped_until_seq);
+
+        let chunks: Vec<TerminalBridgeReplayOutputChunk> = self
+            .chunks
+            .iter()
+            .filter(|chunk| chunk.seq > cursor)
+            .take(capped_limit)
+            .map(|chunk| TerminalBridgeReplayOutputChunk {
+                seq: chunk.seq,
+                data: chunk.data.clone(),
+            })
+            .collect();
+
+        let last_seq = chunks.last().map_or(cursor, |chunk| chunk.seq);
+        let has_more = self.chunks.iter().any(|chunk| chunk.seq > last_seq);
+
+        TerminalBridgeReplayOutputResult {
+            chunks,
+            has_more,
+            truncated,
+            truncated_until_seq: truncated.then_some(self.dropped_until_seq),
+        }
+    }
+}
+
+struct ManagedSession {
+    pty: PTYSession,
+    stream: SessionStreamState,
+}
+
 pub struct PTYManager {
-    sessions: Arc<Mutex<HashMap<String, PTYSession>>>,
+    sessions: Arc<Mutex<HashMap<String, ManagedSession>>>,
+    replay_buffer_bytes: usize,
 }
 
 impl Default for PTYManager {
@@ -35,8 +141,13 @@ impl Default for PTYManager {
 
 impl PTYManager {
     pub fn new() -> Self {
+        Self::new_with_replay_buffer_bytes(DEFAULT_REPLAY_BUFFER_BYTES)
+    }
+
+    fn new_with_replay_buffer_bytes(replay_buffer_bytes: usize) -> Self {
         Self {
             sessions: Arc::new(Mutex::new(HashMap::new())),
+            replay_buffer_bytes,
         }
     }
 
@@ -115,10 +226,24 @@ impl PTYManager {
             .try_clone_reader()
             .ralph_err(codes::TERMINAL, "Failed to clone PTY reader")?;
 
+        self.sessions.lock().err_str(codes::INTERNAL)?.insert(
+            session_id.clone(),
+            ManagedSession {
+                pty: PTYSession {
+                    writer: Arc::clone(&writer),
+                    master: pair.master,
+                    child: Arc::clone(&child),
+                    reader_handle: None,
+                },
+                stream: SessionStreamState::new(),
+            },
+        );
+
         let sid = session_id.clone();
         let app_clone = app;
         let child_clone = Arc::clone(&child);
         let sessions_ref = Arc::clone(&self.sessions);
+        let replay_buffer_bytes = self.replay_buffer_bytes;
         let reader_handle = std::thread::spawn(move || {
             tracing::debug!(session_id = %sid, "PTY reader thread started");
             let mut buf = [0u8; 4096];
@@ -142,13 +267,31 @@ impl PTYManager {
                             preview = %preview_text(&buf[..n], 220),
                             "terminal_bridge_output_chunk"
                         );
-                        let _ = app_clone.emit(
-                            TERMINAL_BRIDGE_OUTPUT_EVENT,
-                            PtyOutputEvent {
-                                session_id: sid.clone(),
-                                data: STANDARD.encode(&buf[..n]),
-                            },
-                        );
+
+                        let encoded_data = STANDARD.encode(&buf[..n]);
+                        let mut output_event: Option<PtyOutputEvent> = None;
+
+                        if let Ok(mut sessions) = sessions_ref.lock() {
+                            if let Some(session) = sessions.get_mut(&sid) {
+                                let seq = session.stream.append_chunk(
+                                    encoded_data.clone(),
+                                    n,
+                                    replay_buffer_bytes,
+                                );
+
+                                if session.stream.mode == SessionStreamMode::Live {
+                                    output_event = Some(PtyOutputEvent {
+                                        session_id: sid.clone(),
+                                        seq,
+                                        data: encoded_data,
+                                    });
+                                }
+                            }
+                        }
+
+                        if let Some(event) = output_event {
+                            let _ = app_clone.emit(TERMINAL_BRIDGE_OUTPUT_EVENT, event);
+                        }
                     }
                 }
             }
@@ -179,12 +322,11 @@ impl PTYManager {
             }
         });
 
-        let session = PTYSession {
-            writer,
-            master: pair.master,
-            child,
-            _reader_handle: Some(reader_handle),
-        };
+        if let Ok(mut sessions) = self.sessions.lock().err_str(codes::INTERNAL) {
+            if let Some(session) = sessions.get_mut(&session_id) {
+                session.pty.reader_handle = Some(reader_handle);
+            }
+        }
 
         if let Some(preamble) = &config.post_start_preamble {
             tracing::debug!(
@@ -192,7 +334,7 @@ impl PTYManager {
                 line_count = preamble.lines().filter(|line| !line.trim().is_empty()).count(),
                 "Applying post-start preamble"
             );
-            let mut guard = session.writer.lock().err_str(codes::INTERNAL)?;
+            let mut guard = writer.lock().err_str(codes::INTERNAL)?;
             for line in preamble.lines().filter(|line| !line.trim().is_empty()) {
                 guard
                     .write_all(line.as_bytes())
@@ -202,11 +344,6 @@ impl PTYManager {
                     .ralph_err(codes::TERMINAL, "Failed to send preamble line terminator")?;
             }
         }
-
-        self.sessions
-            .lock()
-            .err_str(codes::INTERNAL)?
-            .insert(session_id.clone(), session);
 
         tracing::info!(session_id, "PTY session created successfully");
 
@@ -229,7 +366,7 @@ impl PTYManager {
                     format!("No terminal bridge session: {session_id}"),
                 )
             })?;
-            Arc::clone(&session.writer)
+            Arc::clone(&session.pty.writer)
         };
         let mut guard = writer.lock().err_str(codes::INTERNAL)?;
         guard
@@ -250,6 +387,7 @@ impl PTYManager {
             )
         })?;
         session
+            .pty
             .master
             .resize(PtySize {
                 rows,
@@ -271,7 +409,7 @@ impl PTYManager {
         };
 
         if let Some(session) = session {
-            if let Ok(mut child) = session.child.lock() {
+            if let Ok(mut child) = session.pty.child.lock() {
                 let _ = child.kill();
                 tracing::info!(session_id, "PTY session terminated (killed)");
             }
@@ -282,6 +420,34 @@ impl PTYManager {
             );
         }
         Ok(())
+    }
+
+    pub fn set_stream_mode(&self, session_id: &str, mode: SessionStreamMode) -> Result<(), String> {
+        let mut sessions = self.sessions.lock().err_str(codes::INTERNAL)?;
+        let session = sessions.get_mut(session_id).ok_or_else(|| {
+            ralph_errors::err_string(
+                codes::TERMINAL,
+                format!("No terminal bridge session: {session_id}"),
+            )
+        })?;
+        session.stream.mode = mode;
+        Ok(())
+    }
+
+    pub fn replay_output(
+        &self,
+        session_id: &str,
+        after_seq: u64,
+        limit: usize,
+    ) -> Result<TerminalBridgeReplayOutputResult, String> {
+        let sessions = self.sessions.lock().err_str(codes::INTERNAL)?;
+        let session = sessions.get(session_id).ok_or_else(|| {
+            ralph_errors::err_string(
+                codes::TERMINAL,
+                format!("No terminal bridge session: {session_id}"),
+            )
+        })?;
+        Ok(session.stream.replay_after(after_seq, limit))
     }
 }
 
@@ -321,5 +487,48 @@ mod tests {
     fn test_terminate_missing_session_is_ok() {
         let manager = PTYManager::new();
         assert!(manager.terminate("missing-session").is_ok());
+    }
+
+    #[test]
+    fn test_parse_stream_mode() {
+        assert_eq!(
+            SessionStreamMode::parse("live").unwrap(),
+            SessionStreamMode::Live
+        );
+        assert_eq!(
+            SessionStreamMode::parse("buffered").unwrap(),
+            SessionStreamMode::Buffered
+        );
+        assert!(SessionStreamMode::parse("wat").is_err());
+    }
+
+    #[test]
+    fn test_stream_buffer_eviction_marks_truncation() {
+        let mut stream = SessionStreamState::new();
+        stream.append_chunk("QQ==".to_owned(), 1, 4);
+        stream.append_chunk("Qg==".to_owned(), 1, 4);
+        stream.append_chunk("Qw==".to_owned(), 1, 4);
+        stream.append_chunk("RA==".to_owned(), 1, 4);
+        stream.append_chunk("RQ==".to_owned(), 1, 4);
+
+        let replay = stream.replay_after(0, 50);
+        assert!(replay.truncated);
+        assert_eq!(replay.truncated_until_seq, Some(1));
+        assert_eq!(replay.chunks.first().map(|chunk| chunk.seq), Some(2));
+    }
+
+    #[test]
+    fn test_stream_replay_limit_and_has_more() {
+        let mut stream = SessionStreamState::new();
+        stream.append_chunk("QQ==".to_owned(), 1, 1024);
+        stream.append_chunk("Qg==".to_owned(), 1, 1024);
+        stream.append_chunk("Qw==".to_owned(), 1, 1024);
+
+        let replay = stream.replay_after(0, 2);
+        assert_eq!(replay.chunks.len(), 2);
+        assert_eq!(replay.chunks[0].seq, 1);
+        assert_eq!(replay.chunks[1].seq, 2);
+        assert!(replay.has_more);
+        assert!(!replay.truncated);
     }
 }

@@ -8,6 +8,7 @@ pub const TERMINAL_BRIDGE_CLOSED_EVENT: &str = "terminal_bridge:closed";
 #[derive(Clone, Serialize)]
 pub struct PtyOutputEvent {
     pub session_id: String,
+    pub seq: u64,
     /// Base64-encoded PTY output (avoids JSON number[] serialization overhead)
     pub data: String,
 }
@@ -33,10 +34,12 @@ mod tests {
     fn pty_output_event_serializes_expected_shape() {
         let payload = PtyOutputEvent {
             session_id: "session-42".to_owned(),
+            seq: 7,
             data: "SGVsbG8=".to_owned(),
         };
         let json = serde_json::to_value(payload).unwrap();
         assert_eq!(json["session_id"], "session-42");
+        assert_eq!(json["seq"], 7);
         assert_eq!(json["data"], "SGVsbG8=");
     }
 
