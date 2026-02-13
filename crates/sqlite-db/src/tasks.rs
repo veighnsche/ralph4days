@@ -69,7 +69,8 @@ impl SqliteDb {
         self.conn
             .execute(
                 "INSERT INTO task_details (discipline_id, title, description, priority, hints, \
-                 estimated_turns, created) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                 estimated_turns, agent, model, effort, thinking, pseudocode, created) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
                 rusqlite::params![
                     discipline_id,
                     input.title,
@@ -77,6 +78,11 @@ impl SqliteDb {
                     input.priority.map(|p| p.as_str().to_owned()),
                     input.hints,
                     input.estimated_turns,
+                    input.agent,
+                    input.model,
+                    input.effort,
+                    input.thinking,
+                    Option::<String>::None,
                     now,
                 ],
             )
@@ -86,18 +92,14 @@ impl SqliteDb {
 
         self.conn
             .execute(
-                "INSERT INTO runtime_tasks (subsystem_id, details_id, status, created, provenance, \
-                 agent, model, effort, thinking) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                "INSERT INTO runtime_tasks (subsystem_id, details_id, status, created, provenance) \
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
                 rusqlite::params![
                     subsystem_id,
                     details_id,
                     input.status.unwrap_or(TaskStatus::Pending).as_str(),
                     now,
                     input.provenance.map(|p| p.as_str().to_owned()),
-                    input.agent,
-                    input.model,
-                    input.effort,
-                    input.thinking,
                 ],
             )
             .ralph_err(codes::DB_WRITE, "Failed to insert runtime task")?;
@@ -220,7 +222,8 @@ impl SqliteDb {
         self.conn
             .execute(
                 "UPDATE task_details SET discipline_id = ?1, title = ?2, description = ?3, \
-                 priority = ?4, updated = ?5, hints = ?6, estimated_turns = ?7 WHERE id = ?8",
+                 priority = ?4, updated = ?5, hints = ?6, estimated_turns = ?7, agent = ?8, \
+                 model = ?9, effort = ?10, thinking = ?11 WHERE id = ?12",
                 rusqlite::params![
                     discipline_id,
                     update.title,
@@ -229,6 +232,10 @@ impl SqliteDb {
                     now,
                     update.hints,
                     update.estimated_turns,
+                    update.agent,
+                    update.model,
+                    update.effort,
+                    update.thinking,
                     details_id,
                 ],
             )
@@ -236,17 +243,8 @@ impl SqliteDb {
 
         self.conn
             .execute(
-                "UPDATE runtime_tasks SET subsystem_id = ?1, updated = ?2, agent = ?3, model = ?4, \
-                 effort = ?5, thinking = ?6 WHERE id = ?7",
-                rusqlite::params![
-                    subsystem_id,
-                    now,
-                    update.agent,
-                    update.model,
-                    update.effort,
-                    update.thinking,
-                    id,
-                ],
+                "UPDATE runtime_tasks SET subsystem_id = ?1, updated = ?2 WHERE id = ?3",
+                rusqlite::params![subsystem_id, now, id,],
             )
             .ralph_err(codes::DB_WRITE, "Failed to update runtime task")?;
 
@@ -395,11 +393,26 @@ impl SqliteDb {
         }
 
         let now = self.now().format("%Y-%m-%d").to_string();
+        let details_id: i64 = self
+            .conn
+            .query_row(
+                "SELECT details_id FROM runtime_tasks WHERE id = ?1",
+                [id],
+                |row| row.get(0),
+            )
+            .ralph_err(codes::DB_READ, "Failed to get task details ID")?;
+
         self.conn
             .execute(
-                "UPDATE runtime_tasks SET pseudocode = ?1, status = 'pending', \
-                 enriched_at = ?2, updated = ?3 WHERE id = ?4",
-                rusqlite::params![pseudocode, now, now, id],
+                "UPDATE task_details SET pseudocode = ?1, updated = ?2 WHERE id = ?3",
+                rusqlite::params![pseudocode, now, details_id],
+            )
+            .ralph_err(codes::DB_WRITE, "Failed to update task details")?;
+
+        self.conn
+            .execute(
+                "UPDATE runtime_tasks SET status = 'pending', enriched_at = ?1, updated = ?2 WHERE id = ?3",
+                rusqlite::params![now, now, id],
             )
             .ralph_err(codes::DB_WRITE, "Failed to enrich task")?;
 
@@ -456,7 +469,7 @@ impl SqliteDb {
             .prepare(
                 "SELECT t.id, t.subsystem_id, td.discipline_id, td.title, td.description, t.status, \
                  td.priority, t.created, t.updated, t.completed, td.hints, td.estimated_turns, \
-                 t.provenance, t.agent, t.model, t.effort, t.thinking, t.pseudocode, t.enriched_at, \
+                 t.provenance, td.agent, td.model, td.effort, td.thinking, td.pseudocode, t.enriched_at, \
                  f.name, f.display_name, f.acronym, \
                  d.name, d.display_name, d.acronym, d.icon, d.color \
                  FROM runtime_tasks t \
@@ -493,7 +506,7 @@ impl SqliteDb {
         let Ok(mut stmt) = self.conn.prepare(
             "SELECT t.id, t.subsystem_id, td.discipline_id, td.title, td.description, t.status, \
              td.priority, t.created, t.updated, t.completed, td.hints, td.estimated_turns, \
-             t.provenance, t.agent, t.model, t.effort, t.thinking, t.pseudocode, t.enriched_at, \
+             t.provenance, td.agent, td.model, td.effort, td.thinking, td.pseudocode, t.enriched_at, \
              f.name, f.display_name, f.acronym, \
              d.name, d.display_name, d.acronym, d.icon, d.color \
              FROM runtime_tasks t \

@@ -109,6 +109,11 @@ CREATE TABLE task_details (
   priority TEXT CHECK(priority IN ('low','medium','high','critical') OR priority IS NULL),
   hints TEXT,
   estimated_turns INTEGER,
+  agent TEXT CHECK(agent IN ('claude','codex') OR agent IS NULL),
+  model TEXT,
+  effort TEXT CHECK(effort IN ('low','medium','high') OR effort IS NULL),
+  thinking INTEGER CHECK(thinking IN (0,1) OR thinking IS NULL),
+  pseudocode TEXT,
   created TEXT,
   updated TEXT
 ) STRICT;
@@ -119,7 +124,8 @@ CREATE TABLE task_templates (
   details_id INTEGER NOT NULL REFERENCES task_details(id) ON DELETE RESTRICT,
   is_active INTEGER NOT NULL DEFAULT 1 CHECK(is_active IN (0,1)),
   created TEXT,
-  updated TEXT
+  updated TEXT,
+  UNIQUE(details_id)
 ) STRICT;
 
 -- Runtime tasks (actual task instances)
@@ -130,15 +136,11 @@ CREATE TABLE runtime_tasks (
   template_id INTEGER REFERENCES task_templates(id) ON DELETE SET NULL,
   status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('draft','pending','in_progress','done','blocked','skipped','needs_input','failed')),
   provenance TEXT CHECK(provenance IN ('agent','human','system') OR provenance IS NULL),
-  agent TEXT CHECK(agent IN ('claude','codex') OR agent IS NULL),
-  model TEXT,
-  effort TEXT CHECK(effort IN ('low','medium','high') OR effort IS NULL),
-  thinking INTEGER CHECK(thinking IN (0,1) OR thinking IS NULL),
-  pseudocode TEXT,
   enriched_at TEXT,
   created TEXT,
   updated TEXT,
-  completed TEXT
+  completed TEXT,
+  CHECK((status = 'done' AND completed IS NOT NULL) OR (status != 'done'))
 ) STRICT;
 
 CREATE TABLE task_tags (
@@ -349,6 +351,22 @@ CREATE INDEX idx_subsystem_comments_discipline ON subsystem_comments(discipline_
 CREATE INDEX idx_prompt_builder_configs_name ON prompt_builder_configs(name);
 
 -- Auto-update timestamp trigger
+CREATE TRIGGER update_task_details_timestamp
+AFTER UPDATE ON task_details
+FOR EACH ROW
+WHEN NEW.updated IS NULL OR OLD.updated = NEW.updated
+BEGIN
+  UPDATE task_details SET updated = datetime('now') WHERE id = NEW.id;
+END;
+
+CREATE TRIGGER update_task_templates_timestamp
+AFTER UPDATE ON task_templates
+FOR EACH ROW
+WHEN NEW.updated IS NULL OR OLD.updated = NEW.updated
+BEGIN
+  UPDATE task_templates SET updated = datetime('now') WHERE id = NEW.id;
+END;
+
 CREATE TRIGGER update_runtime_task_timestamp
 AFTER UPDATE ON runtime_tasks
 FOR EACH ROW
