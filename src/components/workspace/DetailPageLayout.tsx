@@ -5,6 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 interface DetailPageLayoutProps {
   accentColor: string
   cardBorderColor?: string
+  cardOverlay?: React.ReactNode
   sidebarImage?: React.ReactNode
   mainContent: React.ReactNode
   sidebar: React.ReactNode
@@ -14,6 +15,7 @@ interface DetailPageLayoutProps {
 export function DetailPageLayout({
   accentColor,
   cardBorderColor,
+  cardOverlay,
   sidebarImage,
   mainContent,
   sidebar,
@@ -34,12 +36,16 @@ export function DetailPageLayout({
       <ScrollArea className="h-full">
         <div className="py-3 space-y-3">
           <Card
-            className="shadow-sm flex flex-row gap-0 py-0"
+            className="shadow-sm flex flex-row gap-0 py-0 relative"
             style={cardBorderColor ? { borderColor: cardBorderColor } : undefined}>
-            <div className="flex-1 min-w-0 py-4">{mainContent}</div>
+            {cardOverlay && (
+              <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">{cardOverlay}</div>
+            )}
+
+            <div className="flex-1 min-w-0 py-4 relative z-10">{mainContent}</div>
 
             <div
-              className="w-56 flex-shrink-0 border-l relative overflow-hidden"
+              className="w-56 flex-shrink-0 border-l relative overflow-hidden z-10"
               style={cardBorderColor ? { borderColor: cardBorderColor } : undefined}>
               {sidebarImage}
               <div className="relative">{sidebar}</div>

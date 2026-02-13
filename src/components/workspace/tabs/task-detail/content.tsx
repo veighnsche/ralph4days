@@ -1,4 +1,5 @@
 import { CheckCircle2 } from 'lucide-react'
+import { TaskPriorityCorner } from '@/components/shared'
 import { CroppedImage } from '@/components/ui/cropped-image'
 import { STATUS_CONFIG } from '@/constants/prd'
 import { useInvoke } from '@/hooks/api'
@@ -78,6 +79,7 @@ export function TaskDetailTabContent({ tab, params }: { tab: WorkspaceTab; param
   return (
     <DetailPageLayout
       accentColor={statusConfig.color}
+      cardOverlay={<TaskPriorityCorner priority={task.priority} size="md" className="top-4 right-4" />}
       sidebarImage={
         stripCrop && (
           <CroppedImage
