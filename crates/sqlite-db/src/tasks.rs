@@ -15,16 +15,16 @@ impl SqliteDb {
     }
 
     #[tracing::instrument(skip(self, input), fields(
-        feature = %input.feature,
+        subsystem = %input.subsystem,
         discipline = %input.discipline,
         title = %input.title
     ))]
     pub fn create_task(&self, input: TaskInput) -> Result<u32, String> {
         tracing::debug!("Creating task");
 
-        if input.feature.trim().is_empty() {
-            tracing::error!("Validation failed: empty feature name");
-            return ralph_err!(codes::TASK_VALIDATION, "Feature name cannot be empty");
+        if input.subsystem.trim().is_empty() {
+            tracing::error!("Validation failed: empty subsystem name");
+            return ralph_err!(codes::TASK_VALIDATION, "Subsystem name cannot be empty");
         }
         if input.discipline.trim().is_empty() {
             tracing::error!("Validation failed: empty discipline name");
@@ -35,13 +35,13 @@ impl SqliteDb {
             return ralph_err!(codes::TASK_VALIDATION, "Task title cannot be empty");
         }
 
-        let feature_id = self
-            .get_id_from_name("features", &input.feature)
+        let subsystem_id = self
+            .get_id_from_name("subsystems", &input.subsystem)
             .map_err(|_| {
                 format!(
-                    "[R-{}] Feature '{}' does not exist. Create it first.",
+                    "[R-{}] Subsystem '{}' does not exist. Create it first.",
                     codes::TASK_VALIDATION,
-                    input.feature
+                    input.subsystem
                 )
             })?;
 
@@ -86,10 +86,10 @@ impl SqliteDb {
 
         self.conn
             .execute(
-                "INSERT INTO runtime_tasks (feature_id, details_id, status, created, provenance, \
+                "INSERT INTO runtime_tasks (subsystem_id, details_id, status, created, provenance, \
                  agent, model, effort, thinking) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
                 rusqlite::params![
-                    feature_id,
+                    subsystem_id,
                     details_id,
                     input.status.unwrap_or(TaskStatus::Pending).as_str(),
                     now,
@@ -149,7 +149,7 @@ impl SqliteDb {
 
         tracing::info!(
             task_id = task_id,
-            feature = %input.feature,
+            subsystem = %input.subsystem,
             discipline = %input.discipline,
             "Task created successfully"
         );
@@ -165,13 +165,13 @@ impl SqliteDb {
             return ralph_err!(codes::TASK_OPS, "Task {id} does not exist");
         }
 
-        let feature_id = self
-            .get_id_from_name("features", &update.feature)
+        let subsystem_id = self
+            .get_id_from_name("subsystems", &update.subsystem)
             .map_err(|_| {
                 format!(
-                    "[R-{}] Feature '{}' does not exist. Create it first.",
+                    "[R-{}] Subsystem '{}' does not exist. Create it first.",
                     codes::TASK_VALIDATION,
-                    update.feature
+                    update.subsystem
                 )
             })?;
 
@@ -236,10 +236,10 @@ impl SqliteDb {
 
         self.conn
             .execute(
-                "UPDATE runtime_tasks SET feature_id = ?1, updated = ?2, agent = ?3, model = ?4, \
+                "UPDATE runtime_tasks SET subsystem_id = ?1, updated = ?2, agent = ?3, model = ?4, \
                  effort = ?5, thinking = ?6 WHERE id = ?7",
                 rusqlite::params![
-                    feature_id,
+                    subsystem_id,
                     now,
                     update.agent,
                     update.model,
@@ -454,14 +454,14 @@ impl SqliteDb {
         let mut stmt = self
             .conn
             .prepare(
-                "SELECT t.id, t.feature_id, td.discipline_id, td.title, td.description, t.status, \
+                "SELECT t.id, t.subsystem_id, td.discipline_id, td.title, td.description, t.status, \
                  td.priority, t.created, t.updated, t.completed, td.hints, td.estimated_turns, \
                  t.provenance, t.agent, t.model, t.effort, t.thinking, t.pseudocode, t.enriched_at, \
                  f.name, f.display_name, f.acronym, \
                  d.name, d.display_name, d.acronym, d.icon, d.color \
                  FROM runtime_tasks t \
                  JOIN task_details td ON t.details_id = td.id \
-                 JOIN features f ON t.feature_id = f.id \
+                 JOIN subsystems f ON t.subsystem_id = f.id \
                  JOIN disciplines d ON td.discipline_id = d.id \
                  WHERE t.id = ?1",
             )
@@ -491,14 +491,14 @@ impl SqliteDb {
 
     pub fn get_tasks(&self) -> Vec<Task> {
         let Ok(mut stmt) = self.conn.prepare(
-            "SELECT t.id, t.feature_id, td.discipline_id, td.title, td.description, t.status, \
+            "SELECT t.id, t.subsystem_id, td.discipline_id, td.title, td.description, t.status, \
              td.priority, t.created, t.updated, t.completed, td.hints, td.estimated_turns, \
              t.provenance, t.agent, t.model, t.effort, t.thinking, t.pseudocode, t.enriched_at, \
              f.name, f.display_name, f.acronym, \
              d.name, d.display_name, d.acronym, d.icon, d.color \
              FROM runtime_tasks t \
              JOIN task_details td ON t.details_id = td.id \
-             JOIN features f ON t.feature_id = f.id \
+             JOIN subsystems f ON t.subsystem_id = f.id \
              JOIN disciplines d ON td.discipline_id = d.id \
              ORDER BY t.id",
         ) else {
@@ -548,7 +548,7 @@ impl SqliteDb {
 
         Task {
             id: row.get(0).unwrap_or(0),
-            feature: row.get(19).unwrap_or_default(),
+            subsystem: row.get(19).unwrap_or_default(),
             discipline: row.get(22).unwrap_or_default(),
             title: row.get(3).unwrap_or_default(),
             description: row.get(4).unwrap_or_default(),
@@ -572,8 +572,8 @@ impl SqliteDb {
             pseudocode: row.get(17).ok(),
             enriched_at: row.get(18).ok(),
             signals: vec![],
-            feature_display_name: row.get(20).unwrap_or_default(),
-            feature_acronym: row.get(21).unwrap_or_default(),
+            subsystem_display_name: row.get(20).unwrap_or_default(),
+            subsystem_acronym: row.get(21).unwrap_or_default(),
             discipline_display_name: row.get(23).unwrap_or_default(),
             discipline_acronym: row.get(24).unwrap_or_default(),
             discipline_icon: row.get(25).unwrap_or_else(|_| "Circle".to_owned()),

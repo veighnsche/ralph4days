@@ -1,11 +1,11 @@
-use crate::types::FeatureComment;
+use crate::types::SubsystemComment;
 use crate::SqliteDb;
 use ralph_errors::{codes, ralph_err, RalphResultExt};
 use rusqlite::OptionalExtension;
 use std::collections::HashMap;
 
-pub struct AddFeatureCommentInput {
-    pub feature_name: String,
+pub struct AddSubsystemCommentInput {
+    pub subsystem_name: String,
     pub category: String,
     pub discipline: Option<String>,
     pub agent_task_id: Option<u32>,
@@ -16,27 +16,27 @@ pub struct AddFeatureCommentInput {
 }
 
 impl SqliteDb {
-    fn resolve_feature_id(&self, feature_name: &str) -> Result<i64, String> {
-        let feature_id: Option<i64> = self
+    fn resolve_subsystem_id(&self, subsystem_name: &str) -> Result<i64, String> {
+        let subsystem_id: Option<i64> = self
             .conn
             .query_row(
-                "SELECT id FROM features WHERE name = ?1",
-                [feature_name],
+                "SELECT id FROM subsystems WHERE name = ?1",
+                [subsystem_name],
                 |row| row.get(0),
             )
             .optional()
-            .ralph_err(codes::DB_READ, "Failed to check feature")?;
+            .ralph_err(codes::DB_READ, "Failed to check subsystem")?;
 
-        feature_id.ok_or_else(|| {
+        subsystem_id.ok_or_else(|| {
             format!(
-                "[R-{}] Feature '{}' does not exist",
+                "[R-{}] Subsystem '{}' does not exist",
                 codes::FEATURE_OPS,
-                feature_name
+                subsystem_name
             )
         })
     }
 
-    pub fn add_feature_comment(&self, input: AddFeatureCommentInput) -> Result<(), String> {
+    pub fn add_subsystem_comment(&self, input: AddSubsystemCommentInput) -> Result<(), String> {
         if input.body.trim().is_empty() {
             return ralph_err!(codes::FEATURE_OPS, "Comment body cannot be empty");
         }
@@ -44,7 +44,7 @@ impl SqliteDb {
             return ralph_err!(codes::FEATURE_OPS, "Comment category cannot be empty");
         }
 
-        let feature_id = self.resolve_feature_id(&input.feature_name)?;
+        let subsystem_id = self.resolve_subsystem_id(&input.subsystem_name)?;
 
         let discipline_id: Option<i64> = if let Some(ref disc) = input.discipline {
             self.conn
@@ -63,11 +63,11 @@ impl SqliteDb {
 
         self.conn
             .execute(
-                "INSERT INTO feature_comments \
-                 (feature_id, category, discipline_id, agent_task_id, body, summary, reason, source_iteration, created) \
+                "INSERT INTO subsystem_comments \
+                 (subsystem_id, category, discipline_id, agent_task_id, body, summary, reason, source_iteration, created) \
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
                 rusqlite::params![
-                    feature_id,
+                    subsystem_id,
                     input.category.trim(),
                     discipline_id,
                     input.agent_task_id,
@@ -78,14 +78,14 @@ impl SqliteDb {
                     now,
                 ],
             )
-            .ralph_err(codes::DB_WRITE, "Failed to insert feature comment")?;
+            .ralph_err(codes::DB_WRITE, "Failed to insert subsystem comment")?;
 
         Ok(())
     }
 
-    pub fn update_feature_comment(
+    pub fn update_subsystem_comment(
         &self,
-        feature_name: &str,
+        subsystem_name: &str,
         comment_id: u32,
         body: &str,
         summary: Option<String>,
@@ -95,71 +95,71 @@ impl SqliteDb {
             return ralph_err!(codes::FEATURE_OPS, "Comment body cannot be empty");
         }
 
-        let feature_id = self.resolve_feature_id(feature_name)?;
+        let subsystem_id = self.resolve_subsystem_id(subsystem_name)?;
 
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
 
         let affected = self
             .conn
             .execute(
-                "UPDATE feature_comments SET body = ?1, summary = ?2, reason = ?3, updated = ?4 \
-                 WHERE id = ?5 AND feature_id = ?6",
-                rusqlite::params![body.trim(), summary, reason, now, comment_id, feature_id],
+                "UPDATE subsystem_comments SET body = ?1, summary = ?2, reason = ?3, updated = ?4 \
+                 WHERE id = ?5 AND subsystem_id = ?6",
+                rusqlite::params![body.trim(), summary, reason, now, comment_id, subsystem_id],
             )
-            .ralph_err(codes::DB_WRITE, "Failed to update feature comment")?;
+            .ralph_err(codes::DB_WRITE, "Failed to update subsystem comment")?;
 
         if affected == 0 {
             return ralph_err!(
                 codes::FEATURE_OPS,
-                "Comment {comment_id} does not exist on feature '{feature_name}'"
+                "Comment {comment_id} does not exist on subsystem '{subsystem_name}'"
             );
         }
 
         Ok(())
     }
 
-    pub fn delete_feature_comment(
+    pub fn delete_subsystem_comment(
         &self,
-        feature_name: &str,
+        subsystem_name: &str,
         comment_id: u32,
     ) -> Result<(), String> {
-        let feature_id = self.resolve_feature_id(feature_name)?;
+        let subsystem_id = self.resolve_subsystem_id(subsystem_name)?;
 
         let affected = self
             .conn
             .execute(
-                "DELETE FROM feature_comments WHERE id = ?1 AND feature_id = ?2",
-                rusqlite::params![comment_id, feature_id],
+                "DELETE FROM subsystem_comments WHERE id = ?1 AND subsystem_id = ?2",
+                rusqlite::params![comment_id, subsystem_id],
             )
-            .ralph_err(codes::DB_WRITE, "Failed to delete feature comment")?;
+            .ralph_err(codes::DB_WRITE, "Failed to delete subsystem comment")?;
 
         if affected == 0 {
             return ralph_err!(
                 codes::FEATURE_OPS,
-                "Comment {comment_id} does not exist on feature '{feature_name}'"
+                "Comment {comment_id} does not exist on subsystem '{subsystem_name}'"
             );
         }
 
         Ok(())
     }
 
-    pub(crate) fn get_all_comments_by_feature(&self) -> HashMap<String, Vec<FeatureComment>> {
+    pub(crate) fn get_all_comments_by_subsystem(&self) -> HashMap<String, Vec<SubsystemComment>> {
         let Ok(mut stmt) = self.conn.prepare(
             "SELECT fc.id, f.name, fc.category, d.name, fc.agent_task_id, fc.body, fc.summary, fc.reason, fc.source_iteration, fc.created, fc.updated \
-             FROM feature_comments fc \
-             JOIN features f ON fc.feature_id = f.id \
+             FROM subsystem_comments fc \
+             JOIN subsystems f ON fc.subsystem_id = f.id \
              LEFT JOIN disciplines d ON fc.discipline_id = d.id \
              ORDER BY f.name, fc.id DESC",
         ) else {
             return HashMap::new();
         };
 
-        let mut map: HashMap<String, Vec<FeatureComment>> = HashMap::new();
+        let mut map: HashMap<String, Vec<SubsystemComment>> = HashMap::new();
 
         let Ok(rows) = stmt.query_map([], |row| {
             Ok((
                 row.get::<_, String>(1)?,
-                FeatureComment {
+                SubsystemComment {
                     id: row.get(0)?,
                     category: row.get(2)?,
                     discipline: row.get(3)?,

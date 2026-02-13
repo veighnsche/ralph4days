@@ -34,9 +34,9 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn search_feature_comments(
+    pub fn search_subsystem_comments(
         &self,
-        feature_name: &str,
+        subsystem_name: &str,
         query_embedding: &[f32],
         limit: usize,
         min_score: f32,
@@ -44,14 +44,14 @@ impl SqliteDb {
         let Ok(mut stmt) = self.conn.prepare(
             "SELECT ce.comment_id, ce.embedding, fc.category, fc.body, fc.summary, fc.reason
              FROM comment_embeddings ce
-             JOIN feature_comments fc ON fc.id = ce.comment_id
-             JOIN features f ON fc.feature_id = f.id
+             JOIN subsystem_comments fc ON fc.id = ce.comment_id
+             JOIN subsystems f ON fc.subsystem_id = f.id
              WHERE f.name = ?1",
         ) else {
             return vec![];
         };
 
-        let Ok(rows) = stmt.query_map([feature_name], |row| {
+        let Ok(rows) = stmt.query_map([subsystem_name], |row| {
             let comment_id: u32 = row.get(0)?;
             let blob: Vec<u8> = row.get(1)?;
             let category: String = row.get(2)?;
@@ -199,7 +199,7 @@ mod tests {
     #[test]
     fn upsert_and_search() {
         let db = SqliteDb::open_in_memory(None).unwrap();
-        db.create_feature(crate::FeatureInput {
+        db.create_subsystem(crate::SubsystemInput {
             name: "auth".to_owned(),
             display_name: "Auth".to_owned(),
             acronym: "AUTH".to_owned(),
@@ -207,8 +207,8 @@ mod tests {
         })
         .unwrap();
 
-        db.add_feature_comment(crate::AddFeatureCommentInput {
-            feature_name: "auth".to_owned(),
+        db.add_subsystem_comment(crate::AddSubsystemCommentInput {
+            subsystem_name: "auth".to_owned(),
             category: "gotcha".to_owned(),
 
             discipline: None,
@@ -220,8 +220,8 @@ mod tests {
         })
         .unwrap();
 
-        let features = db.get_features();
-        let comment_id = features[0].comments[0].id;
+        let subsystems = db.get_subsystems();
+        let comment_id = subsystems[0].comments[0].id;
 
         let embedding = vec![0.5_f32; 768];
         db.upsert_comment_embedding(comment_id, &embedding, "nomic-embed-text", "abc123")
@@ -231,7 +231,7 @@ mod tests {
         assert_eq!(db.get_embedding_hash(comment_id), Some("abc123".to_owned()));
 
         let query = vec![0.5_f32; 768];
-        let results = db.search_feature_comments("auth", &query, 10, 0.0);
+        let results = db.search_subsystem_comments("auth", &query, 10, 0.0);
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].body, "Use JWT not sessions");
         assert!((results[0].score - 1.0).abs() < 1e-6);
@@ -240,7 +240,7 @@ mod tests {
     #[test]
     fn search_respects_min_score() {
         let db = SqliteDb::open_in_memory(None).unwrap();
-        db.create_feature(crate::FeatureInput {
+        db.create_subsystem(crate::SubsystemInput {
             name: "auth".to_owned(),
             display_name: "Auth".to_owned(),
             acronym: "AUTH".to_owned(),
@@ -248,8 +248,8 @@ mod tests {
         })
         .unwrap();
 
-        db.add_feature_comment(crate::AddFeatureCommentInput {
-            feature_name: "auth".to_owned(),
+        db.add_subsystem_comment(crate::AddSubsystemCommentInput {
+            subsystem_name: "auth".to_owned(),
             category: "gotcha".to_owned(),
 
             discipline: None,
@@ -261,22 +261,22 @@ mod tests {
         })
         .unwrap();
 
-        let features = db.get_features();
-        let comment_id = features[0].comments[0].id;
+        let subsystems = db.get_subsystems();
+        let comment_id = subsystems[0].comments[0].id;
 
         let embedding = vec![1.0, 0.0, 0.0];
         db.upsert_comment_embedding(comment_id, &embedding, "test", "hash1")
             .unwrap();
 
         let query = vec![0.0, 1.0, 0.0];
-        let results = db.search_feature_comments("auth", &query, 10, 0.4);
+        let results = db.search_subsystem_comments("auth", &query, 10, 0.4);
         assert!(results.is_empty());
     }
 
     #[test]
     fn cascade_delete_removes_embedding() {
         let db = SqliteDb::open_in_memory(None).unwrap();
-        db.create_feature(crate::FeatureInput {
+        db.create_subsystem(crate::SubsystemInput {
             name: "auth".to_owned(),
             display_name: "Auth".to_owned(),
             acronym: "AUTH".to_owned(),
@@ -284,8 +284,8 @@ mod tests {
         })
         .unwrap();
 
-        db.add_feature_comment(crate::AddFeatureCommentInput {
-            feature_name: "auth".to_owned(),
+        db.add_subsystem_comment(crate::AddSubsystemCommentInput {
+            subsystem_name: "auth".to_owned(),
             category: "gotcha".to_owned(),
 
             discipline: None,
@@ -296,21 +296,21 @@ mod tests {
             source_iteration: None,
         })
         .unwrap();
-        let features = db.get_features();
-        let comment_id = features[0].comments[0].id;
+        let subsystems = db.get_subsystems();
+        let comment_id = subsystems[0].comments[0].id;
 
         db.upsert_comment_embedding(comment_id, &[0.5; 768], "test", "hash1")
             .unwrap();
         assert!(db.has_comment_embedding(comment_id));
 
-        db.delete_feature_comment("auth", comment_id).unwrap();
+        db.delete_subsystem_comment("auth", comment_id).unwrap();
         assert!(!db.has_comment_embedding(comment_id));
     }
 
     #[test]
     fn delete_embedding_direct() {
         let db = SqliteDb::open_in_memory(None).unwrap();
-        db.create_feature(crate::FeatureInput {
+        db.create_subsystem(crate::SubsystemInput {
             name: "auth".to_owned(),
             display_name: "Auth".to_owned(),
             acronym: "AUTH".to_owned(),
@@ -318,8 +318,8 @@ mod tests {
         })
         .unwrap();
 
-        db.add_feature_comment(crate::AddFeatureCommentInput {
-            feature_name: "auth".to_owned(),
+        db.add_subsystem_comment(crate::AddSubsystemCommentInput {
+            subsystem_name: "auth".to_owned(),
             category: "gotcha".to_owned(),
 
             discipline: None,
@@ -330,7 +330,7 @@ mod tests {
             source_iteration: None,
         })
         .unwrap();
-        let comment_id = db.get_features()[0].comments[0].id;
+        let comment_id = db.get_subsystems()[0].comments[0].id;
 
         db.upsert_comment_embedding(comment_id, &[0.5; 768], "test", "hash1")
             .unwrap();
@@ -343,7 +343,7 @@ mod tests {
     #[test]
     fn upsert_overwrites_embedding() {
         let db = SqliteDb::open_in_memory(None).unwrap();
-        db.create_feature(crate::FeatureInput {
+        db.create_subsystem(crate::SubsystemInput {
             name: "auth".to_owned(),
             display_name: "Auth".to_owned(),
             acronym: "AUTH".to_owned(),
@@ -351,8 +351,8 @@ mod tests {
         })
         .unwrap();
 
-        db.add_feature_comment(crate::AddFeatureCommentInput {
-            feature_name: "auth".to_owned(),
+        db.add_subsystem_comment(crate::AddSubsystemCommentInput {
+            subsystem_name: "auth".to_owned(),
             category: "gotcha".to_owned(),
 
             discipline: None,
@@ -363,7 +363,7 @@ mod tests {
             source_iteration: None,
         })
         .unwrap();
-        let comment_id = db.get_features()[0].comments[0].id;
+        let comment_id = db.get_subsystems()[0].comments[0].id;
 
         db.upsert_comment_embedding(comment_id, &[0.1; 768], "test", "hash_old")
             .unwrap();
@@ -381,10 +381,10 @@ mod tests {
     }
 
     #[test]
-    fn search_multiple_features_isolated() {
+    fn search_multiple_subsystems_isolated() {
         let db = SqliteDb::open_in_memory(None).unwrap();
         for (name, display, acronym) in [("auth", "Auth", "AUTH"), ("billing", "Billing", "BILL")] {
-            db.create_feature(crate::FeatureInput {
+            db.create_subsystem(crate::SubsystemInput {
                 name: name.to_owned(),
                 display_name: display.to_owned(),
                 acronym: acronym.to_owned(),
@@ -393,8 +393,8 @@ mod tests {
             .unwrap();
         }
 
-        db.add_feature_comment(crate::AddFeatureCommentInput {
-            feature_name: "auth".to_owned(),
+        db.add_subsystem_comment(crate::AddSubsystemCommentInput {
+            subsystem_name: "auth".to_owned(),
             category: "gotcha".to_owned(),
 
             discipline: None,
@@ -406,8 +406,8 @@ mod tests {
         })
         .unwrap();
 
-        db.add_feature_comment(crate::AddFeatureCommentInput {
-            feature_name: "billing".to_owned(),
+        db.add_subsystem_comment(crate::AddSubsystemCommentInput {
+            subsystem_name: "billing".to_owned(),
             category: "gotcha".to_owned(),
 
             discipline: None,
@@ -419,9 +419,14 @@ mod tests {
         })
         .unwrap();
 
-        let features = db.get_features();
-        let auth_cid = features.iter().find(|f| f.name == "auth").unwrap().comments[0].id;
-        let bill_cid = features
+        let subsystems = db.get_subsystems();
+        let auth_cid = subsystems
+            .iter()
+            .find(|f| f.name == "auth")
+            .unwrap()
+            .comments[0]
+            .id;
+        let bill_cid = subsystems
             .iter()
             .find(|f| f.name == "billing")
             .unwrap()
@@ -434,11 +439,11 @@ mod tests {
         db.upsert_comment_embedding(bill_cid, &emb, "test", "h2")
             .unwrap();
 
-        let auth_results = db.search_feature_comments("auth", &emb, 10, 0.0);
+        let auth_results = db.search_subsystem_comments("auth", &emb, 10, 0.0);
         assert_eq!(auth_results.len(), 1);
         assert_eq!(auth_results[0].body, "Auth only");
 
-        let billing_results = db.search_feature_comments("billing", &emb, 10, 0.0);
+        let billing_results = db.search_subsystem_comments("billing", &emb, 10, 0.0);
         assert_eq!(billing_results.len(), 1);
         assert_eq!(billing_results[0].body, "Billing only");
     }
@@ -446,7 +451,7 @@ mod tests {
     #[test]
     fn search_ordering_by_score() {
         let db = SqliteDb::open_in_memory(None).unwrap();
-        db.create_feature(crate::FeatureInput {
+        db.create_subsystem(crate::SubsystemInput {
             name: "auth".to_owned(),
             display_name: "Auth".to_owned(),
             acronym: "AUTH".to_owned(),
@@ -454,8 +459,8 @@ mod tests {
         })
         .unwrap();
 
-        db.add_feature_comment(crate::AddFeatureCommentInput {
-            feature_name: "auth".to_owned(),
+        db.add_subsystem_comment(crate::AddSubsystemCommentInput {
+            subsystem_name: "auth".to_owned(),
             category: "gotcha".to_owned(),
 
             discipline: None,
@@ -466,8 +471,8 @@ mod tests {
             source_iteration: None,
         })
         .unwrap();
-        db.add_feature_comment(crate::AddFeatureCommentInput {
-            feature_name: "auth".to_owned(),
+        db.add_subsystem_comment(crate::AddSubsystemCommentInput {
+            subsystem_name: "auth".to_owned(),
             category: "convention".to_owned(),
 
             discipline: None,
@@ -479,8 +484,12 @@ mod tests {
         })
         .unwrap();
 
-        let features = db.get_features();
-        let comments = &features.iter().find(|f| f.name == "auth").unwrap().comments;
+        let subsystems = db.get_subsystems();
+        let comments = &subsystems
+            .iter()
+            .find(|f| f.name == "auth")
+            .unwrap()
+            .comments;
         let cid_low = comments.iter().find(|c| c.body == "Low match").unwrap().id;
         let cid_high = comments.iter().find(|c| c.body == "High match").unwrap().id;
 
@@ -492,7 +501,7 @@ mod tests {
             .unwrap();
 
         let query = vec![0.0, 1.0, 0.0];
-        let results = db.search_feature_comments("auth", &query, 10, 0.0);
+        let results = db.search_subsystem_comments("auth", &query, 10, 0.0);
         assert_eq!(results.len(), 2);
         assert_eq!(results[0].body, "High match");
         assert_eq!(results[1].body, "Low match");

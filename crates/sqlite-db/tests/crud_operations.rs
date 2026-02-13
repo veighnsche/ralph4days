@@ -1,10 +1,10 @@
 use sqlite_db::{
-    AddFeatureCommentInput, FeatureInput, FixedClock, Priority, SqliteDb, TaskInput, TaskStatus,
+    AddSubsystemCommentInput, FixedClock, Priority, SqliteDb, SubsystemInput, TaskInput, TaskStatus,
 };
 
-fn comment(feature: &str, category: &str, body: &str) -> AddFeatureCommentInput {
-    AddFeatureCommentInput {
-        feature_name: feature.to_owned(),
+fn comment(subsystem: &str, category: &str, body: &str) -> AddSubsystemCommentInput {
+    AddSubsystemCommentInput {
+        subsystem_name: subsystem.to_owned(),
         category: category.to_owned(),
         discipline: None,
         agent_task_id: None,
@@ -69,8 +69,8 @@ fn seed_test_disciplines(db: &SqliteDb) {
     }
 }
 
-fn feature(name: &str, display_name: &str, acronym: &str) -> FeatureInput {
-    FeatureInput {
+fn subsystem(name: &str, display_name: &str, acronym: &str) -> SubsystemInput {
+    SubsystemInput {
         name: name.into(),
         display_name: display_name.into(),
         acronym: acronym.into(),
@@ -83,11 +83,12 @@ fn feature(name: &str, display_name: &str, acronym: &str) -> FeatureInput {
 #[test]
 fn test_create_task() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
 
     let task_id = db
         .create_task(TaskInput {
-            feature: "auth".into(),
+            subsystem: "auth".into(),
             discipline: "backend".into(),
             title: "Implement login".into(),
             description: Some("Login API".into()),
@@ -106,23 +107,25 @@ fn test_create_task() {
 }
 
 #[test]
-fn test_create_task_empty_feature_rejected() {
+fn test_create_task_empty_subsystem_rejected() {
     let db = create_test_db();
     let result = db.create_task(TaskInput {
-        feature: "   ".into(),
+        subsystem: "   ".into(),
         discipline: "backend".into(),
         title: "Task".into(),
         ..Default::default()
     });
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("Feature name cannot be empty"));
+    assert!(result
+        .unwrap_err()
+        .contains("Subsystem name cannot be empty"));
 }
 
 #[test]
 fn test_create_task_empty_discipline_rejected() {
     let db = create_test_db();
     let result = db.create_task(TaskInput {
-        feature: "test".into(),
+        subsystem: "test".into(),
         discipline: "\t\n ".into(),
         title: "Task".into(),
         ..Default::default()
@@ -137,7 +140,7 @@ fn test_create_task_empty_discipline_rejected() {
 fn test_create_task_empty_title_rejected() {
     let db = create_test_db();
     let result = db.create_task(TaskInput {
-        feature: "test".into(),
+        subsystem: "test".into(),
         discipline: "backend".into(),
         title: "     ".into(),
         ..Default::default()
@@ -147,10 +150,10 @@ fn test_create_task_empty_title_rejected() {
 }
 
 #[test]
-fn test_create_task_nonexistent_feature_rejected() {
+fn test_create_task_nonexistent_subsystem_rejected() {
     let db = create_test_db();
     let result = db.create_task(TaskInput {
-        feature: "nope".into(),
+        subsystem: "nope".into(),
         discipline: "backend".into(),
         title: "Task".into(),
         ..Default::default()
@@ -162,9 +165,10 @@ fn test_create_task_nonexistent_feature_rejected() {
 #[test]
 fn test_create_task_nonexistent_discipline_rejected() {
     let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    db.create_subsystem(subsystem("test", "Test", "TEST"))
+        .unwrap();
     let result = db.create_task(TaskInput {
-        feature: "test".into(),
+        subsystem: "test".into(),
         discipline: "nope".into(),
         title: "Task".into(),
         ..Default::default()
@@ -178,11 +182,12 @@ fn test_create_task_nonexistent_discipline_rejected() {
 #[test]
 fn test_get_task_by_id() {
     let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    db.create_subsystem(subsystem("test", "Test", "TEST"))
+        .unwrap();
 
     let task_id = db
         .create_task(TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "Test Task".into(),
             priority: Some(Priority::Medium),
@@ -207,11 +212,12 @@ fn test_get_task_by_id_not_found() {
 #[test]
 fn test_update_task() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
 
     let task_id = db
         .create_task(TaskInput {
-            feature: "auth".into(),
+            subsystem: "auth".into(),
             discipline: "backend".into(),
             title: "Old Title".into(),
             description: Some("Old description".into()),
@@ -224,7 +230,7 @@ fn test_update_task() {
     db.update_task(
         task_id,
         TaskInput {
-            feature: "auth".into(),
+            subsystem: "auth".into(),
             discipline: "backend".into(),
             title: "New Title".into(),
             description: Some("New description".into()),
@@ -249,11 +255,12 @@ fn test_update_task() {
 #[test]
 fn test_update_nonexistent_task() {
     let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    db.create_subsystem(subsystem("test", "Test", "TEST"))
+        .unwrap();
     let result = db.update_task(
         999,
         TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "Title".into(),
             ..Default::default()
@@ -266,11 +273,12 @@ fn test_update_nonexistent_task() {
 #[test]
 fn test_update_task_self_dependency_rejected() {
     let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    db.create_subsystem(subsystem("test", "Test", "TEST"))
+        .unwrap();
 
     let task_id = db
         .create_task(TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "Task".into(),
             ..Default::default()
@@ -280,7 +288,7 @@ fn test_update_task_self_dependency_rejected() {
     let result = db.update_task(
         task_id,
         TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "Task".into(),
             depends_on: vec![task_id],
@@ -294,11 +302,12 @@ fn test_update_task_self_dependency_rejected() {
 #[test]
 fn test_update_task_circular_dependency_rejected() {
     let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    db.create_subsystem(subsystem("test", "Test", "TEST"))
+        .unwrap();
 
     let a = db
         .create_task(TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "A".into(),
             ..Default::default()
@@ -307,7 +316,7 @@ fn test_update_task_circular_dependency_rejected() {
 
     let b = db
         .create_task(TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "B".into(),
             depends_on: vec![a],
@@ -319,7 +328,7 @@ fn test_update_task_circular_dependency_rejected() {
     let result = db.update_task(
         a,
         TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "A".into(),
             depends_on: vec![b],
@@ -333,11 +342,12 @@ fn test_update_task_circular_dependency_rejected() {
 #[test]
 fn test_update_task_complex_circular_dependency() {
     let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    db.create_subsystem(subsystem("test", "Test", "TEST"))
+        .unwrap();
 
     let a = db
         .create_task(TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "A".into(),
             ..Default::default()
@@ -345,7 +355,7 @@ fn test_update_task_complex_circular_dependency() {
         .unwrap();
     let b = db
         .create_task(TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "B".into(),
             depends_on: vec![a],
@@ -354,7 +364,7 @@ fn test_update_task_complex_circular_dependency() {
         .unwrap();
     let c = db
         .create_task(TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "C".into(),
             depends_on: vec![b],
@@ -366,7 +376,7 @@ fn test_update_task_complex_circular_dependency() {
     let result = db.update_task(
         a,
         TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "A".into(),
             depends_on: vec![c],
@@ -380,11 +390,12 @@ fn test_update_task_complex_circular_dependency() {
 #[test]
 fn test_update_task_preserves_status() {
     let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    db.create_subsystem(subsystem("test", "Test", "TEST"))
+        .unwrap();
 
     let task_id = db
         .create_task(TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "Original".into(),
             ..Default::default()
@@ -399,7 +410,7 @@ fn test_update_task_preserves_status() {
     db.update_task(
         task_id,
         TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "Updated".into(),
             ..Default::default()
@@ -417,11 +428,12 @@ fn test_update_task_preserves_status() {
 #[test]
 fn test_delete_task() {
     let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    db.create_subsystem(subsystem("test", "Test", "TEST"))
+        .unwrap();
 
     let task_id = db
         .create_task(TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "To delete".into(),
             ..Default::default()
@@ -445,18 +457,19 @@ fn test_delete_nonexistent_task() {
 #[test]
 fn test_delete_task_with_dependents_rejected() {
     let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    db.create_subsystem(subsystem("test", "Test", "TEST"))
+        .unwrap();
 
     let a = db
         .create_task(TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "A".into(),
             ..Default::default()
         })
         .unwrap();
     db.create_task(TaskInput {
-        feature: "test".into(),
+        subsystem: "test".into(),
         discipline: "backend".into(),
         title: "B".into(),
         depends_on: vec![a],
@@ -472,11 +485,12 @@ fn test_delete_task_with_dependents_rejected() {
 #[test]
 fn test_delete_dependent_then_dependency() {
     let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    db.create_subsystem(subsystem("test", "Test", "TEST"))
+        .unwrap();
 
     let a = db
         .create_task(TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "A".into(),
             ..Default::default()
@@ -484,7 +498,7 @@ fn test_delete_dependent_then_dependency() {
         .unwrap();
     let b = db
         .create_task(TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "B".into(),
             depends_on: vec![a],
@@ -500,43 +514,46 @@ fn test_delete_dependent_then_dependency() {
 // === FEATURE tests ===
 
 #[test]
-fn test_create_feature() {
+fn test_create_subsystem() {
     let db = create_test_db();
-    db.create_feature(FeatureInput {
+    db.create_subsystem(SubsystemInput {
         name: "auth".into(),
         display_name: "Auth".into(),
         acronym: "AUTH".into(),
-        description: Some("Auth feature".into()),
+        description: Some("Auth subsystem".into()),
     })
     .unwrap();
-    let features = db.get_features();
-    let f = features.iter().find(|f| f.name == "auth").unwrap();
+    let subsystems = db.get_subsystems();
+    let f = subsystems.iter().find(|f| f.name == "auth").unwrap();
     assert_eq!(f.created, Some("2026-01-01".into()));
 }
 
 #[test]
-fn test_create_duplicate_feature_rejected() {
+fn test_create_duplicate_subsystem_rejected() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
-    let result = db.create_feature(feature("auth", "Auth2", "AUT2"));
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
+    let result = db.create_subsystem(subsystem("auth", "Auth2", "AUT2"));
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("already exists"));
 }
 
 #[test]
-fn test_create_feature_duplicate_acronym_rejected() {
+fn test_create_subsystem_duplicate_acronym_rejected() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
-    let result = db.create_feature(feature("other", "Other", "AUTH"));
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
+    let result = db.create_subsystem(subsystem("other", "Other", "AUTH"));
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("already used"));
 }
 
 #[test]
-fn test_update_feature() {
+fn test_update_subsystem() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
-    db.update_feature(FeatureInput {
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
+    db.update_subsystem(SubsystemInput {
         name: "auth".into(),
         display_name: "Authentication".into(),
         acronym: "AUTH".into(),
@@ -544,58 +561,61 @@ fn test_update_feature() {
     })
     .unwrap();
 
-    let features = db.get_features();
-    let f = features.iter().find(|f| f.name == "auth").unwrap();
+    let subsystems = db.get_subsystems();
+    let f = subsystems.iter().find(|f| f.name == "auth").unwrap();
     assert_eq!(f.display_name, "Authentication");
     assert_eq!(f.description, Some("Updated".into()));
     assert!(f.created.is_some()); // Preserved
 }
 
 #[test]
-fn test_delete_feature() {
+fn test_delete_subsystem() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
-    let initial = db.get_features().len();
-    db.delete_feature("auth".into()).unwrap();
-    assert_eq!(db.get_features().len(), initial - 1);
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
+    let initial = db.get_subsystems().len();
+    db.delete_subsystem("auth".into()).unwrap();
+    assert_eq!(db.get_subsystems().len(), initial - 1);
 }
 
 #[test]
-fn test_delete_feature_nonexistent() {
+fn test_delete_subsystem_nonexistent() {
     let db = create_test_db();
-    let result = db.delete_feature("nope".into());
+    let result = db.delete_subsystem("nope".into());
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("does not exist"));
 }
 
 #[test]
-fn test_delete_feature_with_tasks_rejected() {
+fn test_delete_subsystem_with_tasks_rejected() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
     db.create_task(TaskInput {
-        feature: "auth".into(),
+        subsystem: "auth".into(),
         discipline: "backend".into(),
         title: "Task".into(),
         ..Default::default()
     })
     .unwrap();
 
-    let result = db.delete_feature("auth".into());
+    let result = db.delete_subsystem("auth".into());
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("Cannot delete feature"));
+    assert!(result.unwrap_err().contains("Cannot delete subsystem"));
 }
 
 // === FEATURE fields tests ===
 
 #[test]
-fn test_update_feature_preserves_comments() {
+fn test_update_subsystem_preserves_comments() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
-
-    db.add_feature_comment(comment("auth", "architecture", "Use bcrypt not SHA256"))
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
         .unwrap();
 
-    db.update_feature(FeatureInput {
+    db.add_subsystem_comment(comment("auth", "architecture", "Use bcrypt not SHA256"))
+        .unwrap();
+
+    db.update_subsystem(SubsystemInput {
         name: "auth".into(),
         display_name: "Authentication".into(),
         acronym: "AUTH".into(),
@@ -603,8 +623,8 @@ fn test_update_feature_preserves_comments() {
     })
     .unwrap();
 
-    let features = db.get_features();
-    let f = features.iter().find(|f| f.name == "auth").unwrap();
+    let subsystems = db.get_subsystems();
+    let f = subsystems.iter().find(|f| f.name == "auth").unwrap();
     assert_eq!(f.display_name, "Authentication");
     assert_eq!(f.comments.len(), 1);
     assert_eq!(f.comments[0].body, "Use bcrypt not SHA256");
@@ -613,18 +633,19 @@ fn test_update_feature_preserves_comments() {
 // === FEATURE COMMENT tests ===
 
 #[test]
-fn test_add_feature_comment_basic() {
+fn test_add_subsystem_comment_basic() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
 
-    db.add_feature_comment(AddFeatureCommentInput {
+    db.add_subsystem_comment(AddSubsystemCommentInput {
         reason: Some("Industry standard".into()),
         ..comment("auth", "architecture", "OAuth2 + JWT flow")
     })
     .unwrap();
 
-    let features = db.get_features();
-    let f = features.iter().find(|f| f.name == "auth").unwrap();
+    let subsystems = db.get_subsystems();
+    let f = subsystems.iter().find(|f| f.name == "auth").unwrap();
     assert_eq!(f.comments.len(), 1);
     assert_eq!(f.comments[0].category, "architecture");
     assert_eq!(f.comments[0].body, "OAuth2 + JWT flow");
@@ -633,45 +654,53 @@ fn test_add_feature_comment_basic() {
 }
 
 #[test]
-fn test_add_feature_comment_empty_body_rejected() {
+fn test_add_subsystem_comment_empty_body_rejected() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
 
-    let result = db.add_feature_comment(comment("auth", "architecture", "   "));
+    let result = db.add_subsystem_comment(comment("auth", "architecture", "   "));
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("cannot be empty"));
 }
 
 #[test]
-fn test_add_feature_comment_empty_category_rejected() {
+fn test_add_subsystem_comment_empty_category_rejected() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
 
-    let result = db.add_feature_comment(comment("auth", "  ", "body"));
+    let result = db.add_subsystem_comment(comment("auth", "  ", "body"));
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("category cannot be empty"));
 }
 
 #[test]
-fn test_add_feature_comment_nonexistent_feature() {
+fn test_add_subsystem_comment_nonexistent_subsystem() {
     let db = create_test_db();
-    let result = db.add_feature_comment(comment("nope", "architecture", "body"));
+    let result = db.add_subsystem_comment(comment("nope", "architecture", "body"));
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("does not exist"));
 }
 
 #[test]
-fn test_update_feature_comment() {
+fn test_update_subsystem_comment() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
-
-    db.add_feature_comment(comment("auth", "gotcha", "Original"))
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
         .unwrap();
 
-    let features = db.get_features();
-    let comment_id = features.iter().find(|f| f.name == "auth").unwrap().comments[0].id;
+    db.add_subsystem_comment(comment("auth", "gotcha", "Original"))
+        .unwrap();
 
-    db.update_feature_comment(
+    let subsystems = db.get_subsystems();
+    let comment_id = subsystems
+        .iter()
+        .find(|f| f.name == "auth")
+        .unwrap()
+        .comments[0]
+        .id;
+
+    db.update_subsystem_comment(
         "auth",
         comment_id,
         "Edited",
@@ -680,56 +709,59 @@ fn test_update_feature_comment() {
     )
     .unwrap();
 
-    let features = db.get_features();
-    let f = features.iter().find(|f| f.name == "auth").unwrap();
+    let subsystems = db.get_subsystems();
+    let f = subsystems.iter().find(|f| f.name == "auth").unwrap();
     assert_eq!(f.comments[0].body, "Edited");
     assert_eq!(f.comments[0].reason, Some("new reason".into()));
     assert!(f.comments[0].updated.is_some());
 }
 
 #[test]
-fn test_delete_feature_comment() {
+fn test_delete_subsystem_comment() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
-
-    db.add_feature_comment(comment("auth", "gotcha", "First"))
-        .unwrap();
-    db.add_feature_comment(comment("auth", "convention", "Second"))
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
         .unwrap();
 
-    let features = db.get_features();
-    let f = features.iter().find(|f| f.name == "auth").unwrap();
+    db.add_subsystem_comment(comment("auth", "gotcha", "First"))
+        .unwrap();
+    db.add_subsystem_comment(comment("auth", "convention", "Second"))
+        .unwrap();
+
+    let subsystems = db.get_subsystems();
+    let f = subsystems.iter().find(|f| f.name == "auth").unwrap();
     let first_id = f.comments.iter().find(|c| c.body == "First").unwrap().id;
 
-    db.delete_feature_comment("auth", first_id).unwrap();
+    db.delete_subsystem_comment("auth", first_id).unwrap();
 
-    let features = db.get_features();
-    let f = features.iter().find(|f| f.name == "auth").unwrap();
+    let subsystems = db.get_subsystems();
+    let f = subsystems.iter().find(|f| f.name == "auth").unwrap();
     assert_eq!(f.comments.len(), 1);
     assert_eq!(f.comments[0].body, "Second");
 }
 
 #[test]
-fn test_delete_feature_cascades_comments() {
+fn test_delete_subsystem_cascades_comments() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
-    db.add_feature_comment(comment("auth", "gotcha", "Note"))
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
+    db.add_subsystem_comment(comment("auth", "gotcha", "Note"))
         .unwrap();
 
-    db.delete_feature("auth".into()).unwrap();
+    db.delete_subsystem("auth".into()).unwrap();
 
-    // Feature and its comments are gone
-    assert!(db.get_features().iter().all(|f| f.name != "auth"));
+    // Subsystem and its comments are gone
+    assert!(db.get_subsystems().iter().all(|f| f.name != "auth"));
 }
 
 // === FEATURE COMMENT EXTENDED tests ===
 
 #[test]
-fn test_feature_comment_with_all_fields() {
+fn test_subsystem_comment_with_all_fields() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
 
-    db.add_feature_comment(AddFeatureCommentInput {
+    db.add_subsystem_comment(AddSubsystemCommentInput {
         discipline: Some("backend".to_owned()),
         agent_task_id: Some(42),
         reason: Some("Prevents replay attacks".to_owned()),
@@ -739,7 +771,7 @@ fn test_feature_comment_with_all_fields() {
     .unwrap();
 
     let f = db
-        .get_features()
+        .get_subsystems()
         .into_iter()
         .find(|f| f.name == "auth")
         .unwrap();
@@ -751,29 +783,30 @@ fn test_feature_comment_with_all_fields() {
 }
 
 #[test]
-fn test_feature_comment_update_clears_reason() {
+fn test_subsystem_comment_update_clears_reason() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
 
-    db.add_feature_comment(AddFeatureCommentInput {
+    db.add_subsystem_comment(AddSubsystemCommentInput {
         reason: Some("Old reason".to_owned()),
         ..comment("auth", "gotcha", "Watch out for XSS")
     })
     .unwrap();
 
     let comment_id = db
-        .get_features()
+        .get_subsystems()
         .into_iter()
         .find(|f| f.name == "auth")
         .unwrap()
         .comments[0]
         .id;
 
-    db.update_feature_comment("auth", comment_id, "Watch out for XSS", None, None)
+    db.update_subsystem_comment("auth", comment_id, "Watch out for XSS", None, None)
         .unwrap();
 
     let f = db
-        .get_features()
+        .get_subsystems()
         .into_iter()
         .find(|f| f.name == "auth")
         .unwrap();
@@ -781,19 +814,20 @@ fn test_feature_comment_update_clears_reason() {
 }
 
 #[test]
-fn test_feature_comment_ordering() {
+fn test_subsystem_comment_ordering() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
 
-    db.add_feature_comment(comment("auth", "gotcha", "First"))
+    db.add_subsystem_comment(comment("auth", "gotcha", "First"))
         .unwrap();
-    db.add_feature_comment(comment("auth", "convention", "Second"))
+    db.add_subsystem_comment(comment("auth", "convention", "Second"))
         .unwrap();
-    db.add_feature_comment(comment("auth", "architecture", "Third"))
+    db.add_subsystem_comment(comment("auth", "architecture", "Third"))
         .unwrap();
 
     let f = db
-        .get_features()
+        .get_subsystems()
         .into_iter()
         .find(|f| f.name == "auth")
         .unwrap();
@@ -806,38 +840,41 @@ fn test_feature_comment_ordering() {
 }
 
 #[test]
-fn test_update_nonexistent_feature_comment() {
+fn test_update_nonexistent_subsystem_comment() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
 
-    let result = db.update_feature_comment("auth", 9999, "new body", None, None);
+    let result = db.update_subsystem_comment("auth", 9999, "new body", None, None);
     assert!(result.is_err());
 }
 
 #[test]
-fn test_delete_nonexistent_feature_comment() {
+fn test_delete_nonexistent_subsystem_comment() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
 
-    let result = db.delete_feature_comment("auth", 9999);
+    let result = db.delete_subsystem_comment("auth", 9999);
     assert!(result.is_err());
 }
 
 #[test]
-fn test_multiple_features_comments_isolated() {
+fn test_multiple_subsystems_comments_isolated() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
-    db.create_feature(feature("billing", "Billing", "BILL"))
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
+    db.create_subsystem(subsystem("billing", "Billing", "BILL"))
         .unwrap();
 
-    db.add_feature_comment(comment("auth", "gotcha", "Auth comment"))
+    db.add_subsystem_comment(comment("auth", "gotcha", "Auth comment"))
         .unwrap();
-    db.add_feature_comment(comment("billing", "convention", "Billing comment"))
+    db.add_subsystem_comment(comment("billing", "convention", "Billing comment"))
         .unwrap();
 
-    let features = db.get_features();
-    let auth = features.iter().find(|f| f.name == "auth").unwrap();
-    let billing = features.iter().find(|f| f.name == "billing").unwrap();
+    let subsystems = db.get_subsystems();
+    let auth = subsystems.iter().find(|f| f.name == "auth").unwrap();
+    let billing = subsystems.iter().find(|f| f.name == "billing").unwrap();
 
     assert_eq!(auth.comments.len(), 1);
     assert_eq!(auth.comments[0].body, "Auth comment");
@@ -993,9 +1030,10 @@ fn test_delete_discipline_nonexistent() {
 #[test]
 fn test_delete_discipline_with_tasks_rejected() {
     let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    db.create_subsystem(subsystem("test", "Test", "TEST"))
+        .unwrap();
     db.create_task(TaskInput {
-        feature: "test".into(),
+        subsystem: "test".into(),
         discipline: "backend".into(),
         title: "Task".into(),
         ..Default::default()
@@ -1012,10 +1050,11 @@ fn test_delete_discipline_with_tasks_rejected() {
 #[test]
 fn test_add_human_comment() {
     let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    db.create_subsystem(subsystem("test", "Test", "TEST"))
+        .unwrap();
     let task_id = db
         .create_task(TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "Task".into(),
             ..Default::default()
@@ -1035,10 +1074,11 @@ fn test_add_human_comment() {
 #[test]
 fn test_add_agent_comment() {
     let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    db.create_subsystem(subsystem("test", "Test", "TEST"))
+        .unwrap();
     let task_id = db
         .create_task(TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "Task".into(),
             ..Default::default()
@@ -1061,10 +1101,11 @@ fn test_add_agent_comment() {
 #[test]
 fn test_add_comment_empty_body_rejected() {
     let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    db.create_subsystem(subsystem("test", "Test", "TEST"))
+        .unwrap();
     let task_id = db
         .create_task(TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "Task".into(),
             ..Default::default()
@@ -1087,10 +1128,11 @@ fn test_add_comment_nonexistent_task() {
 #[test]
 fn test_update_comment_by_id() {
     let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    db.create_subsystem(subsystem("test", "Test", "TEST"))
+        .unwrap();
     let task_id = db
         .create_task(TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "Task".into(),
             ..Default::default()
@@ -1113,10 +1155,11 @@ fn test_update_comment_by_id() {
 #[test]
 fn test_delete_comment_by_id() {
     let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    db.create_subsystem(subsystem("test", "Test", "TEST"))
+        .unwrap();
     let task_id = db
         .create_task(TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "Task".into(),
             ..Default::default()
@@ -1145,10 +1188,11 @@ fn test_delete_comment_by_id() {
 #[test]
 fn test_update_task_preserves_comments() {
     let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    db.create_subsystem(subsystem("test", "Test", "TEST"))
+        .unwrap();
     let task_id = db
         .create_task(TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "Original".into(),
             ..Default::default()
@@ -1161,7 +1205,7 @@ fn test_update_task_preserves_comments() {
     db.update_task(
         task_id,
         TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "Updated".into(),
             ..Default::default()
@@ -1180,7 +1224,7 @@ fn test_update_task_preserves_comments() {
 #[test]
 fn test_enriched_tasks() {
     let db = create_test_db();
-    db.create_feature(FeatureInput {
+    db.create_subsystem(SubsystemInput {
         name: "auth".into(),
         display_name: "Authentication".into(),
         acronym: "AUTH".into(),
@@ -1188,7 +1232,7 @@ fn test_enriched_tasks() {
     })
     .unwrap();
     db.create_task(TaskInput {
-        feature: "auth".into(),
+        subsystem: "auth".into(),
         discipline: "backend".into(),
         title: "Login".into(),
         ..Default::default()
@@ -1197,8 +1241,8 @@ fn test_enriched_tasks() {
 
     let enriched = db.get_tasks();
     assert_eq!(enriched.len(), 1);
-    assert_eq!(enriched[0].feature_display_name, "Authentication");
-    assert_eq!(enriched[0].feature_acronym, "AUTH");
+    assert_eq!(enriched[0].subsystem_display_name, "Authentication");
+    assert_eq!(enriched[0].subsystem_acronym, "AUTH");
     assert_eq!(enriched[0].discipline_display_name, "Backend");
     assert_eq!(enriched[0].discipline_acronym, "BACK");
     assert_eq!(enriched[0].discipline_icon, "Server");
@@ -1207,9 +1251,10 @@ fn test_enriched_tasks() {
 #[test]
 fn test_enriched_tasks_comments_visible() {
     let db = create_test_db();
-    db.create_feature(feature("test", "Test", "TEST")).unwrap();
+    db.create_subsystem(subsystem("test", "Test", "TEST"))
+        .unwrap();
     db.create_task(TaskInput {
-        feature: "test".into(),
+        subsystem: "test".into(),
         discipline: "backend".into(),
         title: "Task".into(),
         ..Default::default()
@@ -1247,9 +1292,10 @@ fn test_project_info() {
 fn test_export_prd_yaml_deterministic() {
     let db = create_test_db();
     db.initialize_metadata("Test".into(), None).unwrap();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
     db.create_task(TaskInput {
-        feature: "auth".into(),
+        subsystem: "auth".into(),
         discipline: "backend".into(),
         title: "Login".into(),
         ..Default::default()
@@ -1268,11 +1314,12 @@ fn test_export_prd_yaml_deterministic() {
 #[test]
 fn test_crud_lifecycle() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
 
     let task_id = db
         .create_task(TaskInput {
-            feature: "auth".into(),
+            subsystem: "auth".into(),
             discipline: "backend".into(),
             title: "Initial".into(),
             priority: Some(Priority::Low),
@@ -1287,7 +1334,7 @@ fn test_crud_lifecycle() {
     db.update_task(
         task_id,
         TaskInput {
-            feature: "auth".into(),
+            subsystem: "auth".into(),
             discipline: "frontend".into(),
             title: "Updated".into(),
             priority: Some(Priority::High),
@@ -1310,10 +1357,11 @@ fn test_crud_lifecycle() {
 #[test]
 fn test_set_task_status() {
     let db = create_test_db();
-    db.create_feature(feature("auth", "Auth", "AUTH")).unwrap();
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
     let task_id = db
         .create_task(TaskInput {
-            feature: "auth".into(),
+            subsystem: "auth".into(),
             discipline: "backend".into(),
             title: "Login flow".into(),
             ..Default::default()
@@ -1352,16 +1400,16 @@ fn test_set_task_status_nonexistent() {
 #[test]
 fn test_export_yaml_escapes_special_chars() {
     let db = create_test_db();
-    db.create_feature(FeatureInput {
+    db.create_subsystem(SubsystemInput {
         name: "test".into(),
-        display_name: "Test \"Feature\"".into(),
+        display_name: "Test \"Subsystem\"".into(),
         acronym: "TSTF".into(),
         description: Some("A description with \"quotes\" and\nnewlines".into()),
     })
     .unwrap();
     let task_id = db
         .create_task(TaskInput {
-            feature: "test".into(),
+            subsystem: "test".into(),
             discipline: "backend".into(),
             title: "Fix the \"bug\" in code".into(),
             description: Some("Line 1\nLine 2\tTabbed".into()),
@@ -1393,7 +1441,7 @@ fn test_export_yaml_escapes_special_chars() {
     let yaml = db.export_prd_yaml().unwrap();
 
     // Verify escaped quotes don't break the YAML structure
-    assert!(yaml.contains(r#"display_name: "Test \"Feature\"""#));
+    assert!(yaml.contains(r#"display_name: "Test \"Subsystem\"""#));
     assert!(yaml.contains(r#"title: "Fix the \"bug\" in code""#));
     assert!(yaml.contains(r#"description: "Line 1\nLine 2\tTabbed""#));
     assert!(yaml.contains(r#"- "tag with \"quotes\"""#));

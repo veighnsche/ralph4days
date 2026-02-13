@@ -12,8 +12,8 @@ CREATE TABLE metadata (
   project_created TEXT
 ) STRICT;
 
--- Features
-CREATE TABLE features (
+-- Subsystems
+CREATE TABLE subsystems (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL UNIQUE COLLATE NOCASE,
   display_name TEXT NOT NULL,
@@ -25,30 +25,30 @@ CREATE TABLE features (
   created TEXT
 ) STRICT;
 
-CREATE TABLE feature_knowledge_paths (
+CREATE TABLE subsystem_knowledge_paths (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  feature_id INTEGER NOT NULL REFERENCES features(id) ON DELETE CASCADE,
+  subsystem_id INTEGER NOT NULL REFERENCES subsystems(id) ON DELETE CASCADE,
   path TEXT NOT NULL
 ) STRICT;
 
-CREATE TABLE feature_context_files (
+CREATE TABLE subsystem_context_files (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  feature_id INTEGER NOT NULL REFERENCES features(id) ON DELETE CASCADE,
+  subsystem_id INTEGER NOT NULL REFERENCES subsystems(id) ON DELETE CASCADE,
   file_path TEXT NOT NULL
 ) STRICT;
 
-CREATE TABLE feature_learnings (
+CREATE TABLE subsystem_learnings (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  feature_id INTEGER NOT NULL REFERENCES features(id) ON DELETE CASCADE,
+  subsystem_id INTEGER NOT NULL REFERENCES subsystems(id) ON DELETE CASCADE,
   learning TEXT NOT NULL
 ) STRICT;
 
-CREATE TABLE feature_dependencies (
+CREATE TABLE subsystem_dependencies (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  feature_id INTEGER NOT NULL REFERENCES features(id) ON DELETE CASCADE,
-  depends_on_feature_id INTEGER NOT NULL REFERENCES features(id) ON DELETE CASCADE,
-  CHECK (feature_id != depends_on_feature_id),
-  UNIQUE(feature_id, depends_on_feature_id)
+  subsystem_id INTEGER NOT NULL REFERENCES subsystems(id) ON DELETE CASCADE,
+  depends_on_subsystem_id INTEGER NOT NULL REFERENCES subsystems(id) ON DELETE CASCADE,
+  CHECK (subsystem_id != depends_on_subsystem_id),
+  UNIQUE(subsystem_id, depends_on_subsystem_id)
 ) STRICT;
 
 -- Disciplines
@@ -125,7 +125,7 @@ CREATE TABLE task_templates (
 -- Runtime tasks (actual task instances)
 CREATE TABLE runtime_tasks (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  feature_id INTEGER NOT NULL REFERENCES features(id) ON DELETE RESTRICT,
+  subsystem_id INTEGER NOT NULL REFERENCES subsystems(id) ON DELETE RESTRICT,
   details_id INTEGER NOT NULL REFERENCES task_details(id) ON DELETE RESTRICT,
   template_id INTEGER REFERENCES task_templates(id) ON DELETE SET NULL,
   status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('draft','pending','in_progress','done','blocked','skipped','needs_input','failed')),
@@ -219,7 +219,7 @@ CREATE TABLE task_signals (
   severity TEXT CHECK(severity IN ('info','warning','blocking') OR severity IS NULL),
   category TEXT CHECK(category IN ('bug','stale','contradiction','ambiguity','overlap','performance','security','incomplete_prior') OR category IS NULL),
   kind TEXT,
-  scope TEXT CHECK(scope IN ('project','feature','task') OR scope IS NULL),
+  scope TEXT CHECK(scope IN ('project','subsystem','task') OR scope IS NULL),
 
   -- Additional details
   preferred TEXT,
@@ -257,7 +257,7 @@ CREATE TABLE task_signals (
     (verb NOT IN ('learned','suggest','blocked') AND kind IS NULL)
   ),
   CHECK(
-    (verb = 'learned' AND (scope IN ('project','feature','task') OR scope IS NULL)) OR
+    (verb = 'learned' AND (scope IN ('project','subsystem','task') OR scope IS NULL)) OR
     (verb != 'learned' AND scope IS NULL)
   ),
   CHECK((verb = 'ask') OR (blocking IS NULL AND options IS NULL AND preferred IS NULL AND answer IS NULL)),
@@ -278,10 +278,10 @@ CREATE TABLE task_signal_comments (
   created TEXT NOT NULL DEFAULT (datetime('now'))
 ) STRICT;
 
--- Feature Comments (knowledge layer for features)
-CREATE TABLE feature_comments (
+-- Subsystem Comments (knowledge layer for subsystems)
+CREATE TABLE subsystem_comments (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  feature_id INTEGER NOT NULL REFERENCES features(id) ON DELETE CASCADE,
+  subsystem_id INTEGER NOT NULL REFERENCES subsystems(id) ON DELETE CASCADE,
   category TEXT NOT NULL CHECK(category IN ('architecture','boundary','learning','convention','dependency','design-decision','gotcha')),
   discipline_id INTEGER REFERENCES disciplines(id) ON DELETE SET NULL,
   agent_task_id INTEGER,
@@ -293,9 +293,9 @@ CREATE TABLE feature_comments (
   updated TEXT
 ) STRICT;
 
--- Comment Embeddings (vector search for feature comments)
+-- Comment Embeddings (vector search for subsystem comments)
 CREATE TABLE comment_embeddings (
-  comment_id INTEGER PRIMARY KEY REFERENCES feature_comments(id) ON DELETE CASCADE,
+  comment_id INTEGER PRIMARY KEY REFERENCES subsystem_comments(id) ON DELETE CASCADE,
   embedding BLOB NOT NULL,
   embedding_model TEXT NOT NULL,
   embedding_hash TEXT NOT NULL
@@ -313,14 +313,14 @@ CREATE TABLE prompt_builder_configs (
 ) STRICT;
 
 -- Indexes for performance
-CREATE INDEX idx_features_name ON features(name);
+CREATE INDEX idx_subsystems_name ON subsystems(name);
 CREATE INDEX idx_disciplines_name ON disciplines(name);
 
 CREATE INDEX idx_task_details_discipline ON task_details(discipline_id);
 CREATE INDEX idx_task_templates_details ON task_templates(details_id);
 CREATE INDEX idx_task_templates_active ON task_templates(is_active);
 
-CREATE INDEX idx_runtime_tasks_feature ON runtime_tasks(feature_id);
+CREATE INDEX idx_runtime_tasks_subsystem ON runtime_tasks(subsystem_id);
 CREATE INDEX idx_runtime_tasks_details ON runtime_tasks(details_id);
 CREATE INDEX idx_runtime_tasks_template ON runtime_tasks(template_id);
 CREATE INDEX idx_runtime_tasks_status ON runtime_tasks(status);
@@ -342,9 +342,9 @@ CREATE INDEX idx_signal_comments_signal ON task_signal_comments(signal_id);
 CREATE INDEX idx_signal_comments_session ON task_signal_comments(session_id);
 CREATE INDEX idx_signal_comments_created ON task_signal_comments(created);
 
-CREATE INDEX idx_feature_comments_feature ON feature_comments(feature_id);
-CREATE INDEX idx_feature_comments_category ON feature_comments(category);
-CREATE INDEX idx_feature_comments_discipline ON feature_comments(discipline_id);
+CREATE INDEX idx_subsystem_comments_subsystem ON subsystem_comments(subsystem_id);
+CREATE INDEX idx_subsystem_comments_category ON subsystem_comments(category);
+CREATE INDEX idx_subsystem_comments_discipline ON subsystem_comments(discipline_id);
 
 CREATE INDEX idx_prompt_builder_configs_name ON prompt_builder_configs(name);
 

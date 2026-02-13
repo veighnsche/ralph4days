@@ -3,18 +3,17 @@ mod agent_sessions;
 mod comment_embeddings;
 mod disciplines;
 mod export;
-mod feature_comments;
-mod features;
 mod helpers;
 mod metadata;
 mod prompt_builder_configs;
 mod signals;
+mod subsystem_comments;
+mod subsystems;
 mod tasks;
 pub mod types;
 
 // Re-export public types
 pub use comment_embeddings::ScoredCommentRow;
-pub use feature_comments::AddFeatureCommentInput;
 pub use prompt_builder_configs::{
     PromptBuilderConfigData, PromptBuilderConfigInput, SectionSettingsData,
 };
@@ -22,10 +21,11 @@ pub use signals::{
     AskSignalInput, BlockedSignalInput, DoneSignalInput, FlagSignalInput, LearnedSignalInput,
     PartialSignalInput, StuckSignalInput, SuggestSignalInput,
 };
+pub use subsystem_comments::AddSubsystemCommentInput;
 pub use types::{
     AgentSession, AgentSessionCreateInput, AgentSessionUpdateInput, Discipline, DisciplineInput,
-    Feature, FeatureComment, FeatureInput, FeatureStatus, McpServerConfig, Priority,
-    ProjectMetadata, Task, TaskInput, TaskProvenance, TaskSignal, TaskSignalComment,
+    McpServerConfig, Priority, ProjectMetadata, Subsystem, SubsystemComment, SubsystemInput,
+    SubsystemStatus, Task, TaskInput, TaskProvenance, TaskSignal, TaskSignalComment,
     TaskSignalCommentCreateInput, TaskSignalSummary, TaskStatus,
 };
 
@@ -120,7 +120,7 @@ impl SqliteDb {
     //
     // If you need to execute SQL:
     // 1. For signals: Use the typed methods in signals.rs (insert_*_signal)
-    // 2. For features: Use the typed methods in features.rs
+    // 2. For subsystems: Use the typed methods in subsystems.rs
     // 3. For new operations: Create a new typed method with proper validation
     //
     // The API server and fixture generator MUST use the same typed interface that

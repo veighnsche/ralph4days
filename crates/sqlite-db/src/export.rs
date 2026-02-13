@@ -29,11 +29,11 @@ impl SqliteDb {
         }
         output.push('\n');
 
-        // Section 2: features (sorted by name via ORDER BY)
-        let features = self.get_features();
-        if !features.is_empty() {
-            output.push_str("features:\n");
-            for f in &features {
+        // Section 2: subsystems (sorted by name via ORDER BY)
+        let subsystems = self.get_subsystems();
+        if !subsystems.is_empty() {
+            output.push_str("subsystems:\n");
+            for f in &subsystems {
                 output.push_str(&format!("- name: \"{}\"\n", yaml_escape(&f.name)));
                 output.push_str(&format!(
                     "  display_name: \"{}\"\n",
@@ -95,7 +95,7 @@ impl SqliteDb {
             output.push_str("tasks:\n");
             for t in &tasks {
                 output.push_str(&format!("- id: {}\n", t.id));
-                output.push_str(&format!("  feature: \"{}\"\n", yaml_escape(&t.feature)));
+                output.push_str(&format!("  subsystem: \"{}\"\n", yaml_escape(&t.subsystem)));
                 output.push_str(&format!(
                     "  discipline: \"{}\"\n",
                     yaml_escape(&t.discipline)

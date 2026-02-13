@@ -168,7 +168,7 @@ pub struct McpServerConfig {
 #[serde(rename_all = "camelCase")]
 pub struct Task {
     pub id: u32,
-    pub feature: String,
+    pub subsystem: String,
     pub discipline: String,
     pub title: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -212,8 +212,8 @@ pub struct Task {
     pub enriched_at: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub signals: Vec<TaskSignal>,
-    pub feature_display_name: String,
-    pub feature_acronym: String,
+    pub subsystem_display_name: String,
+    pub subsystem_acronym: String,
     pub discipline_display_name: String,
     pub discipline_acronym: String,
     pub discipline_icon: String,
@@ -247,12 +247,12 @@ pub struct ProjectProgress {
 #[ipc_type]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
-pub enum FeatureStatus {
+pub enum SubsystemStatus {
     Active,
     Archived,
 }
 
-impl FeatureStatus {
+impl SubsystemStatus {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Active => "active",
@@ -271,7 +271,7 @@ impl FeatureStatus {
 
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FeatureComment {
+pub struct SubsystemComment {
     pub id: u32,
     pub category: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -292,7 +292,7 @@ pub struct FeatureComment {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Feature {
+pub struct Subsystem {
     pub id: u32,
     pub name: String,
     pub display_name: String,
@@ -302,13 +302,13 @@ pub struct Feature {
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
-    pub status: FeatureStatus,
+    pub status: SubsystemStatus,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub comments: Vec<FeatureComment>,
+    pub comments: Vec<SubsystemComment>,
 }
 
 #[derive(Default)]
-pub struct FeatureInput {
+pub struct SubsystemInput {
     pub name: String,
     pub display_name: String,
     pub acronym: String,
@@ -398,7 +398,7 @@ pub struct TaskSignalSummary {
 
 #[derive(Default)]
 pub struct TaskInput {
-    pub feature: String,
+    pub subsystem: String,
     pub discipline: String,
     pub title: String,
     pub description: Option<String>,
