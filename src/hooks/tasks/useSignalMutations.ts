@@ -1,37 +1,45 @@
 import { useState } from 'react'
-import { QUERY_KEYS } from '@/constants/cache'
-import { useInvokeMutation } from '@/hooks/api'
+import { type InvokeQueryDomain, useInvokeMutation } from '@/hooks/api'
+import type { Task } from '@/types/generated'
+import { patchTaskInTasksCache } from './taskCache'
 
-export function useSignalMutations(taskId: number) {
+export function useSignalMutations(taskId: number, queryDomain: InvokeQueryDomain = 'app') {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editBody, setEditBody] = useState('')
   const [replyingToId, setReplyingToId] = useState<number | null>(null)
   const [replyBody, setReplyBody] = useState('')
   const [replyPriority, setReplyPriority] = useState<string | null>(null)
 
-  const addSignalMutation = useInvokeMutation<{ taskId: number; body: string }>('add_task_signal', {
-    invalidateKeys: QUERY_KEYS.TASKS
+  const addSignalMutation = useInvokeMutation<{ taskId: number; body: string }, Task>('add_task_signal', {
+    queryDomain,
+    updateCache: ({ queryClient, data, queryDomain }) => patchTaskInTasksCache(queryClient, data, queryDomain)
   })
 
-  const editSignal = useInvokeMutation<{ taskId: number; signalId: number; body: string }>('update_task_signal', {
-    invalidateKeys: QUERY_KEYS.TASKS,
+  const editSignal = useInvokeMutation<{ taskId: number; signalId: number; body: string }, Task>('update_task_signal', {
+    queryDomain,
+    updateCache: ({ queryClient, data, queryDomain }) => patchTaskInTasksCache(queryClient, data, queryDomain),
     onSuccess: () => {
       setEditingId(null)
       setEditBody('')
     }
   })
 
-  const deleteSignal = useInvokeMutation<{ taskId: number; signalId: number }>('delete_task_signal', {
-    invalidateKeys: QUERY_KEYS.TASKS
+  const deleteSignal = useInvokeMutation<{ taskId: number; signalId: number }, Task>('delete_task_signal', {
+    queryDomain,
+    updateCache: ({ queryClient, data, queryDomain }) => patchTaskInTasksCache(queryClient, data, queryDomain)
   })
 
-  const replyToSignalMutation = useInvokeMutation<{
-    taskId: number
-    parentSignalId: number
-    priority: string | null
-    body: string
-  }>('add_reply_to_signal', {
-    invalidateKeys: QUERY_KEYS.TASKS,
+  const replyToSignalMutation = useInvokeMutation<
+    {
+      taskId: number
+      parentCommentId: number
+      priority: string | null
+      body: string
+    },
+    Task
+  >('add_reply_to_comment', {
+    queryDomain,
+    updateCache: ({ queryClient, data, queryDomain }) => patchTaskInTasksCache(queryClient, data, queryDomain),
     onSuccess: () => {
       setReplyingToId(null)
       setReplyBody('')
@@ -76,7 +84,7 @@ export function useSignalMutations(taskId: number) {
       if (replyingToId === null || !replyBody.trim()) return
       replyToSignalMutation.mutate({
         taskId,
-        parentSignalId: replyingToId,
+        parentCommentId: replyingToId,
         priority: replyPriority,
         body: replyBody.trim()
       })

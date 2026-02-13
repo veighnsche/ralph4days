@@ -123,7 +123,7 @@ export function SignalsSection({ task }: SignalsSectionProps) {
     isPending,
     error,
     resetError
-  } = useSignalMutations(task.id)
+  } = useSignalMutations(task.id, 'workspace')
 
   const handleAddSignal = () => {
     if (!signalInput.trim()) return

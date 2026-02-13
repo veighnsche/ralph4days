@@ -107,68 +107,86 @@ pub struct DisciplineConfig {
     pub task_templates: Vec<DisciplineTaskTemplateData>,
 }
 
+fn to_discipline_config(db: &sqlite_db::SqliteDb, d: &sqlite_db::Discipline) -> DisciplineConfig {
+    DisciplineConfig {
+        id: d.id,
+        name: d.name.clone(),
+        display_name: d.display_name.clone(),
+        icon: d.icon.clone(),
+        color: d.color.clone(),
+        acronym: d.acronym.clone(),
+        description: d.description.clone(),
+        system_prompt: d.system_prompt.clone(),
+        agent: d.agent.clone(),
+        model: d.model.clone(),
+        effort: d.effort.clone(),
+        thinking: d.thinking,
+        skills: d.skills.clone(),
+        conventions: d.conventions.clone(),
+        mcp_servers: d
+            .mcp_servers
+            .iter()
+            .map(|m| McpServerConfigData {
+                name: m.name.clone(),
+                command: m.command.clone(),
+                args: m.args.clone(),
+                env: m.env.clone(),
+            })
+            .collect(),
+        stack_id: d.stack_id,
+        image_path: d.image_path.clone(),
+        crops: d
+            .crops
+            .as_deref()
+            .and_then(|s| serde_json::from_str::<DisciplineCropsData>(s).ok()),
+        image_prompt: d
+            .image_prompt
+            .as_deref()
+            .and_then(|s| serde_json::from_str::<DisciplineImagePromptData>(s).ok()),
+        task_templates: db
+            .get_active_task_templates_for_discipline(d.id)
+            .into_iter()
+            .map(|template| DisciplineTaskTemplateData {
+                id: template.id,
+                title: template.title,
+                description: template.description,
+                priority: template.priority.map(|p| p.as_str().to_owned()),
+                hints: template.hints,
+                estimated_turns: template.estimated_turns,
+                agent: template.agent,
+                model: template.model,
+                effort: template.effort,
+                thinking: template.thinking,
+                pseudocode: template.pseudocode,
+                created: template.created,
+                updated: template.updated,
+                pulled_count: template.pulled_count,
+            })
+            .collect(),
+    }
+}
+
+fn get_discipline_config_or_error(
+    db: &sqlite_db::SqliteDb,
+    name: &str,
+) -> Result<DisciplineConfig, String> {
+    let disciplines = db.get_disciplines();
+    let discipline = disciplines.iter().find(|d| d.name == name).ok_or_else(|| {
+        ralph_errors::err_string(
+            codes::DISCIPLINE_OPS,
+            format!("Discipline '{name}' not found"),
+        )
+    })?;
+    Ok(to_discipline_config(db, discipline))
+}
+
 #[tauri::command]
 pub fn get_disciplines_config(state: State<'_, AppState>) -> Result<Vec<DisciplineConfig>, String> {
     CommandContext::from_tauri_state(&state).db(|db| {
         Ok(db
             .get_disciplines()
             .iter()
-            .map(|d| DisciplineConfig {
-                id: d.id,
-                name: d.name.clone(),
-                display_name: d.display_name.clone(),
-                icon: d.icon.clone(),
-                color: d.color.clone(),
-                acronym: d.acronym.clone(),
-                description: d.description.clone(),
-                system_prompt: d.system_prompt.clone(),
-                agent: d.agent.clone(),
-                model: d.model.clone(),
-                effort: d.effort.clone(),
-                thinking: d.thinking,
-                skills: d.skills.clone(),
-                conventions: d.conventions.clone(),
-                mcp_servers: d
-                    .mcp_servers
-                    .iter()
-                    .map(|m| McpServerConfigData {
-                        name: m.name.clone(),
-                        command: m.command.clone(),
-                        args: m.args.clone(),
-                        env: m.env.clone(),
-                    })
-                    .collect(),
-                stack_id: d.stack_id,
-                image_path: d.image_path.clone(),
-                crops: d
-                    .crops
-                    .as_deref()
-                    .and_then(|s| serde_json::from_str::<DisciplineCropsData>(s).ok()),
-                image_prompt: d
-                    .image_prompt
-                    .as_deref()
-                    .and_then(|s| serde_json::from_str::<DisciplineImagePromptData>(s).ok()),
-                task_templates: db
-                    .get_active_task_templates_for_discipline(d.id)
-                    .into_iter()
-                    .map(|template| DisciplineTaskTemplateData {
-                        id: template.id,
-                        title: template.title,
-                        description: template.description,
-                        priority: template.priority.map(|p| p.as_str().to_owned()),
-                        hints: template.hints,
-                        estimated_turns: template.estimated_turns,
-                        agent: template.agent,
-                        model: template.model,
-                        effort: template.effort,
-                        thinking: template.thinking,
-                        pseudocode: template.pseudocode,
-                        created: template.created,
-                        updated: template.updated,
-                        pulled_count: template.pulled_count,
-                    })
-                    .collect(),
-            })
+            .map(|d| to_discipline_config(db, d))
             .collect())
     })
 }
@@ -225,24 +243,34 @@ fn to_comment_data(c: &sqlite_db::SubsystemComment) -> SubsystemCommentData {
     }
 }
 
+fn to_subsystem_data(subsystem: &sqlite_db::Subsystem) -> SubsystemData {
+    SubsystemData {
+        id: subsystem.id,
+        name: subsystem.name.clone(),
+        display_name: subsystem.display_name.clone(),
+        acronym: subsystem.acronym.clone(),
+        description: subsystem.description.clone(),
+        created: subsystem.created.clone(),
+        status: subsystem.status.as_str().to_owned(),
+        comments: subsystem.comments.iter().map(to_comment_data).collect(),
+    }
+}
+
+fn get_subsystem_data_or_error(
+    db: &sqlite_db::SqliteDb,
+    name: &str,
+) -> Result<SubsystemData, String> {
+    let subsystems = db.get_subsystems();
+    let subsystem = subsystems.iter().find(|f| f.name == name).ok_or_else(|| {
+        ralph_errors::err_string(codes::FEATURE_OPS, format!("Subsystem '{name}' not found"))
+    })?;
+    Ok(to_subsystem_data(subsystem))
+}
+
 #[tauri::command]
 pub fn get_subsystems(state: State<'_, AppState>) -> Result<Vec<SubsystemData>, String> {
-    CommandContext::from_tauri_state(&state).db(|db| {
-        Ok(db
-            .get_subsystems()
-            .iter()
-            .map(|f| SubsystemData {
-                id: f.id,
-                name: f.name.clone(),
-                display_name: f.display_name.clone(),
-                acronym: f.acronym.clone(),
-                description: f.description.clone(),
-                created: f.created.clone(),
-                status: f.status.as_str().to_owned(),
-                comments: f.comments.iter().map(to_comment_data).collect(),
-            })
-            .collect())
-    })
+    CommandContext::from_tauri_state(&state)
+        .db(|db| Ok(db.get_subsystems().iter().map(to_subsystem_data).collect()))
 }
 
 #[derive(Deserialize)]
@@ -257,14 +285,16 @@ pub struct CreateFeatureParams {
 pub fn create_subsystem(
     state: State<'_, AppState>,
     params: CreateFeatureParams,
-) -> Result<(), String> {
+) -> Result<SubsystemData, String> {
+    let subsystem_name = params.name.clone();
     CommandContext::from_tauri_state(&state).db(|db| {
         db.create_subsystem(sqlite_db::SubsystemInput {
             name: params.name,
             display_name: params.display_name,
             acronym: params.acronym,
             description: params.description,
-        })
+        })?;
+        get_subsystem_data_or_error(db, &subsystem_name)
     })
 }
 
@@ -280,14 +310,16 @@ pub struct UpdateFeatureParams {
 pub fn update_subsystem(
     state: State<'_, AppState>,
     params: UpdateFeatureParams,
-) -> Result<(), String> {
+) -> Result<SubsystemData, String> {
+    let subsystem_name = params.name.clone();
     CommandContext::from_tauri_state(&state).db(|db| {
         db.update_subsystem(sqlite_db::SubsystemInput {
             name: params.name,
             display_name: params.display_name,
             acronym: params.acronym,
             description: params.description,
-        })
+        })?;
+        get_subsystem_data_or_error(db, &subsystem_name)
     })
 }
 
@@ -308,10 +340,10 @@ pub struct AddFeatureCommentParams {
 pub async fn add_subsystem_comment(
     state: State<'_, AppState>,
     params: AddFeatureCommentParams,
-) -> Result<(), String> {
+) -> Result<SubsystemData, String> {
     let command_ctx = CommandContext::from_tauri_state(&state);
     let path = db_path(&command_ctx)?;
-    let (comment_id, embedding_text) = command_ctx.db_tx(|db| {
+    let (comment_id, embedding_text, subsystem) = command_ctx.db_tx(|db| {
         db.add_subsystem_comment(sqlite_db::AddSubsystemCommentInput {
             subsystem_name: params.subsystem_name.clone(),
             category: params.category.clone(),
@@ -323,11 +355,10 @@ pub async fn add_subsystem_comment(
             source_iteration: params.source_iteration,
         })?;
 
-        let subsystems = db.get_subsystems();
-        let cid = subsystems
-            .iter()
-            .find(|f| f.name == params.subsystem_name)
-            .and_then(|f| f.comments.last())
+        let subsystem = get_subsystem_data_or_error(db, &params.subsystem_name)?;
+        let cid = subsystem
+            .comments
+            .last()
             .map(|c| c.id)
             .ok_or("Failed to get new comment ID")?;
 
@@ -336,7 +367,7 @@ pub async fn add_subsystem_comment(
             &params.body,
             params.reason.as_deref(),
         );
-        Ok((cid, text))
+        Ok((cid, text, subsystem))
     })?;
 
     let ext_config = ralph_external::ExternalServicesConfig::load()?;
@@ -345,7 +376,8 @@ pub async fn add_subsystem_comment(
         ralph_external::comment_embeddings::embed_text(&embed_config, &embedding_text).await?;
 
     let db = sqlite_db::SqliteDb::open(&path, None)?;
-    db.upsert_comment_embedding(comment_id, &result.vector, &result.model, &result.hash)
+    db.upsert_comment_embedding(comment_id, &result.vector, &result.model, &result.hash)?;
+    Ok(subsystem)
 }
 
 #[derive(Deserialize)]
@@ -362,10 +394,10 @@ pub struct UpdateFeatureCommentParams {
 pub async fn update_subsystem_comment(
     state: State<'_, AppState>,
     params: UpdateFeatureCommentParams,
-) -> Result<(), String> {
+) -> Result<SubsystemData, String> {
     let command_ctx = CommandContext::from_tauri_state(&state);
     let path = db_path(&command_ctx)?;
-    let (embedding_text, needs_embed) = command_ctx.db_tx(|db| {
+    let (embedding_text, needs_embed, subsystem) = command_ctx.db_tx(|db| {
         db.update_subsystem_comment(
             &params.subsystem_name,
             params.comment_id,
@@ -374,11 +406,11 @@ pub async fn update_subsystem_comment(
             params.reason.clone(),
         )?;
 
-        let subsystems = db.get_subsystems();
-        let category = subsystems
+        let subsystem = get_subsystem_data_or_error(db, &params.subsystem_name)?;
+        let category = subsystem
+            .comments
             .iter()
-            .find(|f| f.name == params.subsystem_name)
-            .and_then(|f| f.comments.iter().find(|c| c.id == params.comment_id))
+            .find(|c| c.id == params.comment_id)
             .map(|c| c.category.clone())
             .ok_or("Comment not found after update")?;
 
@@ -395,11 +427,11 @@ pub async fn update_subsystem_comment(
             params.reason.as_deref(),
         )
         .is_some();
-        Ok((text, needs))
+        Ok((text, needs, subsystem))
     })?;
 
     if !needs_embed {
-        return Ok(());
+        return Ok(subsystem);
     }
 
     let ext_config = ralph_external::ExternalServicesConfig::load()?;
@@ -413,7 +445,8 @@ pub async fn update_subsystem_comment(
         &result.vector,
         &result.model,
         &result.hash,
-    )
+    )?;
+    Ok(subsystem)
 }
 
 #[derive(Deserialize)]
@@ -427,9 +460,11 @@ pub struct DeleteFeatureCommentParams {
 pub fn delete_subsystem_comment(
     state: State<'_, AppState>,
     params: DeleteFeatureCommentParams,
-) -> Result<(), String> {
-    CommandContext::from_tauri_state(&state)
-        .db(|db| db.delete_subsystem_comment(&params.subsystem_name, params.comment_id))
+) -> Result<SubsystemData, String> {
+    CommandContext::from_tauri_state(&state).db(|db| {
+        db.delete_subsystem_comment(&params.subsystem_name, params.comment_id)?;
+        get_subsystem_data_or_error(db, &params.subsystem_name)
+    })
 }
 
 #[derive(Deserialize)]
@@ -453,12 +488,13 @@ pub struct CreateDisciplineParams {
 pub fn create_discipline(
     state: State<'_, AppState>,
     params: CreateDisciplineParams,
-) -> Result<(), String> {
+) -> Result<DisciplineConfig, String> {
     let normalized_name = params
         .name
         .to_lowercase()
         .trim()
         .replace(char::is_whitespace, "-");
+    let discipline_name = normalized_name.clone();
 
     let skills_json = serde_json::to_string(&params.skills.unwrap_or_default())
         .ralph_err(codes::DISCIPLINE_OPS, "Failed to serialize skills")?;
@@ -497,7 +533,8 @@ pub fn create_discipline(
             image_path: None,
             crops: None,
             image_prompt: None,
-        })
+        })?;
+        get_discipline_config_or_error(db, &discipline_name)
     })
 }
 
@@ -522,7 +559,7 @@ pub struct UpdateDisciplineParams {
 pub fn update_discipline(
     state: State<'_, AppState>,
     params: UpdateDisciplineParams,
-) -> Result<(), String> {
+) -> Result<DisciplineConfig, String> {
     let skills_json = serde_json::to_string(&params.skills.unwrap_or_default())
         .ralph_err(codes::DISCIPLINE_OPS, "Failed to serialize skills")?;
 
@@ -541,6 +578,7 @@ pub fn update_discipline(
     let mcp_json = serde_json::to_string(&mcp_servers)
         .ralph_err(codes::DISCIPLINE_OPS, "Failed to serialize mcp_servers")?;
 
+    let discipline_name = params.name.clone();
     CommandContext::from_tauri_state(&state).db(|db| {
         db.update_discipline(sqlite_db::DisciplineInput {
             name: params.name,
@@ -560,7 +598,8 @@ pub fn update_discipline(
             image_path: None,
             crops: None,
             image_prompt: None,
-        })
+        })?;
+        get_discipline_config_or_error(db, &discipline_name)
     })
 }
 
@@ -570,8 +609,12 @@ pub fn delete_subsystem(state: State<'_, AppState>, name: String) -> Result<(), 
 }
 
 #[tauri::command]
-pub fn delete_discipline(state: State<'_, AppState>, name: String) -> Result<(), String> {
-    CommandContext::from_tauri_state(&state).db(|db| db.delete_discipline(name))
+pub fn delete_discipline(state: State<'_, AppState>, name: String) -> Result<String, String> {
+    let deleted_name = name.clone();
+    CommandContext::from_tauri_state(&state).db(|db| {
+        db.delete_discipline(name)?;
+        Ok(deleted_name)
+    })
 }
 
 #[ipc_type]

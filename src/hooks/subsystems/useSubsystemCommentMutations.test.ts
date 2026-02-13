@@ -2,6 +2,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { createElement, type ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { buildInvokeQueryKey } from '@/hooks/api'
+import type { SubsystemData } from '@/types/generated'
 import { useSubsystemCommentMutations } from './useSubsystemCommentMutations'
 
 const mockInvoke = vi.fn()
@@ -14,6 +16,15 @@ function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { mutations: { retry: false } }
   })
+  const seededSubsystem: SubsystemData = {
+    id: 1,
+    name: 'auth',
+    displayName: 'Auth',
+    acronym: 'AUTH',
+    status: 'active',
+    comments: []
+  }
+  queryClient.setQueryData(buildInvokeQueryKey('get_subsystems', undefined, 'app'), [seededSubsystem])
   return ({ children }: { children: ReactNode }) =>
     createElement(QueryClientProvider, { client: queryClient }, children)
 }
@@ -21,7 +32,23 @@ function createWrapper() {
 describe('useSubsystemCommentMutations', () => {
   beforeEach(() => {
     mockInvoke.mockReset()
-    mockInvoke.mockResolvedValue(undefined)
+    mockInvoke.mockImplementation((command: string) => {
+      if (
+        command === 'add_subsystem_comment' ||
+        command === 'update_subsystem_comment' ||
+        command === 'delete_subsystem_comment'
+      ) {
+        return Promise.resolve({
+          id: 1,
+          name: 'auth',
+          displayName: 'Auth',
+          acronym: 'AUTH',
+          status: 'active',
+          comments: []
+        } satisfies SubsystemData)
+      }
+      return Promise.resolve(undefined)
+    })
   })
 
   it('addComment.mutate calls invoke with correct params', async () => {

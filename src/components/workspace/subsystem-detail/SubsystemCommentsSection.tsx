@@ -191,7 +191,7 @@ function AddCommentForm({
 
 export function SubsystemCommentsSection({ subsystem }: { subsystem: SubsystemData }) {
   const comments = subsystem.comments ?? []
-  const mutations = useSubsystemCommentMutations(subsystem.name)
+  const mutations = useSubsystemCommentMutations(subsystem.name, 'workspace')
 
   return (
     <div className="px-3 pb-1">

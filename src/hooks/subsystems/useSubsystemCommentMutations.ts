@@ -1,31 +1,40 @@
 import { useState } from 'react'
-import { QUERY_KEYS } from '@/constants/cache'
-import { useInvokeMutation } from '@/hooks/api'
+import { type InvokeQueryDomain, useInvokeMutation } from '@/hooks/api'
+import type { SubsystemData } from '@/types/generated'
+import { patchSubsystemInCache } from './subsystemCache'
 
-export function useSubsystemCommentMutations(subsystemName: string) {
+export function useSubsystemCommentMutations(subsystemName: string, queryDomain: InvokeQueryDomain = 'app') {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editBody, setEditBody] = useState('')
   const [editSummary, setEditSummary] = useState('')
   const [editReason, setEditReason] = useState('')
 
-  const addCommentMutation = useInvokeMutation<{
-    subsystemName: string
-    category: string
-    body: string
-    summary?: string
-    reason?: string
-  }>('add_subsystem_comment', {
-    invalidateKeys: QUERY_KEYS.SUBSYSTEMS
+  const addCommentMutation = useInvokeMutation<
+    {
+      subsystemName: string
+      category: string
+      body: string
+      summary?: string
+      reason?: string
+    },
+    SubsystemData
+  >('add_subsystem_comment', {
+    queryDomain,
+    updateCache: ({ queryClient, data, queryDomain }) => patchSubsystemInCache(queryClient, data, queryDomain)
   })
 
-  const editComment = useInvokeMutation<{
-    subsystemName: string
-    commentId: number
-    body: string
-    summary?: string
-    reason?: string
-  }>('update_subsystem_comment', {
-    invalidateKeys: QUERY_KEYS.SUBSYSTEMS,
+  const editComment = useInvokeMutation<
+    {
+      subsystemName: string
+      commentId: number
+      body: string
+      summary?: string
+      reason?: string
+    },
+    SubsystemData
+  >('update_subsystem_comment', {
+    queryDomain,
+    updateCache: ({ queryClient, data, queryDomain }) => patchSubsystemInCache(queryClient, data, queryDomain),
     onSuccess: () => {
       setEditingId(null)
       setEditBody('')
@@ -34,11 +43,15 @@ export function useSubsystemCommentMutations(subsystemName: string) {
     }
   })
 
-  const deleteComment = useInvokeMutation<{
-    subsystemName: string
-    commentId: number
-  }>('delete_subsystem_comment', {
-    invalidateKeys: QUERY_KEYS.SUBSYSTEMS
+  const deleteComment = useInvokeMutation<
+    {
+      subsystemName: string
+      commentId: number
+    },
+    SubsystemData
+  >('delete_subsystem_comment', {
+    queryDomain,
+    updateCache: ({ queryClient, data, queryDomain }) => patchSubsystemInCache(queryClient, data, queryDomain)
   })
 
   const error = addCommentMutation.error ?? editComment.error ?? deleteComment.error

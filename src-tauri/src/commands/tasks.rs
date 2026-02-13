@@ -3,6 +3,15 @@ use ralph_errors::codes;
 use serde::Deserialize;
 use tauri::State;
 
+fn get_task_or_error(db: &sqlite_db::SqliteDb, id: u32) -> Result<sqlite_db::Task, String> {
+    db.get_task_by_id(id).ok_or_else(|| {
+        ralph_errors::err_string(
+            codes::TASK_OPS,
+            format!("Task {id} not found after mutation"),
+        )
+    })
+}
+
 #[derive(Deserialize)]
 pub struct CreateTaskParams {
     pub subsystem: String,
@@ -75,8 +84,12 @@ pub fn create_task(state: State<'_, AppState>, params: CreateTaskParams) -> Resu
 }
 
 #[tauri::command]
-pub fn update_task(state: State<'_, AppState>, params: UpdateTaskParams) -> Result<(), String> {
+pub fn update_task(
+    state: State<'_, AppState>,
+    params: UpdateTaskParams,
+) -> Result<sqlite_db::Task, String> {
     let ctx = CommandContext::from_tauri_state(&state);
+    let task_id = params.id;
     let task_input = sqlite_db::TaskInput {
         subsystem: params.subsystem,
         discipline: params.discipline,
@@ -98,16 +111,26 @@ pub fn update_task(state: State<'_, AppState>, params: UpdateTaskParams) -> Resu
         thinking: params.thinking,
     };
 
-    ctx.db(|db| db.update_task(params.id, task_input))
+    ctx.db(|db| {
+        db.update_task(task_id, task_input)?;
+        get_task_or_error(db, task_id)
+    })
 }
 
 #[tauri::command]
-pub fn set_task_status(state: State<'_, AppState>, id: u32, status: String) -> Result<(), String> {
+pub fn set_task_status(
+    state: State<'_, AppState>,
+    id: u32,
+    status: String,
+) -> Result<sqlite_db::Task, String> {
     let ctx = CommandContext::from_tauri_state(&state);
     let status = sqlite_db::TaskStatus::parse(&status).ok_or_else(|| {
         ralph_errors::err_string(codes::TASK_VALIDATION, format!("Invalid status: {status}"))
     })?;
-    ctx.db(|db| db.set_task_status(id, status))
+    ctx.db(|db| {
+        db.set_task_status(id, status)?;
+        get_task_or_error(db, id)
+    })
 }
 
 #[tauri::command]
@@ -123,9 +146,11 @@ pub fn add_task_signal(
     agent_task_id: Option<u32>,
     priority: Option<String>,
     body: String,
-) -> Result<(), String> {
-    CommandContext::from_tauri_state(&state)
-        .db(|db| db.add_signal(task_id, discipline, agent_task_id, priority, body))
+) -> Result<sqlite_db::Task, String> {
+    CommandContext::from_tauri_state(&state).db(|db| {
+        db.add_signal(task_id, discipline, agent_task_id, priority, body)?;
+        get_task_or_error(db, task_id)
+    })
 }
 
 #[tauri::command]
@@ -134,8 +159,11 @@ pub fn update_task_signal(
     task_id: u32,
     signal_id: u32,
     body: String,
-) -> Result<(), String> {
-    CommandContext::from_tauri_state(&state).db(|db| db.update_signal(task_id, signal_id, body))
+) -> Result<sqlite_db::Task, String> {
+    CommandContext::from_tauri_state(&state).db(|db| {
+        db.update_signal(task_id, signal_id, body)?;
+        get_task_or_error(db, task_id)
+    })
 }
 
 #[tauri::command]
@@ -143,8 +171,11 @@ pub fn delete_task_signal(
     state: State<'_, AppState>,
     task_id: u32,
     signal_id: u32,
-) -> Result<(), String> {
-    CommandContext::from_tauri_state(&state).db(|db| db.delete_signal(task_id, signal_id))
+) -> Result<sqlite_db::Task, String> {
+    CommandContext::from_tauri_state(&state).db(|db| {
+        db.delete_signal(task_id, signal_id)?;
+        get_task_or_error(db, task_id)
+    })
 }
 
 #[tauri::command]
@@ -176,9 +207,11 @@ pub fn add_reply_to_comment(
     parent_comment_id: u32,
     priority: Option<String>,
     body: String,
-) -> Result<(), String> {
-    CommandContext::from_tauri_state(&state)
-        .db(|db| db.add_signal_with_parent(task_id, None, priority, body, Some(parent_comment_id)))
+) -> Result<sqlite_db::Task, String> {
+    CommandContext::from_tauri_state(&state).db(|db| {
+        db.add_signal_with_parent(task_id, None, priority, body, Some(parent_comment_id))?;
+        get_task_or_error(db, task_id)
+    })
 }
 
 #[tauri::command]

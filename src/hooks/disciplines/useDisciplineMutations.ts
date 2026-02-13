@@ -1,5 +1,7 @@
-import { useInvokeMutation } from '@/hooks/api'
+import { type InvokeQueryDomain, useInvokeMutation } from '@/hooks/api'
 import type { DisciplineFormData } from '@/lib/schemas'
+import type { DisciplineConfig as DisciplineConfigWire } from '@/types/generated'
+import { patchDisciplineInCache, removeDisciplineFromCache } from './disciplineCache'
 
 interface CreateDisciplineParams {
   name: string
@@ -43,17 +45,20 @@ interface UpdateDisciplineParams {
   }>
 }
 
-export function useDisciplineMutations() {
-  const createMutation = useInvokeMutation<CreateDisciplineParams, void>('create_discipline', {
-    invalidateKeys: [['get_disciplines_config']]
+export function useDisciplineMutations(queryDomain: InvokeQueryDomain = 'app') {
+  const createMutation = useInvokeMutation<CreateDisciplineParams, DisciplineConfigWire>('create_discipline', {
+    queryDomain,
+    updateCache: ({ queryClient, data, queryDomain }) => patchDisciplineInCache(queryClient, data, queryDomain)
   })
 
-  const updateMutation = useInvokeMutation<UpdateDisciplineParams, void>('update_discipline', {
-    invalidateKeys: [['get_disciplines_config']]
+  const updateMutation = useInvokeMutation<UpdateDisciplineParams, DisciplineConfigWire>('update_discipline', {
+    queryDomain,
+    updateCache: ({ queryClient, data, queryDomain }) => patchDisciplineInCache(queryClient, data, queryDomain)
   })
 
-  const deleteMutation = useInvokeMutation<{ name: string }, void>('delete_discipline', {
-    invalidateKeys: [['get_disciplines_config']]
+  const deleteMutation = useInvokeMutation<{ name: string }, string>('delete_discipline', {
+    queryDomain,
+    updateCache: ({ queryClient, data, queryDomain }) => removeDisciplineFromCache(queryClient, data, queryDomain)
   })
 
   const createDiscipline = (data: DisciplineFormData) => {

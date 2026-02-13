@@ -5,10 +5,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
 import { Separator } from '@/components/ui/separator'
-import { QUERY_KEYS } from '@/constants/cache'
 import { INFERRED_STATUS_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from '@/constants/prd'
 import { type SignalVerb, VERB_CONFIG } from '@/constants/signals'
 import { useInvokeMutation } from '@/hooks/api'
+import { patchTaskInTasksCache } from '@/hooks/tasks/taskCache'
 import { formatDate } from '@/lib/formatDate'
 import type { InferredTaskStatus } from '@/lib/taskStatus'
 import { shouldShowInferredStatus } from '@/lib/taskStatus'
@@ -231,9 +231,9 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
     thinkingSource
   } = useResolvedTaskLaunch(task)
 
-  const approveMutation = useInvokeMutation<{ id: number; status: string }>('set_task_status', {
-    invalidateKeys: QUERY_KEYS.TASKS,
-    queryDomain: 'workspace'
+  const approveMutation = useInvokeMutation<{ id: number; status: string }, Task>('set_task_status', {
+    queryDomain: 'workspace',
+    updateCache: ({ queryClient, data, queryDomain }) => patchTaskInTasksCache(queryClient, data, queryDomain)
   })
   const updateTaskMutation = useInvokeMutation<
     {
@@ -258,10 +258,10 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
         thinking?: boolean
       }
     },
-    void
+    Task
   >('update_task', {
-    invalidateKeys: QUERY_KEYS.TASKS,
-    queryDomain: 'workspace'
+    queryDomain: 'workspace',
+    updateCache: ({ queryClient, data, queryDomain }) => patchTaskInTasksCache(queryClient, data, queryDomain)
   })
 
   const handleApprove = () => {

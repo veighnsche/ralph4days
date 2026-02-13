@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, FileCode } from 'lucide-react'
+import { AlertCircle, FileCode } from 'lucide-react'
 import { Fragment } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -9,11 +9,14 @@ import {
   useWorkspaceTabContext
 } from '@/components/workspace/tabs'
 import { STATUS_CONFIG } from '@/constants/prd'
-import { useInvoke } from '@/hooks/api'
+import { useInvoke, useInvokeMutation } from '@/hooks/api'
 import { useDisciplines } from '@/hooks/disciplines'
+import { patchTaskInTasksCache } from '@/hooks/tasks/taskCache'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { SubsystemData, Task } from '@/types/generated'
 import { TaskIdDisplay } from '../../../prd/TaskIdDisplay'
+import { AcceptanceCriterionItem } from './AcceptanceCriterionItem'
+import { toggleAcceptanceCriterion, updateAcceptanceCriterionText } from './acceptanceCriteria'
 
 export function TaskCardContent({ task }: { task: Task }) {
   const currentTab = useWorkspaceTabContext()
@@ -26,6 +29,73 @@ export function TaskCardContent({ task }: { task: Task }) {
   const disciplineId = disciplines.find(discipline => discipline.name === task.discipline)?.id
   const openRelatedTabAfterCurrent = (tab: ReturnType<typeof createTaskDetailTab>) => {
     openTabAfter(currentTab.id, tab)
+  }
+  const updateTaskMutation = useInvokeMutation<
+    {
+      params: {
+        id: number
+        subsystem: string
+        discipline: string
+        title: string
+        description?: string
+        priority?: Task['priority']
+        tags: string[]
+        depends_on: number[]
+        acceptance_criteria: string[]
+        context_files: string[]
+        output_artifacts: string[]
+        hints?: string
+        estimated_turns?: number
+        provenance?: Task['provenance']
+        agent?: string
+        model?: string
+        effort?: string
+        thinking?: boolean
+      }
+    },
+    Task
+  >('update_task', {
+    queryDomain: 'workspace',
+    updateCache: ({ queryClient, data, queryDomain }) => patchTaskInTasksCache(queryClient, data, queryDomain)
+  })
+
+  const submitCriteriaUpdate = (nextCriteria: string[]) => {
+    updateTaskMutation.mutate({
+      params: {
+        id: task.id,
+        subsystem: task.subsystem,
+        discipline: task.discipline,
+        title: task.title,
+        description: task.description,
+        priority: task.priority,
+        tags: task.tags,
+        depends_on: task.dependsOn,
+        acceptance_criteria: nextCriteria,
+        context_files: task.contextFiles,
+        output_artifacts: task.outputArtifacts,
+        hints: task.hints,
+        estimated_turns: task.estimatedTurns,
+        provenance: task.provenance,
+        agent: task.agent,
+        model: task.model,
+        effort: task.effort,
+        thinking: task.thinking
+      }
+    })
+  }
+
+  const handleCriterionToggle = (criterionIndex: number) => {
+    if (task.status === 'done') return
+
+    const nextCriteria = toggleAcceptanceCriterion(task.acceptanceCriteria, criterionIndex)
+    submitCriteriaUpdate(nextCriteria)
+  }
+
+  const handleCriterionTextSave = (criterionIndex: number, nextText: string) => {
+    if (task.status === 'done') return
+
+    const nextCriteria = updateAcceptanceCriterionText(task.acceptanceCriteria, criterionIndex, nextText)
+    submitCriteriaUpdate(nextCriteria)
   }
 
   const sections: Array<{ id: string; node: React.ReactNode }> = []
@@ -88,20 +158,16 @@ export function TaskCardContent({ task }: { task: Task }) {
         <div className="px-6 space-y-2">
           <h2 className="text-sm font-medium text-muted-foreground">Acceptance Criteria</h2>
           <ul className="space-y-1.5">
-            {task.acceptanceCriteria.map(criterion => (
-              <li key={criterion} className="flex items-start gap-2.5 text-sm">
-                <div
-                  className="mt-1 w-4 h-4 rounded-sm border flex items-center justify-center flex-shrink-0"
-                  style={{
-                    borderColor: task.status === 'done' ? STATUS_CONFIG.done.color : 'hsl(var(--border))',
-                    backgroundColor: task.status === 'done' ? STATUS_CONFIG.done.bgColor : 'transparent'
-                  }}>
-                  {task.status === 'done' && (
-                    <CheckCircle2 className="w-3 h-3" style={{ color: STATUS_CONFIG.done.color }} />
-                  )}
-                </div>
-                <span className={task.status === 'done' ? 'line-through text-muted-foreground' : ''}>{criterion}</span>
-              </li>
+            {task.acceptanceCriteria.map((criterion, criterionIndex) => (
+              <AcceptanceCriterionItem
+                key={`${criterion}-${criterionIndex.toString()}`}
+                criterion={criterion}
+                criterionIndex={criterionIndex}
+                isTaskDone={task.status === 'done'}
+                isPending={updateTaskMutation.isPending}
+                onToggle={handleCriterionToggle}
+                onSaveText={handleCriterionTextSave}
+              />
             ))}
           </ul>
         </div>
