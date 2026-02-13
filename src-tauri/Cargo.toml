@@ -50,6 +50,7 @@ workspace = true
 [dev-dependencies]
 tempfile = "3"
 tauri = { version = "2", default-features = false, features = ["test"] }
+rusqlite = { version = "0.31", features = ["bundled"] }
 
 [profile.dev]
 opt-level = 0

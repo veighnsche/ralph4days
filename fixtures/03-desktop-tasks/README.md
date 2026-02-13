@@ -1,9 +1,9 @@
 # Desktop Tasks
 
-**Purpose**: Desktop stack project with features and tasks (ready for execution sequence)
+**Purpose**: Desktop stack project with subsystems, tasks, and a couple routine templates.
 
 This fixture shows a complete project ready for Ralph task execution to run.
-It has features defined and tasks created, all using Desktop stack disciplines.
+It has subsystems defined and tasks created, all using Desktop stack disciplines.
 
 ## Usage
 
@@ -18,7 +18,7 @@ just dev-mock 03-desktop-tasks
 
 ## Contents
 
-- `.undetect-ralph/db/ralph.db` - SQLite database (2 features, 3 tasks, 8 Desktop disciplines)
+- `.undetect-ralph/db/ralph.db` - SQLite database (2 subsystems, 3 tasks, 2 templates, 8 Desktop disciplines)
 - `.undetect-ralph/images/disciplines/` - Discipline portrait images
 
 ## Tasks
@@ -32,4 +32,4 @@ just dev-mock 03-desktop-tasks
 - Test task execution sequencing
 - Monkey testing with real task data
 - Verify task dependency handling
-- Test multi-feature projects
+- Test multi-subsystem projects

@@ -3,7 +3,7 @@
 **Purpose**: Freshly initialized Ralph project with Desktop stack (empty, ready for AI agents)
 
 This fixture shows the state immediately after running `initialize_ralph_project` with stack 2 (Desktop).
-It has `.undetect-ralph/` structure with empty tasks/features (AI agents will populate).
+It has `.undetect-ralph/` structure with empty tasks/subsystems (AI agents will populate).
 
 ## Usage
 
@@ -22,13 +22,13 @@ ralph --project mock/01-desktop-blank
 
 ## Contents
 
-- `.undetect-ralph/db/ralph.db` - SQLite database (empty tasks/features, 8 Desktop disciplines)
+- `.undetect-ralph/db/ralph.db` - SQLite database (empty tasks/subsystems, 8 Desktop disciplines)
 - `.undetect-ralph/images/disciplines/` - Discipline portrait images
 - `.undetect-ralph/CLAUDE.RALPH.md` - Template for context
 
 ## Expected Behavior
 
 - Execution sequence starts with no tasks (clean slate)
-- AI agents will create tasks and features as needed
+- AI agents will create tasks and subsystems as needed
 - Disciplines provide Desktop stack defaults (Frontend, Backend, Data, etc.)
 - Ready for AI-driven development workflow

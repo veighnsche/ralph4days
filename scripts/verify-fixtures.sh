@@ -36,12 +36,13 @@ require_dir "$FIXTURES_DIR/01-desktop-blank"
 require_dir "$FIXTURES_DIR/02-desktop-feature"
 require_dir "$FIXTURES_DIR/03-desktop-tasks"
 require_dir "$FIXTURES_DIR/04-desktop-dev"
+require_dir "$FIXTURES_DIR/05-desktop-templates"
 
 if [ -d "$FIXTURES_DIR/00-empty-project/.undetect-ralph" ]; then
   fail "00-empty-project must not contain .undetect-ralph/"
 fi
 
-for fixture in 01-desktop-blank 02-desktop-feature 03-desktop-tasks 04-desktop-dev; do
+for fixture in 01-desktop-blank 02-desktop-feature 03-desktop-tasks 04-desktop-dev 05-desktop-templates; do
   db="$FIXTURES_DIR/$fixture/.undetect-ralph/db/ralph.db"
   require_file "$db"
 
@@ -52,5 +53,9 @@ for fixture in 01-desktop-blank 02-desktop-feature 03-desktop-tasks 04-desktop-d
   require_sql_result_eq "$db" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='agent_session_transcript';" "0"
   require_sql_result_eq "$db" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='task_signal_comments';" "1"
 done
+
+templates_db="$FIXTURES_DIR/05-desktop-templates/.undetect-ralph/db/ralph.db"
+require_sql_result_eq "$templates_db" "SELECT COUNT(*) FROM task_templates;" "6"
+require_sql_result_eq "$templates_db" "SELECT COUNT(*) FROM runtime_tasks WHERE template_id IS NOT NULL;" "3"
 
 echo "✅ Fixture verification passed"
