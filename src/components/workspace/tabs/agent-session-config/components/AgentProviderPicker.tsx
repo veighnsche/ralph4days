@@ -1,6 +1,6 @@
 import { Field } from '@/components/ui/field'
 import { SelectableCard } from '@/components/ui/selectable-card'
-import type { Agent } from '@/hooks/preferences'
+import type { Agent } from '@/lib/agent-session-launch-config'
 import { AGENT_OPTIONS, AGENT_PROVIDER_META } from '../constants'
 import { useAgentSessionConfigActions, useAgentSessionConfigLaunchState } from '../hooks/useAgentSessionConfigTabState'
 import { PickerSectionHeader } from './PickerSectionHeader'

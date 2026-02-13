@@ -1,4 +1,4 @@
-import type { Agent, PermissionLevel } from '@/hooks/preferences'
+import type { Agent, PermissionLevel } from '@/lib/agent-session-launch-config'
 
 export const AGENT_OPTIONS: Agent[] = ['claude', 'codex']
 

@@ -1,27 +1,9 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+import type { Agent, AgentSessionLaunchConfig, Effort, Model, PermissionLevel } from '@/lib/agent-session-launch-config'
+import { getDefaultModel } from '@/lib/agent-session-launch-config'
 
-const VALID_AGENTS = ['claude', 'codex'] as const
-export type Agent = (typeof VALID_AGENTS)[number]
-export type Model = string
-export type Effort = 'low' | 'medium' | 'high'
-export type PermissionLevel = 'safe' | 'balanced' | 'auto' | 'full_auto'
-export type AgentSessionLaunchConfig = {
-  agent: Agent
-  model: Model
-  effort: Effort
-  thinking: boolean
-  permissionLevel: PermissionLevel
-}
-
-const DEFAULT_MODELS_BY_AGENT: Record<Agent, string> = {
-  claude: 'claude-sonnet-4',
-  codex: 'gpt-5-codex'
-}
-
-function getDefaultModel(agent: Agent) {
-  return DEFAULT_MODELS_BY_AGENT[agent]
-}
+export type { Agent, AgentSessionLaunchConfig, Effort, Model, PermissionLevel }
 
 type AgentSessionLaunchPreferencesStore = AgentSessionLaunchConfig & {
   setAgent: (value: Agent) => void

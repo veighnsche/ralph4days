@@ -1,7 +1,7 @@
 import { createContext, type ReactNode, useContext, useRef } from 'react'
 import { useStore } from 'zustand'
 import { createStore, type StoreApi } from 'zustand/vanilla'
-import type { AgentSessionLaunchConfig } from '@/hooks/preferences'
+import type { AgentSessionLaunchConfig } from '@/lib/agent-session-launch-config'
 
 export type AgentSessionConfigStoreState = AgentSessionLaunchConfig & {
   setAgent: (agent: AgentSessionLaunchConfig['agent']) => void

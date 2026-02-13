@@ -70,7 +70,7 @@ fn build_session_config(
     permission_level: Option<String>,
     post_start_preamble: Option<String>,
 ) -> Result<SessionConfig, String> {
-    let runtime_model = resolve_session_model_for_agent(agent.as_deref(), selected_model.clone());
+    let runtime_model = resolve_session_model_for_agent(agent.as_deref(), selected_model.clone())?;
     let runtime_effort =
         resolve_session_effort_for_agent(agent.as_deref(), selected_model.as_deref(), effort)?;
     let resolved_preamble = resolve_session_post_start_preamble(

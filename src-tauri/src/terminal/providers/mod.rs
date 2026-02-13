@@ -43,16 +43,21 @@ fn find_model_entry_for_agent(agent: Option<&str>, selected_model: &str) -> Opti
 pub fn resolve_session_model_for_agent(
     agent: Option<&str>,
     model: Option<String>,
-) -> Option<String> {
-    let selected = model?;
+) -> Result<Option<String>, String> {
+    let Some(selected) = model else {
+        return Ok(None);
+    };
     let trimmed = selected.trim();
     if trimmed.is_empty() {
-        return None;
+        return Ok(None);
     }
     if let Some(entry) = find_model_entry_for_agent(agent, trimmed) {
-        return Some(entry.session_model.unwrap_or(entry.name));
+        return Ok(Some(entry.session_model.unwrap_or(entry.name)));
     }
-    Some(trimmed.to_owned())
+    Err(format!(
+        "Unknown model '{trimmed}' for agent '{}'",
+        resolve_agent_provider(agent).id()
+    ))
 }
 
 pub fn resolve_session_effort_for_agent(
@@ -177,5 +182,12 @@ mod tests {
             resolve_session_effort_for_agent(Some("claude"), Some("opus"), Some("max".into()))
                 .unwrap_err();
         assert!(err.contains("Invalid effort"));
+    }
+
+    #[test]
+    fn rejects_unknown_model_for_agent() {
+        let err = resolve_session_model_for_agent(Some("claude"), Some("not-a-real-model".into()))
+            .unwrap_err();
+        assert!(err.contains("Unknown model"));
     }
 }

@@ -4,5 +4,5 @@ export type {
   Effort,
   Model,
   PermissionLevel
-} from './useAgentSessionLaunchPreferences'
+} from '@/lib/agent-session-launch-config'
 export { useAgentSessionLaunchPreferences } from './useAgentSessionLaunchPreferences'

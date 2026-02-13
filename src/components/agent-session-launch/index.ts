@@ -1,2 +1,2 @@
-export type { Agent, AgentSessionLaunchConfig, Effort, Model, PermissionLevel } from '@/hooks/preferences'
+export type { Agent, AgentSessionLaunchConfig, Effort, Model, PermissionLevel } from '@/lib/agent-session-launch-config'
 export { AgentSessionLaunchButton } from './AgentSessionLaunchButton'

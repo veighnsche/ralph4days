@@ -1,4 +1,4 @@
-import type { Agent, AgentSessionLaunchConfig, Effort } from '@/hooks/preferences'
+import type { Agent, AgentSessionLaunchConfig, Effort } from '@/lib/agent-session-launch-config'
 import type { TerminalBridgeModelOption } from '@/types/generated'
 import type { AgentSessionConfigTabParams } from './schema'
 

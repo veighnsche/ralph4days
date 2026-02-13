@@ -1,10 +1,12 @@
 import { ChevronDown, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { type AgentSessionLaunchConfig, useAgentSessionLaunchPreferences } from '@/hooks/preferences'
+import { useAgentSessionLaunchPreferences } from '@/hooks/preferences'
+import type { AgentSessionLaunchConfig, Model } from '@/lib/agent-session-launch-config'
 import { cn } from '@/lib/utils'
+import { resolveLaunchConfigAgainstCatalog } from './resolveLaunchConfig'
 
-export type { Model } from '@/hooks/preferences'
+export type { Model }
 
 interface AgentSessionLaunchButtonProps {
   onNewTab: (config: AgentSessionLaunchConfig) => void
@@ -12,14 +14,20 @@ interface AgentSessionLaunchButtonProps {
 }
 
 export function AgentSessionLaunchButton({ onNewTab, onOpenRunForm }: AgentSessionLaunchButtonProps) {
-  const { agent, model, effort, thinking, permissionLevel } = useAgentSessionLaunchPreferences()
+  const { agent, model, effort, thinking, permissionLevel, setLaunchConfig } = useAgentSessionLaunchPreferences()
 
-  const handleNewTab = () => {
-    onNewTab({ agent, model, effort, thinking, permissionLevel })
+  const launchConfig: AgentSessionLaunchConfig = { agent, model, effort, thinking, permissionLevel }
+
+  const handleNewTab = async () => {
+    const resolved = await resolveLaunchConfigAgainstCatalog(launchConfig).catch(() => launchConfig)
+    setLaunchConfig(resolved)
+    onNewTab(resolved)
   }
 
-  const handleOpenRunForm = () => {
-    onOpenRunForm({ agent, model, effort, thinking, permissionLevel })
+  const handleOpenRunForm = async () => {
+    const resolved = await resolveLaunchConfigAgainstCatalog(launchConfig).catch(() => launchConfig)
+    setLaunchConfig(resolved)
+    onOpenRunForm(resolved)
   }
 
   return (
