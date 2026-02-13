@@ -1,5 +1,6 @@
 mod api_server;
 mod commands;
+mod diagnostics;
 mod recent_projects;
 mod terminal;
 mod xdg;
@@ -60,6 +61,7 @@ pub fn run() {
         .setup(|app| {
             // Start API server for MCP signal communication
             let app_handle = app.handle().clone();
+            diagnostics::register_app_handle(&app_handle);
             let state: tauri::State<AppState> = app.state();
 
             tauri::async_runtime::block_on(async {

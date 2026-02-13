@@ -1,3 +1,4 @@
+use crate::diagnostics;
 use serde::Deserialize;
 use std::collections::HashSet;
 
@@ -68,6 +69,11 @@ fn dedupe_valid_models(models: Vec<ModelSpec>) -> Vec<ModelSpec> {
 
 fn parse_codex_models_yaml(yaml: &str) -> Vec<ModelSpec> {
     let parsed = serde_yaml::from_str::<CodexModelCatalog>(yaml).unwrap_or_else(|err| {
+        diagnostics::emit_warning(
+            "terminal-providers",
+            "model-catalog-parse-codex",
+            &format!("Invalid codex model catalog YAML: {err}"),
+        );
         tracing::warn!("Invalid codex model catalog YAML: {err}");
         return CodexModelCatalog { models: vec![] };
     });
@@ -75,11 +81,15 @@ fn parse_codex_models_yaml(yaml: &str) -> Vec<ModelSpec> {
 }
 
 fn parse_claudecode_models_yaml(yaml: &str) -> Vec<ModelSpec> {
-    let parsed =
-        serde_yaml::from_str::<ClaudeCodeModelCatalog>(yaml).unwrap_or_else(|err| {
-            tracing::warn!("Invalid claudecode model catalog YAML: {err}");
-            ClaudeCodeModelCatalog { models: vec![] }
-        });
+    let parsed = serde_yaml::from_str::<ClaudeCodeModelCatalog>(yaml).unwrap_or_else(|err| {
+        diagnostics::emit_warning(
+            "terminal-providers",
+            "model-catalog-parse-claudecode",
+            &format!("Invalid claudecode model catalog YAML: {err}"),
+        );
+        tracing::warn!("Invalid claudecode model catalog YAML: {err}");
+        ClaudeCodeModelCatalog { models: vec![] }
+    });
     dedupe_valid_models(parsed.models)
 }
 

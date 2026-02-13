@@ -1,8 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { AlertCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { BottomBar, ProjectSelector } from '@/components/app-shell'
 import { ErrorBoundary } from '@/components/shared'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
@@ -13,6 +15,13 @@ import { type Page, pageRegistry } from '@/pages/pageRegistry'
 import './index.css'
 
 const isTauri = typeof window !== 'undefined' && '__TAURI__' in window
+
+type BackendDiagnostic = {
+  level: 'warning' | 'error'
+  source: string
+  code: string
+  message: string
+}
 
 function NoBackendError() {
   return (
@@ -34,6 +43,28 @@ function App() {
   const queryClient = useQueryClient()
 
   const { data: lockedProject, isLoading: isLoadingProject } = useInvoke<string | null>('get_locked_project')
+
+  useEffect(() => {
+    if (!isTauri) return
+
+    let unlisten: (() => void) | null = null
+
+    void (async () => {
+      unlisten = await listen<BackendDiagnostic>('backend-diagnostic', event => {
+        const { level, source, code, message } = event.payload
+        const detail = `${source}: ${code} — ${message}`
+        if (level === 'warning') {
+          toast.warning(detail)
+        } else {
+          toast.error(detail)
+        }
+      })
+    })()
+
+    return () => {
+      unlisten?.()
+    }
+  }, [])
 
   useEffect(() => {
     if (!isLoadingProject) {
