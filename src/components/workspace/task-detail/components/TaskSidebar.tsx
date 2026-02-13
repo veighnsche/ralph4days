@@ -101,7 +101,7 @@ function buildStatusSection(
   const dependsOnBadges = renderDependsOnBadges(dependsOn)
 
   return (
-    <PropertyRow label="Status">
+    <PropertyRow key="status" label="Status">
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center gap-1.5">
           <statusConfig.icon className="h-3.5 w-3.5" style={{ color: statusConfig.color }} />
@@ -158,8 +158,7 @@ function buildSessionsSection(signals: TaskSignal[]) {
         </div>
         {summary && <span className="text-xs text-muted-foreground pl-4.5">{summary}</span>}
       </div>
-    </PropertyRow>,
-    <Separator key="sessions-sep" bleed="md" className="my-2" />
+    </PropertyRow>
   ]
 
   return sections
