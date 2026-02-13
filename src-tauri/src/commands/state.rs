@@ -1,3 +1,4 @@
+use crate::diagnostics;
 use crate::terminal::PTYManager;
 use crate::xdg::XdgDirs;
 use prompt_builder::{CodebaseSnapshot, PromptContext};
@@ -22,7 +23,11 @@ impl Default for AppState {
         let xdg = match XdgDirs::resolve() {
             Ok(xdg) => xdg,
             Err(error) => {
-                tracing::warn!("Failed to resolve XDG directories: {error}. Using fallback temp directories.");
+                let message = format!(
+                    "Failed to resolve XDG directories: {error}. Using fallback temp directories."
+                );
+                diagnostics::emit_warning("app-state", "xdg-resolve-fallback", &message);
+                tracing::warn!("{message}");
                 XdgDirs::fallback()
             }
         };
