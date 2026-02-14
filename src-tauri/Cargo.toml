@@ -20,6 +20,7 @@ prompt-builder = { path = "../crates/prompt-builder" }
 ralph-external = { path = "../crates/ralph-external" }
 predefined-disciplines = { path = "../crates/predefined-disciplines" }
 ralph-errors = { workspace = true }
+ralph-contracts = { workspace = true }
 tauri = { version = "2", default-features = false, features = ["wry", "dynamic-acl"] }
 tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"

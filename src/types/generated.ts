@@ -47,6 +47,8 @@ export type AgentSessionUpdateInput = {
   errorText?: string
 }
 export type AgentSessionsByIdArgs = { id: string }
+export type BackendDiagnosticEvent = { level: BackendDiagnosticLevel; source: string; code: string; message: string }
+export type BackendDiagnosticLevel = 'warning' | 'error'
 export type CropBoxData = { x: number; y: number; w: number; h: number }
 export type DisciplineConfig = {
   id: number
@@ -180,6 +182,7 @@ export type PromptBuilderConfigSaveArgs = { config: PromptBuilderConfigInput }
 export type PromptBuilderPreviewArgs = { sections: SectionConfig[]; userInput?: string }
 export type PromptPreview = { sections: PromptPreviewSection[]; fullPrompt: string }
 export type PromptPreviewSection = { name: string; content: string }
+export type ProtocolVersionInfo = { protocolVersion: number }
 export type PtyClosedEvent = { sessionId: string; exitCode: number }
 export type PtyOutputEvent = { sessionId: string; seq: bigint; data: string }
 export type RalphProject = { name: string; path: string }

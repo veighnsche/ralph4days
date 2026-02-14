@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "src-tauri",
+    "crates/ralph-contracts",
     "crates/ralph-errors",
     "crates/ralph-rag",
     "crates/ralph-external",
@@ -65,3 +66,4 @@ tokio = { version = "1", features = ["full"] }
 ts-rs = { version = "12", features = ["serde-compat"] }
 ralph-macros = { path = "crates/ralph-macros" }
 ralph-errors = { path = "crates/ralph-errors" }
+ralph-contracts = { path = "crates/ralph-contracts" }
