@@ -30,7 +30,7 @@ fn config(ollama: &OllamaConfig) -> CommentEmbeddingConfig<'_> {
 }
 
 #[tokio::test]
-#[ignore]
+#[ignore = "Requires local Ollama (ollama serve) + qwen3-embedding:0.6b"]
 async fn smoke_embed_store_search_render() {
     let db = SqliteDb::open_in_memory(None).unwrap();
     let ollama = ollama();
@@ -42,7 +42,6 @@ async fn smoke_embed_store_search_render() {
         display_name: "Auth".to_owned(),
         acronym: "AUTH".to_owned(),
         description: Some("User authentication".to_owned()),
-        ..Default::default()
     })
     .unwrap();
     db.create_subsystem(SubsystemInput {
@@ -50,7 +49,6 @@ async fn smoke_embed_store_search_render() {
         display_name: "Billing".to_owned(),
         acronym: "BILL".to_owned(),
         description: Some("Payment processing".to_owned()),
-        ..Default::default()
     })
     .unwrap();
 

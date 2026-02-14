@@ -121,14 +121,14 @@ async fn main() {
 
     let (steps, megapixels) = match args.quality {
         Quality::Test => (1u32, 1.0f64),
-        Quality::Dev => match &stack.generation {
-            Some(g) => (g.dev.steps, g.dev.megapixels),
-            None => (14, 1.0),
-        },
-        Quality::Prod => match &stack.generation {
-            Some(g) => (g.prod.steps, g.prod.megapixels),
-            None => (28, 2.0),
-        },
+        Quality::Dev => stack
+            .generation
+            .as_ref()
+            .map_or((14, 1.0), |g| (g.dev.steps, g.dev.megapixels)),
+        Quality::Prod => stack
+            .generation
+            .as_ref()
+            .map_or((28, 2.0), |g| (g.prod.steps, g.prod.megapixels)),
     };
 
     let (width, height) =
@@ -206,7 +206,10 @@ async fn main() {
 
     let is_sandboxed = std::env::var("SANDBOX_RUNTIME").is_ok();
 
-    if !is_sandboxed {
+    if is_sandboxed {
+        eprintln!("NOTE: Running in sandbox - skipping ComfyUI preflight check");
+        eprintln!("      If generation fails, sandbox network isolation may be the cause");
+    } else {
         let status = ralph_external::check_comfy_available(&config).await;
         if !status.available {
             eprintln!(
@@ -216,9 +219,6 @@ async fn main() {
             eprintln!("Make sure ComfyUI is running at {}", config.api_url);
             std::process::exit(1);
         }
-    } else {
-        eprintln!("NOTE: Running in sandbox - skipping ComfyUI preflight check");
-        eprintln!("      If generation fails, sandbox network isolation may be the cause");
     }
 
     let result = ralph_external::generate_discipline_portrait_with_progress(

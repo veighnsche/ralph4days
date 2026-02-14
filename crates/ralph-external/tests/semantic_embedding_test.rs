@@ -33,7 +33,6 @@ fn seed_feature_with_comments(db: &SqliteDb) {
         display_name: "Authentication".to_owned(),
         acronym: "AUTH".to_owned(),
         description: Some("User authentication and session management".to_owned()),
-        ..Default::default()
     })
     .unwrap();
 
@@ -78,7 +77,7 @@ fn seed_feature_with_comments(db: &SqliteDb) {
             agent_task_id: None,
             body: body.to_owned(),
             summary: None,
-            reason: reason.map(|r| r.to_owned()),
+            reason: reason.map(str::to_owned),
             source_iteration: None,
         })
         .unwrap();
@@ -89,7 +88,6 @@ fn seed_feature_with_comments(db: &SqliteDb) {
         display_name: "Billing".to_owned(),
         acronym: "BILL".to_owned(),
         description: Some("Payment processing and subscription management".to_owned()),
-        ..Default::default()
     })
     .unwrap();
 
@@ -139,7 +137,7 @@ async fn embed_all_comments(db: &SqliteDb, config: &CommentEmbeddingConfig<'_>) 
 }
 
 #[tokio::test]
-#[ignore]
+#[ignore = "Requires local Ollama running with nomic-embed-text"]
 async fn semantic_search_surfaces_relevant_auth_comments() {
     let db = SqliteDb::open_in_memory(None).unwrap();
     let ollama = default_ollama();
@@ -173,7 +171,7 @@ async fn semantic_search_surfaces_relevant_auth_comments() {
 }
 
 #[tokio::test]
-#[ignore]
+#[ignore = "Requires local Ollama running with nomic-embed-text"]
 async fn semantic_search_isolates_features() {
     let db = SqliteDb::open_in_memory(None).unwrap();
     let ollama = default_ollama();
@@ -211,7 +209,7 @@ async fn semantic_search_isolates_features() {
 }
 
 #[tokio::test]
-#[ignore]
+#[ignore = "Requires local Ollama running with nomic-embed-text"]
 async fn semantic_search_feeds_into_prompt_builder() {
     let db = SqliteDb::open_in_memory(None).unwrap();
     let ollama = default_ollama();
