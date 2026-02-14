@@ -10,17 +10,11 @@ import {
   useWorkspaceTabContext
 } from '@/components/workspace/tabs'
 import { STATUS_CONFIG } from '@/constants/prd'
-import { buildInvokeQueryKey, useInvoke, useInvokeMutation } from '@/hooks/api'
+import { useInvoke, useInvokeMutation } from '@/hooks/api'
 import { useDisciplines } from '@/hooks/disciplines'
-import {
-  patchTaskInTaskDetailCache,
-  patchTaskInTaskDetailCacheOptimistically,
-  patchTaskListItemInTaskListCache,
-  patchTaskListItemInTaskListCacheOptimistically
-} from '@/hooks/tasks/taskCache'
-import { buildOptimisticTaskFromUpdateTask, type UpdateTaskVariables } from '@/hooks/tasks/updateTaskMutation'
+import type { UpdateTaskVariables } from '@/hooks/tasks/updateTaskMutation'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
-import type { SubsystemData, Task, TaskListItem } from '@/types/generated'
+import type { SubsystemData, Task } from '@/types/generated'
 import { TaskIdDisplay } from '../../../prd/TaskIdDisplay'
 import { AcceptanceCriterionItem } from './AcceptanceCriterionItem'
 import { addAcceptanceCriterion, toggleAcceptanceCriterion, updateAcceptanceCriterionText } from './acceptanceCriteria'
@@ -40,42 +34,7 @@ export function TaskCardContent({ task }: { task: Task }) {
   }
   const updateTaskMutation = useInvokeMutation<UpdateTaskVariables, Task>('update_task', {
     queryDomain: 'workspace',
-    optimisticUpdate: ({ queryClient, variables, queryDomain }) => {
-      const optimisticTask = buildOptimisticTaskFromUpdateTask(task, variables.params)
-      const rollbackDetail = patchTaskInTaskDetailCacheOptimistically(queryClient, optimisticTask, queryDomain)
-
-      const listQueryKey = buildInvokeQueryKey('get_task_list_items', undefined, queryDomain)
-      const listItems = queryClient.getQueryData<TaskListItem[]>(listQueryKey)
-      const listItem = listItems?.find(item => item.id === task.id)
-
-      const nextCount = optimisticTask.acceptanceCriteria.length
-      const rollbackList =
-        !listItem || listItem.acceptanceCriteriaCount === nextCount
-          ? undefined
-          : patchTaskListItemInTaskListCacheOptimistically(
-              queryClient,
-              { ...listItem, acceptanceCriteriaCount: nextCount },
-              queryDomain
-            )
-
-      return () => {
-        rollbackList?.()
-        rollbackDetail()
-      }
-    },
-    updateCache: ({ queryClient, data, queryDomain }) => {
-      patchTaskInTaskDetailCache(queryClient, data, queryDomain)
-
-      const listQueryKey = buildInvokeQueryKey('get_task_list_items', undefined, queryDomain)
-      const listItems = queryClient.getQueryData<TaskListItem[]>(listQueryKey)
-      const listItem = listItems?.find(item => item.id === data.id)
-      if (!listItem) return
-
-      const nextCount = data.acceptanceCriteria.length
-      if (listItem.acceptanceCriteriaCount === nextCount) return
-
-      patchTaskListItemInTaskListCache(queryClient, { ...listItem, acceptanceCriteriaCount: nextCount }, queryDomain)
-    }
+    invalidateKeys: [['get_task', { id: task.id }], ['get_task_list_items']]
   })
 
   const submitCriteriaUpdate = (nextCriteria: string[]) => {

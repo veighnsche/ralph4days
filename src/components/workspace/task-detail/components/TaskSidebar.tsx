@@ -11,11 +11,9 @@ import { useInvokeMutation } from '@/hooks/api'
 import {
   buildTaskListItemFromTask,
   patchTaskInTaskDetailCache,
-  patchTaskInTaskDetailCacheOptimistically,
-  patchTaskListItemInTaskListCache,
-  patchTaskListItemInTaskListCacheOptimistically
+  patchTaskListItemInTaskListCache
 } from '@/hooks/tasks/taskCache'
-import { buildOptimisticTaskFromUpdateTask, type UpdateTaskVariables } from '@/hooks/tasks/updateTaskMutation'
+import type { UpdateTaskVariables } from '@/hooks/tasks/updateTaskMutation'
 import { formatDate } from '@/lib/formatDate'
 import type { InferredTaskStatus } from '@/lib/taskStatus'
 import { shouldShowInferredStatus } from '@/lib/taskStatus'
@@ -354,24 +352,7 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
   })
   const updateTaskMutation = useInvokeMutation<UpdateTaskVariables, Task>('update_task', {
     queryDomain: 'workspace',
-    optimisticUpdate: ({ queryClient, variables, queryDomain }) => {
-      const optimisticTask = buildOptimisticTaskFromUpdateTask(task, variables.params)
-      const rollbackDetail = patchTaskInTaskDetailCacheOptimistically(queryClient, optimisticTask, queryDomain)
-      const rollbackList = patchTaskListItemInTaskListCacheOptimistically(
-        queryClient,
-        buildTaskListItemFromTask(optimisticTask),
-        queryDomain
-      )
-
-      return () => {
-        rollbackList()
-        rollbackDetail()
-      }
-    },
-    updateCache: ({ queryClient, data, queryDomain }) => {
-      patchTaskInTaskDetailCache(queryClient, data, queryDomain)
-      patchTaskListItemInTaskListCache(queryClient, buildTaskListItemFromTask(data), queryDomain)
-    }
+    invalidateKeys: [['get_task', { id: taskId }], ['get_task_list_items']]
   })
 
   const handleApprove = () => {

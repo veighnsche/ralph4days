@@ -2,20 +2,14 @@ import { CheckCircle2 } from 'lucide-react'
 import { TaskPriorityCorner } from '@/components/shared'
 import { CroppedImage } from '@/components/ui/cropped-image'
 import { STATUS_CONFIG } from '@/constants/prd'
-import { buildInvokeQueryKey, useInvoke, useInvokeMutation } from '@/hooks/api'
+import { useInvoke, useInvokeMutation } from '@/hooks/api'
 import { useDisciplines } from '@/hooks/disciplines'
 import { usePRDData } from '@/hooks/tasks'
-import {
-  patchTaskInTaskDetailCache,
-  patchTaskInTaskDetailCacheOptimistically,
-  patchTaskListItemInTaskListCache,
-  patchTaskListItemInTaskListCacheOptimistically
-} from '@/hooks/tasks/taskCache'
-import { buildOptimisticTaskFromUpdateTask, type UpdateTaskVariables } from '@/hooks/tasks/updateTaskMutation'
+import type { UpdateTaskVariables } from '@/hooks/tasks/updateTaskMutation'
 import { useTabMeta } from '@/hooks/workspace'
 import { computeInferredStatus } from '@/lib/taskStatus'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
-import type { Task, TaskListItem } from '@/types/generated'
+import type { Task } from '@/types/generated'
 import { DetailPageLayout } from '../../DetailPageLayout'
 import { CommentsSection } from '../../task-detail'
 import { TaskCardContent } from '../../task-detail/components/TaskCardContent'
@@ -45,39 +39,7 @@ export function TaskDetailTabContent({ tab, params }: { tab: WorkspaceTab; param
 
   const updateTaskMutation = useInvokeMutation<UpdateTaskVariables, Task>('update_task', {
     queryDomain: 'workspace',
-    optimisticUpdate: ({ queryClient, variables, queryDomain }) => {
-      if (!task) throw new Error('[task-detail] update_task optimisticUpdate called without task loaded')
-
-      const optimisticTask = buildOptimisticTaskFromUpdateTask(task, variables.params)
-      const rollbackDetail = patchTaskInTaskDetailCacheOptimistically(queryClient, optimisticTask, queryDomain)
-
-      const listQueryKey = buildInvokeQueryKey('get_task_list_items', undefined, queryDomain)
-      const listItems = queryClient.getQueryData<TaskListItem[]>(listQueryKey)
-      const listItem = listItems?.find(item => item.id === task.id)
-      const rollbackList = listItem
-        ? patchTaskListItemInTaskListCacheOptimistically(
-            queryClient,
-            { ...listItem, priority: optimisticTask.priority },
-            queryDomain
-          )
-        : undefined
-
-      return () => {
-        rollbackList?.()
-        rollbackDetail()
-      }
-    },
-    updateCache: ({ queryClient, data, queryDomain }) => {
-      patchTaskInTaskDetailCache(queryClient, data, queryDomain)
-
-      const listQueryKey = buildInvokeQueryKey('get_task_list_items', undefined, queryDomain)
-      const listItems = queryClient.getQueryData<TaskListItem[]>(listQueryKey)
-      const listItem = listItems?.find(item => item.id === data.id)
-      if (!listItem) return
-
-      if (listItem.priority === data.priority) return
-      patchTaskListItemInTaskListCache(queryClient, { ...listItem, priority: data.priority }, queryDomain)
-    }
+    invalidateKeys: entityId != null ? ([['get_task', { id: entityId }], ['get_task_list_items']] as const) : undefined
   })
 
   if (entityId == null) {
