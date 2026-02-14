@@ -1,4 +1,5 @@
-import { Eye, Layers, Play, Settings2 } from 'lucide-react'
+import { Brain, Eye, Layers, Play, Settings2 } from 'lucide-react'
+import { LaunchOptionsReadout } from '@/components/agent-session-launch'
 import { DisciplineLabel } from '@/components/prd/DisciplineLabel'
 import { Badge } from '@/components/ui/badge'
 import { CroppedImage } from '@/components/ui/cropped-image'
@@ -186,33 +187,42 @@ function DisciplineSidebar({
 
       <Separator bleed="md" />
       <PropertyRow label="Launch Defaults">
-        <div className="space-y-1.5 text-xs">
-          {discipline.agent && (
-            <div>
-              <span className="text-muted-foreground">Agent:</span>{' '}
-              <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{discipline.agent}</code>
-            </div>
-          )}
-          {discipline.model && (
-            <div>
-              <span className="text-muted-foreground">Model:</span>{' '}
-              <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{discipline.model}</code>
-            </div>
-          )}
-          {discipline.effort && (
-            <div>
-              <span className="text-muted-foreground">Effort:</span>{' '}
-              <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{discipline.effort}</code>
-            </div>
-          )}
-          {discipline.model && discipline.thinking !== undefined && (
-            <div>
-              <span className="text-muted-foreground">Thinking:</span>{' '}
-              <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{discipline.thinking ? 'on' : 'off'}</code>
-            </div>
-          )}
-          {!discipline.model && <span className="text-muted-foreground">No model set</span>}
-        </div>
+        <LaunchOptionsReadout
+          rows={[
+            {
+              label: 'Agent',
+              value: discipline.agent ?? 'unset',
+              valueTitle: discipline.agent ?? 'unset',
+              monospace: true,
+              muted: discipline.agent == null
+            },
+            {
+              label: 'Model',
+              value: discipline.model ?? 'No model set',
+              valueTitle: discipline.model ?? 'No model set',
+              monospace: true,
+              muted: discipline.model == null
+            },
+            {
+              label: 'Effort',
+              value: discipline.effort ?? 'unset',
+              valueTitle: discipline.effort ?? 'unset',
+              monospace: true,
+              muted: discipline.effort == null
+            },
+            {
+              label: 'Thinking',
+              value: (
+                <span className="inline-flex items-center gap-1">
+                  <Brain className="h-3 w-3" aria-hidden="true" />
+                  {discipline.thinking === undefined ? 'unset' : discipline.thinking ? 'on' : 'off'}
+                </span>
+              ),
+              valueTitle: discipline.thinking === undefined ? 'unset' : discipline.thinking ? 'on' : 'off',
+              muted: discipline.thinking === undefined
+            }
+          ]}
+        />
       </PropertyRow>
     </div>
   )

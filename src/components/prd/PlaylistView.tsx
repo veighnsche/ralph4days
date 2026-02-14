@@ -10,7 +10,6 @@ import { PlaylistItem } from './PlaylistItem'
 interface PlaylistViewProps {
   tasks: TaskListItem[]
   cropsStore: Map<string, DisciplineCropsData>
-  onTaskClick: (task: TaskListItem) => void
 }
 
 function countUnresolvedDeps(task: TaskListItem, statusById: Map<number, string>): number {
@@ -21,7 +20,7 @@ function countUnresolvedDeps(task: TaskListItem, statusById: Map<number, string>
   }).length
 }
 
-export function PlaylistView({ tasks, cropsStore, onTaskClick }: PlaylistViewProps) {
+export function PlaylistView({ tasks, cropsStore }: PlaylistViewProps) {
   const [issuesOpen, setIssuesOpen] = useState(true)
 
   const taskIds = useMemo(() => tasks.map(t => t.id), [tasks])
@@ -81,7 +80,6 @@ export function PlaylistView({ tasks, cropsStore, onTaskClick }: PlaylistViewPro
                       crops={cropsStore.get(task.discipline)}
                       unresolvedDeps={countUnresolvedDeps(task, statusById)}
                       signalSummary={summaries[task.id]}
-                      onClick={() => onTaskClick(task)}
                     />
                     {index < blockedSkipped.length - 1 && <ItemSeparator />}
                   </Fragment>
@@ -99,7 +97,6 @@ export function PlaylistView({ tasks, cropsStore, onTaskClick }: PlaylistViewPro
                 crops={cropsStore.get(task.discipline)}
                 unresolvedDeps={countUnresolvedDeps(task, statusById)}
                 signalSummary={summaries[task.id]}
-                onClick={() => onTaskClick(task)}
               />
               <ItemSeparator />
             </Fragment>
@@ -113,7 +110,6 @@ export function PlaylistView({ tasks, cropsStore, onTaskClick }: PlaylistViewPro
                 unresolvedDeps={countUnresolvedDeps(task, statusById)}
                 signalSummary={summaries[task.id]}
                 isNowPlaying
-                onClick={() => onTaskClick(task)}
               />
               <ItemSeparator />
             </Fragment>
@@ -126,7 +122,6 @@ export function PlaylistView({ tasks, cropsStore, onTaskClick }: PlaylistViewPro
                 crops={cropsStore.get(task.discipline)}
                 unresolvedDeps={countUnresolvedDeps(task, statusById)}
                 signalSummary={summaries[task.id]}
-                onClick={() => onTaskClick(task)}
               />
               {index < pending.length - 1 && <ItemSeparator />}
             </Fragment>

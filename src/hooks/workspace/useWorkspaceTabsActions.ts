@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { createDefaultTerminalTab } from '@/components/workspace/tabs'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 
@@ -20,17 +21,19 @@ export function useWorkspaceTabsActions(): WorkspaceTabsActions {
   const openTabAfter = useWorkspaceStore(s => s.openTabAfter)
   const reorderTabs = useWorkspaceStore(s => s.reorderTabs)
 
-  const newTabToRight = (afterTabId: string) => {
-    openTabAfter(afterTabId, createDefaultTerminalTab())
+  const actionsRef = useRef<WorkspaceTabsActions | null>(null)
+  if (!actionsRef.current) {
+    actionsRef.current = {
+      switchTab,
+      closeTab,
+      closeAll,
+      closeOthers: closeAllExcept,
+      closeToRight,
+      newTabToRight: (afterTabId: string) => {
+        openTabAfter(afterTabId, createDefaultTerminalTab())
+      },
+      reorderTabs
+    }
   }
-
-  return {
-    switchTab,
-    closeTab,
-    closeAll,
-    closeOthers: closeAllExcept,
-    closeToRight,
-    newTabToRight,
-    reorderTabs
-  }
+  return actionsRef.current
 }

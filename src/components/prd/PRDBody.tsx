@@ -8,11 +8,10 @@ interface PRDBodyProps {
   filteredTasks: TaskListItem[]
   totalTasks: number
   cropsStore: Map<string, DisciplineCropsData>
-  onTaskClick: (task: TaskListItem) => void
   onClearFilters: () => void
 }
 
-export function PRDBody({ filteredTasks, totalTasks, cropsStore, onTaskClick, onClearFilters }: PRDBodyProps) {
+export function PRDBody({ filteredTasks, totalTasks, cropsStore, onClearFilters }: PRDBodyProps) {
   if (filteredTasks.length === 0) {
     if (totalTasks === 0) {
       return (
@@ -51,5 +50,5 @@ export function PRDBody({ filteredTasks, totalTasks, cropsStore, onTaskClick, on
     )
   }
 
-  return <PlaylistView tasks={filteredTasks} cropsStore={cropsStore} onTaskClick={onTaskClick} />
+  return <PlaylistView tasks={filteredTasks} cropsStore={cropsStore} />
 }

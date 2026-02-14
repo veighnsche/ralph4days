@@ -1,12 +1,8 @@
 import { createContext, type ReactNode, useContext } from 'react'
 import type { TabType, WorkspaceTab } from '@/stores/useWorkspaceStore'
 
-interface WorkspaceTabContextValue {
-  tab: WorkspaceTab
-  isActive: boolean
-}
-
-const WorkspaceTabContext = createContext<WorkspaceTabContextValue | null>(null)
+const WorkspaceTabContext = createContext<WorkspaceTab | null>(null)
+const WorkspaceTabIsActiveContext = createContext<boolean | null>(null)
 
 export function WorkspaceTabProvider({
   tab,
@@ -17,7 +13,11 @@ export function WorkspaceTabProvider({
   isActive: boolean
   children: ReactNode
 }) {
-  return <WorkspaceTabContext.Provider value={{ tab, isActive }}>{children}</WorkspaceTabContext.Provider>
+  return (
+    <WorkspaceTabContext.Provider value={tab}>
+      <WorkspaceTabIsActiveContext.Provider value={isActive}>{children}</WorkspaceTabIsActiveContext.Provider>
+    </WorkspaceTabContext.Provider>
+  )
 }
 
 export function useWorkspaceTabContext() {
@@ -25,15 +25,15 @@ export function useWorkspaceTabContext() {
   if (!context) {
     throw new Error('useWorkspaceTabContext must be used inside WorkspaceTabProvider')
   }
-  return context.tab
+  return context
 }
 
 export function useWorkspaceTabIsActive() {
-  const context = useContext(WorkspaceTabContext)
-  if (!context) {
+  const context = useContext(WorkspaceTabIsActiveContext)
+  if (context === null) {
     throw new Error('useWorkspaceTabIsActive must be used inside WorkspaceTabProvider')
   }
-  return context.isActive
+  return context
 }
 
 export function useWorkspaceTabOfType<T extends TabType>(type: T): WorkspaceTab {

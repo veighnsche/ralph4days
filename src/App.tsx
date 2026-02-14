@@ -39,7 +39,6 @@ function NoBackendError() {
 }
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<Page>('tasks')
   const queryClient = useQueryClient()
 
   const { data: lockedProject, isLoading: isLoadingProject } = useInvoke<string | null>('get_locked_project')
@@ -111,16 +110,7 @@ function App() {
     <ErrorBoundary>
       <ResizablePanelGroup orientation="horizontal" className="h-screen">
         <ResizablePanel defaultSize={50} minSize={40}>
-          <div className="h-full flex flex-col overflow-hidden">
-            <div className="flex-1 min-h-0 overflow-hidden relative">
-              {Object.entries(pageRegistry).map(([id, PageComponent]) => (
-                <div key={id} className={currentPage === id ? 'h-full' : 'hidden'}>
-                  <PageComponent />
-                </div>
-              ))}
-            </div>
-            <BottomBar lockedProject={lockedProject} currentPage={currentPage} onPageChange={setCurrentPage} />
-          </div>
+          <MainPanel lockedProject={lockedProject} />
         </ResizablePanel>
 
         <ResizableHandle withHandle />
@@ -133,6 +123,20 @@ function App() {
       </ResizablePanelGroup>
       <Toaster />
     </ErrorBoundary>
+  )
+}
+
+function MainPanel({ lockedProject }: { lockedProject: string }) {
+  const [currentPage, setCurrentPage] = useState<Page>('tasks')
+  const PageComponent = pageRegistry[currentPage]
+
+  return (
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden relative">
+        <PageComponent />
+      </div>
+      <BottomBar lockedProject={lockedProject} currentPage={currentPage} onPageChange={setCurrentPage} />
+    </div>
   )
 }
 

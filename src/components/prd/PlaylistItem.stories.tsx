@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { type Acronym, acronym } from '@/types/acronym'
-import type { Task } from '@/types/generated'
+import type { TaskListItem } from '@/types/generated'
 import { PlaylistItem } from './PlaylistItem'
 
 const meta = {
@@ -56,7 +56,6 @@ function enrichFields(subsystem: StorySubsystem, discipline: StoryDiscipline) {
   const disc = DISCIPLINE_DEFAULTS[discipline]
   return {
     subsystemDisplayName: subsystemDefaults.displayName,
-    signals: [],
     subsystemAcronym: subsystemDefaults.acronym,
     disciplineDisplayName: disc.displayName,
     disciplineAcronym: disc.acronym,
@@ -65,7 +64,7 @@ function enrichFields(subsystem: StorySubsystem, discipline: StoryDiscipline) {
   }
 }
 
-const baseTask: Task = {
+const baseTask: TaskListItem = {
   id: 1,
   subsystem: 'ui',
   discipline: 'frontend',
@@ -75,18 +74,14 @@ const baseTask: Task = {
   priority: 'high',
   tags: ['design', 'layout'],
   dependsOn: [],
-  acceptanceCriteria: ['Responsive on mobile, tablet, desktop', 'Sidebar collapses on mobile', 'Dark mode support'],
-  contextFiles: [],
-  outputArtifacts: [],
-  created: '2026-02-01',
-  updated: '2026-02-05',
+  acceptanceCriteriaCount: 3,
+  signalCount: 0,
   ...enrichFields('ui', 'frontend')
 }
 
 export const Pending: Story = {
   args: {
-    task: baseTask,
-    onClick: () => console.log('Task clicked')
+    task: baseTask
   }
 }
 
@@ -101,8 +96,7 @@ export const InProgress: Story = {
       status: 'in_progress',
       ...enrichFields('api', 'backend')
     },
-    isNowPlaying: true,
-    onClick: () => console.log('Task clicked')
+    isNowPlaying: true
   }
 }
 
@@ -115,10 +109,8 @@ export const Done: Story = {
       discipline: 'database',
       title: 'Setup REST API endpoints',
       status: 'done',
-      completed: '2026-02-03',
       ...enrichFields('data', 'database')
-    },
-    onClick: () => console.log('Task clicked')
+    }
   }
 }
 
@@ -132,8 +124,7 @@ export const Blocked: Story = {
       title: 'Add authentication middleware',
       status: 'blocked',
       ...enrichFields('tests', 'testing')
-    },
-    onClick: () => console.log('Task clicked')
+    }
   }
 }
 
@@ -147,8 +138,7 @@ export const Skipped: Story = {
       title: 'Deploy to staging environment',
       status: 'skipped',
       ...enrichFields('deploy', 'infra')
-    },
-    onClick: () => console.log('Task clicked')
+    }
   }
 }
 
@@ -158,8 +148,7 @@ export const LowPriority: Story = {
       ...baseTask,
       title: 'Update documentation',
       priority: 'low'
-    },
-    onClick: () => console.log('Task clicked')
+    }
   }
 }
 
@@ -175,8 +164,7 @@ export const CriticalPriority: Story = {
       status: 'in_progress',
       ...enrichFields('sec', 'security')
     },
-    isNowPlaying: true,
-    onClick: () => console.log('Task clicked')
+    isNowPlaying: true
   }
 }
 
@@ -187,8 +175,7 @@ export const WithDependencies: Story = {
       title: 'Add task detail sidebar',
       dependsOn: [2, 3],
       tags: ['component', 'ui', 'depends-on-others']
-    },
-    onClick: () => console.log('Task clicked')
+    }
   }
 }
 
@@ -203,19 +190,16 @@ export const NoDescription: Story = {
       priority: 'medium' as const,
       tags: [],
       dependsOn: [],
-      acceptanceCriteria: [],
-      contextFiles: [],
-      outputArtifacts: [],
+      acceptanceCriteriaCount: 0,
+      signalCount: 0,
       ...enrichFields('docs', 'docs')
-    },
-    onClick: () => console.log('Task clicked')
+    }
   }
 }
 
 export const AllDisciplines: Story = {
   args: {
-    task: baseTask,
-    onClick: () => {}
+    task: baseTask
   },
   render: () => (
     <div className="flex flex-col gap-2">
@@ -228,7 +212,6 @@ export const AllDisciplines: Story = {
           title: 'Frontend Task',
           ...enrichFields('ui', 'frontend')
         }}
-        onClick={() => {}}
       />
       <PlaylistItem
         task={{
@@ -239,7 +222,6 @@ export const AllDisciplines: Story = {
           title: 'Backend Task',
           ...enrichFields('api', 'backend')
         }}
-        onClick={() => {}}
       />
       <PlaylistItem
         task={{
@@ -250,7 +232,6 @@ export const AllDisciplines: Story = {
           title: 'Database Task',
           ...enrichFields('data', 'database')
         }}
-        onClick={() => {}}
       />
       <PlaylistItem
         task={{
@@ -261,7 +242,6 @@ export const AllDisciplines: Story = {
           title: 'Testing Task',
           ...enrichFields('tests', 'testing')
         }}
-        onClick={() => {}}
       />
       <PlaylistItem
         task={{
@@ -272,7 +252,6 @@ export const AllDisciplines: Story = {
           title: 'Infrastructure Task',
           ...enrichFields('deploy', 'infra')
         }}
-        onClick={() => {}}
       />
       <PlaylistItem
         task={{
@@ -283,7 +262,6 @@ export const AllDisciplines: Story = {
           title: 'Security Task',
           ...enrichFields('sec', 'security')
         }}
-        onClick={() => {}}
       />
       <PlaylistItem
         task={{
@@ -294,7 +272,6 @@ export const AllDisciplines: Story = {
           title: 'Documentation Task',
           ...enrichFields('docs', 'docs')
         }}
-        onClick={() => {}}
       />
       <PlaylistItem
         task={{
@@ -305,7 +282,6 @@ export const AllDisciplines: Story = {
           title: 'Design Task',
           ...enrichFields('ui', 'design')
         }}
-        onClick={() => {}}
       />
       <PlaylistItem
         task={{
@@ -316,7 +292,6 @@ export const AllDisciplines: Story = {
           title: 'Marketing Task',
           ...enrichFields('campaign', 'promo')
         }}
-        onClick={() => {}}
       />
       <PlaylistItem
         task={{
@@ -327,7 +302,6 @@ export const AllDisciplines: Story = {
           title: 'API Task',
           ...enrichFields('rest', 'api')
         }}
-        onClick={() => {}}
       />
     </div>
   )

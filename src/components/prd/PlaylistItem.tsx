@@ -3,8 +3,10 @@ import { memo } from 'react'
 import { TaskPriorityCorner } from '@/components/shared'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { createTaskDetailTab } from '@/components/workspace/tabs'
 import { INFERRED_STATUS_CONFIG, STATUS_CONFIG } from '@/constants/prd'
 import { FLAG_SEVERITY_CONFIG, type FlagSeverity } from '@/constants/signals'
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { DisciplineCropsData, TaskListItem, TaskSignalSummary } from '@/types/generated'
 import { DisciplineHeadshot } from './DisciplineHeadshot'
 import { DisciplineLabel } from './DisciplineLabel'
@@ -15,7 +17,6 @@ interface PlaylistItemProps {
   unresolvedDeps?: number
   isNowPlaying?: boolean
   signalSummary?: TaskSignalSummary
-  onClick: () => void
 }
 
 const PROVENANCE_ICONS = { agent: Bot, human: User, system: Cog } as const
@@ -108,9 +109,9 @@ export const PlaylistItem = memo(function PlaylistItem({
   crops,
   unresolvedDeps = 0,
   isNowPlaying = false,
-  signalSummary,
-  onClick
+  signalSummary
 }: PlaylistItemProps) {
+  const openTab = useWorkspaceStore(state => state.openTab)
   const statusConfig = STATUS_CONFIG[task.status]
   const hasHeadshot = !!crops?.face
 
@@ -123,7 +124,7 @@ export const PlaylistItem = memo(function PlaylistItem({
         backgroundColor: statusConfig.bgColor,
         opacity: task.status === 'done' || task.status === 'skipped' || task.status === 'draft' ? 0.5 : 1
       }}
-      onClick={onClick}>
+      onClick={() => openTab(createTaskDetailTab(task.id))}>
       <TaskPriorityCorner priority={task.priority} />
 
       {hasHeadshot && (

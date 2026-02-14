@@ -1,13 +1,10 @@
 import { Bot } from 'lucide-react'
-import { InlineError } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { FormDescription, FormHeader, FormTitle } from '@/components/ui/form-header'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
 import { useAgentSessionLaunchPreferences } from '@/hooks/preferences'
 import { useTabMeta } from '@/hooks/workspace'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
-import { AgentProviderPicker, ModelPicker, PermissionLevelControls } from './components'
+import { AgentSessionLaunchForm } from './components/AgentSessionLaunchForm'
+import { PermissionLevelControls } from './components/PermissionLevelControls'
 import { useAgentSessionConfigController } from './hooks'
 import { useAgentSessionConfigLaunchState } from './hooks/useAgentSessionConfigTabState'
 import type { AgentSessionConfigTabParams } from './schema'
@@ -19,37 +16,24 @@ function AgentSessionConfigTabBody({ tab }: { tab: WorkspaceTab }) {
   const { model } = useAgentSessionConfigLaunchState()
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="px-4">
-        <FormHeader>
-          <FormTitle>Start Agent Session</FormTitle>
-          <FormDescription>Configure launch options, then start an agent session.</FormDescription>
-        </FormHeader>
-      </div>
-      <Separator />
-      <ScrollArea className="flex-1 min-h-0">
-        <div className="grid grid-cols-1 gap-4 px-4 py-4 md:grid-cols-2">
-          <div className="min-h-[26rem] min-w-0">
-            <AgentProviderPicker />
-          </div>
-          <div className="min-h-[26rem] min-w-0">
-            <ModelPicker models={models} loadingModels={loadingModels} />
-          </div>
+    <AgentSessionLaunchForm
+      layout="two_column"
+      showHeader
+      models={models}
+      loadingModels={loadingModels}
+      error={error}
+      footer={
+        <div className="flex justify-end gap-2">
+          <PermissionLevelControls />
+          <Button
+            type="button"
+            onClick={runSession}
+            disabled={loadingModels || !model || models.length === 0 || !canRun}>
+            Run
+          </Button>
         </div>
-      </ScrollArea>
-      <Separator />
-      {error && (
-        <div className="px-3 pt-1.5">
-          <InlineError error={error} />
-        </div>
-      )}
-      <div className="px-3 py-1.5 flex justify-end gap-2">
-        <PermissionLevelControls />
-        <Button type="button" onClick={runSession} disabled={loadingModels || !model || models.length === 0 || !canRun}>
-          Run
-        </Button>
-      </div>
-    </div>
+      }
+    />
   )
 }
 

@@ -1,10 +1,11 @@
-import { ChevronDown, Plus, TerminalSquare } from 'lucide-react'
+import { Brain, ChevronDown, Plus, TerminalSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAgentSessionLaunchPreferences } from '@/hooks/preferences'
 import type { AgentSessionLaunchConfig, Model } from '@/lib/agent-session-launch-config'
 import { cn } from '@/lib/utils'
 import { WORKSPACE_SELECTORS } from '@/test/selectors'
+import { LaunchOptionsReadout } from './LaunchOptionsReadout'
 import { resolveLaunchConfigAgainstCatalog } from './resolveLaunchConfig'
 
 export type { Model }
@@ -74,23 +75,26 @@ export function AgentSessionLaunchButton({
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <div className="space-y-1">
-              <div>
-                <span className="font-semibold">Agent:</span> {agent}
-              </div>
-              <div>
-                <span className="font-semibold">Model:</span> {model}
-              </div>
-              <div>
-                <span className="font-semibold">Effort:</span> {effort}
-              </div>
-              <div>
-                <span className="font-semibold">Thinking:</span> {thinking ? 'On' : 'Off'}
-              </div>
-              <div>
-                <span className="font-semibold">Permission:</span> {permissionLevel}
-              </div>
-            </div>
+            <LaunchOptionsReadout
+              variant="tooltip"
+              className="text-background"
+              rows={[
+                { label: 'Agent', value: agent, valueTitle: agent, monospace: true },
+                { label: 'Model', value: model, valueTitle: model, monospace: true },
+                { label: 'Effort', value: effort, valueTitle: effort, monospace: true },
+                {
+                  label: 'Thinking',
+                  valueTitle: thinking ? 'on' : 'off',
+                  value: (
+                    <span className="inline-flex items-center gap-1">
+                      <Brain className="h-3 w-3" aria-hidden="true" />
+                      {thinking ? 'on' : 'off'}
+                    </span>
+                  )
+                },
+                { label: 'Perm', value: permissionLevel, valueTitle: permissionLevel, monospace: true }
+              ]}
+            />
           </TooltipContent>
         </Tooltip>
 

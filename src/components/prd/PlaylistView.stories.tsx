@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import type { Task } from '@/types/generated'
+import type { TaskListItem } from '@/types/generated'
 import { PlaylistView } from './PlaylistView'
 
 const meta = {
@@ -7,7 +7,7 @@ const meta = {
   component: PlaylistView,
   tags: ['autodocs'],
   args: {
-    onTaskClick: () => {},
+    tasks: [],
     cropsStore: new Map()
   }
 } satisfies Meta<typeof PlaylistView>
@@ -15,7 +15,7 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-const mockTasks: Task[] = [
+const mockTasks: TaskListItem[] = [
   {
     id: 1,
     subsystem: 'authentication',
@@ -26,12 +26,9 @@ const mockTasks: Task[] = [
     priority: 'high',
     tags: ['api', 'security'],
     dependsOn: [],
-    acceptanceCriteria: [],
-    contextFiles: [],
-    outputArtifacts: [],
-    created: '2026-02-01',
+    acceptanceCriteriaCount: 0,
+    signalCount: 0,
     subsystemDisplayName: 'Authentication',
-    signals: [],
     subsystemAcronym: 'AUTH',
     disciplineDisplayName: 'Backend',
     disciplineAcronym: 'BKND',
@@ -48,11 +45,9 @@ const mockTasks: Task[] = [
     priority: 'medium',
     tags: ['ui'],
     dependsOn: [1],
-    acceptanceCriteria: [],
-    contextFiles: [],
-    outputArtifacts: [],
+    acceptanceCriteriaCount: 0,
+    signalCount: 0,
     subsystemDisplayName: 'Authentication',
-    signals: [],
     subsystemAcronym: 'AUTH',
     disciplineDisplayName: 'Frontend',
     disciplineAcronym: 'FRNT',
@@ -68,11 +63,9 @@ const mockTasks: Task[] = [
     priority: 'low',
     tags: [],
     dependsOn: [],
-    acceptanceCriteria: [],
-    contextFiles: [],
-    outputArtifacts: [],
+    acceptanceCriteriaCount: 0,
+    signalCount: 0,
     subsystemDisplayName: 'User Profile',
-    signals: [],
     subsystemAcronym: 'USER',
     disciplineDisplayName: 'Backend',
     disciplineAcronym: 'BKND',
@@ -88,11 +81,9 @@ const mockTasks: Task[] = [
     priority: 'medium',
     tags: ['ui'],
     dependsOn: [3],
-    acceptanceCriteria: [],
-    contextFiles: [],
-    outputArtifacts: [],
+    acceptanceCriteriaCount: 0,
+    signalCount: 0,
     subsystemDisplayName: 'User Profile',
-    signals: [],
     subsystemAcronym: 'USER',
     disciplineDisplayName: 'Frontend',
     disciplineAcronym: 'FRNT',
@@ -120,11 +111,9 @@ export const WithBlockedTasks: Story = {
         priority: 'critical',
         tags: ['payments'],
         dependsOn: [],
-        acceptanceCriteria: [],
-        contextFiles: [],
-        outputArtifacts: [],
+        acceptanceCriteriaCount: 0,
+        signalCount: 0,
         subsystemDisplayName: 'Payments',
-        signals: [],
         subsystemAcronym: 'PAYM',
         disciplineDisplayName: 'Backend',
         disciplineAcronym: 'BKND',
@@ -140,11 +129,9 @@ export const WithBlockedTasks: Story = {
         priority: 'low',
         tags: ['email'],
         dependsOn: [],
-        acceptanceCriteria: [],
-        contextFiles: [],
-        outputArtifacts: [],
+        acceptanceCriteriaCount: 0,
+        signalCount: 0,
         subsystemDisplayName: 'Notifications',
-        signals: [],
         subsystemAcronym: 'NOTI',
         disciplineDisplayName: 'Backend',
         disciplineAcronym: 'BKND',

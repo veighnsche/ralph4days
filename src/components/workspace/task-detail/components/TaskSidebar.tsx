@@ -1,5 +1,6 @@
-import { Bot, Check, Cog, Play, Radio, Sparkles, User, WandSparkles } from 'lucide-react'
+import { Bot, Brain, Check, Cog, Play, Radio, Sparkles, User, WandSparkles } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { LaunchOptionsReadout } from '@/components/agent-session-launch'
 import { InlineError } from '@/components/shared'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -14,6 +15,7 @@ import {
   patchTaskListItemInTaskListCache
 } from '@/hooks/tasks/taskCache'
 import type { UpdateTaskVariables } from '@/hooks/tasks/updateTaskMutation'
+import { getDefaultModel } from '@/lib/agent-session-launch-config'
 import { formatDate } from '@/lib/formatDate'
 import type { InferredTaskStatus } from '@/lib/taskStatus'
 import { shouldShowInferredStatus } from '@/lib/taskStatus'
@@ -23,6 +25,7 @@ import { PropertyRow } from '../../PropertyRow'
 import { createTerminalTab } from '../../tabs'
 import { type LaunchSource, useResolvedTaskLaunch } from '../hooks/useResolvedTaskLaunch'
 import { DisciplineSelect } from './DisciplineSelect'
+import { TaskLaunchOverridesDialog } from './TaskLaunchOverridesDialog'
 
 const PROVENANCE_CONFIG = {
   agent: { label: 'Agent', icon: Bot },
@@ -220,6 +223,7 @@ function formatThinkingValue(thinking: boolean | undefined) {
 }
 
 function buildLaunchSection({
+  task,
   resolvedAgent,
   resolvedModel,
   resolvedEffort,
@@ -230,6 +234,7 @@ function buildLaunchSection({
   effortSource,
   thinkingSource
 }: {
+  task: Task
   resolvedAgent: string | null | undefined
   resolvedModel: string | null | undefined
   resolvedEffort: string | null | undefined
@@ -241,47 +246,79 @@ function buildLaunchSection({
   thinkingSource: LaunchSource
 }) {
   const thinkingText = formatThinkingValue(resolvedThinking)
+  const agentText = resolvedAgent ?? 'unset'
+  const modelText = resolvedModel ?? 'No model set'
+  const effortText = resolvedEffort ?? 'unset'
+  const initialAgent = resolvedAgent === 'claude' || resolvedAgent === 'codex' ? resolvedAgent : 'codex'
 
   return (
     <PropertyRow key="launch" label="Launch">
-      <div className="space-y-1 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <span>Agent:</span>
-          <code
-            title={resolvedAgent ?? 'unset'}
-            className="font-mono bg-muted px-1.5 py-0.5 rounded flex-1 min-w-0 truncate">
-            {resolvedAgent ?? 'unset'}
-          </code>
-          {sourceIcon(agentSource)}
-        </div>
-        <div className="flex items-center gap-1.5 min-w-0">
-          <span>Model:</span>
-          <code
-            title={resolvedModel ?? 'No model set'}
-            className="font-mono bg-muted px-1.5 py-0.5 rounded flex-1 min-w-0 truncate">
-            {resolvedModel ?? 'No model set'}
-          </code>
-          {sourceIcon(modelSource)}
-        </div>
-        {resolvedModelSupportsEffort ? (
-          <div className="flex items-center gap-1.5 min-w-0">
-            <span>Effort:</span>
-            <code
-              title={resolvedEffort ?? 'unset'}
-              className="font-mono bg-muted px-1.5 py-0.5 rounded flex-1 min-w-0 truncate">
-              {resolvedEffort ?? 'unset'}
-            </code>
-            {sourceIcon(effortSource)}
-          </div>
-        ) : null}
-        <div className="flex items-center gap-1.5 min-w-0">
-          <span>Thinking:</span>
-          <code title={thinkingText} className="font-mono bg-muted px-1.5 py-0.5 rounded flex-1 min-w-0 truncate">
-            {thinkingText}
-          </code>
-          {sourceIcon(thinkingSource)}
-        </div>
-      </div>
+      <TaskLaunchOverridesDialog
+        task={task}
+        initialConfig={{
+          agent: initialAgent,
+          model: resolvedModel ?? getDefaultModel(initialAgent),
+          effort:
+            resolvedEffort === 'low' || resolvedEffort === 'medium' || resolvedEffort === 'high'
+              ? resolvedEffort
+              : 'medium',
+          thinking: resolvedThinking ?? false,
+          // Tasks do not persist permission level today; keep a deterministic local default.
+          permissionLevel: 'balanced'
+        }}
+        trigger={
+          <button
+            type="button"
+            className="w-full text-left rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            aria-label="Edit launch options">
+            <LaunchOptionsReadout
+              className="transition-colors hover:bg-accent/20"
+              rows={[
+                {
+                  label: 'Agent',
+                  value: agentText,
+                  valueTitle: agentText,
+                  monospace: true,
+                  muted: resolvedAgent == null,
+                  right: sourceIcon(agentSource)
+                },
+                {
+                  label: 'Model',
+                  value: modelText,
+                  valueTitle: modelText,
+                  monospace: true,
+                  muted: resolvedModel == null,
+                  right: sourceIcon(modelSource)
+                },
+                ...(resolvedModelSupportsEffort
+                  ? [
+                      {
+                        label: 'Effort',
+                        value: effortText,
+                        valueTitle: effortText,
+                        monospace: true,
+                        muted: resolvedEffort == null,
+                        right: sourceIcon(effortSource)
+                      }
+                    ]
+                  : []),
+                {
+                  label: 'Thinking',
+                  value: (
+                    <span className="inline-flex items-center gap-1">
+                      <Brain className="h-3 w-3" aria-hidden="true" />
+                      {thinkingText}
+                    </span>
+                  ),
+                  valueTitle: thinkingText,
+                  muted: resolvedThinking === undefined,
+                  right: sourceIcon(thinkingSource)
+                }
+              ]}
+            />
+          </button>
+        }
+      />
     </PropertyRow>
   )
 }
@@ -415,6 +452,7 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
       className="mt-1 mb-2"
     />,
     buildLaunchSection({
+      task,
       resolvedAgent,
       resolvedModel,
       resolvedEffort,

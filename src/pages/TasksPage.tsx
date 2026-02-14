@@ -4,12 +4,10 @@ import { PRDBody } from '@/components/prd/PRDBody'
 import { PRDHeader } from '@/components/prd/PRDHeader'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
-import { createTaskDetailTab } from '@/components/workspace/tabs'
 import { useInvoke } from '@/hooks/api'
 import { useDisciplines } from '@/hooks/disciplines/useDisciplines'
 import { usePRDData, usePRDFilters } from '@/hooks/tasks'
 import { computeProjectProgress, getAllTags } from '@/lib/stats'
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { DisciplineCropsData, ProjectInfo } from '@/types/generated'
 
 export function TasksPage() {
@@ -28,7 +26,6 @@ export function TasksPage() {
   const progress = useMemo(() => computeProjectProgress(tasks ?? []), [tasks])
 
   const { filters, setters, filteredTasks, clearFilters } = usePRDFilters(tasks, allTags)
-  const openTab = useWorkspaceStore(s => s.openTab)
 
   const totalTasks = progress.totalTasks
   const doneTasks = progress.doneTasks
@@ -98,7 +95,6 @@ export function TasksPage() {
           filteredTasks={filteredTasks}
           totalTasks={totalTasks}
           cropsStore={cropsStore}
-          onTaskClick={task => openTab(createTaskDetailTab(task.id))}
           onClearFilters={clearFilters}
         />
       </PageContent>

@@ -1,4 +1,5 @@
 import { Brain } from 'lucide-react'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { SelectableCard } from '@/components/ui/selectable-card'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -94,7 +95,7 @@ export function ModelPicker({
   const { setModel, setEffort, setThinking } = useAgentSessionConfigActions()
 
   return (
-    <div className="flex flex-col gap-2" role="radiogroup" aria-label="Model">
+    <div className="flex h-full min-h-0 flex-col gap-2" role="radiogroup" aria-label="Model">
       <PickerSectionHeader
         title="Model"
         action={
@@ -117,28 +118,32 @@ export function ModelPicker({
           </TooltipProvider>
         }
       />
-      {models.map(modelOption => {
-        const selected = model === modelOption.name
-        const hasEffort = (modelOption.effortOptions ?? []).length > 0
-        return (
-          <div key={modelOption.name} className="flex flex-col">
-            <ModelCard
-              modelOption={modelOption}
-              selected={selected}
-              loading={loadingModels}
-              fusedBottom={hasEffort}
-              onSelect={() => setModel(modelOption.name)}
-            />
-            <ModelEffortRow
-              modelOption={modelOption}
-              selected={selected}
-              effort={effort}
-              onModelSelect={setModel}
-              onEffortSelect={setEffort}
-            />
-          </div>
-        )
-      })}
+      <ScrollArea className="min-h-0 flex-1 pr-2">
+        <div className="flex flex-col gap-2">
+          {models.map(modelOption => {
+            const selected = model === modelOption.name
+            const hasEffort = (modelOption.effortOptions ?? []).length > 0
+            return (
+              <div key={modelOption.name} className="flex flex-col">
+                <ModelCard
+                  modelOption={modelOption}
+                  selected={selected}
+                  loading={loadingModels}
+                  fusedBottom={hasEffort}
+                  onSelect={() => setModel(modelOption.name)}
+                />
+                <ModelEffortRow
+                  modelOption={modelOption}
+                  selected={selected}
+                  effort={effort}
+                  onModelSelect={setModel}
+                  onEffortSelect={setEffort}
+                />
+              </div>
+            )
+          })}
+        </div>
+      </ScrollArea>
     </div>
   )
 }
