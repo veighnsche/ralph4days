@@ -155,9 +155,10 @@ fn start_session_impl(
         args.post_start_preamble,
     )?;
 
+    let sink = std::sync::Arc::new(crate::event_sink::TauriEventSink::new(app));
     state
         .pty_manager
-        .create_session(app, args.session_id, &project_path, mcp_config, config)
+        .create_session(sink, args.session_id, &project_path, mcp_config, config)
 }
 
 fn start_task_session_impl(
@@ -183,8 +184,9 @@ fn start_task_session_impl(
         args.post_start_preamble,
     )?;
 
+    let sink = std::sync::Arc::new(crate::event_sink::TauriEventSink::new(app));
     state.pty_manager.create_session(
-        app,
+        sink,
         args.session_id,
         &project_path,
         Some(mcp_config),

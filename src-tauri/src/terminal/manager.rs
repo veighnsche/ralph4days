@@ -4,12 +4,12 @@ use std::collections::{HashMap, VecDeque};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use tauri::{AppHandle, Emitter};
 
-use super::events::{PtyClosedEvent, PtyOutputEvent, TERMINAL_CLOSED_EVENT, TERMINAL_OUTPUT_EVENT};
 use super::providers::resolve_agent_provider;
 use super::session::{PTYSession, SessionConfig};
 use super::{TerminalBridgeReplayOutputChunk, TerminalBridgeReplayOutputResult};
+use ralph_contracts::terminal::{PtyClosedEvent, PtyOutputEvent};
+use ralph_contracts::transport::EventSink;
 
 use ralph_errors::{codes, RalphResultExt, ToStringErr};
 
@@ -149,10 +149,10 @@ impl PTYManager {
         }
     }
 
-    #[tracing::instrument(skip(self, app), fields(session_id = %session_id))]
+    #[tracing::instrument(skip(self, sink), fields(session_id = %session_id))]
     pub fn create_session(
         &self,
-        app: AppHandle,
+        sink: Arc<dyn EventSink>,
         session_id: String,
         working_dir: &Path,
         mcp_config: Option<PathBuf>,
@@ -238,7 +238,7 @@ impl PTYManager {
         );
 
         let sid = session_id.clone();
-        let app_clone = app;
+        let sink_clone = sink;
         let child_clone = Arc::clone(&child);
         let sessions_ref = Arc::clone(&self.sessions);
         let replay_buffer_bytes = self.replay_buffer_bytes;
@@ -288,7 +288,13 @@ impl PTYManager {
                         }
 
                         if let Some(event) = output_event {
-                            let _ = app_clone.emit(TERMINAL_OUTPUT_EVENT, event);
+                            if let Err(error) = sink_clone.emit_terminal_output(event) {
+                                tracing::warn!(
+                                    session_id = %sid,
+                                    error = %error,
+                                    "Failed to emit terminal output event"
+                                );
+                            }
                         }
                     }
                 }
@@ -307,13 +313,16 @@ impl PTYManager {
                 "PTY session closed"
             );
 
-            let _ = app_clone.emit(
-                TERMINAL_CLOSED_EVENT,
-                PtyClosedEvent {
-                    session_id: sid.clone(),
-                    exit_code,
-                },
-            );
+            if let Err(error) = sink_clone.emit_terminal_closed(PtyClosedEvent {
+                session_id: sid.clone(),
+                exit_code,
+            }) {
+                tracing::warn!(
+                    session_id = %sid,
+                    error = %error,
+                    "Failed to emit terminal closed event"
+                );
+            }
 
             if let Ok(mut sessions) = sessions_ref.lock() {
                 sessions.remove(&sid);

@@ -9,12 +9,11 @@ pub use contract::{
     TerminalBridgeStartSessionArgs, TerminalBridgeStartTaskSessionArgs,
     TerminalBridgeTerminateArgs,
 };
-pub use events::{PtyOutputEvent, TERMINAL_OUTPUT_EVENT};
 pub use manager::{PTYManager, SessionStreamMode};
+pub use ralph_contracts::terminal::{PtyOutputEvent, TERMINAL_OUTPUT_EVENT};
 pub use session::{SessionConfig, SessionInitSettings};
 
 mod contract;
-mod events;
 mod manager;
 mod mappers;
 pub(crate) mod providers;

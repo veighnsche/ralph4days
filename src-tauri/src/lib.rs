@@ -1,6 +1,7 @@
 mod api_server;
 mod commands;
 mod diagnostics;
+mod event_sink;
 mod recent_projects;
 mod terminal;
 mod xdg;
@@ -61,7 +62,9 @@ pub fn run() {
         .setup(|app| {
             // Start API server for MCP signal communication
             let app_handle = app.handle().clone();
-            diagnostics::register_app_handle(&app_handle);
+            diagnostics::register_sink(std::sync::Arc::new(event_sink::TauriEventSink::new(
+                app_handle.clone(),
+            )));
             let state: tauri::State<AppState> = app.state();
             let mut skip_splash = false;
 
@@ -202,6 +205,7 @@ pub fn run() {
             commands::prompts::prompt_builder_config_get,
             commands::prompts::prompt_builder_config_save,
             commands::prompts::prompt_builder_config_delete,
+            commands::protocol::protocol_version_get,
             commands::terminal_bridge::terminal_start_session,
             commands::terminal_bridge::terminal_start_task_session,
             commands::terminal_bridge::terminal_send_input,

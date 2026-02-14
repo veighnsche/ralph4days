@@ -1,39 +1,33 @@
-use serde::Serialize;
-use std::sync::OnceLock;
-use tauri::{AppHandle, Emitter};
+use ralph_contracts::events::{BackendDiagnosticEvent, BackendDiagnosticLevel};
+use ralph_contracts::transport::EventSink;
+use std::sync::{Arc, OnceLock};
 
-static APP_HANDLE: OnceLock<AppHandle> = OnceLock::new();
+static EVENT_SINK: OnceLock<Arc<dyn EventSink>> = OnceLock::new();
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct BackendDiagnostic {
-    level: String,
-    source: String,
-    code: String,
-    message: String,
+pub fn register_sink(sink: Arc<dyn EventSink>) {
+    assert!(
+        EVENT_SINK.set(sink).is_ok(),
+        "backend-diagnostic sink already registered"
+    );
 }
 
-pub fn register_app_handle(app_handle: &AppHandle) {
-    let _ = APP_HANDLE.set(app_handle.clone());
-}
-
-pub fn emit(level: &str, source: &str, code: &str, message: &str) {
-    let event = BackendDiagnostic {
-        level: level.to_owned(),
+pub fn emit(level: BackendDiagnosticLevel, source: &str, code: &str, message: &str) {
+    let event = BackendDiagnosticEvent {
+        level,
         source: source.to_owned(),
         code: code.to_owned(),
         message: message.to_owned(),
     };
 
-    if let Some(handle) = APP_HANDLE.get() {
-        if let Err(error) = handle.emit("backend-diagnostic", &event) {
+    if let Some(sink) = EVENT_SINK.get() {
+        if let Err(error) = sink.emit_backend_diagnostic(event) {
             tracing::warn!("Failed to emit backend-diagnostic event: {error}");
         }
     } else {
-        tracing::warn!("backend-diagnostic not registered: {}", event.message);
+        tracing::warn!("backend-diagnostic sink not registered: {}", event.message);
     }
 }
 
 pub fn emit_warning(source: &str, code: &str, message: &str) {
-    emit("warning", source, code, message);
+    emit(BackendDiagnosticLevel::Warning, source, code, message);
 }
