@@ -1,9 +1,9 @@
 import { Brain } from 'lucide-react'
-import { Fragment } from 'react'
 import { SelectableCard } from '@/components/ui/selectable-card'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import type { Effort } from '@/lib/agent-session-launch-config'
+import { cn } from '@/lib/utils'
 import type { TerminalBridgeModelOption } from '@/types/generated'
 import { useAgentSessionConfigActions, useAgentSessionConfigLaunchState } from '../hooks/useAgentSessionConfigTabState'
 import { asEffort } from '../state'
@@ -13,11 +13,13 @@ function ModelCard({
   modelOption,
   selected,
   loading,
+  fusedBottom,
   onSelect
 }: {
   modelOption: TerminalBridgeModelOption
   selected: boolean
   loading: boolean
+  fusedBottom: boolean
   onSelect: () => void
 }) {
   return (
@@ -27,7 +29,10 @@ function ModelCard({
       aria-checked={selected}
       onClick={onSelect}
       disabled={loading}
-      className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-sm font-medium">
+      className={cn(
+        'flex w-full flex-col items-start gap-0.5 px-3 py-2 text-sm font-medium',
+        fusedBottom && 'rounded-b-none'
+      )}>
       <span>{modelOption.display || modelOption.name}</span>
       <span className="text-xs font-normal text-muted-foreground">{modelOption.description}</span>
       {modelOption.sessionModel && modelOption.sessionModel !== modelOption.name && (
@@ -64,10 +69,13 @@ function ModelEffortRow({
         if (nextEffort) onEffortSelect(nextEffort)
       }}
       variant="outline"
-      className="w-full"
+      className="w-full rounded-none"
       aria-label="Effort">
       {effortOptions.map(effortOption => (
-        <ToggleGroupItem key={effortOption} value={effortOption} className="flex-1 capitalize">
+        <ToggleGroupItem
+          key={effortOption}
+          value={effortOption}
+          className="flex-1 capitalize border-t-0 data-[spacing=0]:first:!rounded-tl-none data-[spacing=0]:last:!rounded-tr-none">
           {effortOption}
         </ToggleGroupItem>
       ))}
@@ -111,12 +119,14 @@ export function ModelPicker({
       />
       {models.map(modelOption => {
         const selected = model === modelOption.name
+        const hasEffort = (modelOption.effortOptions ?? []).length > 0
         return (
-          <Fragment key={modelOption.name}>
+          <div key={modelOption.name} className="flex flex-col">
             <ModelCard
               modelOption={modelOption}
               selected={selected}
               loading={loadingModels}
+              fusedBottom={hasEffort}
               onSelect={() => setModel(modelOption.name)}
             />
             <ModelEffortRow
@@ -126,7 +136,7 @@ export function ModelPicker({
               onModelSelect={setModel}
               onEffortSelect={setEffort}
             />
-          </Fragment>
+          </div>
         )
       })}
     </div>
