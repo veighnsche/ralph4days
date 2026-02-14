@@ -1,6 +1,6 @@
 import { PRIORITY_CONFIG } from '@/constants/prd'
 
-export function PriorityRadial({ priority }: { priority: string }) {
+export function PriorityRadial({ priority }: { priority?: string | null }) {
   const config = PRIORITY_CONFIG[priority as keyof typeof PRIORITY_CONFIG]
   if (!config) return null
 

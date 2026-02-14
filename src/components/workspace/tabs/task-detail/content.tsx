@@ -2,13 +2,20 @@ import { CheckCircle2 } from 'lucide-react'
 import { TaskPriorityCorner } from '@/components/shared'
 import { CroppedImage } from '@/components/ui/cropped-image'
 import { STATUS_CONFIG } from '@/constants/prd'
-import { useInvoke } from '@/hooks/api'
+import { buildInvokeQueryKey, useInvoke, useInvokeMutation } from '@/hooks/api'
 import { useDisciplines } from '@/hooks/disciplines'
 import { usePRDData } from '@/hooks/tasks'
+import {
+  patchTaskInTaskDetailCache,
+  patchTaskInTaskDetailCacheOptimistically,
+  patchTaskListItemInTaskListCache,
+  patchTaskListItemInTaskListCacheOptimistically
+} from '@/hooks/tasks/taskCache'
+import { buildOptimisticTaskFromUpdateTask, type UpdateTaskVariables } from '@/hooks/tasks/updateTaskMutation'
 import { useTabMeta } from '@/hooks/workspace'
 import { computeInferredStatus } from '@/lib/taskStatus'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
-import type { Task } from '@/types/generated'
+import type { Task, TaskListItem } from '@/types/generated'
 import { DetailPageLayout } from '../../DetailPageLayout'
 import { CommentsSection } from '../../task-detail'
 import { TaskCardContent } from '../../task-detail/components/TaskCardContent'
@@ -35,6 +42,43 @@ export function TaskDetailTabContent({ tab, params }: { tab: WorkspaceTab; param
   const { disciplines } = useDisciplines('workspace')
 
   useTabMeta(tab.id, task?.title ?? TASK_DETAIL_TAB_FALLBACK_TITLE, CheckCircle2)
+
+  const updateTaskMutation = useInvokeMutation<UpdateTaskVariables, Task>('update_task', {
+    queryDomain: 'workspace',
+    optimisticUpdate: ({ queryClient, variables, queryDomain }) => {
+      if (!task) throw new Error('[task-detail] update_task optimisticUpdate called without task loaded')
+
+      const optimisticTask = buildOptimisticTaskFromUpdateTask(task, variables.params)
+      const rollbackDetail = patchTaskInTaskDetailCacheOptimistically(queryClient, optimisticTask, queryDomain)
+
+      const listQueryKey = buildInvokeQueryKey('get_task_list_items', undefined, queryDomain)
+      const listItems = queryClient.getQueryData<TaskListItem[]>(listQueryKey)
+      const listItem = listItems?.find(item => item.id === task.id)
+      const rollbackList = listItem
+        ? patchTaskListItemInTaskListCacheOptimistically(
+            queryClient,
+            { ...listItem, priority: optimisticTask.priority },
+            queryDomain
+          )
+        : undefined
+
+      return () => {
+        rollbackList?.()
+        rollbackDetail()
+      }
+    },
+    updateCache: ({ queryClient, data, queryDomain }) => {
+      patchTaskInTaskDetailCache(queryClient, data, queryDomain)
+
+      const listQueryKey = buildInvokeQueryKey('get_task_list_items', undefined, queryDomain)
+      const listItems = queryClient.getQueryData<TaskListItem[]>(listQueryKey)
+      const listItem = listItems?.find(item => item.id === data.id)
+      if (!listItem) return
+
+      if (listItem.priority === data.priority) return
+      patchTaskListItemInTaskListCache(queryClient, { ...listItem, priority: data.priority }, queryDomain)
+    }
+  })
 
   if (entityId == null) {
     return (
@@ -76,10 +120,47 @@ export function TaskDetailTabContent({ tab, params }: { tab: WorkspaceTab; param
     ? Math.round((faceCrop.y + faceCrop.h / 2) * 100)
     : TASK_DETAIL_TAB_FALLBACK_EYELINE_PERCENT
 
+  const cyclePriority = () => {
+    const current = task.priority
+    const next = current === 'low' ? 'medium' : current === 'medium' ? 'high' : current === 'high' ? undefined : 'low'
+
+    updateTaskMutation.mutate({
+      params: {
+        id: task.id,
+        subsystem: task.subsystem,
+        discipline: task.discipline,
+        title: task.title,
+        description: task.description,
+        priority: next,
+        tags: task.tags,
+        depends_on: task.dependsOn,
+        acceptance_criteria: task.acceptanceCriteria,
+        context_files: task.contextFiles,
+        output_artifacts: task.outputArtifacts,
+        hints: task.hints,
+        estimated_turns: task.estimatedTurns,
+        provenance: task.provenance,
+        agent: task.agent,
+        model: task.model,
+        effort: task.effort,
+        thinking: task.thinking
+      }
+    })
+  }
+
   return (
     <DetailPageLayout
       accentColor={statusConfig.color}
-      cardOverlay={<TaskPriorityCorner priority={task.priority} size="md" className="top-4 right-4" />}
+      cardOverlay={
+        <TaskPriorityCorner
+          priority={task.priority}
+          size="md"
+          className="top-4 right-4"
+          showUnset
+          disabled={updateTaskMutation.isPending}
+          onClick={cyclePriority}
+        />
+      }
       sidebarImage={
         stripCrop && (
           <CroppedImage

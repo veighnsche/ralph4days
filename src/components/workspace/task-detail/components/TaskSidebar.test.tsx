@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Task } from '@/types/generated'
 import { TaskSidebar } from './TaskSidebar'
@@ -98,32 +98,16 @@ describe('TaskSidebar', () => {
       separator => separator.nextElementSibling?.getAttribute('data-slot') === 'separator'
     )
 
-    expect(separators.length).toBe(3)
+    expect(separators.length).toBe(2)
     expect(hasAdjacentSeparators).toBe(false)
   })
 
-  it('updates task priority when a different priority button is clicked', () => {
+  it('does not render the priority button group in the sidebar', () => {
     render(<TaskSidebar task={createTask({ priority: 'medium' })} inferredStatus="ready" />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'High' }))
-
-    expect(updateMutate).toHaveBeenCalledTimes(1)
-    expect(updateMutate).toHaveBeenCalledWith({
-      params: expect.objectContaining({
-        id: 101,
-        priority: 'high',
-        discipline: 'frontend',
-        subsystem: 'core-platform'
-      })
-    })
-  })
-
-  it('does not update task priority when clicking the current priority button', () => {
-    render(<TaskSidebar task={createTask({ priority: 'medium' })} inferredStatus="ready" />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Medium' }))
-
-    expect(updateMutate).not.toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: 'Low' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Medium' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'High' })).toBeNull()
   })
 
   it('uses workspace query domain for task mutations', () => {

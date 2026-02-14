@@ -38,11 +38,12 @@ export function DetailPageLayout({
           <Card
             className="shadow-sm flex flex-row gap-0 py-0 relative"
             style={cardBorderColor ? { borderColor: cardBorderColor } : undefined}>
-            {cardOverlay && (
-              <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">{cardOverlay}</div>
-            )}
-
-            <div className="flex-1 min-w-0 py-4 relative z-10">{mainContent}</div>
+            <div className="flex-1 min-w-0 py-4 relative z-10">
+              {cardOverlay && (
+                <div className="absolute inset-0 overflow-hidden pointer-events-none z-20">{cardOverlay}</div>
+              )}
+              {mainContent}
+            </div>
 
             <div
               className="w-56 flex-shrink-0 border-l relative overflow-hidden z-10"

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
 import { Separator } from '@/components/ui/separator'
-import { INFERRED_STATUS_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG } from '@/constants/prd'
+import { INFERRED_STATUS_CONFIG, STATUS_CONFIG } from '@/constants/prd'
 import { type SignalVerb, VERB_CONFIG } from '@/constants/signals'
 import { useInvokeMutation } from '@/hooks/api'
 import {
@@ -31,7 +31,6 @@ const PROVENANCE_CONFIG = {
   human: { label: 'Human', icon: User },
   system: { label: 'System', icon: Cog }
 } as const
-const PRIORITY_OPTIONS = ['low', 'medium', 'high'] as const satisfies ReadonlyArray<keyof typeof PRIORITY_CONFIG>
 
 function sourceIcon(source: LaunchSource) {
   if (source === 'task') {
@@ -217,10 +216,118 @@ function buildCreatedSection(task: Task) {
   return rows
 }
 
+function formatThinkingValue(thinking: boolean | undefined) {
+  if (thinking === undefined) return 'unset'
+  return thinking ? 'on' : 'off'
+}
+
+function buildLaunchSection({
+  resolvedAgent,
+  resolvedModel,
+  resolvedEffort,
+  resolvedThinking,
+  resolvedModelSupportsEffort,
+  agentSource,
+  modelSource,
+  effortSource,
+  thinkingSource
+}: {
+  resolvedAgent: string | null | undefined
+  resolvedModel: string | null | undefined
+  resolvedEffort: string | null | undefined
+  resolvedThinking: boolean | undefined
+  resolvedModelSupportsEffort: boolean
+  agentSource: LaunchSource
+  modelSource: LaunchSource
+  effortSource: LaunchSource
+  thinkingSource: LaunchSource
+}) {
+  const thinkingText = formatThinkingValue(resolvedThinking)
+
+  return (
+    <PropertyRow key="launch" label="Launch">
+      <div className="space-y-1 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span>Agent:</span>
+          <code
+            title={resolvedAgent ?? 'unset'}
+            className="font-mono bg-muted px-1.5 py-0.5 rounded flex-1 min-w-0 truncate">
+            {resolvedAgent ?? 'unset'}
+          </code>
+          {sourceIcon(agentSource)}
+        </div>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span>Model:</span>
+          <code
+            title={resolvedModel ?? 'No model set'}
+            className="font-mono bg-muted px-1.5 py-0.5 rounded flex-1 min-w-0 truncate">
+            {resolvedModel ?? 'No model set'}
+          </code>
+          {sourceIcon(modelSource)}
+        </div>
+        {resolvedModelSupportsEffort ? (
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span>Effort:</span>
+            <code
+              title={resolvedEffort ?? 'unset'}
+              className="font-mono bg-muted px-1.5 py-0.5 rounded flex-1 min-w-0 truncate">
+              {resolvedEffort ?? 'unset'}
+            </code>
+            {sourceIcon(effortSource)}
+          </div>
+        ) : null}
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span>Thinking:</span>
+          <code title={thinkingText} className="font-mono bg-muted px-1.5 py-0.5 rounded flex-1 min-w-0 truncate">
+            {thinkingText}
+          </code>
+          {sourceIcon(thinkingSource)}
+        </div>
+      </div>
+    </PropertyRow>
+  )
+}
+
+function buildTagsSection(tags: string[] | null | undefined): ReactNode[] {
+  if (!tags || tags.length === 0) return []
+  return [
+    <Separator key="tags-sep" bleed="md" className="my-2" />,
+    <PropertyRow key="tags" label="Tags">
+      <div className="flex flex-wrap gap-1">
+        {tags.map(tag => (
+          <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0 h-5">
+            {tag}
+          </Badge>
+        ))}
+      </div>
+    </PropertyRow>
+  ]
+}
+
+function buildRunSection({
+  isDraftAgent,
+  isPending,
+  onApprove
+}: {
+  isDraftAgent: boolean
+  isPending: boolean
+  onApprove: () => void
+}) {
+  return (
+    <div key="run" className="pt-2 pb-1 space-y-1.5">
+      {isDraftAgent ? (
+        <Button onClick={onApprove} variant="outline" size="sm" className="w-full h-8" disabled={isPending}>
+          <Check className="h-3.5 w-3.5 mr-1.5" />
+          {isPending ? 'Approving...' : 'Approve Task'}
+        </Button>
+      ) : null}
+    </div>
+  )
+}
+
 export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStatus: InferredTaskStatus }) {
   const { id: taskId, status, subsystemDisplayName, tags, subsystem, discipline, title, description } = task
   const signals = (task.signals ?? []).filter(signal => signal.signal_verb != null)
-  const shouldShowSignals = signals.length > 0
   const statusConfig = STATUS_CONFIG[status]
   const openTab = useWorkspaceStore(state => state.openTab)
   const isDraftAgent = status === 'draft' && task.provenance === 'agent'
@@ -284,8 +391,8 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
     )
   }
 
-  const handleDisciplineSelect = (disciplineName: string) =>
-    disciplineName !== discipline &&
+  const handleDisciplineSelect = (disciplineName: string) => {
+    if (disciplineName === discipline) return
     updateTaskMutation.mutate({
       params: {
         id: taskId,
@@ -308,75 +415,17 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
         thinking: task.thinking
       }
     })
+  }
 
-  const handlePrioritySelect = (priority: keyof typeof PRIORITY_CONFIG) =>
-    priority !== task.priority &&
-    updateTaskMutation.mutate({
-      params: {
-        id: taskId,
-        subsystem,
-        discipline,
-        title,
-        description,
-        priority,
-        tags,
-        depends_on: dependsOn,
-        acceptance_criteria: task.acceptanceCriteria,
-        context_files: task.contextFiles,
-        output_artifacts: task.outputArtifacts,
-        hints: task.hints,
-        estimated_turns: task.estimatedTurns,
-        provenance: task.provenance,
-        agent: task.agent,
-        model: task.model,
-        effort: task.effort,
-        thinking: task.thinking
-      }
-    })
-
-  const sections: ReactNode[] = []
-  sections.push(
+  const sections: ReactNode[] = [
     buildStatusSection(task, statusConfig, inferredStatus, dependsOn),
-    <div key="run" className="pt-2 pb-1 space-y-1.5">
-      {isDraftAgent && (
-        <Button
-          onClick={handleApprove}
-          variant="outline"
-          size="sm"
-          className="w-full h-8"
-          disabled={approveMutation.isPending}>
-          <Check className="h-3.5 w-3.5 mr-1.5" />
-          {approveMutation.isPending ? 'Approving...' : 'Approve Task'}
-        </Button>
-      )}
-    </div>,
-    <PropertyRow key="priority" label="Priority">
-      <ButtonGroup className="w-full [&>[data-slot=button]]:flex-1">
-        {PRIORITY_OPTIONS.map(priority => {
-          const config = PRIORITY_CONFIG[priority]
-          const isSelected = task.priority === priority
-          return (
-            <Button
-              key={priority}
-              type="button"
-              size="sm"
-              variant={isSelected ? 'secondary' : 'outline'}
-              disabled={updateTaskMutation.isPending}
-              aria-pressed={isSelected}
-              onClick={() => handlePrioritySelect(priority)}
-              style={isSelected ? { color: config.color } : undefined}>
-              {config.label}
-            </Button>
-          )
-        })}
-      </ButtonGroup>
-    </PropertyRow>,
-    <Separator key="priority-sep" bleed="md" className="my-2" />,
+    buildRunSection({
+      isDraftAgent,
+      isPending: approveMutation.isPending,
+      onApprove: handleApprove
+    }),
     <PropertyRow key="subsystem" label="Subsystem">
       <span className="text-sm">{subsystemDisplayName}</span>
-    </PropertyRow>,
-    <PropertyRow key="discipline" label="Discipline">
-      <DisciplineSelect value={discipline} onSelect={handleDisciplineSelect} disabled={updateTaskMutation.isPending} />
     </PropertyRow>,
     <InlineError
       key="discipline-error"
@@ -384,68 +433,52 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
       onDismiss={updateTaskMutation.reset}
       className="mt-1 mb-2"
     />,
-    <PropertyRow key="launch" label="Launch">
-      <div className="space-y-1 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5">
-          <span>Agent:</span>
-          <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{resolvedAgent ?? 'unset'}</code>
-          {sourceIcon(agentSource)}
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span>Model:</span>
-          <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{resolvedModel ?? 'No model set'}</code>
-          {sourceIcon(modelSource)}
-        </div>
-        {resolvedModelSupportsEffort && (
-          <div className="flex items-center gap-1.5">
-            <span>Effort:</span>
-            <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{resolvedEffort ?? 'unset'}</code>
-            {sourceIcon(effortSource)}
-          </div>
-        )}
-        <div className="flex items-center gap-1.5">
-          <span>Thinking:</span>
-          <code className="font-mono bg-muted px-1.5 py-0.5 rounded">
-            {resolvedThinking === undefined ? 'unset' : resolvedThinking ? 'on' : 'off'}
-          </code>
-          {sourceIcon(thinkingSource)}
-        </div>
-      </div>
-    </PropertyRow>
-  )
+    buildLaunchSection({
+      resolvedAgent,
+      resolvedModel,
+      resolvedEffort,
+      resolvedThinking,
+      resolvedModelSupportsEffort,
+      agentSource,
+      modelSource,
+      effortSource,
+      thinkingSource
+    })
+  ]
 
-  sections.push(
-    ...(shouldShowSignals ? buildSessionsSection(signals) : []),
-    ...(task.tags && task.tags.length > 0
-      ? [
-          <Separator key="tags-sep" bleed="md" className="my-2" />,
-          <PropertyRow key="tags" label="Tags">
-            <div className="flex flex-wrap gap-1">
-              {task.tags.map(tag => (
-                <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0 h-5">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          </PropertyRow>
-        ]
-      : []),
-    <Separator key="created-sep" bleed="md" className="my-2" />,
-    ...buildCreatedSection(task)
-  )
+  if (signals.length > 0) {
+    sections.push(...buildSessionsSection(signals))
+  }
+
+  sections.push(...buildTagsSection(task.tags))
+  sections.push(<Separator key="created-sep" bleed="md" className="my-2" />)
+  sections.push(...buildCreatedSection(task))
 
   return (
-    <div className="relative h-full">
-      <Button
-        onClick={handleExecute}
-        size="icon"
-        className="absolute top-0 right-0 z-10 rounded-none rounded-bl-md"
-        disabled={status === 'done'}
-        aria-label="Execute Task">
-        <Play className="h-3.5 w-3.5" />
-      </Button>
+    <div className="h-full flex flex-col">
+      <div className="w-full border-b">
+        <ButtonGroup className="w-full">
+          <DisciplineSelect
+            value={discipline}
+            onSelect={handleDisciplineSelect}
+            disabled={updateTaskMutation.isPending}
+            showPencilIcon={false}
+            triggerClassName="flex-1 min-w-0 h-8 rounded-none rounded-tl-md border-t-0 border-b-0 border-l-0 shadow-none"
+          />
+          <Button
+            onClick={handleExecute}
+            variant="outline"
+            size="icon"
+            className="rounded-none rounded-tr-md border-t-0 border-b-0 border-r-0 shadow-none"
+            style={{ backgroundColor: 'var(--status-done)', borderColor: 'var(--status-done)', color: 'white' }}
+            disabled={status === 'done'}
+            aria-label="Execute Task">
+            <Play className="h-3.5 w-3.5" />
+          </Button>
+        </ButtonGroup>
+      </div>
 
-      <div className="px-4 py-4 space-y-0.5 overflow-y-auto h-full">{sections}</div>
+      <div className="px-3 pb-3 pt-2 space-y-0.5 overflow-y-auto overflow-x-hidden flex-1">{sections}</div>
     </div>
   )
 }
