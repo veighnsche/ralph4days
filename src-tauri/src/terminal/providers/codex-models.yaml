@@ -4,15 +4,30 @@ models:
   - name: gpt-5.3-codex
     display: GPT 5.3 Codex
     description: Latest frontier agentic coding model.
+    effort_options: [low, medium, high, xhigh]
+    effort_default: medium
+  - name: gpt-5.3-codex-spark
+    display: GPT 5.3 Codex Spark
+    description: Latest frontier agentic coding model.
+    effort_options: [low, medium, high, xhigh]
+    effort_default: high
   - name: gpt-5.2-codex
     display: GPT 5.2 Codex
     description: Frontier agentic coding model.
+    effort_options: [low, medium, high, xhigh]
+    effort_default: medium
   - name: gpt-5.1-codex-max
     display: GPT 5.1 Codex MAX
     description: Codex-optimized flagship for deep and fast reasoning.
+    effort_options: [low, medium, high, xhigh]
+    effort_default: medium
   - name: gpt-5.2
     display: GPT 5.2
     description: Latest frontier model with improvements across knowledge, reasoning and coding.
+    effort_options: [low, medium, high, xhigh]
+    effort_default: medium
   - name: gpt-5.1-codex-mini
     display: GPT 5.1 codex mini
     description: Optimized for codex. Cheaper, faster, but less capable.
+    effort_options: [medium, high]
+    effort_default: medium

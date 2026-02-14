@@ -5,6 +5,7 @@ models:
     display: Opus 4.6
     description: Most capable for complex work.
     effort_options: [low, medium, high]
+    effort_default: high
   - name: sonnet
     display: Sonnet 4.5
     description: Best for everyday tasks

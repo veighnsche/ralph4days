@@ -299,8 +299,13 @@ fn build_launch_command(config: &SessionConfig) -> String {
         parts.push(model.to_owned());
     }
     if let Some(effort) = config.effort.as_deref() {
-        parts.push("--effort".to_owned());
-        parts.push(effort.to_owned());
+        if agent == AGENT_CODEX {
+            parts.push("--config".to_owned());
+            parts.push(format!("model_reasoning_effort={effort}"));
+        } else {
+            parts.push("--effort".to_owned());
+            parts.push(effort.to_owned());
+        }
     }
 
     if agent == AGENT_CODEX {
@@ -691,6 +696,23 @@ mod tests {
         let event = build_system_message_event("session-ansi".to_owned(), text.clone());
         let decoded = STANDARD.decode(event.data).unwrap();
         assert_eq!(String::from_utf8(decoded).unwrap(), text);
+    }
+
+    #[test]
+    fn build_launch_command_for_codex_uses_reasoning_effort_config_override() {
+        let config = SessionConfig {
+            agent: Some(AGENT_CODEX.to_owned()),
+            model: Some("gpt-5.3-codex".to_owned()),
+            effort: Some("high".to_owned()),
+            thinking: None,
+            permission_level: None,
+            init_settings: SessionInitSettings::default(),
+            post_start_preamble: None,
+        };
+
+        let launch = build_launch_command(&config);
+        assert!(launch.contains("--config model_reasoning_effort=high"));
+        assert!(!launch.contains("--effort "));
     }
 
     #[test]
