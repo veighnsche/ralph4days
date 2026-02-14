@@ -6,9 +6,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter};
 
-use super::events::{
-    PtyClosedEvent, PtyOutputEvent, TERMINAL_BRIDGE_CLOSED_EVENT, TERMINAL_BRIDGE_OUTPUT_EVENT,
-};
+use super::events::{PtyClosedEvent, PtyOutputEvent, TERMINAL_CLOSED_EVENT, TERMINAL_OUTPUT_EVENT};
 use super::providers::resolve_agent_provider;
 use super::session::{PTYSession, SessionConfig};
 use super::{TerminalBridgeReplayOutputChunk, TerminalBridgeReplayOutputResult};
@@ -290,7 +288,7 @@ impl PTYManager {
                         }
 
                         if let Some(event) = output_event {
-                            let _ = app_clone.emit(TERMINAL_BRIDGE_OUTPUT_EVENT, event);
+                            let _ = app_clone.emit(TERMINAL_OUTPUT_EVENT, event);
                         }
                     }
                 }
@@ -310,7 +308,7 @@ impl PTYManager {
             );
 
             let _ = app_clone.emit(
-                TERMINAL_BRIDGE_CLOSED_EVENT,
+                TERMINAL_CLOSED_EVENT,
                 PtyClosedEvent {
                     session_id: sid.clone(),
                     exit_code,

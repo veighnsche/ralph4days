@@ -1,8 +1,8 @@
-import { invoke } from '@tauri-apps/api/core'
 import { Play, Square } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
+import { tauriInvoke } from '@/lib/tauri/invoke'
 import type { Page } from '@/pages/pageRegistry'
 import { ExecutionToggle } from './ExecutionToggle'
 import { NavigationMenu } from './NavigationMenu'
@@ -17,7 +17,7 @@ export function BottomBar({ lockedProject: _lockedProject, currentPage, onPageCh
   const isExecutionEnabled = Boolean(_lockedProject)
 
   const runExecutionCommand = (command: string) => {
-    void invoke(command).catch(error => {
+    void tauriInvoke(command).catch(error => {
       const message = error instanceof Error ? error.message : String(error)
       toast.error(message)
     })
@@ -35,7 +35,7 @@ export function BottomBar({ lockedProject: _lockedProject, currentPage, onPageCh
             disabled={!isExecutionEnabled}
             onClick={() => {
               if (isExecutionEnabled) {
-                runExecutionCommand('pause_execution_sequence')
+                runExecutionCommand('execution_pause')
               }
             }}
             title={isExecutionEnabled ? 'Pause execution' : 'Execution unavailable'}
@@ -48,7 +48,7 @@ export function BottomBar({ lockedProject: _lockedProject, currentPage, onPageCh
             title={isExecutionEnabled ? 'Start' : 'Execution unavailable'}
             onClick={() => {
               if (isExecutionEnabled) {
-                runExecutionCommand('start_execution_sequence')
+                runExecutionCommand('execution_start')
               }
             }}>
             <Play className="h-4 w-4" />
@@ -61,7 +61,7 @@ export function BottomBar({ lockedProject: _lockedProject, currentPage, onPageCh
             title={isExecutionEnabled ? 'Stop' : 'Execution unavailable'}
             onClick={() => {
               if (isExecutionEnabled) {
-                runExecutionCommand('stop_execution_sequence')
+                runExecutionCommand('execution_stop')
               }
             }}>
             <Square className="h-4 w-4" />

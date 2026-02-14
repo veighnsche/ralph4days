@@ -1,11 +1,12 @@
 use ralph_macros::ipc_type;
 use serde::Serialize;
 
-pub const TERMINAL_BRIDGE_OUTPUT_EVENT: &str = "terminal_bridge:output";
-pub const TERMINAL_BRIDGE_CLOSED_EVENT: &str = "terminal_bridge:closed";
+pub const TERMINAL_OUTPUT_EVENT: &str = "terminal:output";
+pub const TERMINAL_CLOSED_EVENT: &str = "terminal:closed";
 
 #[ipc_type]
 #[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PtyOutputEvent {
     pub session_id: String,
     pub seq: u64,
@@ -15,6 +16,7 @@ pub struct PtyOutputEvent {
 
 #[ipc_type]
 #[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PtyClosedEvent {
     pub session_id: String,
     pub exit_code: u32,
@@ -25,9 +27,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn terminal_bridge_event_names_are_stable() {
-        assert_eq!(TERMINAL_BRIDGE_OUTPUT_EVENT, "terminal_bridge:output");
-        assert_eq!(TERMINAL_BRIDGE_CLOSED_EVENT, "terminal_bridge:closed");
+    fn terminal_event_names_are_stable() {
+        assert_eq!(TERMINAL_OUTPUT_EVENT, "terminal:output");
+        assert_eq!(TERMINAL_CLOSED_EVENT, "terminal:closed");
     }
 
     #[test]
@@ -38,7 +40,7 @@ mod tests {
             data: "SGVsbG8=".to_owned(),
         };
         let json = serde_json::to_value(payload).unwrap();
-        assert_eq!(json["session_id"], "session-42");
+        assert_eq!(json["sessionId"], "session-42");
         assert_eq!(json["seq"], 7);
         assert_eq!(json["data"], "SGVsbG8=");
     }
@@ -50,7 +52,7 @@ mod tests {
             exit_code: 0,
         };
         let json = serde_json::to_value(payload).unwrap();
-        assert_eq!(json["session_id"], "session-42");
-        assert_eq!(json["exit_code"], 0);
+        assert_eq!(json["sessionId"], "session-42");
+        assert_eq!(json["exitCode"], 0);
     }
 }

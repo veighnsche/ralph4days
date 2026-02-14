@@ -127,7 +127,7 @@ function SubsystemSidebar({
 export function SubsystemDetailTabContent({ tab, params }: { tab: WorkspaceTab; params: SubsystemDetailTabParams }) {
   const { entityId: subsystemId } = params
 
-  const { data: subsystems, isLoading } = useInvoke<SubsystemData[]>('get_subsystems', undefined, {
+  const { data: subsystems, isLoading } = useInvoke<SubsystemData[]>('subsystems_list', undefined, {
     queryDomain: 'workspace',
     staleTime: 5 * 60 * 1000
   })

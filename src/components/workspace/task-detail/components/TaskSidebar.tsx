@@ -14,7 +14,7 @@ import {
   patchTaskInTaskDetailCache,
   patchTaskListItemInTaskListCache
 } from '@/hooks/tasks/taskCache'
-import type { UpdateTaskVariables } from '@/hooks/tasks/updateTaskMutation'
+import { buildUpdateArgsFromTask, type UpdateTaskVariables } from '@/hooks/tasks/updateTaskMutation'
 import { getDefaultModel } from '@/lib/agent-session-launch-config'
 import { formatDate } from '@/lib/formatDate'
 import type { InferredTaskStatus } from '@/lib/taskStatus'
@@ -54,10 +54,10 @@ function sourceIcon(source: LaunchSource) {
 function buildSignalSummaryText(signals: TaskSignal[]): string | null {
   if (signals.length === 0) return null
   const counts: Record<string, number> = {}
-  const pendingAsks = signals.filter(signal => signal.signal_verb === 'ask' && !signal.answer).length
+  const pendingAsks = signals.filter(signal => signal.signalVerb === 'ask' && !signal.answer).length
   for (const signal of signals) {
-    if (signal.signal_verb === 'flag') counts.flags = (counts.flags ?? 0) + 1
-    if (signal.signal_verb === 'learned') counts.learned = (counts.learned ?? 0) + 1
+    if (signal.signalVerb === 'flag') counts.flags = (counts.flags ?? 0) + 1
+    if (signal.signalVerb === 'learned') counts.learned = (counts.learned ?? 0) + 1
   }
   const parts: string[] = []
   if (counts.flags) parts.push(`${counts.flags} flag${counts.flags > 1 ? 's' : ''}`)
@@ -68,7 +68,7 @@ function buildSignalSummaryText(signals: TaskSignal[]): string | null {
 
 function getLastClosingVerb(signals: TaskSignal[]): SignalVerb | null {
   for (let i = signals.length - 1; i >= 0; i--) {
-    const verb = signals[i].signal_verb
+    const verb = signals[i].signalVerb
     if (verb === 'done' || verb === 'partial' || verb === 'stuck') return verb
   }
   return null
@@ -143,7 +143,7 @@ function buildStatusSection(
 }
 
 function buildSessionsSection(signals: TaskSignal[]) {
-  const sessions = new Set(signals.map(signal => signal.session_id))
+  const sessions = new Set(signals.map(signal => signal.sessionId).filter((id): id is string => !!id))
   const summary = buildSignalSummaryText(signals)
   const lastClosing = getLastClosingVerb(signals)
   const lastClosingConfig = lastClosing ? VERB_CONFIG[lastClosing] : null
@@ -361,8 +361,8 @@ function buildRunSection({
 }
 
 export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStatus: InferredTaskStatus }) {
-  const { id: taskId, status, subsystemDisplayName, tags, subsystem, discipline, title, description } = task
-  const signals = (task.signals ?? []).filter(signal => signal.signal_verb != null)
+  const { id: taskId, status, subsystemDisplayName, discipline } = task
+  const signals = (task.signals ?? []).filter(signal => signal.signalVerb != null)
   const statusConfig = STATUS_CONFIG[status]
   const openTab = useWorkspaceStore(state => state.openTab)
   const isDraftAgent = status === 'draft' && task.provenance === 'agent'
@@ -380,16 +380,16 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
     thinkingSource
   } = useResolvedTaskLaunch(task)
 
-  const approveMutation = useInvokeMutation<{ id: number; status: string }, Task>('set_task_status', {
+  const approveMutation = useInvokeMutation<{ id: number; status: string }, Task>('tasks_set_status', {
     queryDomain: 'workspace',
     updateCache: ({ queryClient, data, queryDomain }) => {
       patchTaskInTaskDetailCache(queryClient, data, queryDomain)
       patchTaskListItemInTaskListCache(queryClient, buildTaskListItemFromTask(data), queryDomain)
     }
   })
-  const updateTaskMutation = useInvokeMutation<UpdateTaskVariables, Task>('update_task', {
+  const updateTaskMutation = useInvokeMutation<UpdateTaskVariables, Task>('tasks_update', {
     queryDomain: 'workspace',
-    invalidateKeys: [['get_task', { id: taskId }], ['get_task_list_items']]
+    invalidateKeys: [['tasks_get', { id: taskId }], ['tasks_list_items']]
   })
 
   const handleApprove = () => {
@@ -411,28 +411,7 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
 
   const handleDisciplineSelect = (disciplineName: string) => {
     if (disciplineName === discipline) return
-    updateTaskMutation.mutate({
-      params: {
-        id: taskId,
-        subsystem,
-        discipline: disciplineName,
-        title,
-        description,
-        priority: task.priority,
-        tags,
-        depends_on: dependsOn,
-        acceptance_criteria: task.acceptanceCriteria,
-        context_files: task.contextFiles,
-        output_artifacts: task.outputArtifacts,
-        hints: task.hints,
-        estimated_turns: task.estimatedTurns,
-        provenance: task.provenance,
-        agent: task.agent,
-        model: task.model,
-        effort: task.effort,
-        thinking: task.thinking
-      }
-    })
+    updateTaskMutation.mutate(buildUpdateArgsFromTask(task, { discipline: disciplineName }))
   }
 
   const sections: ReactNode[] = [

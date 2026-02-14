@@ -31,7 +31,7 @@ describe('useTerminalSession', () => {
 
   beforeEach(() => {
     mockInvoke.mockImplementation((command: string) => {
-      if (command === 'terminal_bridge_replay_output') {
+      if (command === 'terminal_replay_output') {
         return Promise.resolve({
           chunks: [],
           hasMore: false,
@@ -53,12 +53,14 @@ describe('useTerminalSession', () => {
     renderHook(() => useTerminalSession(defaultConfig, defaultHandlers))
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_start_session', {
-        sessionId: 'test-session',
-        agent: 'codex',
-        mcpMode: 'interactive',
-        model: 'haiku',
-        thinking: true
+      expect(mockInvoke).toHaveBeenCalledWith('terminal_start_session', {
+        args: {
+          sessionId: 'test-session',
+          agent: 'codex',
+          mcpMode: 'interactive',
+          model: 'haiku',
+          thinking: true
+        }
       })
     })
   })
@@ -72,8 +74,8 @@ describe('useTerminalSession', () => {
     renderHook(() => useTerminalSession(config, defaultHandlers))
 
     await waitFor(() => {
-      expect(mockInvoke).not.toHaveBeenCalledWith('terminal_bridge_start_session', expect.anything())
-      expect(mockInvoke).not.toHaveBeenCalledWith('terminal_bridge_start_task_session', expect.anything())
+      expect(mockInvoke).not.toHaveBeenCalledWith('terminal_start_session', expect.anything())
+      expect(mockInvoke).not.toHaveBeenCalledWith('terminal_start_task_session', expect.anything())
     })
   })
 
@@ -96,8 +98,10 @@ describe('useTerminalSession', () => {
     unmount()
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_terminate', {
-        sessionId: 'test-session'
+      expect(mockInvoke).toHaveBeenCalledWith('terminal_terminate', {
+        args: {
+          sessionId: 'test-session'
+        }
       })
     })
   })
@@ -122,7 +126,7 @@ describe('useTerminalSession', () => {
     renderHook(() => useTerminalSession(defaultConfig, defaultHandlers))
 
     await waitFor(() => {
-      expect(mockListen).toHaveBeenCalledWith('terminal_bridge:output', expect.any(Function))
+      expect(mockListen).toHaveBeenCalledWith('terminal:output', expect.any(Function))
     })
   })
 
@@ -130,7 +134,7 @@ describe('useTerminalSession', () => {
     renderHook(() => useTerminalSession(defaultConfig, defaultHandlers))
 
     await waitFor(() => {
-      expect(mockListen).toHaveBeenCalledWith('terminal_bridge:closed', expect.any(Function))
+      expect(mockListen).toHaveBeenCalledWith('terminal:closed', expect.any(Function))
     })
   })
 
@@ -140,10 +144,10 @@ describe('useTerminalSession', () => {
       onOutput: vi.fn()
     }
 
-    let outputCallback: ((event: { payload: { session_id: string; seq: bigint; data: string } }) => void) | undefined
+    let outputCallback: ((event: { payload: { sessionId: string; seq: bigint; data: string } }) => void) | undefined
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
-      if (eventName === 'terminal_bridge:output') {
+      if (eventName === 'terminal:output') {
         outputCallback = callback as typeof outputCallback
       }
       return Promise.resolve(mockUnlisten)
@@ -155,7 +159,7 @@ describe('useTerminalSession', () => {
 
     act(() => {
       outputCallback?.({
-        payload: { session_id: 'test-session', seq: 1n, data: btoa('Hello') }
+        payload: { sessionId: 'test-session', seq: 1n, data: btoa('Hello') }
       })
     })
 
@@ -168,10 +172,10 @@ describe('useTerminalSession', () => {
       onOutput: vi.fn()
     }
 
-    let outputCallback: ((event: { payload: { session_id: string; seq: unknown; data: string } }) => void) | undefined
+    let outputCallback: ((event: { payload: { sessionId: string; seq: unknown; data: string } }) => void) | undefined
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
-      if (eventName === 'terminal_bridge:output') {
+      if (eventName === 'terminal:output') {
         outputCallback = callback as typeof outputCallback
       }
       return Promise.resolve(mockUnlisten)
@@ -185,7 +189,7 @@ describe('useTerminalSession', () => {
     act(() => {
       outputCallback?.({
         payload: {
-          session_id: 'test-session',
+          sessionId: 'test-session',
           seq: 7,
           data: btoa('hello')
         }
@@ -208,10 +212,10 @@ describe('useTerminalSession', () => {
       onError: vi.fn()
     }
 
-    let outputCallback: ((event: { payload: { session_id: string; seq: unknown; data: string } }) => void) | undefined
+    let outputCallback: ((event: { payload: { sessionId: string; seq: unknown; data: string } }) => void) | undefined
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
-      if (eventName === 'terminal_bridge:output') {
+      if (eventName === 'terminal:output') {
         outputCallback = callback as typeof outputCallback
       }
       return Promise.resolve(mockUnlisten)
@@ -225,7 +229,7 @@ describe('useTerminalSession', () => {
     act(() => {
       outputCallback?.({
         payload: {
-          session_id: 'test-session',
+          sessionId: 'test-session',
           seq: 'not-a-number',
           data: btoa('oops')
         }
@@ -244,10 +248,10 @@ describe('useTerminalSession', () => {
       onOutput: vi.fn()
     }
 
-    let outputCallback: ((event: { payload: { session_id: string; seq: bigint; data: string } }) => void) | undefined
+    let outputCallback: ((event: { payload: { sessionId: string; seq: bigint; data: string } }) => void) | undefined
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
-      if (eventName === 'terminal_bridge:output') {
+      if (eventName === 'terminal:output') {
         outputCallback = callback as typeof outputCallback
       }
       return Promise.resolve(mockUnlisten)
@@ -260,7 +264,7 @@ describe('useTerminalSession', () => {
     const bufferedData = new Uint8Array([72, 101, 108, 108, 111]) // "Hello"
     act(() => {
       outputCallback?.({
-        payload: { session_id: 'test-session', seq: 1n, data: btoa('Hello') }
+        payload: { sessionId: 'test-session', seq: 1n, data: btoa('Hello') }
       })
     })
 
@@ -279,9 +283,11 @@ describe('useTerminalSession', () => {
     result.current.sendInput('ls -la\n')
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_send_input', {
-        sessionId: 'test-session',
-        data: [108, 115, 32, 45, 108, 97, 10] // "ls -la\n" as bytes
+      expect(mockInvoke).toHaveBeenCalledWith('terminal_send_input', {
+        args: {
+          sessionId: 'test-session',
+          data: [108, 115, 32, 45, 108, 97, 10] // "ls -la\n" as bytes
+        }
       })
     })
   })
@@ -294,10 +300,12 @@ describe('useTerminalSession', () => {
     result.current.resize(120, 40)
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_resize', {
-        sessionId: 'test-session',
-        cols: 120,
-        rows: 40
+      expect(mockInvoke).toHaveBeenCalledWith('terminal_resize', {
+        args: {
+          sessionId: 'test-session',
+          cols: 120,
+          rows: 40
+        }
       })
     })
   })
@@ -308,10 +316,10 @@ describe('useTerminalSession', () => {
       onOutput: vi.fn()
     }
 
-    let outputCallback: ((event: { payload: { session_id: string; seq: bigint; data: string } }) => void) | undefined
+    let outputCallback: ((event: { payload: { sessionId: string; seq: bigint; data: string } }) => void) | undefined
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
-      if (eventName === 'terminal_bridge:output') {
+      if (eventName === 'terminal:output') {
         outputCallback = callback as typeof outputCallback
       }
       return Promise.resolve(mockUnlisten)
@@ -325,7 +333,7 @@ describe('useTerminalSession', () => {
 
     act(() => {
       outputCallback?.({
-        payload: { session_id: 'different-session', seq: 1n, data: btoa('He') }
+        payload: { sessionId: 'different-session', seq: 1n, data: btoa('He') }
       })
     })
 
@@ -338,14 +346,14 @@ describe('useTerminalSession', () => {
       onClosed: vi.fn()
     }
 
-    let closedCallback: ((event: { payload: { session_id: string; exit_code: number } }) => void) | undefined
-    let outputCallback: ((event: { payload: { session_id: string; seq: bigint; data: string } }) => void) | undefined
+    let closedCallback: ((event: { payload: { sessionId: string; exitCode: number } }) => void) | undefined
+    let outputCallback: ((event: { payload: { sessionId: string; seq: bigint; data: string } }) => void) | undefined
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
-      if (eventName === 'terminal_bridge:closed') {
+      if (eventName === 'terminal:closed') {
         closedCallback = callback as typeof closedCallback
       }
-      if (eventName === 'terminal_bridge:output') {
+      if (eventName === 'terminal:output') {
         outputCallback = callback as typeof outputCallback
       }
       return Promise.resolve(mockUnlisten)
@@ -358,13 +366,13 @@ describe('useTerminalSession', () => {
 
     act(() => {
       outputCallback?.({
-        payload: { session_id: 'test-session', seq: 1n, data: btoa('He') }
+        payload: { sessionId: 'test-session', seq: 1n, data: btoa('He') }
       })
     })
 
     act(() => {
       closedCallback?.({
-        payload: { session_id: 'test-session', exit_code: 0 }
+        payload: { sessionId: 'test-session', exitCode: 0 }
       })
     })
 
@@ -383,12 +391,14 @@ describe('useTerminalSession', () => {
     renderHook(() => useTerminalSession(config, defaultHandlers))
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_start_session', {
-        sessionId: 'test',
-        agent: 'codex',
-        mcpMode: 'interactive',
-        model: undefined,
-        thinking: undefined
+      expect(mockInvoke).toHaveBeenCalledWith('terminal_start_session', {
+        args: {
+          sessionId: 'test',
+          agent: 'codex',
+          mcpMode: 'interactive',
+          model: undefined,
+          thinking: undefined
+        }
       })
     })
   })
@@ -402,16 +412,18 @@ describe('useTerminalSession', () => {
     renderHook(() => useTerminalSession(config, defaultHandlers))
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_set_stream_mode', {
-        sessionId: 'test-session',
-        mode: 'buffered'
+      expect(mockInvoke).toHaveBeenCalledWith('terminal_set_stream_mode', {
+        args: {
+          sessionId: 'test-session',
+          mode: 'buffered'
+        }
       })
     })
   })
 
   it('replays output and returns to live mode on reactivation', async () => {
     mockInvoke.mockImplementation((command: string) => {
-      if (command === 'terminal_bridge_replay_output') {
+      if (command === 'terminal_replay_output') {
         return Promise.resolve({
           chunks: [{ seq: 2n, data: btoa('Hi') }],
           hasMore: false,
@@ -437,9 +449,11 @@ describe('useTerminalSession', () => {
     )
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_set_stream_mode', {
-        sessionId: 'test-session',
-        mode: 'buffered'
+      expect(mockInvoke).toHaveBeenCalledWith('terminal_set_stream_mode', {
+        args: {
+          sessionId: 'test-session',
+          mode: 'buffered'
+        }
       })
     })
 
@@ -447,16 +461,18 @@ describe('useTerminalSession', () => {
     rerender({ isActive: true })
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_set_stream_mode', {
-        sessionId: 'test-session',
-        mode: 'live'
+      expect(mockInvoke).toHaveBeenCalledWith('terminal_set_stream_mode', {
+        args: {
+          sessionId: 'test-session',
+          mode: 'live'
+        }
       })
     })
   })
 
   it('normalizes numeric seq values in replayed chunks', async () => {
     mockInvoke.mockImplementation((command: string) => {
-      if (command === 'terminal_bridge_replay_output') {
+      if (command === 'terminal_replay_output') {
         return Promise.resolve({
           chunks: [{ seq: 5 as unknown as bigint, data: btoa('Hi') }],
           hasMore: false,
@@ -476,9 +492,11 @@ describe('useTerminalSession', () => {
 
     result.current.markReady()
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_set_stream_mode', {
-        sessionId: 'test-session',
-        mode: 'buffered'
+      expect(mockInvoke).toHaveBeenCalledWith('terminal_set_stream_mode', {
+        args: {
+          sessionId: 'test-session',
+          mode: 'buffered'
+        }
       })
     })
 
@@ -493,7 +511,7 @@ describe('useTerminalSession', () => {
 
   it('restores live stream mode when replay fails', async () => {
     mockInvoke.mockImplementation((command: string) => {
-      if (command === 'terminal_bridge_replay_output') {
+      if (command === 'terminal_replay_output') {
         return Promise.reject(new Error('[terminal_bridge] failed to replay output'))
       }
       return Promise.resolve(undefined)
@@ -519,18 +537,22 @@ describe('useTerminalSession', () => {
     )
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_set_stream_mode', {
-        sessionId: 'test-session',
-        mode: 'buffered'
+      expect(mockInvoke).toHaveBeenCalledWith('terminal_set_stream_mode', {
+        args: {
+          sessionId: 'test-session',
+          mode: 'buffered'
+        }
       })
     })
 
     rerender({ isActive: true })
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_set_stream_mode', {
-        sessionId: 'test-session',
-        mode: 'live'
+      expect(mockInvoke).toHaveBeenCalledWith('terminal_set_stream_mode', {
+        args: {
+          sessionId: 'test-session',
+          mode: 'live'
+        }
       })
     })
 
@@ -547,10 +569,10 @@ describe('useTerminalSession', () => {
       onOutput: vi.fn()
     }
 
-    let outputCallback: ((event: { payload: { session_id: string; seq: bigint; data: string } }) => void) | undefined
+    let outputCallback: ((event: { payload: { sessionId: string; seq: bigint; data: string } }) => void) | undefined
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
-      if (eventName === 'terminal_bridge:output') {
+      if (eventName === 'terminal:output') {
         outputCallback = callback as typeof outputCallback
       }
       return Promise.resolve(mockUnlisten)
@@ -563,7 +585,7 @@ describe('useTerminalSession', () => {
     result.current.markReady()
     act(() => {
       outputCallback?.({
-        payload: { session_id: 'test-session', seq: 0n, data: btoa('connected') }
+        payload: { sessionId: 'test-session', seq: 0n, data: btoa('connected') }
       })
     })
 

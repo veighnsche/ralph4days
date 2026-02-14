@@ -11,8 +11,8 @@ export function useSubsystemStats(queryDomain: InvokeQueryDomain = 'workspace') 
     data: subsystemsData,
     isLoading: subsystemsLoading,
     error: subsystemsError
-  } = useInvoke<SubsystemData[]>('get_subsystems', undefined, { queryDomain })
-  const { data: tasksData, isLoading: tasksLoading } = useInvoke<TaskListItem[]>('get_task_list_items', undefined, {
+  } = useInvoke<SubsystemData[]>('subsystems_list', undefined, { queryDomain })
+  const { data: tasksData, isLoading: tasksLoading } = useInvoke<TaskListItem[]>('tasks_list_items', undefined, {
     queryDomain
   })
   const subsystems = subsystemsData ?? EMPTY_SUBSYSTEMS

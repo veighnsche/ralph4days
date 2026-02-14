@@ -1,5 +1,4 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { AlertCircle } from 'lucide-react'
@@ -11,6 +10,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { Toaster } from '@/components/ui/sonner'
 import { WorkspacePanel } from '@/components/workspace'
 import { useInvoke } from '@/hooks/api'
+import { tauriInvoke } from '@/lib/tauri/invoke'
 import { type Page, pageRegistry } from '@/pages/pageRegistry'
 import './index.css'
 
@@ -41,7 +41,7 @@ function NoBackendError() {
 function App() {
   const queryClient = useQueryClient()
 
-  const { data: lockedProject, isLoading: isLoadingProject } = useInvoke<string | null>('get_locked_project')
+  const { data: lockedProject, isLoading: isLoadingProject } = useInvoke<string | null>('project_lock_get')
 
   useEffect(() => {
     if (!isTauri) return
@@ -67,7 +67,7 @@ function App() {
 
   useEffect(() => {
     if (!isLoadingProject) {
-      invoke('close_splash').catch(() => {})
+      tauriInvoke('window_splash_close').catch(() => {})
     }
   }, [isLoadingProject])
 
@@ -85,7 +85,7 @@ function App() {
   if (!isTauri) return <NoBackendError />
 
   const handleProjectSelected = async (project: string) => {
-    queryClient.setQueryData(['get_locked_project'], project)
+    queryClient.setQueryData(['project_lock_get'], project)
     const projectName = project.split('/').pop() || 'Unknown'
     try {
       await getCurrentWindow().setTitle(`Ralph4days - ${projectName}`)

@@ -113,8 +113,8 @@ export function SignalsSection({ task }: SignalsSectionProps) {
   const repliesByParent = new Map<number, TaskSignal[]>()
 
   for (const signal of allSignals) {
-    if (signal.parent_signal_id) {
-      const parentId = signal.parent_signal_id
+    if (signal.parentSignalId) {
+      const parentId = signal.parentSignalId
       const existing = repliesByParent.get(parentId)
       if (existing) {
         existing.push(signal)
@@ -178,14 +178,14 @@ export function SignalsSection({ task }: SignalsSectionProps) {
       {topLevel.length > 0 && (
         <div className="space-y-1">
           {topLevel.map(signal => {
-            const isSignal = signal.signal_verb != null
+            const isSignal = signal.signalVerb != null
             const replies = repliesByParent.get(signal.id) ?? EMPTY_REPLIES
 
             let signalConfig = null
             let SignalIcon = null
 
-            if (isSignal && signal.signal_verb) {
-              const verb = signal.signal_verb
+            if (isSignal && signal.signalVerb) {
+              const verb = signal.signalVerb
               signalConfig = VERB_CONFIG[verb] || {
                 icon: MessageCircle,
                 color: 'text-muted-foreground',
@@ -209,7 +209,7 @@ export function SignalsSection({ task }: SignalsSectionProps) {
                   {signalConfig && SignalIcon && (
                     <div className="absolute top-2 right-2 flex items-center gap-1.5">
                       <span className={`text-xs font-bold uppercase tracking-wider ${signalConfig.color}`}>
-                        {signal.signal_verb}
+                        {signal.signalVerb}
                       </span>
                       <SignalIcon className={`h-4 w-4 ${signalConfig.color}`} />
                     </div>

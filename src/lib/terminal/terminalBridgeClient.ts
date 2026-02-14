@@ -1,5 +1,5 @@
-import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
+import { tauriInvoke } from '@/lib/tauri/invoke'
 import type {
   PtyClosedEvent,
   PtyOutputEvent,
@@ -98,24 +98,24 @@ export type TerminalBridgeStartHumanSessionResult = {
 
 export async function terminalBridgeStartSession(params: TerminalBridgeStartSessionArgs) {
   terminalBridgeDebugLog('tx.startSession', params)
-  await invoke(TERMINAL_BRIDGE_COMMANDS.startSession, params)
+  await tauriInvoke(TERMINAL_BRIDGE_COMMANDS.startSession, params)
 }
 
 export async function terminalBridgeStartTaskSession(params: TerminalBridgeStartTaskSessionArgs) {
   terminalBridgeDebugLog('tx.startTaskSession', params)
-  await invoke(TERMINAL_BRIDGE_COMMANDS.startTaskSession, params)
+  await tauriInvoke(TERMINAL_BRIDGE_COMMANDS.startTaskSession, params)
 }
 
 export async function terminalBridgeListModelFormTree(): Promise<TerminalBridgeListModelFormTreeResult> {
   terminalBridgeDebugLog('tx.listModelFormTree', {})
-  return invoke<TerminalBridgeListModelFormTreeResult>(TERMINAL_BRIDGE_COMMANDS.listModelFormTree)
+  return tauriInvoke<TerminalBridgeListModelFormTreeResult>(TERMINAL_BRIDGE_COMMANDS.listModelFormTree)
 }
 
 export async function terminalBridgeStartHumanSession(
   params: TerminalBridgeStartHumanSessionArgs
 ): Promise<TerminalBridgeStartHumanSessionResult> {
   terminalBridgeDebugLog('tx.startHumanSession', params)
-  const result = await invoke<TerminalBridgeStartHumanSessionResult>(TERMINAL_BRIDGE_COMMANDS.startHumanSession, {
+  const result = await tauriInvoke<TerminalBridgeStartHumanSessionResult>(TERMINAL_BRIDGE_COMMANDS.startHumanSession, {
     terminalSessionId: params.terminalSessionId,
     kind: params.kind,
     taskId: params.taskId ?? null,
@@ -142,25 +142,25 @@ export async function terminalBridgeSendInput(sessionId: string, data: string) {
     byteCount: params.data.length,
     preview: previewText(decodeUtf8Bytes(params.data), 140)
   })
-  await invoke(TERMINAL_BRIDGE_COMMANDS.sendInput, params)
+  await tauriInvoke(TERMINAL_BRIDGE_COMMANDS.sendInput, params)
 }
 
 export async function terminalBridgeResize(sessionId: string, cols: number, rows: number) {
   const params: TerminalBridgeResizeArgs = { sessionId, cols, rows }
   terminalBridgeDebugLog('tx.resize', params)
-  await invoke(TERMINAL_BRIDGE_COMMANDS.resize, params)
+  await tauriInvoke(TERMINAL_BRIDGE_COMMANDS.resize, params)
 }
 
 export async function terminalBridgeTerminate(sessionId: string) {
   const params: TerminalBridgeTerminateArgs = { sessionId }
   terminalBridgeDebugLog('tx.terminate', params)
-  await invoke(TERMINAL_BRIDGE_COMMANDS.terminate, params)
+  await tauriInvoke(TERMINAL_BRIDGE_COMMANDS.terminate, params)
 }
 
 export async function terminalBridgeSetStreamMode(sessionId: string, mode: 'live' | 'buffered') {
   const params: TerminalBridgeSetStreamModeArgs = { sessionId, mode }
   terminalBridgeDebugLog('tx.setStreamMode', params)
-  await invoke(TERMINAL_BRIDGE_COMMANDS.setStreamMode, params)
+  await tauriInvoke(TERMINAL_BRIDGE_COMMANDS.setStreamMode, params)
 }
 
 export async function terminalBridgeReplayOutput(
@@ -175,13 +175,13 @@ export async function terminalBridgeReplayOutput(
     limit
   }
   terminalBridgeDebugLog('tx.replayOutput', params)
-  return invoke<TerminalBridgeReplayOutputResult>(TERMINAL_BRIDGE_COMMANDS.replayOutput, params)
+  return tauriInvoke<TerminalBridgeReplayOutputResult>(TERMINAL_BRIDGE_COMMANDS.replayOutput, params)
 }
 
 export async function terminalBridgeEmitSystemMessage(sessionId: string, text: string) {
   const params: TerminalBridgeEmitSystemMessageArgs = { sessionId, text }
   terminalBridgeDebugLog('tx.emitSystemMessage', params)
-  await invoke(TERMINAL_BRIDGE_COMMANDS.emitSystemMessage, params)
+  await tauriInvoke(TERMINAL_BRIDGE_COMMANDS.emitSystemMessage, params)
 }
 
 export async function terminalBridgeListenSessionOutput(
@@ -190,10 +190,10 @@ export async function terminalBridgeListenSessionOutput(
 ) {
   terminalBridgeDebugLog('rx.output.subscribe', { sessionId })
   return listen<PtyOutputEvent>(TERMINAL_BRIDGE_EVENTS.output, event => {
-    if (event.payload.session_id !== sessionId) return
+    if (event.payload.sessionId !== sessionId) return
     const decoded = decodeBase64Payload(event.payload.data)
     terminalBridgeDebugLog('rx.output', {
-      sessionId: event.payload.session_id,
+      sessionId: event.payload.sessionId,
       seq: String(event.payload.seq),
       byteCount: decoded.length,
       preview: previewText(decoded)
@@ -208,7 +208,7 @@ export async function terminalBridgeListenSessionClosed(
 ) {
   terminalBridgeDebugLog('rx.closed.subscribe', { sessionId })
   return listen<PtyClosedEvent>(TERMINAL_BRIDGE_EVENTS.closed, event => {
-    if (event.payload.session_id !== sessionId) return
+    if (event.payload.sessionId !== sessionId) return
     terminalBridgeDebugLog('rx.closed', event.payload)
     onClosed(event.payload)
   })

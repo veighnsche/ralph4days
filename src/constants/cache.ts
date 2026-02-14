@@ -1,5 +1,5 @@
 export const QUERY_KEYS = {
-  TASKS: [['get_tasks']],
-  SUBSYSTEMS: [['get_subsystems']],
-  PROMPT_BUILDER_LIST: [['list_prompt_builder_configs']]
+  TASKS: [['tasks_list']],
+  SUBSYSTEMS: [['subsystems_list']],
+  PROMPT_BUILDER_LIST: [['prompt_builder_config_list']]
 }

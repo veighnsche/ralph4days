@@ -1,6 +1,7 @@
 use super::state::{AppState, CommandContext};
 use ralph_errors::{codes, ralph_err, RalphResultExt, ToStringErr};
 use ralph_macros::ipc_type;
+use serde::{Deserialize, Serialize};
 use sqlite_db::SqliteDb;
 use std::path::PathBuf;
 use tauri::{Manager, State};
@@ -46,9 +47,9 @@ pub struct ProjectInfo {
 
 #[tauri::command]
 #[tracing::instrument]
-pub fn validate_project_path(path: String) -> Result<(), String> {
+pub fn project_validate_path(args: ProjectValidatePathArgs) -> Result<(), String> {
     tracing::debug!("Validating project path");
-    let path = PathBuf::from(&path);
+    let path = PathBuf::from(&args.path);
 
     if !path.exists() {
         tracing::error!(path = %path.display(), "Directory not found");
@@ -90,6 +91,13 @@ pub fn validate_project_path(path: String) -> Result<(), String> {
 
     tracing::info!(path = %path.display(), "Project path validated successfully");
     Ok(())
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectValidatePathArgs {
+    pub path: String,
 }
 
 fn seed_disciplines_for_stack(
@@ -170,13 +178,11 @@ fn seed_disciplines_for_stack(
 
 #[tauri::command]
 #[tracing::instrument]
-pub fn initialize_ralph_project(
-    path: String,
-    project_title: String,
-    stack: u8,
-) -> Result<(), String> {
+pub fn project_initialize(args: ProjectInitializeArgs) -> Result<(), String> {
+    let stack = args.stack;
     tracing::info!("Initializing Ralph project with stack {}", stack);
-    let path = PathBuf::from(&path);
+    let project_title = args.project_title.clone();
+    let path = PathBuf::from(&args.path);
 
     if !path.exists() {
         return ralph_err!(
@@ -244,7 +250,16 @@ Describe the architecture, tech stack, and key components.
     Ok(())
 }
 
-pub fn lock_project_validated(state: &AppState, path: String) -> Result<(), String> {
+#[ipc_type]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectInitializeArgs {
+    pub path: String,
+    pub project_title: String,
+    pub stack: u8,
+}
+
+pub fn project_lock_validated(state: &AppState, path: String) -> Result<(), String> {
     let canonical_path =
         std::fs::canonicalize(&path).ralph_err(codes::PROJECT_PATH, "Failed to resolve path")?;
 
@@ -276,52 +291,57 @@ pub fn lock_project_validated(state: &AppState, path: String) -> Result<(), Stri
 }
 
 #[tauri::command]
-pub fn set_locked_project(state: State<'_, AppState>, path: String) -> Result<(), String> {
-    validate_project_path(path.clone())?;
-    lock_project_validated(&state, path)
+pub fn project_lock_set(
+    state: State<'_, AppState>,
+    args: ProjectLockSetArgs,
+) -> Result<(), String> {
+    project_validate_path(ProjectValidatePathArgs {
+        path: args.path.clone(),
+    })?;
+    project_lock_validated(&state, args.path)
 }
 
 #[tauri::command]
-pub fn get_locked_project(state: State<'_, AppState>) -> Result<Option<String>, String> {
+pub fn project_lock_get(state: State<'_, AppState>) -> Result<Option<String>, String> {
     let locked = CommandContext::from_tauri_state(&state).maybe_locked_project_path()?;
     Ok(locked.as_ref().map(|p| p.to_string_lossy().to_string()))
 }
 
 #[tauri::command]
-pub fn get_recent_projects(
+pub fn project_recent_list(
     state: State<'_, AppState>,
 ) -> Result<Vec<crate::recent_projects::RecentProject>, String> {
     crate::recent_projects::load(&state.xdg)
 }
 
 #[tauri::command]
-pub fn start_execution_sequence() -> Result<(), String> {
+pub fn execution_start() -> Result<(), String> {
     ralph_err!(codes::LOOP_ENGINE, "Not implemented")
 }
 
 #[tauri::command]
-pub fn pause_execution_sequence() -> Result<(), String> {
+pub fn execution_pause() -> Result<(), String> {
     ralph_err!(codes::LOOP_ENGINE, "Not implemented")
 }
 
 #[tauri::command]
-pub fn resume_execution_sequence() -> Result<(), String> {
+pub fn execution_resume() -> Result<(), String> {
     ralph_err!(codes::LOOP_ENGINE, "Not implemented")
 }
 
 #[tauri::command]
-pub fn stop_execution_sequence() -> Result<(), String> {
+pub fn execution_stop() -> Result<(), String> {
     ralph_err!(codes::LOOP_ENGINE, "Not implemented")
 }
 
 #[tauri::command]
-pub fn get_execution_sequence_state() -> Result<(), String> {
+pub fn execution_state_get() -> Result<(), String> {
     ralph_err!(codes::LOOP_ENGINE, "Not implemented")
 }
 
 #[tauri::command]
-pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProject>, String> {
-    let scan_path = if let Some(dir) = root_dir {
+pub fn project_scan(args: ProjectScanArgs) -> Result<Vec<RalphProject>, String> {
+    let scan_path = if let Some(dir) = args.root_dir {
         PathBuf::from(dir)
     } else {
         dirs::home_dir().ok_or_else(|| {
@@ -393,7 +413,7 @@ pub fn scan_for_ralph_projects(root_dir: Option<String>) -> Result<Vec<RalphProj
 }
 
 #[tauri::command]
-pub fn get_current_dir() -> Result<String, String> {
+pub fn system_home_dir_get() -> Result<String, String> {
     let path = dirs::home_dir().ok_or_else(|| {
         ralph_errors::err_string(codes::FILESYSTEM, "Failed to get home directory")
     })?;
@@ -401,7 +421,7 @@ pub fn get_current_dir() -> Result<String, String> {
 }
 
 #[tauri::command]
-pub fn get_project_info(state: State<'_, AppState>) -> Result<ProjectInfo, String> {
+pub fn project_info_get(state: State<'_, AppState>) -> Result<ProjectInfo, String> {
     let info = CommandContext::from_tauri_state(&state).db(|db| Ok(db.get_project_info()))?;
     Ok(ProjectInfo {
         title: info.title.clone(),
@@ -411,7 +431,7 @@ pub fn get_project_info(state: State<'_, AppState>) -> Result<ProjectInfo, Strin
 }
 
 #[tauri::command]
-pub fn close_splash(app: tauri::AppHandle) {
+pub fn window_splash_close(app: tauri::AppHandle) {
     if let Some(splash) = app.get_webview_window("splash") {
         let _ = splash.close();
     }
@@ -421,11 +441,25 @@ pub fn close_splash(app: tauri::AppHandle) {
 }
 
 #[tauri::command]
-pub fn open_new_window() -> Result<(), String> {
+pub fn window_open_new() -> Result<(), String> {
     let exe = std::env::current_exe()
         .ralph_err(codes::INTERNAL, "Failed to get current executable path")?;
     std::process::Command::new(exe)
         .spawn()
         .ralph_err(codes::INTERNAL, "Failed to spawn new window")?;
     Ok(())
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectLockSetArgs {
+    pub path: String,
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectScanArgs {
+    pub root_dir: Option<String>,
 }

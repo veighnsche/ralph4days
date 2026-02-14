@@ -1,5 +1,6 @@
 use super::state::{AppState, CommandContext};
 use ralph_macros::ipc_type;
+use serde::Deserialize;
 use sqlite_db::{PromptBuilderConfigData, PromptBuilderConfigInput};
 use tauri::State;
 
@@ -28,12 +29,23 @@ pub struct SectionConfig {
     pub instruction_override: Option<String>,
 }
 
+#[ipc_type]
+#[derive(Debug, Clone, serde::Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PromptBuilderPreviewArgs {
+    pub sections: Vec<SectionConfig>,
+    pub user_input: Option<String>,
+}
+
 #[tauri::command]
-pub fn preview_custom_prompt_builder(
+pub fn prompt_builder_preview(
     state: State<'_, AppState>,
-    sections: Vec<SectionConfig>,
-    user_input: Option<String>,
+    args: PromptBuilderPreviewArgs,
 ) -> Result<PromptPreview, String> {
+    let PromptBuilderPreviewArgs {
+        sections,
+        user_input,
+    } = args;
     let ctx = CommandContext::from_tauri_state(&state);
     let project_path = ctx.locked_project_path()?;
 
@@ -80,30 +92,51 @@ pub fn preview_custom_prompt_builder(
 }
 
 #[tauri::command]
-pub fn list_prompt_builder_configs(state: State<'_, AppState>) -> Result<Vec<String>, String> {
+pub fn prompt_builder_config_list(state: State<'_, AppState>) -> Result<Vec<String>, String> {
     CommandContext::from_tauri_state(&state).db(sqlite_db::SqliteDb::list_prompt_builder_configs)
 }
 
+#[ipc_type]
+#[derive(Debug, Clone, serde::Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PromptBuilderConfigGetArgs {
+    pub name: String,
+}
+
 #[tauri::command]
-pub fn get_prompt_builder_config(
+pub fn prompt_builder_config_get(
     state: State<'_, AppState>,
-    name: String,
+    args: PromptBuilderConfigGetArgs,
 ) -> Result<Option<PromptBuilderConfigData>, String> {
-    CommandContext::from_tauri_state(&state).db(|db| db.get_prompt_builder_config(&name))
+    CommandContext::from_tauri_state(&state).db(|db| db.get_prompt_builder_config(&args.name))
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, serde::Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PromptBuilderConfigSaveArgs {
+    pub config: PromptBuilderConfigInput,
 }
 
 #[tauri::command]
-pub fn save_prompt_builder_config(
+pub fn prompt_builder_config_save(
     state: State<'_, AppState>,
-    config: PromptBuilderConfigInput,
+    args: PromptBuilderConfigSaveArgs,
 ) -> Result<(), String> {
-    CommandContext::from_tauri_state(&state).db(|db| db.save_prompt_builder_config(config))
+    CommandContext::from_tauri_state(&state).db(|db| db.save_prompt_builder_config(args.config))
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, serde::Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PromptBuilderConfigDeleteArgs {
+    pub name: String,
 }
 
 #[tauri::command]
-pub fn delete_prompt_builder_config(
+pub fn prompt_builder_config_delete(
     state: State<'_, AppState>,
-    name: String,
+    args: PromptBuilderConfigDeleteArgs,
 ) -> Result<(), String> {
-    CommandContext::from_tauri_state(&state).db(|db| db.delete_prompt_builder_config(&name))
+    CommandContext::from_tauri_state(&state).db(|db| db.delete_prompt_builder_config(&args.name))
 }

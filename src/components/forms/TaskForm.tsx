@@ -15,7 +15,7 @@ import type { SubsystemData as Subsystem } from '@/types/generated'
 export function TaskFormFields({ disabled }: { disabled?: boolean }) {
   const { control, getValues, setValue } = useFormContext<TaskFormData>()
   const { disciplines } = useDisciplines()
-  const { data: subsystems = [] } = useInvoke<Subsystem[]>('get_subsystems')
+  const { data: subsystems = [] } = useInvoke<Subsystem[]>('subsystems_list')
 
   const [newTag, setNewTag] = useState('')
   const [newCriterion, setNewCriterion] = useState('')

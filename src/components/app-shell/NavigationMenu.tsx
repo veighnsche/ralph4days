@@ -1,4 +1,3 @@
-import { invoke } from '@tauri-apps/api/core'
 import { AppWindow, Layers, ListTodo, Menu, Settings as SettingsIcon, Target, Wrench } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -12,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
+import { tauriInvoke } from '@/lib/tauri/invoke'
 import type { Page } from '@/pages/pageRegistry'
 import { Settings } from './Settings'
 
@@ -33,7 +33,7 @@ export function NavigationMenu({ currentPage, onPageChange }: NavigationMenuProp
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-48">
-          <DropdownMenuItem onClick={() => invoke('open_new_window').catch((e: string) => toast.error(e))}>
+          <DropdownMenuItem onClick={() => tauriInvoke('window_open_new').catch((e: string) => toast.error(e))}>
             <AppWindow className="mr-2 h-4 w-4" />
             New Window
           </DropdownMenuItem>

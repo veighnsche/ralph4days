@@ -8,9 +8,9 @@ export function useSignalMutations(taskId: number, queryDomain: InvokeQueryDomai
   const [editBody, setEditBody] = useState('')
   const [replyingToId, setReplyingToId] = useState<number | null>(null)
   const [replyBody, setReplyBody] = useState('')
-  const [replyPriority, setReplyPriority] = useState<string | null>(null)
+  const [replyPriority, setReplyPriority] = useState<string | undefined>(undefined)
 
-  const addSignalMutation = useInvokeMutation<{ taskId: number; body: string }, Task>('add_task_signal', {
+  const addSignalMutation = useInvokeMutation<{ taskId: number; body: string }, Task>('tasks_signal_add', {
     queryDomain,
     updateCache: ({ queryClient, data, queryDomain }) => {
       patchTaskInTaskDetailCache(queryClient, data, queryDomain)
@@ -18,19 +18,22 @@ export function useSignalMutations(taskId: number, queryDomain: InvokeQueryDomai
     }
   })
 
-  const editSignal = useInvokeMutation<{ taskId: number; signalId: number; body: string }, Task>('update_task_signal', {
-    queryDomain,
-    updateCache: ({ queryClient, data, queryDomain }) => {
-      patchTaskInTaskDetailCache(queryClient, data, queryDomain)
-      patchTaskListItemInTaskListCache(queryClient, buildTaskListItemFromTask(data), queryDomain)
-    },
-    onSuccess: () => {
-      setEditingId(null)
-      setEditBody('')
+  const editSignal = useInvokeMutation<{ taskId: number; signalId: number; body: string }, Task>(
+    'tasks_signal_update',
+    {
+      queryDomain,
+      updateCache: ({ queryClient, data, queryDomain }) => {
+        patchTaskInTaskDetailCache(queryClient, data, queryDomain)
+        patchTaskListItemInTaskListCache(queryClient, buildTaskListItemFromTask(data), queryDomain)
+      },
+      onSuccess: () => {
+        setEditingId(null)
+        setEditBody('')
+      }
     }
-  })
+  )
 
-  const deleteSignal = useInvokeMutation<{ taskId: number; signalId: number }, Task>('delete_task_signal', {
+  const deleteSignal = useInvokeMutation<{ taskId: number; signalId: number }, Task>('tasks_signal_delete', {
     queryDomain,
     updateCache: ({ queryClient, data, queryDomain }) => {
       patchTaskInTaskDetailCache(queryClient, data, queryDomain)
@@ -42,11 +45,11 @@ export function useSignalMutations(taskId: number, queryDomain: InvokeQueryDomai
     {
       taskId: number
       parentCommentId: number
-      priority: string | null
+      priority?: string
       body: string
     },
     Task
-  >('add_reply_to_comment', {
+  >('tasks_comment_reply_add', {
     queryDomain,
     updateCache: ({ queryClient, data, queryDomain }) => {
       patchTaskInTaskDetailCache(queryClient, data, queryDomain)
@@ -55,7 +58,7 @@ export function useSignalMutations(taskId: number, queryDomain: InvokeQueryDomai
     onSuccess: () => {
       setReplyingToId(null)
       setReplyBody('')
-      setReplyPriority(null)
+      setReplyPriority(undefined)
     }
   })
 
@@ -85,12 +88,12 @@ export function useSignalMutations(taskId: number, queryDomain: InvokeQueryDomai
     startReply: (signalId: number) => {
       setReplyingToId(signalId)
       setReplyBody('')
-      setReplyPriority(null)
+      setReplyPriority(undefined)
     },
     cancelReply: () => {
       setReplyingToId(null)
       setReplyBody('')
-      setReplyPriority(null)
+      setReplyPriority(undefined)
     },
     submitReply: () => {
       if (replyingToId === null || !replyBody.trim()) return

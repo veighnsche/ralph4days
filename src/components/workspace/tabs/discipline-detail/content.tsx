@@ -265,7 +265,7 @@ function TaskTemplateCard({ template }: { template: DisciplineTemplate }) {
 export function DisciplineDetailTabContent({ tab, params }: { tab: WorkspaceTab; params: DisciplineDetailTabParams }) {
   const { entityId: disciplineId } = params
 
-  const { data: disciplines, isLoading } = useInvoke<DisciplineConfig[]>('get_disciplines_config', undefined, {
+  const { data: disciplines, isLoading } = useInvoke<DisciplineConfig[]>('disciplines_list', undefined, {
     queryDomain: 'workspace',
     staleTime: 5 * 60 * 1000
   })

@@ -4,7 +4,7 @@ import { InlineError } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { useInvokeMutation } from '@/hooks/api'
-import type { UpdateTaskVariables } from '@/hooks/tasks/updateTaskMutation'
+import { buildUpdateArgsFromTask, type UpdateTaskVariables } from '@/hooks/tasks/updateTaskMutation'
 import type { AgentSessionLaunchConfig } from '@/lib/agent-session-launch-config'
 import type { Task } from '@/types/generated'
 import { AgentSessionLaunchForm } from '../../tabs/agent-session-config/components/AgentSessionLaunchForm'
@@ -30,9 +30,9 @@ function TaskLaunchOverridesDialogBody({
   })
   const { agent, model, effort, thinking } = useAgentSessionConfigLaunchState()
 
-  const updateTaskMutation = useInvokeMutation<UpdateTaskVariables, Task>('update_task', {
+  const updateTaskMutation = useInvokeMutation<UpdateTaskVariables, Task>('tasks_update', {
     queryDomain: 'workspace',
-    invalidateKeys: [['get_task', { id: task.id }], ['get_task_list_items']],
+    invalidateKeys: [['tasks_get', { id: task.id }], ['tasks_list_items']],
     onSuccess: () => onSaved()
   })
 
@@ -46,28 +46,14 @@ function TaskLaunchOverridesDialogBody({
       throw new Error('Invariant violation: attempted to save with invalid effort selection for model')
     }
 
-    updateTaskMutation.mutate({
-      params: {
-        id: task.id,
-        subsystem: task.subsystem,
-        discipline: task.discipline,
-        title: task.title,
-        description: task.description,
-        priority: task.priority,
-        tags: task.tags,
-        depends_on: task.dependsOn ?? [],
-        acceptance_criteria: task.acceptanceCriteria,
-        context_files: task.contextFiles,
-        output_artifacts: task.outputArtifacts,
-        hints: task.hints,
-        estimated_turns: task.estimatedTurns,
-        provenance: task.provenance,
+    updateTaskMutation.mutate(
+      buildUpdateArgsFromTask(task, {
         agent,
         model,
         effort: supportsEffort ? effort : undefined,
         thinking
-      }
-    })
+      })
+    )
   }
 
   return (

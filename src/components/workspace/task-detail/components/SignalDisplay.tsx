@@ -199,7 +199,7 @@ function renderBlocked(signal: TaskSignal): ReactNode | null {
   )
 }
 
-const SIGNAL_RENDERERS: Partial<Record<NonNullable<TaskSignal['signal_verb']>, SignalRenderer>> = {
+const SIGNAL_RENDERERS: Partial<Record<NonNullable<TaskSignal['signalVerb']>, SignalRenderer>> = {
   done: renderDone,
   partial: renderPartial,
   stuck: renderStuck,
@@ -211,7 +211,7 @@ const SIGNAL_RENDERERS: Partial<Record<NonNullable<TaskSignal['signal_verb']>, S
 }
 
 export function SignalDisplay({ signal }: SignalDisplayProps) {
-  const verb = signal.signal_verb
+  const verb = signal.signalVerb
   if (!verb) return null
 
   const renderer = SIGNAL_RENDERERS[verb]

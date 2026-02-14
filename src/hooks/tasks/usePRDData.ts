@@ -17,24 +17,20 @@ function isTaskListItemShape(value: unknown): value is TaskListItem {
 }
 
 export function usePRDData(queryDomain: InvokeQueryDomain = 'workspace') {
-  const { data, isLoading, error, refetch } = useInvoke<TaskListItem[], TaskListItem[]>(
-    'get_task_list_items',
-    undefined,
-    {
-      queryDomain,
-      select: nextData => {
-        if (!Array.isArray(nextData)) {
-          throw new Error('Expected task list to be an array')
-        }
-        for (const [index, task] of nextData.entries()) {
-          if (!isTaskListItemShape(task)) {
-            throw new Error(`Invalid task list item payload at index ${index.toString()}`)
-          }
-        }
-        return nextData
+  const { data, isLoading, error, refetch } = useInvoke<TaskListItem[], TaskListItem[]>('tasks_list_items', undefined, {
+    queryDomain,
+    select: nextData => {
+      if (!Array.isArray(nextData)) {
+        throw new Error('Expected task list to be an array')
       }
+      for (const [index, task] of nextData.entries()) {
+        if (!isTaskListItemShape(task)) {
+          throw new Error(`Invalid task list item payload at index ${index.toString()}`)
+        }
+      }
+      return nextData
     }
-  )
+  })
   const tasks = data ?? null
 
   return {

@@ -12,7 +12,7 @@ export function useDisciplineStats(queryDomain: InvokeQueryDomain = 'workspace')
     data: tasksData,
     isLoading: tasksLoading,
     error: tasksError
-  } = useInvoke<TaskListItem[]>('get_task_list_items', undefined, {
+  } = useInvoke<TaskListItem[]>('tasks_list_items', undefined, {
     queryDomain
   })
   const tasks = tasksData ?? EMPTY_TASKS

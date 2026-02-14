@@ -26,14 +26,14 @@ export const BothLists: Story = {
   parameters: {
     mockData: [
       {
-        command: 'get_recent_projects',
+        command: 'project_recent_list',
         response: [
-          { name: 'my-app', path: '/home/user/projects/my-app', lastOpened: '2026-02-10T15:30:00Z' },
-          { name: 'backend-api', path: '/home/user/projects/backend-api', lastOpened: '2026-02-09T12:00:00Z' }
+          { name: 'my-app', path: '/home/user/projects/my-app', last_opened: '2026-02-10T15:30:00Z' },
+          { name: 'backend-api', path: '/home/user/projects/backend-api', last_opened: '2026-02-09T12:00:00Z' }
         ]
       },
       {
-        command: 'scan_for_ralph_projects',
+        command: 'project_scan',
         response: [
           { name: 'my-app', path: '/home/user/projects/my-app' },
           { name: 'backend-api', path: '/home/user/projects/backend-api' },
@@ -49,11 +49,11 @@ export const NoRecentWithDiscovered: Story = {
   parameters: {
     mockData: [
       {
-        command: 'get_recent_projects',
+        command: 'project_recent_list',
         response: []
       },
       {
-        command: 'scan_for_ralph_projects',
+        command: 'project_scan',
         response: Array.from({ length: 8 }, (_, i) => ({
           name: `project-${i + 1}`,
           path: `/home/user/projects/project-${i + 1}`
@@ -67,11 +67,11 @@ export const NoProjectsFound: Story = {
   parameters: {
     mockData: [
       {
-        command: 'get_recent_projects',
+        command: 'project_recent_list',
         response: []
       },
       {
-        command: 'scan_for_ralph_projects',
+        command: 'project_scan',
         response: []
       }
     ]

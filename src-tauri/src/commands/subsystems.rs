@@ -1,7 +1,7 @@
 use super::state::{AppState, CommandContext};
+use crate::diagnostics;
 use ralph_errors::{codes, RalphResultExt};
 use ralph_macros::ipc_type;
-use serde::Deserialize;
 use tauri::State;
 
 fn build_embedding_config(
@@ -181,7 +181,7 @@ fn get_discipline_config_or_error(
 }
 
 #[tauri::command]
-pub fn get_disciplines_config(state: State<'_, AppState>) -> Result<Vec<DisciplineConfig>, String> {
+pub fn disciplines_list(state: State<'_, AppState>) -> Result<Vec<DisciplineConfig>, String> {
     CommandContext::from_tauri_state(&state).db(|db| {
         Ok(db
             .get_disciplines()
@@ -268,13 +268,15 @@ fn get_subsystem_data_or_error(
 }
 
 #[tauri::command]
-pub fn get_subsystems(state: State<'_, AppState>) -> Result<Vec<SubsystemData>, String> {
+pub fn subsystems_list(state: State<'_, AppState>) -> Result<Vec<SubsystemData>, String> {
     CommandContext::from_tauri_state(&state)
         .db(|db| Ok(db.get_subsystems().iter().map(to_subsystem_data).collect()))
 }
 
-#[derive(Deserialize)]
-pub struct CreateFeatureParams {
+#[ipc_type]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SubsystemsCreateArgs {
     pub name: String,
     pub display_name: String,
     pub acronym: String,
@@ -282,24 +284,26 @@ pub struct CreateFeatureParams {
 }
 
 #[tauri::command]
-pub fn create_subsystem(
+pub fn subsystems_create(
     state: State<'_, AppState>,
-    params: CreateFeatureParams,
+    args: SubsystemsCreateArgs,
 ) -> Result<SubsystemData, String> {
-    let subsystem_name = params.name.clone();
+    let subsystem_name = args.name.clone();
     CommandContext::from_tauri_state(&state).db(|db| {
         db.create_subsystem(sqlite_db::SubsystemInput {
-            name: params.name,
-            display_name: params.display_name,
-            acronym: params.acronym,
-            description: params.description,
+            name: args.name,
+            display_name: args.display_name,
+            acronym: args.acronym,
+            description: args.description,
         })?;
         get_subsystem_data_or_error(db, &subsystem_name)
     })
 }
 
-#[derive(Deserialize)]
-pub struct UpdateFeatureParams {
+#[ipc_type]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SubsystemsUpdateArgs {
     pub name: String,
     pub display_name: String,
     pub acronym: String,
@@ -307,25 +311,26 @@ pub struct UpdateFeatureParams {
 }
 
 #[tauri::command]
-pub fn update_subsystem(
+pub fn subsystems_update(
     state: State<'_, AppState>,
-    params: UpdateFeatureParams,
+    args: SubsystemsUpdateArgs,
 ) -> Result<SubsystemData, String> {
-    let subsystem_name = params.name.clone();
+    let subsystem_name = args.name.clone();
     CommandContext::from_tauri_state(&state).db(|db| {
         db.update_subsystem(sqlite_db::SubsystemInput {
-            name: params.name,
-            display_name: params.display_name,
-            acronym: params.acronym,
-            description: params.description,
+            name: args.name,
+            display_name: args.display_name,
+            acronym: args.acronym,
+            description: args.description,
         })?;
         get_subsystem_data_or_error(db, &subsystem_name)
     })
 }
 
-#[derive(Deserialize)]
+#[ipc_type]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct AddFeatureCommentParams {
+pub struct SubsystemsCommentAddArgs {
     pub subsystem_name: String,
     pub category: String,
     pub discipline: Option<String>,
@@ -337,25 +342,25 @@ pub struct AddFeatureCommentParams {
 }
 
 #[tauri::command]
-pub async fn add_subsystem_comment(
+pub async fn subsystems_comment_add(
     state: State<'_, AppState>,
-    params: AddFeatureCommentParams,
+    args: SubsystemsCommentAddArgs,
 ) -> Result<SubsystemData, String> {
     let command_ctx = CommandContext::from_tauri_state(&state);
     let path = db_path(&command_ctx)?;
     let (comment_id, embedding_text, subsystem) = command_ctx.db_tx(|db| {
         db.add_subsystem_comment(sqlite_db::AddSubsystemCommentInput {
-            subsystem_name: params.subsystem_name.clone(),
-            category: params.category.clone(),
-            discipline: params.discipline.clone(),
-            agent_task_id: params.agent_task_id,
-            body: params.body.clone(),
-            summary: params.summary.clone(),
-            reason: params.reason.clone(),
-            source_iteration: params.source_iteration,
+            subsystem_name: args.subsystem_name.clone(),
+            category: args.category.clone(),
+            discipline: args.discipline.clone(),
+            agent_task_id: args.agent_task_id,
+            body: args.body.clone(),
+            summary: args.summary.clone(),
+            reason: args.reason.clone(),
+            source_iteration: args.source_iteration,
         })?;
 
-        let subsystem = get_subsystem_data_or_error(db, &params.subsystem_name)?;
+        let subsystem = get_subsystem_data_or_error(db, &args.subsystem_name)?;
         let cid = subsystem
             .comments
             .last()
@@ -363,9 +368,9 @@ pub async fn add_subsystem_comment(
             .ok_or("Failed to get new comment ID")?;
 
         let text = ralph_external::comment_embeddings::build_embedding_text(
-            &params.category,
-            &params.body,
-            params.reason.as_deref(),
+            &args.category,
+            &args.body,
+            args.reason.as_deref(),
         );
         Ok((cid, text, subsystem))
     })?;
@@ -380,9 +385,10 @@ pub async fn add_subsystem_comment(
     Ok(subsystem)
 }
 
-#[derive(Deserialize)]
+#[ipc_type]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct UpdateFeatureCommentParams {
+pub struct SubsystemsCommentUpdateArgs {
     pub subsystem_name: String,
     pub comment_id: u32,
     pub body: String,
@@ -391,40 +397,40 @@ pub struct UpdateFeatureCommentParams {
 }
 
 #[tauri::command]
-pub async fn update_subsystem_comment(
+pub async fn subsystems_comment_update(
     state: State<'_, AppState>,
-    params: UpdateFeatureCommentParams,
+    args: SubsystemsCommentUpdateArgs,
 ) -> Result<SubsystemData, String> {
     let command_ctx = CommandContext::from_tauri_state(&state);
     let path = db_path(&command_ctx)?;
     let (embedding_text, needs_embed, subsystem) = command_ctx.db_tx(|db| {
         db.update_subsystem_comment(
-            &params.subsystem_name,
-            params.comment_id,
-            &params.body,
-            params.summary.clone(),
-            params.reason.clone(),
+            &args.subsystem_name,
+            args.comment_id,
+            &args.body,
+            args.summary.clone(),
+            args.reason.clone(),
         )?;
 
-        let subsystem = get_subsystem_data_or_error(db, &params.subsystem_name)?;
+        let subsystem = get_subsystem_data_or_error(db, &args.subsystem_name)?;
         let category = subsystem
             .comments
             .iter()
-            .find(|c| c.id == params.comment_id)
+            .find(|c| c.id == args.comment_id)
             .map(|c| c.category.clone())
             .ok_or("Comment not found after update")?;
 
         let text = ralph_external::comment_embeddings::build_embedding_text(
             &category,
-            &params.body,
-            params.reason.as_deref(),
+            &args.body,
+            args.reason.as_deref(),
         );
         let needs = ralph_external::comment_embeddings::should_embed(
             db,
-            params.comment_id,
+            args.comment_id,
             &category,
-            &params.body,
-            params.reason.as_deref(),
+            &args.body,
+            args.reason.as_deref(),
         )
         .is_some();
         Ok((text, needs, subsystem))
@@ -440,35 +446,33 @@ pub async fn update_subsystem_comment(
         ralph_external::comment_embeddings::embed_text(&embed_config, &embedding_text).await?;
 
     let db = sqlite_db::SqliteDb::open(&path, None)?;
-    db.upsert_comment_embedding(
-        params.comment_id,
-        &result.vector,
-        &result.model,
-        &result.hash,
-    )?;
+    db.upsert_comment_embedding(args.comment_id, &result.vector, &result.model, &result.hash)?;
     Ok(subsystem)
 }
 
-#[derive(Deserialize)]
+#[ipc_type]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct DeleteFeatureCommentParams {
+pub struct SubsystemsCommentDeleteArgs {
     pub subsystem_name: String,
     pub comment_id: u32,
 }
 
 #[tauri::command]
-pub fn delete_subsystem_comment(
+pub fn subsystems_comment_delete(
     state: State<'_, AppState>,
-    params: DeleteFeatureCommentParams,
+    args: SubsystemsCommentDeleteArgs,
 ) -> Result<SubsystemData, String> {
     CommandContext::from_tauri_state(&state).db(|db| {
-        db.delete_subsystem_comment(&params.subsystem_name, params.comment_id)?;
-        get_subsystem_data_or_error(db, &params.subsystem_name)
+        db.delete_subsystem_comment(&args.subsystem_name, args.comment_id)?;
+        get_subsystem_data_or_error(db, &args.subsystem_name)
     })
 }
 
-#[derive(Deserialize)]
-pub struct CreateDisciplineParams {
+#[ipc_type]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DisciplinesCreateArgs {
     pub name: String,
     pub display_name: String,
     pub acronym: String,
@@ -479,29 +483,28 @@ pub struct CreateDisciplineParams {
     pub model: Option<String>,
     pub effort: Option<String>,
     pub thinking: Option<bool>,
-    pub skills: Option<Vec<String>>,
+    pub skills: Vec<String>,
     pub conventions: Option<String>,
-    pub mcp_servers: Option<Vec<McpServerConfigData>>,
+    pub mcp_servers: Vec<McpServerConfigData>,
 }
 
 #[tauri::command]
-pub fn create_discipline(
+pub fn disciplines_create(
     state: State<'_, AppState>,
-    params: CreateDisciplineParams,
+    args: DisciplinesCreateArgs,
 ) -> Result<DisciplineConfig, String> {
-    let normalized_name = params
+    let normalized_name = args
         .name
         .to_lowercase()
         .trim()
         .replace(char::is_whitespace, "-");
     let discipline_name = normalized_name.clone();
 
-    let skills_json = serde_json::to_string(&params.skills.unwrap_or_default())
+    let skills_json = serde_json::to_string(&args.skills)
         .ralph_err(codes::DISCIPLINE_OPS, "Failed to serialize skills")?;
 
-    let mcp_servers: Vec<sqlite_db::McpServerConfig> = params
+    let mcp_servers: Vec<sqlite_db::McpServerConfig> = args
         .mcp_servers
-        .unwrap_or_default()
         .iter()
         .map(|m| sqlite_db::McpServerConfig {
             name: m.name.clone(),
@@ -517,18 +520,18 @@ pub fn create_discipline(
     CommandContext::from_tauri_state(&state).db(|db| {
         db.create_discipline(sqlite_db::DisciplineInput {
             name: normalized_name,
-            display_name: params.display_name,
-            acronym: params.acronym,
-            icon: params.icon,
-            color: params.color,
+            display_name: args.display_name,
+            acronym: args.acronym,
+            icon: args.icon,
+            color: args.color,
             description: None,
-            system_prompt: params.system_prompt,
-            agent: params.agent,
-            model: params.model,
-            effort: params.effort,
-            thinking: params.thinking,
+            system_prompt: args.system_prompt,
+            agent: args.agent,
+            model: args.model,
+            effort: args.effort,
+            thinking: args.thinking,
             skills: skills_json,
-            conventions: params.conventions,
+            conventions: args.conventions,
             mcp_servers: mcp_json,
             image_path: None,
             crops: None,
@@ -538,8 +541,10 @@ pub fn create_discipline(
     })
 }
 
-#[derive(Deserialize)]
-pub struct UpdateDisciplineParams {
+#[ipc_type]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DisciplinesUpdateArgs {
     pub name: String,
     pub display_name: String,
     pub acronym: String,
@@ -550,22 +555,21 @@ pub struct UpdateDisciplineParams {
     pub model: Option<String>,
     pub effort: Option<String>,
     pub thinking: Option<bool>,
-    pub skills: Option<Vec<String>>,
+    pub skills: Vec<String>,
     pub conventions: Option<String>,
-    pub mcp_servers: Option<Vec<McpServerConfigData>>,
+    pub mcp_servers: Vec<McpServerConfigData>,
 }
 
 #[tauri::command]
-pub fn update_discipline(
+pub fn disciplines_update(
     state: State<'_, AppState>,
-    params: UpdateDisciplineParams,
+    args: DisciplinesUpdateArgs,
 ) -> Result<DisciplineConfig, String> {
-    let skills_json = serde_json::to_string(&params.skills.unwrap_or_default())
+    let skills_json = serde_json::to_string(&args.skills)
         .ralph_err(codes::DISCIPLINE_OPS, "Failed to serialize skills")?;
 
-    let mcp_servers: Vec<sqlite_db::McpServerConfig> = params
+    let mcp_servers: Vec<sqlite_db::McpServerConfig> = args
         .mcp_servers
-        .unwrap_or_default()
         .iter()
         .map(|m| sqlite_db::McpServerConfig {
             name: m.name.clone(),
@@ -578,22 +582,22 @@ pub fn update_discipline(
     let mcp_json = serde_json::to_string(&mcp_servers)
         .ralph_err(codes::DISCIPLINE_OPS, "Failed to serialize mcp_servers")?;
 
-    let discipline_name = params.name.clone();
+    let discipline_name = args.name.clone();
     CommandContext::from_tauri_state(&state).db(|db| {
         db.update_discipline(sqlite_db::DisciplineInput {
-            name: params.name,
-            display_name: params.display_name,
-            acronym: params.acronym,
-            icon: params.icon,
-            color: params.color,
+            name: args.name,
+            display_name: args.display_name,
+            acronym: args.acronym,
+            icon: args.icon,
+            color: args.color,
             description: None,
-            system_prompt: params.system_prompt,
-            agent: params.agent,
-            model: params.model,
-            effort: params.effort,
-            thinking: params.thinking,
+            system_prompt: args.system_prompt,
+            agent: args.agent,
+            model: args.model,
+            effort: args.effort,
+            thinking: args.thinking,
             skills: skills_json,
-            conventions: params.conventions,
+            conventions: args.conventions,
             mcp_servers: mcp_json,
             image_path: None,
             crops: None,
@@ -604,17 +608,37 @@ pub fn update_discipline(
 }
 
 #[tauri::command]
-pub fn delete_subsystem(state: State<'_, AppState>, name: String) -> Result<(), String> {
-    CommandContext::from_tauri_state(&state).db(|db| db.delete_subsystem(name))
+pub fn subsystems_delete(
+    state: State<'_, AppState>,
+    args: SubsystemsDeleteArgs,
+) -> Result<(), String> {
+    CommandContext::from_tauri_state(&state).db(|db| db.delete_subsystem(args.name))
 }
 
 #[tauri::command]
-pub fn delete_discipline(state: State<'_, AppState>, name: String) -> Result<String, String> {
-    let deleted_name = name.clone();
+pub fn disciplines_delete(
+    state: State<'_, AppState>,
+    args: DisciplinesDeleteArgs,
+) -> Result<String, String> {
+    let deleted_name = args.name.clone();
     CommandContext::from_tauri_state(&state).db(|db| {
-        db.delete_discipline(name)?;
+        db.delete_discipline(args.name)?;
         Ok(deleted_name)
     })
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SubsystemsDeleteArgs {
+    pub name: String,
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DisciplinesDeleteArgs {
+    pub name: String,
 }
 
 #[ipc_type]
@@ -642,7 +666,7 @@ pub struct StackMetadataData {
 }
 
 #[tauri::command]
-pub fn get_stack_metadata() -> Vec<StackMetadataData> {
+pub fn stacks_metadata_list() -> Vec<StackMetadataData> {
     predefined_disciplines::get_all_stack_metadata()
         .iter()
         .map(|m| StackMetadataData {
@@ -664,14 +688,19 @@ pub fn get_stack_metadata() -> Vec<StackMetadataData> {
 }
 
 #[tauri::command]
-pub fn get_discipline_image_data(
+pub fn disciplines_image_data_get(
     state: State<'_, AppState>,
-    name: String,
+    args: DisciplinesImageDataGetArgs,
 ) -> Result<Option<String>, String> {
     use base64::Engine;
 
-    let disc = CommandContext::from_tauri_state(&state)
-        .db(|db| Ok(db.get_disciplines().into_iter().find(|d| d.name == name)))?;
+    let ctx = CommandContext::from_tauri_state(&state);
+    let disc = ctx.db(|db| {
+        Ok(db
+            .get_disciplines()
+            .into_iter()
+            .find(|d| d.name == args.discipline_name))
+    })?;
 
     let Some(disc) = disc else {
         return Ok(None);
@@ -680,78 +709,201 @@ pub fn get_discipline_image_data(
         return Ok(None);
     };
 
-    let project_path = CommandContext::from_tauri_state(&state).locked_project_path()?;
+    let project_path = ctx.locked_project_path()?;
     let abs_path = project_path.join(".ralph").join(image_path);
 
-    std::fs::read(&abs_path).map_or(Ok(None), |bytes| {
-        let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
-        Ok(Some(b64))
-    })
+    let bytes = std::fs::read(&abs_path).map_err(|error| {
+        ralph_errors::err_string(
+            codes::FILESYSTEM,
+            format!(
+                "Failed to read discipline image '{}' at {}: {error}",
+                args.discipline_name,
+                abs_path.display()
+            ),
+        )
+    })?;
+    let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+    Ok(Some(b64))
 }
 
 #[tauri::command]
-pub fn get_cropped_image(
+pub fn disciplines_cropped_image_get(
     state: State<'_, AppState>,
-    name: String,
-    crop: CropBoxData,
-    label: String,
+    args: DisciplinesCroppedImageGetArgs,
 ) -> Result<Option<String>, String> {
     use base64::Engine;
+    use std::io::Cursor;
 
-    let disc = CommandContext::from_tauri_state(&state)
-        .db(|db| Ok(db.get_disciplines().into_iter().find(|d| d.name == name)))?;
+    let ctx = CommandContext::from_tauri_state(&state);
+    let disc = ctx.db(|db| {
+        Ok(db
+            .get_disciplines()
+            .into_iter()
+            .find(|d| d.name == args.discipline_name))
+    })?;
 
     let Some(disc) = disc else {
-        return Ok(None);
+        return Err(ralph_errors::err_string(
+            codes::DISCIPLINE_OPS,
+            format!("Discipline '{}' not found", args.discipline_name),
+        ));
     };
     let Some(ref image_path) = disc.image_path else {
         return Ok(None);
     };
 
-    let project_path = CommandContext::from_tauri_state(&state).locked_project_path()?;
+    let project_path = ctx.locked_project_path()?;
     let cache_dir = project_path.join(".ralph").join("cache").join("crops");
     let cache_key = format!(
         "{}_{}_{}_{}_{}_{}.png",
-        name, label, crop.x, crop.y, crop.w, crop.h
+        args.discipline_name, args.label, args.crop.x, args.crop.y, args.crop.w, args.crop.h
     );
     let cache_path = cache_dir.join(&cache_key);
 
     if cache_path.exists() {
-        return std::fs::read(&cache_path).map_or(Ok(None), |bytes| {
-            Ok(Some(
-                base64::engine::general_purpose::STANDARD.encode(&bytes),
-            ))
-        });
+        match std::fs::read(&cache_path) {
+            Ok(bytes) => {
+                return Ok(Some(
+                    base64::engine::general_purpose::STANDARD.encode(&bytes),
+                ));
+            }
+            Err(error) => {
+                diagnostics::emit_warning(
+                    "disciplines",
+                    "crop-cache-read-failed",
+                    &format!(
+                        "Failed to read crop cache at {}: {error}. Regenerating.",
+                        cache_path.display()
+                    ),
+                );
+            }
+        }
     }
 
     let abs_path = project_path.join(".ralph").join(image_path);
-    let Ok(src_bytes) = std::fs::read(&abs_path) else {
-        return Ok(None);
-    };
+    let src_bytes = std::fs::read(&abs_path).map_err(|error| {
+        ralph_errors::err_string(
+            codes::FILESYSTEM,
+            format!(
+                "Failed to read discipline image '{}' at {}: {error}",
+                args.discipline_name,
+                abs_path.display()
+            ),
+        )
+    })?;
 
-    let img = image::load_from_memory(&src_bytes).map_err(|e| e.to_string())?;
+    if !(args.crop.x.is_finite()
+        && args.crop.y.is_finite()
+        && args.crop.w.is_finite()
+        && args.crop.h.is_finite())
+    {
+        return Err(ralph_errors::err_string(
+            codes::DISCIPLINE_OPS,
+            format!(
+                "Invalid crop box (non-finite): x={} y={} w={} h={}",
+                args.crop.x, args.crop.y, args.crop.w, args.crop.h
+            ),
+        ));
+    }
+
+    if args.crop.x < 0.0 || args.crop.y < 0.0 || args.crop.w <= 0.0 || args.crop.h <= 0.0 {
+        return Err(ralph_errors::err_string(
+            codes::DISCIPLINE_OPS,
+            format!(
+                "Invalid crop box (out of range): x={} y={} w={} h={}",
+                args.crop.x, args.crop.y, args.crop.w, args.crop.h
+            ),
+        ));
+    }
+
+    let img = image::load_from_memory(&src_bytes).map_err(|error| {
+        ralph_errors::err_string(
+            codes::FILESYSTEM,
+            format!(
+                "Failed to decode discipline image '{}' at {}: {error}",
+                args.discipline_name,
+                abs_path.display()
+            ),
+        )
+    })?;
     let (iw, ih) = (img.width(), img.height());
 
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let (sx, sy, sw, sh) = (
-        (crop.x * iw as f32) as u32,
-        (crop.y * ih as f32) as u32,
-        (crop.w * iw as f32).min((iw as f32) - (crop.x * iw as f32)) as u32,
-        (crop.h * ih as f32).min((ih as f32) - (crop.y * ih as f32)) as u32,
+        (args.crop.x * iw as f32) as u32,
+        (args.crop.y * ih as f32) as u32,
+        (args.crop.w * iw as f32).min((iw as f32) - (args.crop.x * iw as f32)) as u32,
+        (args.crop.h * ih as f32).min((ih as f32) - (args.crop.y * ih as f32)) as u32,
     );
 
     if sw == 0 || sh == 0 {
-        return Ok(None);
+        return Err(ralph_errors::err_string(
+            codes::DISCIPLINE_OPS,
+            format!(
+                "Crop box produced empty image (discipline='{}', label='{}', x={} y={} w={} h={})",
+                args.discipline_name,
+                args.label,
+                args.crop.x,
+                args.crop.y,
+                args.crop.w,
+                args.crop.h
+            ),
+        ));
     }
 
     let cropped = img.crop_imm(sx, sy, sw, sh);
 
-    std::fs::create_dir_all(&cache_dir).map_err(|e| e.to_string())?;
-    cropped.save(&cache_path).map_err(|e| e.to_string())?;
+    let mut buf = Cursor::new(Vec::new());
+    cropped
+        .write_to(&mut buf, image::ImageFormat::Png)
+        .map_err(|error| {
+            ralph_errors::err_string(
+                codes::FILESYSTEM,
+                format!(
+                    "Failed to encode crop to PNG (discipline='{}', label='{}'): {error}",
+                    args.discipline_name, args.label
+                ),
+            )
+        })?;
+    let bytes = buf.into_inner();
 
-    std::fs::read(&cache_path).map_or(Ok(None), |bytes| {
-        Ok(Some(
-            base64::engine::general_purpose::STANDARD.encode(&bytes),
-        ))
-    })
+    if let Err(error) = std::fs::create_dir_all(&cache_dir) {
+        diagnostics::emit_warning(
+            "disciplines",
+            "crop-cache-write-failed",
+            &format!(
+                "Failed to create crop cache dir at {}: {error}. Continuing without cache.",
+                cache_dir.display()
+            ),
+        );
+    } else if let Err(error) = std::fs::write(&cache_path, &bytes) {
+        diagnostics::emit_warning(
+            "disciplines",
+            "crop-cache-write-failed",
+            &format!(
+                "Failed to write crop cache at {}: {error}. Continuing without cache.",
+                cache_path.display()
+            ),
+        );
+    }
+
+    Ok(Some(
+        base64::engine::general_purpose::STANDARD.encode(&bytes),
+    ))
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DisciplinesImageDataGetArgs {
+    pub discipline_name: String,
+}
+
+#[ipc_type]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DisciplinesCroppedImageGetArgs {
+    pub discipline_name: String,
+    pub crop: CropBoxData,
+    pub label: String,
 }

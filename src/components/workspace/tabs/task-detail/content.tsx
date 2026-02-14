@@ -5,7 +5,7 @@ import { STATUS_CONFIG } from '@/constants/prd'
 import { useInvoke, useInvokeMutation } from '@/hooks/api'
 import { useDisciplines } from '@/hooks/disciplines'
 import { usePRDData } from '@/hooks/tasks'
-import type { UpdateTaskVariables } from '@/hooks/tasks/updateTaskMutation'
+import { buildUpdateArgsFromTask, type UpdateTaskVariables } from '@/hooks/tasks/updateTaskMutation'
 import { useTabMeta } from '@/hooks/workspace'
 import { computeInferredStatus } from '@/lib/taskStatus'
 import type { WorkspaceTab } from '@/stores/useWorkspaceStore'
@@ -29,7 +29,7 @@ export function TaskDetailTabContent({ tab, params }: { tab: WorkspaceTab; param
     data: task,
     isLoading: taskLoading,
     error: taskError
-  } = useInvoke<Task>('get_task', entityId != null ? { id: entityId } : undefined, {
+  } = useInvoke<Task>('tasks_get', entityId != null ? { id: entityId } : undefined, {
     queryDomain: 'workspace',
     enabled: entityId != null
   })
@@ -37,9 +37,9 @@ export function TaskDetailTabContent({ tab, params }: { tab: WorkspaceTab; param
 
   useTabMeta(tab.id, task?.title ?? TASK_DETAIL_TAB_FALLBACK_TITLE, CheckCircle2)
 
-  const updateTaskMutation = useInvokeMutation<UpdateTaskVariables, Task>('update_task', {
+  const updateTaskMutation = useInvokeMutation<UpdateTaskVariables, Task>('tasks_update', {
     queryDomain: 'workspace',
-    invalidateKeys: entityId != null ? ([['get_task', { id: entityId }], ['get_task_list_items']] as const) : undefined
+    invalidateKeys: entityId != null ? ([['tasks_get', { id: entityId }], ['tasks_list_items']] as const) : undefined
   })
 
   if (entityId == null) {
@@ -86,28 +86,7 @@ export function TaskDetailTabContent({ tab, params }: { tab: WorkspaceTab; param
     const current = task.priority
     const next = current === 'low' ? 'medium' : current === 'medium' ? 'high' : current === 'high' ? undefined : 'low'
 
-    updateTaskMutation.mutate({
-      params: {
-        id: task.id,
-        subsystem: task.subsystem,
-        discipline: task.discipline,
-        title: task.title,
-        description: task.description,
-        priority: next,
-        tags: task.tags,
-        depends_on: task.dependsOn,
-        acceptance_criteria: task.acceptanceCriteria,
-        context_files: task.contextFiles,
-        output_artifacts: task.outputArtifacts,
-        hints: task.hints,
-        estimated_turns: task.estimatedTurns,
-        provenance: task.provenance,
-        agent: task.agent,
-        model: task.model,
-        effort: task.effort,
-        thinking: task.thinking
-      }
-    })
+    updateTaskMutation.mutate(buildUpdateArgsFromTask(task, { priority: next }))
   }
 
   return (

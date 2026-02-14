@@ -1,4 +1,3 @@
-import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import { FolderOpen } from 'lucide-react'
 import { useState } from 'react'
@@ -11,6 +10,7 @@ import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
 import { useInvoke } from '@/hooks/api'
+import { tauriInvoke } from '@/lib/tauri/invoke'
 import { cn } from '@/lib/utils'
 import type { RalphProject } from '@/types/generated'
 
@@ -106,7 +106,7 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
     data: recentProjects,
     isLoading: loadingRecent,
     error: recentError
-  } = useInvoke<RecentProject[]>('get_recent_projects')
+  } = useInvoke<RecentProject[]>('project_recent_list')
 
   const recentAsProjects: RalphProject[] = (recentProjects ?? []).map(p => ({ name: p.name, path: p.path }))
   const recentPaths = new Set(recentAsProjects.map(p => p.path))
@@ -115,7 +115,7 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
     data: scannedProjects,
     isLoading: loadingScan,
     error: scanError
-  } = useInvoke<RalphProject[]>('scan_for_ralph_projects')
+  } = useInvoke<RalphProject[]>('project_scan', {})
 
   const discoveredProjects = (scannedProjects ?? []).filter(p => !recentPaths.has(p.path))
 
@@ -123,7 +123,7 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
     setOpenError(null)
     setOpeningPath(path)
     try {
-      await invoke('set_locked_project', { path })
+      await tauriInvoke('project_lock_set', { path })
       onProjectSelected(path)
     } catch (err) {
       setOpenError(`Failed to open: ${err}`)
@@ -195,8 +195,8 @@ function ProjectInitPanel({ onProjectSelected }: { onProjectSelected: (path: str
     setInitializing(true)
     try {
       const title = initPath.split('/').pop() || 'Project'
-      await invoke('initialize_ralph_project', { path: initPath, projectTitle: title, stack })
-      await invoke('set_locked_project', { path: initPath })
+      await tauriInvoke('project_initialize', { path: initPath, projectTitle: title, stack })
+      await tauriInvoke('project_lock_set', { path: initPath })
       onProjectSelected(initPath)
     } catch (err) {
       setInitError(`Failed to initialize: ${err}`)

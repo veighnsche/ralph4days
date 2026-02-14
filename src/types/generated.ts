@@ -19,6 +19,34 @@ export type AgentSession = {
   outputBytes?: number
   errorText?: string
 }
+export type AgentSessionCreateInput = {
+  id: string
+  kind: string
+  taskId?: number
+  agent?: string
+  model?: string
+  launchCommand?: string
+  postStartPreamble?: string
+  initPrompt?: string
+}
+export type AgentSessionUpdateInput = {
+  id: string
+  kind?: string
+  taskId?: number
+  agent?: string
+  model?: string
+  launchCommand?: string
+  postStartPreamble?: string
+  initPrompt?: string
+  ended?: string
+  exitCode?: number
+  closingVerb?: string
+  status?: string
+  promptHash?: string
+  outputBytes?: number
+  errorText?: string
+}
+export type AgentSessionsByIdArgs = { id: string }
 export type CropBoxData = { x: number; y: number; w: number; h: number }
 export type DisciplineConfig = {
   id: number
@@ -67,6 +95,39 @@ export type DisciplineTaskTemplateData = {
   updated?: string
   pulledCount: number
 }
+export type DisciplinesCreateArgs = {
+  name: string
+  displayName: string
+  acronym: string
+  icon: string
+  color: string
+  systemPrompt?: string
+  agent?: string
+  model?: string
+  effort?: string
+  thinking?: boolean
+  skills: string[]
+  conventions?: string
+  mcpServers: McpServerConfigData[]
+}
+export type DisciplinesCroppedImageGetArgs = { disciplineName: string; crop: CropBoxData; label: string }
+export type DisciplinesDeleteArgs = { name: string }
+export type DisciplinesImageDataGetArgs = { disciplineName: string }
+export type DisciplinesUpdateArgs = {
+  name: string
+  displayName: string
+  acronym: string
+  icon: string
+  color: string
+  systemPrompt?: string
+  agent?: string
+  model?: string
+  effort?: string
+  thinking?: boolean
+  skills: string[]
+  conventions?: string
+  mcpServers: McpServerConfigData[]
+}
 export type FeatureLearning = {
   text: string
   reason?: string
@@ -94,7 +155,11 @@ export type McpServerConfig = { name: string; command: string; args: string[]; e
 export type McpServerConfigData = { name: string; command: string; args: string[]; env: { [key in string]: string } }
 export type Priority = 'low' | 'medium' | 'high' | 'critical'
 export type ProjectInfo = { title: string; description?: string; created?: string }
+export type ProjectInitializeArgs = { path: string; projectTitle: string; stack: number }
+export type ProjectLockSetArgs = { path: string }
 export type ProjectProgress = { totalTasks: number; doneTasks: number; progressPercent: number }
+export type ProjectScanArgs = { rootDir?: string }
+export type ProjectValidatePathArgs = { path: string }
 export type PromptBuilderConfigData = {
   name: string
   basePrompt: string
@@ -103,16 +168,20 @@ export type PromptBuilderConfigData = {
   created?: string
   updated?: string
 }
+export type PromptBuilderConfigDeleteArgs = { name: string }
+export type PromptBuilderConfigGetArgs = { name: string }
 export type PromptBuilderConfigInput = {
   name: string
   basePrompt: string
   sectionOrder: string[]
   sections: { [key in string]: SectionSettingsData }
 }
+export type PromptBuilderConfigSaveArgs = { config: PromptBuilderConfigInput }
+export type PromptBuilderPreviewArgs = { sections: SectionConfig[]; userInput?: string }
 export type PromptPreview = { sections: PromptPreviewSection[]; fullPrompt: string }
 export type PromptPreviewSection = { name: string; content: string }
-export type PtyClosedEvent = { session_id: string; exit_code: number }
-export type PtyOutputEvent = { session_id: string; seq: bigint; data: string }
+export type PtyClosedEvent = { sessionId: string; exitCode: number }
+export type PtyOutputEvent = { sessionId: string; seq: bigint; data: string }
 export type RalphProject = { name: string; path: string }
 export type SectionConfig = { name: string; enabled: boolean; instructionOverride?: string }
 export type SectionInfo = {
@@ -168,6 +237,27 @@ export type SubsystemData = {
   comments: SubsystemCommentData[]
 }
 export type SubsystemStatus = 'active' | 'archived'
+export type SubsystemsCommentAddArgs = {
+  subsystemName: string
+  category: string
+  discipline?: string
+  agentTaskId?: number
+  body: string
+  summary?: string
+  reason?: string
+  sourceIteration?: number
+}
+export type SubsystemsCommentDeleteArgs = { subsystemName: string; commentId: number }
+export type SubsystemsCommentUpdateArgs = {
+  subsystemName: string
+  commentId: number
+  body: string
+  summary?: string
+  reason?: string
+}
+export type SubsystemsCreateArgs = { name: string; displayName: string; acronym: string; description?: string }
+export type SubsystemsDeleteArgs = { name: string }
+export type SubsystemsUpdateArgs = { name: string; displayName: string; acronym: string; description?: string }
 export type Task = {
   id: number
   subsystem: string
@@ -227,9 +317,9 @@ export type TaskSignal = {
   author: string
   body: string
   created?: string
-  session_id?: string
-  signal_verb?: string
-  parent_signal_id?: number
+  sessionId?: string
+  signalVerb?: string
+  parentSignalId?: number
   priority?: string
   summary?: string
   remaining?: string
@@ -258,6 +348,7 @@ export type TaskSignalComment = {
   body: string
   created?: string
 }
+export type TaskSignalCommentCreateInput = { signalId: number; sessionId?: string; authorType: string; body: string }
 export type TaskSignalSummary = {
   pendingAsks: number
   flagCount: number
@@ -283,6 +374,63 @@ export type TaskTemplate = {
   created?: string
   updated?: string
   pulledCount: number
+}
+export type TasksAskAnswerArgs = { signalId: number; answer: string }
+export type TasksCommentReplyAddArgs = { taskId: number; parentCommentId: number; priority?: string; body: string }
+export type TasksCreateArgs = {
+  subsystem: string
+  discipline: string
+  title: string
+  description?: string
+  priority?: Priority
+  tags: string[]
+  dependsOn: number[]
+  acceptanceCriteria: string[]
+  contextFiles: string[]
+  outputArtifacts: string[]
+  hints?: string
+  estimatedTurns?: number
+  provenance?: TaskProvenance
+  agent?: string
+  model?: string
+  effort?: string
+  thinking?: boolean
+}
+export type TasksDeleteArgs = { id: number }
+export type TasksGetArgs = { id: number }
+export type TasksSetStatusArgs = { id: number; status: string }
+export type TasksSignalAddArgs = {
+  taskId: number
+  discipline?: string
+  agentTaskId?: number
+  priority?: string
+  body: string
+}
+export type TasksSignalCommentDeleteArgs = { commentId: number }
+export type TasksSignalCommentUpdateArgs = { commentId: number; body: string }
+export type TasksSignalCommentsListArgs = { signalId: number }
+export type TasksSignalDeleteArgs = { taskId: number; signalId: number }
+export type TasksSignalSummariesGetArgs = { taskIds: number[] }
+export type TasksSignalUpdateArgs = { taskId: number; signalId: number; body: string }
+export type TasksUpdateArgs = {
+  id: number
+  subsystem: string
+  discipline: string
+  title: string
+  description?: string
+  priority?: Priority
+  tags: string[]
+  dependsOn: number[]
+  acceptanceCriteria: string[]
+  contextFiles: string[]
+  outputArtifacts: string[]
+  hints?: string
+  estimatedTurns?: number
+  provenance?: TaskProvenance
+  agent?: string
+  model?: string
+  effort?: string
+  thinking?: boolean
 }
 export type TerminalBridgeEmitSystemMessageArgs = { sessionId: string; text: string }
 export type TerminalBridgeListModelFormTreeResult = { providers: TerminalBridgeListModelsResult[] }

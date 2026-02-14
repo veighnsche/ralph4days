@@ -1,6 +1,6 @@
-import { invoke } from '@tauri-apps/api/core'
 import { useEffect, useRef, useState } from 'react'
 import { useDebouncedCallback } from 'use-debounce'
+import { tauriInvoke } from '@/lib/tauri/invoke'
 import type { PromptPreview, SectionConfig } from '@/types/generated'
 import type { SectionBlock } from './useSectionConfiguration'
 
@@ -47,7 +47,7 @@ export function usePromptPreview(open: boolean, sections: SectionBlock[]) {
         enabled: s.enabled,
         instructionOverride: s.instructionOverride ?? undefined
       }))
-      const result = await invoke<PromptPreview>('preview_custom_prompt_builder', {
+      const result = await tauriInvoke<PromptPreview>('prompt_builder_preview', {
         sections: wireSections,
         userInput: null
       })

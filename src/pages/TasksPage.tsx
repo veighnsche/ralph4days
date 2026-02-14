@@ -12,7 +12,7 @@ import type { DisciplineCropsData, ProjectInfo } from '@/types/generated'
 
 export function TasksPage() {
   const { tasks, isLoading: tasksLoading, error } = usePRDData()
-  const { data: projectInfo } = useInvoke<ProjectInfo>('get_project_info')
+  const { data: projectInfo } = useInvoke<ProjectInfo>('project_info_get')
   const { disciplines } = useDisciplines()
   const cropsStore = useMemo(() => {
     const map = new Map<string, DisciplineCropsData>()

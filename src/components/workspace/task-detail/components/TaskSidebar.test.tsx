@@ -39,8 +39,8 @@ function createTask(overrides: Partial<Task> = {}): Task {
         id: 1,
         author: 'agent',
         body: 'Need API contract clarification',
-        session_id: 'session-1',
-        signal_verb: 'ask'
+        sessionId: 'session-1',
+        signalVerb: 'ask'
       }
     ],
     subsystemDisplayName: 'Core Platform',
@@ -60,7 +60,7 @@ describe('TaskSidebar', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     useInvokeMutationMock.mockImplementation((command: string) => {
-      if (command === 'set_task_status') {
+      if (command === 'tasks_set_status') {
         return {
           mutate: approveMutate,
           isPending: false,
@@ -68,7 +68,7 @@ describe('TaskSidebar', () => {
           reset: vi.fn()
         }
       }
-      if (command === 'update_task') {
+      if (command === 'tasks_update') {
         return {
           mutate: updateMutate,
           isPending: false,
@@ -115,12 +115,12 @@ describe('TaskSidebar', () => {
 
     expect(useInvokeMutationMock).toHaveBeenNthCalledWith(
       1,
-      'set_task_status',
+      'tasks_set_status',
       expect.objectContaining({ queryDomain: 'workspace' })
     )
     expect(useInvokeMutationMock).toHaveBeenNthCalledWith(
       2,
-      'update_task',
+      'tasks_update',
       expect.objectContaining({ queryDomain: 'workspace' })
     )
   })

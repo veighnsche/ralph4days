@@ -40,12 +40,12 @@ describe('buildOptimisticTaskFromUpdateTask', () => {
       description: 'Updated description',
       priority: 'high',
       tags: ['ui'],
-      depends_on: [1, 2],
-      acceptance_criteria: ['[x] first'],
-      context_files: ['src/a.ts'],
-      output_artifacts: ['dist/a.js'],
+      dependsOn: [1, 2],
+      acceptanceCriteria: ['[x] first'],
+      contextFiles: ['src/a.ts'],
+      outputArtifacts: ['dist/a.js'],
       hints: 'Do this',
-      estimated_turns: 3,
+      estimatedTurns: 3,
       provenance: 'agent',
       agent: 'codex',
       model: 'gpt-5.3-codex',
@@ -82,10 +82,10 @@ describe('buildOptimisticTaskFromUpdateTask', () => {
         discipline: 'frontend',
         title: 'Mismatch',
         tags: [],
-        depends_on: [],
-        acceptance_criteria: [],
-        context_files: [],
-        output_artifacts: []
+        dependsOn: [],
+        acceptanceCriteria: [],
+        contextFiles: [],
+        outputArtifacts: []
       })
     ).toThrowError('[task-cache] Cannot build optimistic task for id 8; current task is 7')
   })

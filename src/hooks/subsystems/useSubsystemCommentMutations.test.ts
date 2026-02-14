@@ -24,7 +24,7 @@ function createWrapper() {
     status: 'active',
     comments: []
   }
-  queryClient.setQueryData(buildInvokeQueryKey('get_subsystems', undefined, 'app'), [seededSubsystem])
+  queryClient.setQueryData(buildInvokeQueryKey('subsystems_list', undefined, 'app'), [seededSubsystem])
   return ({ children }: { children: ReactNode }) =>
     createElement(QueryClientProvider, { client: queryClient }, children)
 }
@@ -34,9 +34,9 @@ describe('useSubsystemCommentMutations', () => {
     mockInvoke.mockReset()
     mockInvoke.mockImplementation((command: string) => {
       if (
-        command === 'add_subsystem_comment' ||
-        command === 'update_subsystem_comment' ||
-        command === 'delete_subsystem_comment'
+        command === 'subsystems_comment_add' ||
+        command === 'subsystems_comment_update' ||
+        command === 'subsystems_comment_delete'
       ) {
         return Promise.resolve({
           id: 1,
@@ -66,11 +66,13 @@ describe('useSubsystemCommentMutations', () => {
     })
 
     await waitFor(() =>
-      expect(mockInvoke).toHaveBeenCalledWith('add_subsystem_comment', {
-        subsystemName: 'auth',
-        category: 'gotcha',
-        body: 'Watch out for XSS',
-        reason: 'OWASP top 10'
+      expect(mockInvoke).toHaveBeenCalledWith('subsystems_comment_add', {
+        args: {
+          subsystemName: 'auth',
+          category: 'gotcha',
+          body: 'Watch out for XSS',
+          reason: 'OWASP top 10'
+        }
       })
     )
   })
@@ -118,12 +120,14 @@ describe('useSubsystemCommentMutations', () => {
     })
 
     await waitFor(() =>
-      expect(mockInvoke).toHaveBeenCalledWith('update_subsystem_comment', {
-        subsystemName: 'auth',
-        commentId: 7,
-        body: 'trimmed body',
-        summary: 'trimmed summary',
-        reason: 'trimmed reason'
+      expect(mockInvoke).toHaveBeenCalledWith('subsystems_comment_update', {
+        args: {
+          subsystemName: 'auth',
+          commentId: 7,
+          body: 'trimmed body',
+          summary: 'trimmed summary',
+          reason: 'trimmed reason'
+        }
       })
     )
   })
@@ -150,7 +154,9 @@ describe('useSubsystemCommentMutations', () => {
     })
 
     await waitFor(() =>
-      expect(mockInvoke).toHaveBeenCalledWith('delete_subsystem_comment', { subsystemName: 'auth', commentId: 99 })
+      expect(mockInvoke).toHaveBeenCalledWith('subsystems_comment_delete', {
+        args: { subsystemName: 'auth', commentId: 99 }
+      })
     )
   })
 

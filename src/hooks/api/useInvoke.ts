@@ -1,5 +1,5 @@
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query'
-import { invoke } from '@tauri-apps/api/core'
+import { tauriInvoke } from '@/lib/tauri/invoke'
 
 const isTauri = typeof window !== 'undefined' && '__TAURI__' in window
 
@@ -46,7 +46,7 @@ export function useInvoke<TResult, TSelected = TResult>(
   const { enabled: callerEnabled, queryDomain = 'app', ...rest } = options ?? {}
   return useQuery<TResult, Error, TSelected>({
     queryKey: buildInvokeQueryKey(command, args, queryDomain),
-    queryFn: () => invoke<TResult>(command, args),
+    queryFn: () => (args ? tauriInvoke<TResult>(command, args) : tauriInvoke<TResult>(command)),
     enabled: isTauri && (callerEnabled ?? true),
     ...rest
   })

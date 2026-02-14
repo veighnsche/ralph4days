@@ -44,7 +44,7 @@ const EMPTY_DISCIPLINES: DisciplineConfig[] = []
 
 export function useDisciplines(queryDomain: InvokeQueryDomain = 'app') {
   const { data, error, isLoading } = useInvoke<DisciplineConfigWire[], DisciplineConfig[]>(
-    'get_disciplines_config',
+    'disciplines_list',
     undefined,
     {
       queryDomain,

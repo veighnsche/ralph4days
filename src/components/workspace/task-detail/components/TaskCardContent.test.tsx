@@ -97,12 +97,12 @@ describe('TaskCardContent', () => {
       vi.advanceTimersByTime(200)
     })
 
-    expect(updateTaskMutateMock).toHaveBeenCalledWith({
-      params: expect.objectContaining({
+    expect(updateTaskMutateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
         id: 101,
-        acceptance_criteria: ['[x] Confirm workspace update']
+        acceptanceCriteria: ['[x] Confirm workspace update']
       })
-    })
+    )
   })
 
   it('double-click edits criterion text and saves without triggering checkbox toggle', () => {
@@ -122,12 +122,12 @@ describe('TaskCardContent', () => {
     fireEvent.change(editingInput, { target: { value: 'Updated criterion text' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save acceptance criterion 1 edit' }))
 
-    expect(updateTaskMutateMock).toHaveBeenCalledWith({
-      params: expect.objectContaining({
+    expect(updateTaskMutateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
         id: 101,
-        acceptance_criteria: ['[ ] Updated criterion text']
+        acceptanceCriteria: ['[ ] Updated criterion text']
       })
-    })
+    )
     expect(updateTaskMutateMock).toHaveBeenCalledTimes(1)
   })
 
@@ -156,12 +156,12 @@ describe('TaskCardContent', () => {
       vi.advanceTimersByTime(200)
     })
 
-    expect(updateTaskMutateMock).toHaveBeenCalledWith({
-      params: expect.objectContaining({
+    expect(updateTaskMutateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
         id: 101,
-        acceptance_criteria: ['[x] Confirm workspace update']
+        acceptanceCriteria: ['[x] Confirm workspace update']
       })
-    })
+    )
   })
 
   it('renders criterion text as read-only input by default', () => {
@@ -189,12 +189,12 @@ describe('TaskCardContent', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Add acceptance criterion' }))
 
-    expect(updateTaskMutateMock).toHaveBeenCalledWith({
-      params: expect.objectContaining({
+    expect(updateTaskMutateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
         id: 101,
-        acceptance_criteria: ['[ ] ', '[ ] Existing criterion']
+        acceptanceCriteria: ['[ ] ', '[ ] Existing criterion']
       })
-    })
+    )
   })
 
   it('keeps add-criterion action hidden until acceptance section hover/focus', () => {

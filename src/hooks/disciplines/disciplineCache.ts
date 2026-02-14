@@ -10,7 +10,7 @@ export function patchDisciplineInCache(
   replaceListItemInQueryCache({
     queryClient,
     queryDomain,
-    command: 'get_disciplines_config',
+    command: 'disciplines_list',
     item: discipline,
     getKey: item => item.name,
     entityLabel: 'Discipline'
@@ -25,7 +25,7 @@ export function removeDisciplineFromCache(
   removeListItemFromQueryCache<DisciplineConfigWire, string>({
     queryClient,
     queryDomain,
-    command: 'get_disciplines_config',
+    command: 'disciplines_list',
     key: name,
     getKey: item => item.name,
     entityLabel: 'Discipline'

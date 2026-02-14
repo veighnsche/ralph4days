@@ -10,7 +10,7 @@ export interface SubsystemConfig {
 }
 
 export function useSubsystems() {
-  const { data, error } = useInvoke<SubsystemData[]>('get_subsystems', undefined, {
+  const { data, error } = useInvoke<SubsystemData[]>('subsystems_list', undefined, {
     staleTime: 5 * 60 * 1000
   })
 

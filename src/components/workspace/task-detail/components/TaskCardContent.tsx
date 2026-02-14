@@ -12,7 +12,7 @@ import {
 import { STATUS_CONFIG } from '@/constants/prd'
 import { useInvoke, useInvokeMutation } from '@/hooks/api'
 import { useDisciplines } from '@/hooks/disciplines'
-import type { UpdateTaskVariables } from '@/hooks/tasks/updateTaskMutation'
+import { buildUpdateArgsFromTask, type UpdateTaskVariables } from '@/hooks/tasks/updateTaskMutation'
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import type { SubsystemData, Task } from '@/types/generated'
 import { TaskIdDisplay } from '../../../prd/TaskIdDisplay'
@@ -26,7 +26,7 @@ export function TaskCardContent({ task }: { task: Task }) {
   const currentTab = useWorkspaceTabContext()
   const openTabAfter = useWorkspaceStore(s => s.openTabAfter)
   const { disciplines } = useDisciplines()
-  const { data: subsystemsData } = useInvoke<SubsystemData[]>('get_subsystems', undefined, {
+  const { data: subsystemsData } = useInvoke<SubsystemData[]>('subsystems_list', undefined, {
     staleTime: 5 * 60 * 1000
   })
   const subsystems = subsystemsData ?? EMPTY_SUBSYSTEMS
@@ -35,34 +35,13 @@ export function TaskCardContent({ task }: { task: Task }) {
   const openRelatedTabAfterCurrent = (tab: ReturnType<typeof createTaskDetailTab>) => {
     openTabAfter(currentTab.id, tab)
   }
-  const updateTaskMutation = useInvokeMutation<UpdateTaskVariables, Task>('update_task', {
+  const updateTaskMutation = useInvokeMutation<UpdateTaskVariables, Task>('tasks_update', {
     queryDomain: 'workspace',
-    invalidateKeys: [['get_task', { id: task.id }], ['get_task_list_items']]
+    invalidateKeys: [['tasks_get', { id: task.id }], ['tasks_list_items']]
   })
 
   const submitCriteriaUpdate = (nextCriteria: string[]) => {
-    updateTaskMutation.mutate({
-      params: {
-        id: task.id,
-        subsystem: task.subsystem,
-        discipline: task.discipline,
-        title: task.title,
-        description: task.description,
-        priority: task.priority,
-        tags: task.tags,
-        depends_on: task.dependsOn,
-        acceptance_criteria: nextCriteria,
-        context_files: task.contextFiles,
-        output_artifacts: task.outputArtifacts,
-        hints: task.hints,
-        estimated_turns: task.estimatedTurns,
-        provenance: task.provenance,
-        agent: task.agent,
-        model: task.model,
-        effort: task.effort,
-        thinking: task.thinking
-      }
-    })
+    updateTaskMutation.mutate(buildUpdateArgsFromTask(task, { acceptanceCriteria: nextCriteria }))
   }
 
   const handleCriterionToggle = (criterionIndex: number) => {

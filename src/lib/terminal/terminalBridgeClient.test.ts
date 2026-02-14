@@ -42,11 +42,13 @@ describe('terminalBridgeClient', () => {
       thinking: true
     })
 
-    expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_start_session', {
-      sessionId: 's1',
-      mcpMode: 'interactive',
-      model: 'sonnet',
-      thinking: true
+    expect(mockInvoke).toHaveBeenCalledWith('terminal_start_session', {
+      args: {
+        sessionId: 's1',
+        mcpMode: 'interactive',
+        model: 'sonnet',
+        thinking: true
+      }
     })
   })
 
@@ -58,20 +60,24 @@ describe('terminalBridgeClient', () => {
       thinking: undefined
     })
 
-    expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_start_task_session', {
-      sessionId: 's1',
-      taskId: 7,
-      model: undefined,
-      thinking: undefined
+    expect(mockInvoke).toHaveBeenCalledWith('terminal_start_task_session', {
+      args: {
+        sessionId: 's1',
+        taskId: 7,
+        model: undefined,
+        thinking: undefined
+      }
     })
   })
 
   it('encodes input as bytes', async () => {
     await terminalBridgeSendInput('s1', 'ls\n')
 
-    expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_send_input', {
-      sessionId: 's1',
-      data: [108, 115, 10]
+    expect(mockInvoke).toHaveBeenCalledWith('terminal_send_input', {
+      args: {
+        sessionId: 's1',
+        data: [108, 115, 10]
+      }
     })
   })
 
@@ -82,44 +88,56 @@ describe('terminalBridgeClient', () => {
     await terminalBridgeReplayOutput('s1', 42n, 64)
     await terminalBridgeEmitSystemMessage('s1', '[session started]\r\n')
 
-    expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_resize', {
-      sessionId: 's1',
-      cols: 120,
-      rows: 40
+    expect(mockInvoke).toHaveBeenCalledWith('terminal_resize', {
+      args: {
+        sessionId: 's1',
+        cols: 120,
+        rows: 40
+      }
     })
-    expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_terminate', { sessionId: 's1' })
-    expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_set_stream_mode', {
-      sessionId: 's1',
-      mode: 'buffered'
+    expect(mockInvoke).toHaveBeenCalledWith('terminal_terminate', { args: { sessionId: 's1' } })
+    expect(mockInvoke).toHaveBeenCalledWith('terminal_set_stream_mode', {
+      args: {
+        sessionId: 's1',
+        mode: 'buffered'
+      }
     })
-    expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_replay_output', {
-      sessionId: 's1',
-      afterSeq: 42,
-      limit: 64
+    expect(mockInvoke).toHaveBeenCalledWith('terminal_replay_output', {
+      args: {
+        sessionId: 's1',
+        afterSeq: 42,
+        limit: 64
+      }
     })
-    expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_emit_system_message', {
-      sessionId: 's1',
-      text: '[session started]\r\n'
+    expect(mockInvoke).toHaveBeenCalledWith('terminal_emit_system_message', {
+      args: {
+        sessionId: 's1',
+        text: '[session started]\r\n'
+      }
     })
   })
 
   it('accepts numeric afterSeq payloads in replay requests', async () => {
     await terminalBridgeReplayOutput('s1', 123, 16)
 
-    expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_replay_output', {
-      sessionId: 's1',
-      afterSeq: 123,
-      limit: 16
+    expect(mockInvoke).toHaveBeenCalledWith('terminal_replay_output', {
+      args: {
+        sessionId: 's1',
+        afterSeq: 123,
+        limit: 16
+      }
     })
   })
 
   it('accepts string afterSeq payloads in replay requests', async () => {
     await terminalBridgeReplayOutput('s1', '123')
 
-    expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_replay_output', {
-      sessionId: 's1',
-      afterSeq: 123,
-      limit: 256
+    expect(mockInvoke).toHaveBeenCalledWith('terminal_replay_output', {
+      args: {
+        sessionId: 's1',
+        afterSeq: 123,
+        limit: 256
+      }
     })
   })
 
@@ -141,7 +159,7 @@ describe('terminalBridgeClient', () => {
 
     const result = await terminalBridgeListModelFormTree()
 
-    expect(mockInvoke).toHaveBeenCalledWith('terminal_bridge_list_model_form_tree')
+    expect(mockInvoke).toHaveBeenCalledWith('terminal_list_model_form_tree')
     expect(result).toEqual({
       providers: [
         { agent: 'claude', models: [] },
@@ -151,9 +169,9 @@ describe('terminalBridgeClient', () => {
   })
 
   it('filters output events by session id', async () => {
-    let handler: ((event: { payload: { session_id: string; seq: bigint; data: string } }) => void) | undefined
+    let handler: ((event: { payload: { sessionId: string; seq: bigint; data: string } }) => void) | undefined
     mockListen.mockImplementation((eventName: string, cb: unknown) => {
-      if (eventName === 'terminal_bridge:output') {
+      if (eventName === 'terminal:output') {
         handler = cb as typeof handler
       }
       return Promise.resolve(vi.fn())
@@ -162,17 +180,17 @@ describe('terminalBridgeClient', () => {
     const onOutput = vi.fn()
     await terminalBridgeListenSessionOutput('target', onOutput)
 
-    handler?.({ payload: { session_id: 'other', seq: 1n, data: 'x' } })
-    handler?.({ payload: { session_id: 'target', seq: 2n, data: 'y' } })
+    handler?.({ payload: { sessionId: 'other', seq: 1n, data: 'x' } })
+    handler?.({ payload: { sessionId: 'target', seq: 2n, data: 'y' } })
 
     expect(onOutput).toHaveBeenCalledTimes(1)
-    expect(onOutput).toHaveBeenCalledWith({ session_id: 'target', seq: 2n, data: 'y' })
+    expect(onOutput).toHaveBeenCalledWith({ sessionId: 'target', seq: 2n, data: 'y' })
   })
 
   it('filters closed events by session id', async () => {
-    let handler: ((event: { payload: { session_id: string; exit_code: number } }) => void) | undefined
+    let handler: ((event: { payload: { sessionId: string; exitCode: number } }) => void) | undefined
     mockListen.mockImplementation((eventName: string, cb: unknown) => {
-      if (eventName === 'terminal_bridge:closed') {
+      if (eventName === 'terminal:closed') {
         handler = cb as typeof handler
       }
       return Promise.resolve(vi.fn())
@@ -181,10 +199,10 @@ describe('terminalBridgeClient', () => {
     const onClosed = vi.fn()
     await terminalBridgeListenSessionClosed('target', onClosed)
 
-    handler?.({ payload: { session_id: 'other', exit_code: 1 } })
-    handler?.({ payload: { session_id: 'target', exit_code: 0 } })
+    handler?.({ payload: { sessionId: 'other', exitCode: 1 } })
+    handler?.({ payload: { sessionId: 'target', exitCode: 0 } })
 
     expect(onClosed).toHaveBeenCalledTimes(1)
-    expect(onClosed).toHaveBeenCalledWith({ session_id: 'target', exit_code: 0 })
+    expect(onClosed).toHaveBeenCalledWith({ sessionId: 'target', exitCode: 0 })
   })
 })

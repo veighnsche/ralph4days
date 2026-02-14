@@ -76,7 +76,7 @@ describe('taskCache', () => {
 
   it('patches the workspace get_task cache with a returned task payload', () => {
     const queryClient = new QueryClient()
-    const queryKey = buildInvokeQueryKey('get_task', { id: 11 }, 'workspace')
+    const queryKey = buildInvokeQueryKey('tasks_get', { id: 11 }, 'workspace')
     const original = createTask(11, { title: 'Before' })
     const updated = createTask(11, { title: 'After' })
 
@@ -88,7 +88,7 @@ describe('taskCache', () => {
 
   it('optimistically patches and rolls back a task in workspace get_task cache', () => {
     const queryClient = new QueryClient()
-    const queryKey = buildInvokeQueryKey('get_task', { id: 11 }, 'workspace')
+    const queryKey = buildInvokeQueryKey('tasks_get', { id: 11 }, 'workspace')
     const original = createTask(11, { title: 'Before' })
     const optimistic = createTask(11, { title: 'Optimistic' })
 
@@ -105,7 +105,7 @@ describe('taskCache', () => {
 
   it('patches the workspace get_task_list_items cache with a returned list item payload', () => {
     const queryClient = new QueryClient()
-    const queryKey = buildInvokeQueryKey('get_task_list_items', undefined, 'workspace')
+    const queryKey = buildInvokeQueryKey('tasks_list_items', undefined, 'workspace')
     const original = [createTaskListItem(10), createTaskListItem(11)]
     const updated = createTaskListItem(11, { status: 'done' })
 
@@ -117,7 +117,7 @@ describe('taskCache', () => {
 
   it('optimistically patches and rolls back a list item in workspace get_task_list_items cache', () => {
     const queryClient = new QueryClient()
-    const queryKey = buildInvokeQueryKey('get_task_list_items', undefined, 'workspace')
+    const queryKey = buildInvokeQueryKey('tasks_list_items', undefined, 'workspace')
     const original = [createTaskListItem(10), createTaskListItem(11)]
     const optimistic = createTaskListItem(11, { priority: 'high' })
 

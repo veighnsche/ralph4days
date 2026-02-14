@@ -10,7 +10,7 @@ export function patchSubsystemInCache(
   replaceListItemInQueryCache({
     queryClient,
     queryDomain,
-    command: 'get_subsystems',
+    command: 'subsystems_list',
     item: subsystem,
     getKey: item => item.name,
     entityLabel: 'Subsystem'

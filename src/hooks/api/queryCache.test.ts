@@ -6,14 +6,14 @@ import { buildInvokeQueryKey } from './useInvoke'
 describe('queryCache helpers', () => {
   it('replaces cached query data for a parameterized invoke query', () => {
     const queryClient = new QueryClient()
-    const queryKey = buildInvokeQueryKey('get_task', { id: 123 }, 'workspace')
+    const queryKey = buildInvokeQueryKey('tasks_get', { id: 123 }, 'workspace')
 
     queryClient.setQueryData(queryKey, { id: 123, title: 'before' })
 
     replaceQueryDataInCache({
       queryClient,
       queryDomain: 'workspace',
-      command: 'get_task',
+      command: 'tasks_get',
       args: { id: 123 },
       data: { id: 123, title: 'after' }
     })
@@ -28,23 +28,23 @@ describe('queryCache helpers', () => {
       replaceQueryDataInCache({
         queryClient,
         queryDomain: 'workspace',
-        command: 'get_task',
+        command: 'tasks_get',
         args: { id: 123 },
         data: { id: 123, title: 'after' }
       })
-    ).toThrowError('[query-cache] get_task cache is missing for workspace domain')
+    ).toThrowError('[query-cache] tasks_get cache is missing for workspace domain')
   })
 
   it('optimistically patches and rolls back a cached invoke query', () => {
     const queryClient = new QueryClient()
-    const queryKey = buildInvokeQueryKey('get_task', { id: 123 }, 'workspace')
+    const queryKey = buildInvokeQueryKey('tasks_get', { id: 123 }, 'workspace')
 
     queryClient.setQueryData(queryKey, { id: 123, title: 'before' })
 
     const rollback = replaceQueryDataInCacheOptimistically({
       queryClient,
       queryDomain: 'workspace',
-      command: 'get_task',
+      command: 'tasks_get',
       args: { id: 123 },
       data: { id: 123, title: 'optimistic' }
     })

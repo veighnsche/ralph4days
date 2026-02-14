@@ -11,7 +11,7 @@ use crate::terminal::{
     TerminalBridgeReplayOutputResult, TerminalBridgeResizeArgs, TerminalBridgeSendInputArgs,
     TerminalBridgeSetStreamModeArgs, TerminalBridgeStartHumanSessionArgs,
     TerminalBridgeStartHumanSessionResult, TerminalBridgeStartSessionArgs,
-    TerminalBridgeStartTaskSessionArgs, TerminalBridgeTerminateArgs, TERMINAL_BRIDGE_OUTPUT_EVENT,
+    TerminalBridgeStartTaskSessionArgs, TerminalBridgeTerminateArgs, TERMINAL_OUTPUT_EVENT,
 };
 use base64::{engine::general_purpose::STANDARD, Engine};
 use std::path::PathBuf;
@@ -39,7 +39,7 @@ fn emit_system_message<R: tauri::Runtime>(
     text: String,
 ) -> Result<(), String> {
     let event = build_system_message_event(session_id, text);
-    app.emit(TERMINAL_BRIDGE_OUTPUT_EVENT, event)
+    app.emit(TERMINAL_OUTPUT_EVENT, event)
         .map_err(|e| e.to_string())
 }
 
@@ -142,7 +142,7 @@ fn start_session_impl(
         mcp_mode = ?args.mcp_mode,
         model = ?args.model,
         thinking = ?args.thinking,
-        "terminal_bridge_start_session"
+        "terminal_start_session"
     );
     let (project_path, mcp_config) =
         resolve_start_session_context(state, args.mcp_mode.as_deref())?;
@@ -171,7 +171,7 @@ fn start_task_session_impl(
         agent = ?args.agent,
         model = ?args.model,
         thinking = ?args.thinking,
-        "terminal_bridge_start_task_session"
+        "terminal_start_task_session"
     );
     let (project_path, mcp_config) = resolve_start_task_session_context(state, args.task_id)?;
     let config = build_session_config(
@@ -197,7 +197,7 @@ fn send_input_impl(state: &AppState, args: TerminalBridgeSendInputArgs) -> Resul
         session_id = %args.session_id,
         byte_count = args.data.len(),
         text = %String::from_utf8_lossy(&args.data).escape_debug().to_string(),
-        "terminal_bridge_send_input"
+        "terminal_send_input"
     );
     state.pty_manager.send_input(&args.session_id, &args.data)
 }
@@ -207,7 +207,7 @@ fn resize_impl(state: &AppState, args: TerminalBridgeResizeArgs) -> Result<(), S
         session_id = %args.session_id,
         cols = args.cols,
         rows = args.rows,
-        "terminal_bridge_resize"
+        "terminal_resize"
     );
     state
         .pty_manager
@@ -215,7 +215,7 @@ fn resize_impl(state: &AppState, args: TerminalBridgeResizeArgs) -> Result<(), S
 }
 
 fn terminate_impl(state: &AppState, args: TerminalBridgeTerminateArgs) -> Result<(), String> {
-    tracing::debug!(session_id = %args.session_id, "terminal_bridge_terminate");
+    tracing::debug!(session_id = %args.session_id, "terminal_terminate");
     state.pty_manager.terminate(&args.session_id)
 }
 
@@ -227,7 +227,7 @@ fn set_stream_mode_impl(
     tracing::debug!(
         session_id = %args.session_id,
         mode = %args.mode,
-        "terminal_bridge_set_stream_mode"
+        "terminal_set_stream_mode"
     );
     state.pty_manager.set_stream_mode(&args.session_id, mode)
 }
@@ -240,7 +240,7 @@ fn replay_output_impl(
         session_id = %args.session_id,
         after_seq = args.after_seq,
         limit = args.limit,
-        "terminal_bridge_replay_output"
+        "terminal_replay_output"
     );
     state
         .pty_manager
@@ -254,7 +254,7 @@ fn emit_system_message_impl<R: tauri::Runtime>(
     tracing::debug!(
         session_id = %args.session_id,
         text = %args.text.escape_debug().to_string(),
-        "terminal_bridge_emit_system_message"
+        "terminal_emit_system_message"
     );
     emit_system_message(app, args.session_id, args.text)
 }
@@ -346,183 +346,87 @@ fn build_launch_command(config: &SessionConfig) -> String {
 }
 
 #[tauri::command]
-#[allow(clippy::too_many_arguments)]
-pub fn terminal_bridge_start_session(
+pub fn terminal_start_session(
     app: AppHandle,
     state: State<'_, AppState>,
-    session_id: String,
-    agent: Option<String>,
-    mcp_mode: Option<String>,
-    model: Option<String>,
-    effort: Option<String>,
-    permission_level: Option<String>,
-    thinking: Option<bool>,
-    post_start_preamble: Option<String>,
+    args: TerminalBridgeStartSessionArgs,
 ) -> Result<(), String> {
-    start_session_impl(
-        app,
-        state.inner(),
-        TerminalBridgeStartSessionArgs {
-            session_id,
-            agent,
-            mcp_mode,
-            model,
-            effort,
-            permission_level,
-            thinking,
-            post_start_preamble,
-        },
-    )
+    start_session_impl(app, state.inner(), args)
 }
 
 #[tauri::command]
-pub fn terminal_bridge_send_input(
+pub fn terminal_send_input(
     state: State<'_, AppState>,
-    session_id: String,
-    data: Vec<u8>,
+    args: TerminalBridgeSendInputArgs,
 ) -> Result<(), String> {
-    send_input_impl(
-        state.inner(),
-        TerminalBridgeSendInputArgs { session_id, data },
-    )
+    send_input_impl(state.inner(), args)
 }
 
 #[tauri::command]
-pub fn terminal_bridge_resize(
+pub fn terminal_resize(
     state: State<'_, AppState>,
-    session_id: String,
-    cols: u16,
-    rows: u16,
+    args: TerminalBridgeResizeArgs,
 ) -> Result<(), String> {
-    resize_impl(
-        state.inner(),
-        TerminalBridgeResizeArgs {
-            session_id,
-            cols,
-            rows,
-        },
-    )
+    resize_impl(state.inner(), args)
 }
 
 #[tauri::command]
-pub fn terminal_bridge_terminate(
+pub fn terminal_terminate(
     state: State<'_, AppState>,
-    session_id: String,
+    args: TerminalBridgeTerminateArgs,
 ) -> Result<(), String> {
-    terminate_impl(state.inner(), TerminalBridgeTerminateArgs { session_id })
+    terminate_impl(state.inner(), args)
 }
 
 #[tauri::command]
-pub fn terminal_bridge_set_stream_mode(
+pub fn terminal_set_stream_mode(
     state: State<'_, AppState>,
-    session_id: String,
-    mode: String,
+    args: TerminalBridgeSetStreamModeArgs,
 ) -> Result<(), String> {
-    set_stream_mode_impl(
-        state.inner(),
-        TerminalBridgeSetStreamModeArgs { session_id, mode },
-    )
+    set_stream_mode_impl(state.inner(), args)
 }
 
 #[tauri::command]
-pub fn terminal_bridge_replay_output(
+pub fn terminal_replay_output(
     state: State<'_, AppState>,
-    session_id: String,
-    after_seq: u64,
-    limit: u32,
+    args: TerminalBridgeReplayOutputArgs,
 ) -> Result<TerminalBridgeReplayOutputResult, String> {
-    replay_output_impl(
-        state.inner(),
-        TerminalBridgeReplayOutputArgs {
-            session_id,
-            after_seq,
-            limit,
-        },
-    )
+    replay_output_impl(state.inner(), args)
 }
 
 #[tauri::command]
-#[allow(clippy::too_many_arguments)]
-pub fn terminal_bridge_start_task_session(
+pub fn terminal_start_task_session(
     app: AppHandle,
     state: State<'_, AppState>,
-    session_id: String,
-    task_id: u32,
-    agent: Option<String>,
-    model: Option<String>,
-    effort: Option<String>,
-    permission_level: Option<String>,
-    thinking: Option<bool>,
-    post_start_preamble: Option<String>,
+    args: TerminalBridgeStartTaskSessionArgs,
 ) -> Result<(), String> {
-    start_task_session_impl(
-        app,
-        state.inner(),
-        TerminalBridgeStartTaskSessionArgs {
-            session_id,
-            task_id,
-            agent,
-            model,
-            effort,
-            permission_level,
-            thinking,
-            post_start_preamble,
-        },
-    )
+    start_task_session_impl(app, state.inner(), args)
 }
 
 #[tauri::command]
-pub fn terminal_bridge_emit_system_message(
+pub fn terminal_emit_system_message(
     app: AppHandle,
-    session_id: String,
-    text: String,
+    args: TerminalBridgeEmitSystemMessageArgs,
 ) -> Result<(), String> {
-    emit_system_message_impl(
-        &app,
-        TerminalBridgeEmitSystemMessageArgs { session_id, text },
-    )
+    emit_system_message_impl(&app, args)
 }
 
 #[tauri::command]
-#[allow(clippy::too_many_arguments)]
-pub fn terminal_bridge_start_human_session(
+pub fn terminal_start_human_session(
     app: AppHandle,
     state: State<'_, AppState>,
-    terminal_session_id: String,
-    kind: String,
-    task_id: Option<u32>,
-    agent: Option<String>,
-    model: Option<String>,
-    effort: Option<String>,
-    permission_level: Option<String>,
-    post_start_preamble: Option<String>,
-    init_prompt: Option<String>,
-    mcp_mode: Option<String>,
-    thinking: Option<bool>,
+    args: TerminalBridgeStartHumanSessionArgs,
 ) -> Result<TerminalBridgeStartHumanSessionResult, String> {
     tracing::debug!(
-        terminal_session_id = %terminal_session_id,
-        kind = %kind,
-        task_id = ?task_id,
-        agent = ?agent,
-        model = ?model,
-        mcp_mode = ?mcp_mode,
-        thinking = ?thinking,
-        "terminal_bridge_start_human_session"
+        terminal_session_id = %args.terminal_session_id,
+        kind = %args.kind,
+        task_id = ?args.task_id,
+        agent = ?args.agent,
+        model = ?args.model,
+        mcp_mode = ?args.mcp_mode,
+        thinking = ?args.thinking,
+        "terminal_start_human_session"
     );
-    let args = TerminalBridgeStartHumanSessionArgs {
-        terminal_session_id,
-        kind,
-        task_id,
-        agent,
-        model,
-        effort,
-        permission_level,
-        post_start_preamble,
-        init_prompt,
-        mcp_mode,
-        thinking,
-    };
 
     let session_config = build_session_config(
         args.agent.clone(),
@@ -540,7 +444,7 @@ pub fn terminal_bridge_start_human_session(
     tracing::debug!(
         terminal_session_id = %args.terminal_session_id,
         agent_session_id = %agent_session_id,
-        "terminal_bridge_start_human_session.created_agent_session_id"
+        "terminal_start_human_session.created_agent_session_id"
     );
 
     let command_ctx = CommandContext::from_tauri_state(&state);
@@ -642,7 +546,7 @@ fn list_models_for_agent(agent: &str) -> TerminalBridgeListModelsResult {
 }
 
 #[tauri::command]
-pub fn terminal_bridge_list_model_form_tree() -> TerminalBridgeListModelFormTreeResult {
+pub fn terminal_list_model_form_tree() -> TerminalBridgeListModelFormTreeResult {
     let mut providers = vec![
         list_models_for_agent(AGENT_CODEX),
         list_models_for_agent(AGENT_CLAUDE),
@@ -716,13 +620,12 @@ mod tests {
     }
 
     #[test]
-    fn terminal_bridge_emit_system_message_emits_output_event() {
+    fn terminal_emit_system_message_emits_output_event() {
         let app = tauri::test::mock_app();
         let (tx, rx) = mpsc::channel::<String>();
-        let listener_id =
-            app.listen_any(TERMINAL_BRIDGE_OUTPUT_EVENT, move |event: tauri::Event| {
-                let _ = tx.send(event.payload().to_owned());
-            });
+        let listener_id = app.listen_any(TERMINAL_OUTPUT_EVENT, move |event: tauri::Event| {
+            let _ = tx.send(event.payload().to_owned());
+        });
 
         emit_system_message(
             &app.handle().clone(),
@@ -733,7 +636,7 @@ mod tests {
 
         let payload_json = rx.recv_timeout(Duration::from_secs(1)).unwrap();
         let payload: serde_json::Value = serde_json::from_str(&payload_json).unwrap();
-        assert_eq!(payload["session_id"], "session-emission");
+        assert_eq!(payload["sessionId"], "session-emission");
         assert_eq!(payload["seq"], 0);
         let decoded = STANDARD.decode(payload["data"].as_str().unwrap()).unwrap();
         assert_eq!(String::from_utf8(decoded).unwrap(), "[session started]\r\n");

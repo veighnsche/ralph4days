@@ -6,5 +6,5 @@ pub(crate) mod subsystems;
 pub(crate) mod tasks;
 pub(crate) mod terminal_bridge;
 
-pub use project::{lock_project_validated, validate_project_path};
+pub use project::{project_lock_validated, project_validate_path};
 pub use state::AppState;

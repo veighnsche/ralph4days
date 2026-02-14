@@ -35,7 +35,7 @@ export function patchTaskInTaskDetailCache(
   updatedTask: Task,
   queryDomain: InvokeQueryDomain
 ): void {
-  const queryKey = buildInvokeQueryKey('get_task', { id: updatedTask.id }, queryDomain)
+  const queryKey = buildInvokeQueryKey('tasks_get', { id: updatedTask.id }, queryDomain)
   if (queryClient.getQueryData<Task>(queryKey) === undefined) return
   queryClient.setQueryData<Task>(queryKey, updatedTask)
 }
@@ -45,7 +45,7 @@ export function patchTaskInTaskDetailCacheOptimistically(
   optimisticTask: Task,
   queryDomain: InvokeQueryDomain
 ): () => void {
-  const queryKey = buildInvokeQueryKey('get_task', { id: optimisticTask.id }, queryDomain)
+  const queryKey = buildInvokeQueryKey('tasks_get', { id: optimisticTask.id }, queryDomain)
   const current = queryClient.getQueryData<Task>(queryKey)
   if (current === undefined) return () => {}
 
@@ -61,7 +61,7 @@ export function patchTaskListItemInTaskListCache(
   updatedTaskListItem: TaskListItem,
   queryDomain: InvokeQueryDomain
 ): void {
-  const queryKey = buildInvokeQueryKey('get_task_list_items', undefined, queryDomain)
+  const queryKey = buildInvokeQueryKey('tasks_list_items', undefined, queryDomain)
   const currentItems = queryClient.getQueryData<TaskListItem[]>(queryKey)
   if (!currentItems) return
 
@@ -78,7 +78,7 @@ export function patchTaskListItemInTaskListCacheOptimistically(
   optimisticTaskListItem: TaskListItem,
   queryDomain: InvokeQueryDomain
 ): () => void {
-  const queryKey = buildInvokeQueryKey('get_task_list_items', undefined, queryDomain)
+  const queryKey = buildInvokeQueryKey('tasks_list_items', undefined, queryDomain)
   const currentItems = queryClient.getQueryData<TaskListItem[]>(queryKey)
   if (!currentItems) return () => {}
 

@@ -6,8 +6,8 @@ interface ReplyFormProps {
   onChange: (value: string) => void
   onSubmit: () => void
   onCancel: () => void
-  priority: string | null
-  onPriorityChange: (value: string | null) => void
+  priority: string | undefined
+  onPriorityChange: (value: string) => void
 }
 
 export function ReplyForm({ value, onChange, onSubmit, onCancel, priority, onPriorityChange }: ReplyFormProps) {

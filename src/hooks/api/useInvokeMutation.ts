@@ -1,5 +1,5 @@
 import { type QueryClient, type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/react-query'
-import { invoke } from '@tauri-apps/api/core'
+import { tauriInvoke } from '@/lib/tauri/invoke'
 import { buildInvalidateQueryKey, type InvokeQueryDomain } from './useInvoke'
 
 type MutationCacheUpdater<TArgs, TResult> = (params: {
@@ -48,7 +48,10 @@ export function useInvokeMutation<TArgs = void, TResult = void, TUserOnMutateRes
   return useMutation<TResult, Error, TArgs, InternalMutationContext<TUserOnMutateResult>>({
     mutationFn: async (args: TArgs) => {
       try {
-        return await invoke<TResult>(command, args as Record<string, unknown>)
+        if (args === undefined) {
+          return await tauriInvoke<TResult>(command)
+        }
+        return await tauriInvoke<TResult>(command, args as Record<string, unknown>)
       } catch (err) {
         throw err instanceof Error ? err : new Error(String(err))
       }

@@ -25,7 +25,7 @@ const baseSignal: TaskSignal = {
   id: 101,
   author: 'frontend',
   body: 'Signal body',
-  signal_verb: 'done'
+  signalVerb: 'done'
 }
 
 function makeSignal(overrides: Partial<TaskSignal>): TaskSignal {
@@ -36,7 +36,7 @@ export const Done: Story = {
   args: {
     signal: makeSignal({
       id: 1,
-      signal_verb: 'done',
+      signalVerb: 'done',
       summary: 'Completed API integration and verified payload compatibility with the task detail panel.'
     })
   }
@@ -46,7 +46,7 @@ export const Partial: Story = {
   args: {
     signal: makeSignal({
       id: 2,
-      signal_verb: 'partial',
+      signalVerb: 'partial',
       summary: 'Implemented optimistic updates and list rendering.',
       remaining: 'Need to finalize rollback handling and add visual loading states.'
     })
@@ -57,7 +57,7 @@ export const Stuck: Story = {
   args: {
     signal: makeSignal({
       id: 3,
-      signal_verb: 'stuck',
+      signalVerb: 'stuck',
       reason: 'Backend endpoint returns inconsistent schema for nested reply payloads.'
     })
   }
@@ -67,7 +67,7 @@ export const AskBlocking: Story = {
   args: {
     signal: makeSignal({
       id: 4,
-      signal_verb: 'ask',
+      signalVerb: 'ask',
       question: 'Should we keep replies sorted ascending by creation time after optimistic insertion?',
       blocking: true,
       options: ['Keep strictly ascending', 'Newest first', 'Group by priority then time'],
@@ -80,7 +80,7 @@ export const AskNonBlockingNoOptions: Story = {
   args: {
     signal: makeSignal({
       id: 5,
-      signal_verb: 'ask',
+      signalVerb: 'ask',
       question: 'Is a compact mobile layout required in this milestone?',
       blocking: false
     })
@@ -91,7 +91,7 @@ export const FlagBlocking: Story = {
   args: {
     signal: makeSignal({
       id: 6,
-      signal_verb: 'flag',
+      signalVerb: 'flag',
       severity: 'blocking',
       category: 'data-integrity',
       what: 'Editing a top-level signal can overwrite stale local state after concurrent updates.'
@@ -103,7 +103,7 @@ export const FlagMinor: Story = {
   args: {
     signal: makeSignal({
       id: 7,
-      signal_verb: 'flag',
+      signalVerb: 'flag',
       severity: 'minor',
       category: 'ui-polish',
       what: 'Timestamp alignment shifts by 1px on narrow widths.'
@@ -115,7 +115,7 @@ export const Learned: Story = {
   args: {
     signal: makeSignal({
       id: 8,
-      signal_verb: 'learned',
+      signalVerb: 'learned',
       text: 'Using verb-specific fields keeps the payload easy to scan and avoids overloading body text.',
       kind: 'architecture',
       rationale: 'Reduces ambiguity and enables targeted rendering for each signal type.',
@@ -128,7 +128,7 @@ export const Suggest: Story = {
   args: {
     signal: makeSignal({
       id: 9,
-      signal_verb: 'suggest',
+      signalVerb: 'suggest',
       what: 'Split payload renderer into per-verb subcomponents to simplify testing and story coverage.',
       kind: 'refactor',
       why: 'Current branch-heavy rendering is harder to reason about and regression-test.'
@@ -140,7 +140,7 @@ export const Blocked: Story = {
   args: {
     signal: makeSignal({
       id: 10,
-      signal_verb: 'blocked',
+      signalVerb: 'blocked',
       kind: 'dependency',
       on: 'Awaiting API contract decision for signal reply threading.'
     })
@@ -153,21 +153,21 @@ export const SparsePayloads: Story = {
   },
   render: () => {
     const sparse: TaskSignal[] = [
-      makeSignal({ id: 11, signal_verb: 'done' }),
-      makeSignal({ id: 12, signal_verb: 'partial', summary: 'Started migration only.' }),
-      makeSignal({ id: 13, signal_verb: 'stuck' }),
-      makeSignal({ id: 14, signal_verb: 'ask', question: 'Need confirmation?' }),
-      makeSignal({ id: 15, signal_verb: 'flag', what: 'Potential issue found.' }),
-      makeSignal({ id: 16, signal_verb: 'learned', text: 'Cache hit ratio improves with memoized selectors.' }),
-      makeSignal({ id: 17, signal_verb: 'suggest', what: 'Add keyboard shortcut for replies.' }),
-      makeSignal({ id: 18, signal_verb: 'blocked' })
+      makeSignal({ id: 11, signalVerb: 'done' }),
+      makeSignal({ id: 12, signalVerb: 'partial', summary: 'Started migration only.' }),
+      makeSignal({ id: 13, signalVerb: 'stuck' }),
+      makeSignal({ id: 14, signalVerb: 'ask', question: 'Need confirmation?' }),
+      makeSignal({ id: 15, signalVerb: 'flag', what: 'Potential issue found.' }),
+      makeSignal({ id: 16, signalVerb: 'learned', text: 'Cache hit ratio improves with memoized selectors.' }),
+      makeSignal({ id: 17, signalVerb: 'suggest', what: 'Add keyboard shortcut for replies.' }),
+      makeSignal({ id: 18, signalVerb: 'blocked' })
     ]
 
     return (
       <div className="space-y-4">
         {sparse.map(signal => (
           <div key={signal.id} className="rounded border bg-background p-3">
-            <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">{signal.signal_verb}</div>
+            <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">{signal.signalVerb}</div>
             <SignalDisplay signal={signal} />
           </div>
         ))}
@@ -182,8 +182,8 @@ export const UnknownOrMissingVerb: Story = {
   },
   render: () => {
     const variants: TaskSignal[] = [
-      makeSignal({ id: 19, signal_verb: undefined }),
-      makeSignal({ id: 20, signal_verb: 'custom_verb_not_supported' })
+      makeSignal({ id: 19, signalVerb: undefined }),
+      makeSignal({ id: 20, signalVerb: 'custom_verb_not_supported' })
     ]
 
     return (
@@ -191,7 +191,7 @@ export const UnknownOrMissingVerb: Story = {
         {variants.map(signal => (
           <div key={signal.id} className="rounded border bg-background p-3">
             <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-              verb: {signal.signal_verb ?? '(none)'}
+              verb: {signal.signalVerb ?? '(none)'}
             </div>
             <SignalDisplay signal={signal} />
             <div className="mt-2 text-xs text-muted-foreground">No payload is rendered for unsupported verbs.</div>
@@ -210,26 +210,26 @@ export const AllVerbVariantsMatrix: Story = {
     const variants: Array<{ label: string; signal: TaskSignal }> = [
       {
         label: 'done',
-        signal: makeSignal({ id: 21, signal_verb: 'done', summary: 'Feature delivered and merged.' })
+        signal: makeSignal({ id: 21, signalVerb: 'done', summary: 'Feature delivered and merged.' })
       },
       {
         label: 'partial',
         signal: makeSignal({
           id: 22,
-          signal_verb: 'partial',
+          signalVerb: 'partial',
           summary: 'Base flow done.',
           remaining: 'Needs a11y and keyboard interactions.'
         })
       },
       {
         label: 'stuck',
-        signal: makeSignal({ id: 23, signal_verb: 'stuck', reason: 'Cannot reproduce race condition reliably.' })
+        signal: makeSignal({ id: 23, signalVerb: 'stuck', reason: 'Cannot reproduce race condition reliably.' })
       },
       {
         label: 'ask',
         signal: makeSignal({
           id: 24,
-          signal_verb: 'ask',
+          signalVerb: 'ask',
           question: 'Which pagination style should we use?',
           options: ['Cursor', 'Offset'],
           preferred: 'Cursor'
@@ -239,7 +239,7 @@ export const AllVerbVariantsMatrix: Story = {
         label: 'flag',
         signal: makeSignal({
           id: 25,
-          signal_verb: 'flag',
+          signalVerb: 'flag',
           severity: 'major',
           category: 'performance',
           what: 'Large lists trigger expensive rerenders.'
@@ -249,7 +249,7 @@ export const AllVerbVariantsMatrix: Story = {
         label: 'learned',
         signal: makeSignal({
           id: 26,
-          signal_verb: 'learned',
+          signalVerb: 'learned',
           text: 'Flattening reply trees before render simplifies ordering.',
           kind: 'implementation',
           rationale: 'Less repeated sorting in render path.'
@@ -259,7 +259,7 @@ export const AllVerbVariantsMatrix: Story = {
         label: 'suggest',
         signal: makeSignal({
           id: 27,
-          signal_verb: 'suggest',
+          signalVerb: 'suggest',
           what: 'Adopt per-verb schema validation in signal creation.',
           why: 'Prevents malformed payloads from reaching UI.'
         })
@@ -268,7 +268,7 @@ export const AllVerbVariantsMatrix: Story = {
         label: 'blocked',
         signal: makeSignal({
           id: 28,
-          signal_verb: 'blocked',
+          signalVerb: 'blocked',
           kind: 'external',
           on: 'Pending design approval for card density changes.'
         })

@@ -316,7 +316,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
       }),
       terminalBridgeListenSessionClosed(sessionId, payload => {
         if (!sessionStartedRef.current) return
-        handlersRef.current.onClosed?.(payload.exit_code)
+        handlersRef.current.onClosed?.(payload.exitCode)
       })
     ])
       .then(([outUnsub, closedUnsub]) => {

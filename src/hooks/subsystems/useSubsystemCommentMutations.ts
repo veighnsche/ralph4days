@@ -18,7 +18,7 @@ export function useSubsystemCommentMutations(subsystemName: string, queryDomain:
       reason?: string
     },
     SubsystemData
-  >('add_subsystem_comment', {
+  >('subsystems_comment_add', {
     queryDomain,
     updateCache: ({ queryClient, data, queryDomain }) => patchSubsystemInCache(queryClient, data, queryDomain)
   })
@@ -32,7 +32,7 @@ export function useSubsystemCommentMutations(subsystemName: string, queryDomain:
       reason?: string
     },
     SubsystemData
-  >('update_subsystem_comment', {
+  >('subsystems_comment_update', {
     queryDomain,
     updateCache: ({ queryClient, data, queryDomain }) => patchSubsystemInCache(queryClient, data, queryDomain),
     onSuccess: () => {
@@ -49,7 +49,7 @@ export function useSubsystemCommentMutations(subsystemName: string, queryDomain:
       commentId: number
     },
     SubsystemData
-  >('delete_subsystem_comment', {
+  >('subsystems_comment_delete', {
     queryDomain,
     updateCache: ({ queryClient, data, queryDomain }) => patchSubsystemInCache(queryClient, data, queryDomain)
   })

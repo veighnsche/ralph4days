@@ -1,8 +1,8 @@
-import { invoke } from '@tauri-apps/api/core'
 import { useEffect, useRef, useState } from 'react'
 import { QUERY_KEYS } from '@/constants/cache'
 import { useInvoke, useInvokeMutation } from '@/hooks/api'
 import { SECTION_REGISTRY } from '@/lib/prompt-builder-registry'
+import { tauriInvoke } from '@/lib/tauri/invoke'
 import type { PromptBuilderConfigData, PromptBuilderConfigInput } from '@/types/generated'
 import type { SectionBlock } from './useSectionConfiguration'
 
@@ -21,7 +21,7 @@ export function usePromptBuilderManagement(
   const [loadError, setLoadError] = useState<string | null>(null)
   const promptBuilderChangeGenRef = useRef(0)
 
-  const { data: customPromptBuilderNamesData } = useInvoke<string[]>('list_prompt_builder_configs', undefined, {
+  const { data: customPromptBuilderNamesData } = useInvoke<string[]>('prompt_builder_config_list', undefined, {
     enabled: open
   })
   const customPromptBuilderNames = customPromptBuilderNamesData ?? EMPTY_CUSTOM_PROMPT_BUILDER_NAMES
@@ -39,7 +39,7 @@ export function usePromptBuilderManagement(
     }
   }, [open])
 
-  const saveMutation = useInvokeMutation<{ config: PromptBuilderConfigInput }>('save_prompt_builder_config', {
+  const saveMutation = useInvokeMutation<{ config: PromptBuilderConfigInput }>('prompt_builder_config_save', {
     invalidateKeys: QUERY_KEYS.PROMPT_BUILDER_LIST,
     onSuccess: (_data, variables) => {
       setPromptBuilderName(variables.config.name)
@@ -47,7 +47,7 @@ export function usePromptBuilderManagement(
     }
   })
 
-  const deleteMutation = useInvokeMutation<{ name: string }>('delete_prompt_builder_config', {
+  const deleteMutation = useInvokeMutation<{ name: string }>('prompt_builder_config_delete', {
     invalidateKeys: QUERY_KEYS.PROMPT_BUILDER_LIST,
     onSuccess: () => {
       setPromptBuilderName(null)
@@ -56,7 +56,7 @@ export function usePromptBuilderManagement(
   })
 
   const loadCustomPromptBuilder = async (name: string, gen: number) => {
-    const data = await invoke<PromptBuilderConfigData>('get_prompt_builder_config', { name })
+    const data = await tauriInvoke<PromptBuilderConfigData | null>('prompt_builder_config_get', { name })
     if (gen !== promptBuilderChangeGenRef.current) return
     if (!data) {
       setLoadError(`Prompt builder config "${name}" not found`)

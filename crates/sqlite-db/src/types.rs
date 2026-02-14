@@ -100,6 +100,7 @@ impl TaskProvenance {
 
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TaskSignal {
     pub id: u32,
     pub author: String,
@@ -516,6 +517,7 @@ pub struct AgentSession {
     pub error_text: Option<String>,
 }
 
+#[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AgentSessionCreateInput {
@@ -529,6 +531,7 @@ pub struct AgentSessionCreateInput {
     pub init_prompt: Option<String>,
 }
 
+#[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AgentSessionUpdateInput {
@@ -563,6 +566,7 @@ pub struct TaskSignalComment {
     pub created: Option<String>,
 }
 
+#[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TaskSignalCommentCreateInput {

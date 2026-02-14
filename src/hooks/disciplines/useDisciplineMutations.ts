@@ -46,17 +46,17 @@ interface UpdateDisciplineParams {
 }
 
 export function useDisciplineMutations(queryDomain: InvokeQueryDomain = 'app') {
-  const createMutation = useInvokeMutation<CreateDisciplineParams, DisciplineConfigWire>('create_discipline', {
+  const createMutation = useInvokeMutation<CreateDisciplineParams, DisciplineConfigWire>('disciplines_create', {
     queryDomain,
     updateCache: ({ queryClient, data, queryDomain }) => patchDisciplineInCache(queryClient, data, queryDomain)
   })
 
-  const updateMutation = useInvokeMutation<UpdateDisciplineParams, DisciplineConfigWire>('update_discipline', {
+  const updateMutation = useInvokeMutation<UpdateDisciplineParams, DisciplineConfigWire>('disciplines_update', {
     queryDomain,
     updateCache: ({ queryClient, data, queryDomain }) => patchDisciplineInCache(queryClient, data, queryDomain)
   })
 
-  const deleteMutation = useInvokeMutation<{ name: string }, string>('delete_discipline', {
+  const deleteMutation = useInvokeMutation<{ name: string }, string>('disciplines_delete', {
     queryDomain,
     updateCache: ({ queryClient, data, queryDomain }) => removeDisciplineFromCache(queryClient, data, queryDomain)
   })
