@@ -21,6 +21,7 @@ ralph-external = { path = "../crates/ralph-external" }
 predefined-disciplines = { path = "../crates/predefined-disciplines" }
 ralph-errors = { workspace = true }
 ralph-contracts = { workspace = true }
+ralph-backend = { workspace = true }
 tauri = { version = "2", default-features = false, features = ["wry", "dynamic-acl"] }
 tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"
@@ -29,6 +30,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.9"
 tokio = { version = "1", features = ["full"] }
+tokio-tungstenite = { version = "0.26", features = ["native-tls"] }
+futures-util = "0.3"
 sha2 = "0.10"
 hex = "0.4"
 thiserror = "2"

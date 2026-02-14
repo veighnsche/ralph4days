@@ -11,13 +11,14 @@ use crate::terminal::{
     TerminalBridgeReplayOutputResult, TerminalBridgeResizeArgs, TerminalBridgeSendInputArgs,
     TerminalBridgeSetStreamModeArgs, TerminalBridgeStartHumanSessionArgs,
     TerminalBridgeStartHumanSessionResult, TerminalBridgeStartSessionArgs,
-    TerminalBridgeStartTaskSessionArgs, TerminalBridgeTerminateArgs, TERMINAL_OUTPUT_EVENT,
+    TerminalBridgeStartTaskSessionArgs, TerminalBridgeTerminateArgs,
 };
 use base64::{engine::general_purpose::STANDARD, Engine};
+use ralph_contracts::transport::EventSink;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, State};
 
 static AGENT_SESSION_COUNTER: AtomicU64 = AtomicU64::new(0);
 
@@ -33,14 +34,13 @@ fn build_system_message_event(session_id: String, text: String) -> PtyOutputEven
     }
 }
 
-fn emit_system_message<R: tauri::Runtime>(
-    app: &AppHandle<R>,
+fn emit_system_message(
+    sink: &dyn EventSink,
     session_id: String,
     text: String,
 ) -> Result<(), String> {
     let event = build_system_message_event(session_id, text);
-    app.emit(TERMINAL_OUTPUT_EVENT, event)
-        .map_err(|e| e.to_string())
+    sink.emit_terminal_output(event)
 }
 
 fn resolve_start_session_context(
@@ -249,8 +249,8 @@ fn replay_output_impl(
         .replay_output(&args.session_id, args.after_seq, args.limit as usize)
 }
 
-fn emit_system_message_impl<R: tauri::Runtime>(
-    app: &AppHandle<R>,
+fn emit_system_message_impl(
+    app: AppHandle,
     args: TerminalBridgeEmitSystemMessageArgs,
 ) -> Result<(), String> {
     tracing::debug!(
@@ -258,7 +258,8 @@ fn emit_system_message_impl<R: tauri::Runtime>(
         text = %args.text.escape_debug().to_string(),
         "terminal_emit_system_message"
     );
-    emit_system_message(app, args.session_id, args.text)
+    let sink = crate::event_sink::TauriEventSink::new(app);
+    emit_system_message(&sink, args.session_id, args.text)
 }
 
 fn generate_agent_session_id() -> String {
@@ -410,7 +411,7 @@ pub fn terminal_emit_system_message(
     app: AppHandle,
     args: TerminalBridgeEmitSystemMessageArgs,
 ) -> Result<(), String> {
-    emit_system_message_impl(&app, args)
+    emit_system_message_impl(app, args)
 }
 
 #[tauri::command]
@@ -527,7 +528,8 @@ pub fn terminal_start_human_session(
 
     let connected_line =
         format!("\x1b[2m[connected to agent_session #{agent_session_number:03}]\x1b[0m\r\n");
-    emit_system_message(&app, args.terminal_session_id, connected_line)?;
+    let sink = crate::event_sink::TauriEventSink::new(app);
+    emit_system_message(&sink, args.terminal_session_id, connected_line)?;
 
     Ok(TerminalBridgeStartHumanSessionResult {
         agent_session_id,
@@ -564,6 +566,7 @@ pub fn terminal_list_model_form_tree() -> TerminalBridgeListModelFormTreeResult 
 mod tests {
     use super::*;
     use base64::engine::general_purpose::STANDARD;
+    use ralph_contracts::terminal::TERMINAL_OUTPUT_EVENT;
     use std::path::PathBuf;
     use std::sync::mpsc;
     use std::time::Duration;
@@ -629,8 +632,9 @@ mod tests {
             let _ = tx.send(event.payload().to_owned());
         });
 
+        let sink = crate::event_sink::TauriEventSink::new(app.handle().clone());
         emit_system_message(
-            &app.handle().clone(),
+            &sink,
             "session-emission".to_owned(),
             "[session started]\r\n".to_owned(),
         )

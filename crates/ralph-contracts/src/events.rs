@@ -13,7 +13,7 @@ pub enum BackendDiagnosticLevel {
 
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct BackendDiagnosticEvent {
     pub level: BackendDiagnosticLevel,
     pub source: String,

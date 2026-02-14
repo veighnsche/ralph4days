@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "src-tauri",
     "crates/ralph-contracts",
+    "crates/ralph-backend",
     "crates/ralph-errors",
     "crates/ralph-rag",
     "crates/ralph-external",
@@ -67,3 +68,4 @@ ts-rs = { version = "12", features = ["serde-compat"] }
 ralph-macros = { path = "crates/ralph-macros" }
 ralph-errors = { path = "crates/ralph-errors" }
 ralph-contracts = { path = "crates/ralph-contracts" }
+ralph-backend = { path = "crates/ralph-backend" }

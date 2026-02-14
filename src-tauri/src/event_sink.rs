@@ -3,17 +3,17 @@ use ralph_contracts::terminal::{TERMINAL_CLOSED_EVENT, TERMINAL_OUTPUT_EVENT};
 use ralph_contracts::transport::EventSink;
 use tauri::{AppHandle, Emitter};
 
-pub struct TauriEventSink {
-    app: AppHandle,
+pub struct TauriEventSink<R: tauri::Runtime> {
+    app: AppHandle<R>,
 }
 
-impl TauriEventSink {
-    pub fn new(app: AppHandle) -> Self {
+impl<R: tauri::Runtime> TauriEventSink<R> {
+    pub fn new(app: AppHandle<R>) -> Self {
         Self { app }
     }
 }
 
-impl EventSink for TauriEventSink {
+impl<R: tauri::Runtime> EventSink for TauriEventSink<R> {
     fn emit_backend_diagnostic(
         &self,
         payload: ralph_contracts::events::BackendDiagnosticEvent,

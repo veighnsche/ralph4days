@@ -7,9 +7,10 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
 ## Current Snapshot (As Of 2026-02-14)
 1. Backend portability (can we reuse “backend core” in both Tauri and `ralphd` today?): **No** (roughly **5/10**).
    1. Major blockers: business logic still lives in `src-tauri/src/commands/*`, and some subsystems still hard-depend on Tauri runtime types (notably `src-tauri/src/api_server.rs`).
+   2. Progress: project path validation moved into a Tauri-free crate (`crates/ralph-backend/src/project.rs`).
 2. IPC contract maturity (typed + stable + drift-tested enough to proxy 1:1): **Partial** (roughly **7.5/10**).
    1. Strongest area: terminal bridge contract (wire types + drift tests + buffering/replay semantics).
-   2. Weakest area: protocol version handshake + command list drift testing.
+   2. Weakest area: protocol mismatch enforcement + drift testing outside terminal/diagnostics.
 
 ## 0. Definitions
 1. “IPC contract” = command names + request/response JSON shapes + event names + event payload shapes.
@@ -17,7 +18,8 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
 
 ## 1. Contract Freeze + Inventory (Must-Have)
 - [x] Declare the canonical command list owner (today: `src-tauri/src/lib.rs` `tauri::generate_handler![...]`).
-- [ ] Add a drift test that asserts the canonical command list is stable (intentional changes require updating the test).
+- [x] Add a drift test that asserts the canonical command list is stable (intentional changes require updating the test):
+  - Owner: `src-tauri/tests/invoke_command_list_contract_test.rs` (SHA256 snapshot of sorted command names extracted from `src-tauri/src/lib.rs`).
 - [x] Declare the canonical event name owners per domain (now centralized in `crates/ralph-contracts/src/{terminal.rs,events.rs}`).
 - [x] Add canonical event constants + drift tests for non-terminal events used by UI (done for `backend-diagnostic` in `crates/ralph-contracts/src/events.rs`; expand to other domains as needed).
 - [ ] Add drift tests for every event name constant that the frontend listens to (terminal has this; others should match).
@@ -31,13 +33,16 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
   - Example: `protocol_version_get` and `health_get` (names are a decision).
 - [x] Implement `protocol_version_get` in local Tauri IPC:
   - Owner: `src-tauri/src/commands/protocol.rs`
-- [ ] Define the hard-fail policy:
-  - If protocol mismatch: fail loudly with required server version + upgrade instruction.
+- [x] Define + implement the hard-fail policy (remote connect):
+  - If protocol mismatch: hard-fail on connect with local + remote versions and an upgrade instruction.
+  - Owner: `src-tauri/src/remote.rs` (`RemoteWireFrameConnection::connect` invokes `protocol_version_get` and rejects mismatches).
 
 ## 3. Wire-Type Canonicalization (Must-Have)
 - [ ] Ensure every IPC arg/result/event payload type is defined once in Rust and exported via `ts-rs`:
   - Pattern: `#[ipc_type]` + `#[serde(rename_all = "camelCase")]`.
   - Current status: event payload types are now shared via `crates/ralph-contracts` (terminal events + `backend-diagnostic`), and most command args/results are already exported via `#[ipc_type]` in `src-tauri/src/commands/*` and other crates.
+- [ ] Decide strict decoding policy for remote parity and apply consistently:
+  - Current status: `deny_unknown_fields` is enabled for `ProtocolVersionInfo`, `BackendDiagnosticEvent`, `PtyOutputEvent`, `PtyClosedEvent`, and `RemoteEventFrame`.
 - [ ] Ensure no required `Vec`/`HashMap` fields are omitted when empty:
   - No `skip_serializing_if = "Vec::is_empty"` / `HashMap::is_empty` on required collections.
   - Add serialization-shape tests for “high fan-out” types (tasks, disciplines, etc.) to lock this down.
@@ -63,6 +68,7 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
 
 ## 6. Single “Backend Service” Boundary in Rust (Swap Enabler)
 - [ ] Move “real work” out of `#[tauri::command]` functions into a transport-agnostic service layer.
+  - Current status: started (project path validation now lives in `crates/ralph-backend/src/project.rs`).
 - [x] Define an injected event sink interface:
   - Local Tauri mode: sink emits Tauri events.
   - Remote mode: sink broadcasts WS events (or framed stream).
@@ -71,6 +77,13 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
     - Tauri impl: `src-tauri/src/event_sink.rs`
 - [x] Define an injected invoke-style RPC client interface (for proxying in remote mode):
   - Contract trait: `crates/ralph-contracts/src/transport.rs` (`RpcClient`)
+- [x] Define the remote event *receive-side* contract (for the local proxy to consume `ralphd` streams):
+  - Contract types: `crates/ralph-contracts/src/transport.rs` (`RemoteEventFrame`, `RemoteEventSource`, `RemoteEventStream`)
+- [x] Define the remote one-channel multiplex framing contract (RPC + events over one WS):
+  - Contract types: `crates/ralph-contracts/src/transport.rs` (`RemoteWireFrame`)
+- [x] Implement the Tauri remote-mode adapter (WS RPC + event pump) on top of `RemoteWireFrame`:
+  - Remote WS client + event pump: `src-tauri/src/remote.rs` (`RemoteRpcClient` + `RemoteWireFrameConnection`)
+  - Frontend-facing control commands: `src-tauri/src/commands/remote.rs` (`remote_connect`, `remote_disconnect`, `remote_status_get`)
 - [ ] Replace remaining direct Tauri `AppHandle.emit(...)` usage with the sink interface (notably `src-tauri/src/api_server.rs` and the remaining direct emits in `src-tauri/src/commands/terminal_bridge.rs`).
 - [ ] Keep Tauri command modules as thin adapters:
   - deserialize args

@@ -82,12 +82,29 @@ Date: 2026-02-14
    2. `GET /version` returns server + protocol info.
    3. `POST /rpc/<command>` for invoke-equivalents. Unknown commands are errors.
 2. WebSocket:
-   1. `GET /ws/events` for push events that currently use Tauri events (execution state, diagnostics, task changes).
-   2. `GET /ws/terminal` (or a session-scoped WS endpoint) for terminal streaming:
+   1. `GET /ws/events` for push events that currently use Tauri events (diagnostics, task changes, terminal output/closed, etc.).
+      1. Recommendation: multiplex *all* server-push events (including terminal) onto this one WS using `RemoteEventFrame`.
+   2. `GET /ws/terminal` is optional (only if we later decide to split terminal streaming onto a separate WS):
       1. stdout/stderr frames
       2. exit status
       3. resize
       4. stdin input
+3. Event framing contract (receive-side):
+   1. Each WS message is one JSON object with the shape:
+      1. `{ "event": "<event-name>", "payload": { ... } }`
+   2. Canonical Rust owner:
+      1. `crates/ralph-contracts/src/transport.rs` (`RemoteEventFrame`)
+   3. Policy:
+      1. Unknown `event` values are protocol errors (fail loudly, no silent drops).
+      2. Payloads are strict-decoded (`deny_unknown_fields`) to catch protocol drift early.
+4. Optional one-channel framing contract (RPC + events over one WS):
+   1. Each WS message is one JSON object with the shape:
+      1. `{ "type": "rpc-request", "id": 1, "command": "<invoke-command>", "payload": { ... } }`
+      2. `{ "type": "rpc-ok", "id": 1, "result": { ... } }`
+      3. `{ "type": "rpc-err", "id": 1, "error": "[R-XXXX] ..." }`
+      4. `{ "type": "event", "event": "<event-name>", "payload": { ... } }`
+   2. Canonical Rust owner:
+      1. `crates/ralph-contracts/src/transport.rs` (`RemoteWireFrame`)
 
 ## 11. Refactoring Strategy (So We Don’t Fork Logic)
 1. Extract backend “real work” from Tauri command handlers into a Tauri-agnostic Rust crate (shared library).
@@ -163,7 +180,7 @@ Date: 2026-02-14
    3. In remote mode, handlers forward the same request payloads to `ralphd` (minimal/no translation) and return the remote response as-is.
 3. Events in remote mode:
    1. Local Tauri backend subscribes to `ralphd` streams (WS).
-   2. It re-emits them as Tauri events with identical names/payloads, so the React UI does not need transport-specific logic.
+   2. It decodes WS frames as `RemoteEventFrame` (Rust) then re-emits them as Tauri events with identical names/payloads, so the React UI does not need transport-specific logic.
 4. DRY contract ownership:
    1. Define the canonical command arg/result structs and event payload structs once in Rust (“wire contract” types).
    2. Derive `serde` + `ts-rs` so `src/types/generated.ts` stays the single frontend owner of wire types.

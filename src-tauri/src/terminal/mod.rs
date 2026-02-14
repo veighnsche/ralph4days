@@ -10,7 +10,7 @@ pub use contract::{
     TerminalBridgeTerminateArgs,
 };
 pub use manager::{PTYManager, SessionStreamMode};
-pub use ralph_contracts::terminal::{PtyOutputEvent, TERMINAL_OUTPUT_EVENT};
+pub use ralph_contracts::terminal::PtyOutputEvent;
 pub use session::{SessionConfig, SessionInitSettings};
 
 mod contract;

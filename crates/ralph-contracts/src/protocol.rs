@@ -8,7 +8,7 @@ pub const PROTOCOL_VERSION: u32 = 1;
 
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ProtocolVersionInfo {
     pub protocol_version: u32,
 }

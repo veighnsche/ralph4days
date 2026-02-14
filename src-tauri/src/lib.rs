@@ -3,6 +3,7 @@ mod commands;
 mod diagnostics;
 mod event_sink;
 mod recent_projects;
+mod remote;
 mod terminal;
 mod xdg;
 
@@ -206,6 +207,9 @@ pub fn run() {
             commands::prompts::prompt_builder_config_save,
             commands::prompts::prompt_builder_config_delete,
             commands::protocol::protocol_version_get,
+            commands::remote::remote_connect,
+            commands::remote::remote_disconnect,
+            commands::remote::remote_status_get,
             commands::terminal_bridge::terminal_start_session,
             commands::terminal_bridge::terminal_start_task_session,
             commands::terminal_bridge::terminal_send_input,

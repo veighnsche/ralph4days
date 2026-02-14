@@ -1,12 +1,12 @@
 use ralph_macros::ipc_type;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 pub const TERMINAL_OUTPUT_EVENT: &str = "terminal:output";
 pub const TERMINAL_CLOSED_EVENT: &str = "terminal:closed";
 
 #[ipc_type]
-#[derive(Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PtyOutputEvent {
     pub session_id: String,
     pub seq: u64,
@@ -15,8 +15,8 @@ pub struct PtyOutputEvent {
 }
 
 #[ipc_type]
-#[derive(Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PtyClosedEvent {
     pub session_id: String,
     pub exit_code: u32,

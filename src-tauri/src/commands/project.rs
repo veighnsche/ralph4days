@@ -48,49 +48,8 @@ pub struct ProjectInfo {
 #[tauri::command]
 #[tracing::instrument]
 pub fn project_validate_path(args: ProjectValidatePathArgs) -> Result<(), String> {
-    tracing::debug!("Validating project path");
     let path = PathBuf::from(&args.path);
-
-    if !path.exists() {
-        tracing::error!(path = %path.display(), "Directory not found");
-        return ralph_err!(
-            codes::PROJECT_PATH,
-            "Directory not found: {}",
-            path.display()
-        );
-    }
-    if !path.is_dir() {
-        return ralph_err!(codes::PROJECT_PATH, "Not a directory: {}", path.display());
-    }
-
-    let ralph_dir = path.join(".ralph");
-    if !ralph_dir.exists() {
-        return ralph_err!(
-            codes::PROJECT_PATH,
-            "No .ralph/ folder. Initialize with:\n  ralph --init \"{}\"",
-            path.display()
-        );
-    }
-    if !ralph_dir.is_dir() {
-        return ralph_err!(
-            codes::PROJECT_PATH,
-            "{} exists but is not a directory",
-            ralph_dir.display()
-        );
-    }
-
-    let db_file = ralph_dir.join("db").join("ralph.db");
-    if !db_file.exists() {
-        tracing::error!(path = %path.display(), "No .ralph/db/ralph.db found");
-        return ralph_err!(
-            codes::PROJECT_PATH,
-            "No .ralph/db/ralph.db found. Initialize with:\n  ralph --init \"{}\"",
-            path.display()
-        );
-    }
-
-    tracing::info!(path = %path.display(), "Project path validated successfully");
-    Ok(())
+    ralph_backend::project::validate_project_path(&path)
 }
 
 #[ipc_type]

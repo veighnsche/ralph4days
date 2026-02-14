@@ -94,10 +94,11 @@ Related docs (deeper design dumps):
 2. Weaknesses (increase remote complexity):
    1. Protocol versioning exists (`crates/ralph-contracts/src/protocol.rs` + `protocol_version_get`), but hard-fail mismatch enforcement is not implemented yet.
    2. Most command implementations are Tauri-bound entrypoints (`#[tauri::command]` functions) rather than a transport-agnostic service layer.
-   3. Event emission is Tauri-coupled in several places (for example terminal output uses `AppHandle.emit`), so `ralphd` needs an alternate event sink/broadcast mechanism.
+   3. Event emission is still partially Tauri-coupled (notably `src-tauri/src/api_server.rs`), so `ralphd` still needs an alternate broadcast mechanism.
+      1. Note: terminal output/closed + backend diagnostics are now routed via `EventSink`, which is the intended seam for `ralphd`.
    4. Parity enforcement is uneven:
       1. Terminal has drift tests and shared types.
-      2. Other domains do not yet have the same “contract drift detection” rigor.
+      2. Command list drift test exists (invoke surface snapshot), but other domains do not yet have the same “contract drift detection” rigor.
    5. Some “domain policy” still lives in frontend (see `.docs/067_FRONTEND_LOGIC_BACKEND_AUDIT_CHECKLIST.md`), which becomes a problem when there are multiple clients (local UI, remote UI, CLI, etc.).
 
 ## 8. Updated Ratings (Based On Current Code)
@@ -124,7 +125,8 @@ Related docs (deeper design dumps):
    1. command args/results
    2. event payload types
    3. protocol version constant
-   4. transport adapter traits (`EventSink`, `RpcClient`)
+   4. transport adapter traits (`EventSink`, `RpcClient`, `RemoteEventSource`/`RemoteEventStream` + `RemoteEventFrame`)
+      1. Also defined: one-channel multiplex framing contract (`RemoteWireFrame`) for RPC+events over one WS.
 3. Add parity/drift tests for non-terminal command surfaces (at least: command list + key payload shapes).
 4. Move frontend-owned domain policy to backend (prompt registry, launch resolution policy, naming invariants).
 5. Only then: build `ralphd` + SSH connection manager (install/update/tunnel).
