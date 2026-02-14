@@ -1,5 +1,4 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { listen } from '@tauri-apps/api/event'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { AlertCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -10,18 +9,14 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { Toaster } from '@/components/ui/sonner'
 import { WorkspacePanel } from '@/components/workspace'
 import { useInvoke } from '@/hooks/api'
+import { tauriListen } from '@/lib/tauri/events'
+import { BACKEND_DIAGNOSTIC_EVENT } from '@/lib/tauri/eventsContract'
 import { tauriInvoke } from '@/lib/tauri/invoke'
 import { type Page, pageRegistry } from '@/pages/pageRegistry'
+import type { BackendDiagnosticEvent } from '@/types/generated'
 import './index.css'
 
 const isTauri = typeof window !== 'undefined' && '__TAURI__' in window
-
-type BackendDiagnostic = {
-  level: 'warning' | 'error'
-  source: string
-  code: string
-  message: string
-}
 
 function NoBackendError() {
   return (
@@ -49,7 +44,7 @@ function App() {
     let unlisten: (() => void) | null = null
 
     void (async () => {
-      unlisten = await listen<BackendDiagnostic>('backend-diagnostic', event => {
+      unlisten = await tauriListen<BackendDiagnosticEvent>(BACKEND_DIAGNOSTIC_EVENT, event => {
         const { level, source, code, message } = event.payload
         const detail = `${source}: ${code} — ${message}`
         if (level === 'warning') {

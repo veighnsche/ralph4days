@@ -1,4 +1,4 @@
-import { listen } from '@tauri-apps/api/event'
+import { tauriListen } from '@/lib/tauri/events'
 import { tauriInvoke } from '@/lib/tauri/invoke'
 import type {
   PtyClosedEvent,
@@ -189,7 +189,7 @@ export async function terminalBridgeListenSessionOutput(
   onOutput: (payload: PtyOutputEvent) => void
 ) {
   terminalBridgeDebugLog('rx.output.subscribe', { sessionId })
-  return listen<PtyOutputEvent>(TERMINAL_BRIDGE_EVENTS.output, event => {
+  return tauriListen<PtyOutputEvent>(TERMINAL_BRIDGE_EVENTS.output, event => {
     if (event.payload.sessionId !== sessionId) return
     const decoded = decodeBase64Payload(event.payload.data)
     terminalBridgeDebugLog('rx.output', {
@@ -207,7 +207,7 @@ export async function terminalBridgeListenSessionClosed(
   onClosed: (payload: PtyClosedEvent) => void
 ) {
   terminalBridgeDebugLog('rx.closed.subscribe', { sessionId })
-  return listen<PtyClosedEvent>(TERMINAL_BRIDGE_EVENTS.closed, event => {
+  return tauriListen<PtyClosedEvent>(TERMINAL_BRIDGE_EVENTS.closed, event => {
     if (event.payload.sessionId !== sessionId) return
     terminalBridgeDebugLog('rx.closed', event.payload)
     onClosed(event.payload)
