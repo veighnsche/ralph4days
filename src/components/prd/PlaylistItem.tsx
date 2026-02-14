@@ -156,7 +156,7 @@ export const PlaylistItem = memo(function PlaylistItem({
       {/* Col 3: Indicators + Tags */}
       <div className="flex flex-col items-end justify-between self-stretch relative z-10">
         <PlaylistItemIndicators task={task} unresolvedDeps={unresolvedDeps} signalSummary={signalSummary} />
-        {task.tags && task.tags.length > 0 && (
+        {task.tags.length > 0 && (
           <div className="flex flex-wrap justify-end gap-1">
             {task.tags.map(tag => (
               <Badge key={tag} variant="outline" className="text-xs px-2.5 py-0.5 h-5 min-w-[3rem]">

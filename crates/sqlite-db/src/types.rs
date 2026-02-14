@@ -158,9 +158,9 @@ pub struct TaskSignal {
 pub struct McpServerConfig {
     pub name: String,
     pub command: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub args: Vec<String>,
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    #[serde(default)]
     pub env: HashMap<String, String>,
 }
 
@@ -177,7 +177,7 @@ pub struct Task {
     pub status: TaskStatus,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub priority: Option<Priority>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub tags: Vec<String>,
     #[serde(default)]
     pub depends_on: Vec<u32>,
@@ -187,11 +187,11 @@ pub struct Task {
     pub updated: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub completed: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub acceptance_criteria: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub context_files: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub output_artifacts: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hints: Option<String>,
@@ -211,7 +211,7 @@ pub struct Task {
     pub pseudocode: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enriched_at: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub signals: Vec<TaskSignal>,
     pub subsystem_display_name: String,
     pub subsystem_acronym: String,
@@ -574,4 +574,98 @@ pub struct TaskSignalCommentCreateInput {
     pub session_id: Option<String>,
     pub author_type: String,
     pub body: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn task_serializes_required_arrays_even_when_empty() {
+        let task = Task {
+            id: 1,
+            subsystem: "core".to_owned(),
+            discipline: "frontend".to_owned(),
+            title: "Test task".to_owned(),
+            description: None,
+            status: TaskStatus::Draft,
+            priority: None,
+            tags: vec![],
+            depends_on: vec![],
+            created: None,
+            updated: None,
+            completed: None,
+            acceptance_criteria: vec![],
+            context_files: vec![],
+            output_artifacts: vec![],
+            hints: None,
+            estimated_turns: None,
+            provenance: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
+            pseudocode: None,
+            enriched_at: None,
+            signals: vec![],
+            subsystem_display_name: "Core".to_owned(),
+            subsystem_acronym: "CORE".to_owned(),
+            discipline_display_name: "Frontend".to_owned(),
+            discipline_acronym: "FE".to_owned(),
+            discipline_icon: "code".to_owned(),
+            discipline_color: "#000000".to_owned(),
+        };
+
+        let value = serde_json::to_value(task).expect("Task should serialize");
+        let obj = value
+            .as_object()
+            .expect("Task should serialize to a JSON object");
+
+        for key in [
+            "tags",
+            "dependsOn",
+            "acceptanceCriteria",
+            "contextFiles",
+            "outputArtifacts",
+            "signals",
+        ] {
+            let Some(v) = obj.get(key) else {
+                panic!("Task JSON missing required key: {key}");
+            };
+            assert!(
+                v.is_array(),
+                "Task JSON key {key} should be an array; got {v:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn mcp_server_config_serializes_args_and_env_even_when_empty() {
+        let cfg = McpServerConfig {
+            name: "test".to_owned(),
+            command: "echo".to_owned(),
+            args: vec![],
+            env: HashMap::new(),
+        };
+
+        let value = serde_json::to_value(cfg).expect("McpServerConfig should serialize");
+        let obj = value
+            .as_object()
+            .expect("McpServerConfig should serialize to a JSON object");
+
+        assert!(
+            obj.contains_key("args"),
+            "McpServerConfig JSON missing args"
+        );
+        assert!(
+            obj.get("args").is_some_and(serde_json::Value::is_array),
+            "McpServerConfig args should be an array"
+        );
+
+        assert!(obj.contains_key("env"), "McpServerConfig JSON missing env");
+        assert!(
+            obj.get("env").is_some_and(serde_json::Value::is_object),
+            "McpServerConfig env should be an object"
+        );
+    }
 }

@@ -162,17 +162,14 @@ export function TaskCardContent({ task }: { task: Task }) {
     )
   })
 
-  if (
-    (task.contextFiles && task.contextFiles.length > 0) ||
-    (task.outputArtifacts && task.outputArtifacts.length > 0)
-  ) {
+  if (task.contextFiles.length > 0 || task.outputArtifacts.length > 0) {
     sections.push({
       id: 'files',
       node: (
         <div className="px-6 space-y-2">
           <h2 className="text-sm font-medium text-muted-foreground">Files</h2>
           <div className="space-y-1.5">
-            {task.contextFiles && task.contextFiles.length > 0 && (
+            {task.contextFiles.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-xs text-muted-foreground">In:</span>
                 {task.contextFiles.map(file => (
@@ -183,7 +180,7 @@ export function TaskCardContent({ task }: { task: Task }) {
                 ))}
               </div>
             )}
-            {task.outputArtifacts && task.outputArtifacts.length > 0 && (
+            {task.outputArtifacts.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-xs text-muted-foreground">Out:</span>
                 {task.outputArtifacts.map(artifact => (
