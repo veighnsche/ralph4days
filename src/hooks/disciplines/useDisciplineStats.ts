@@ -4,15 +4,18 @@ import { computeDisciplineStats, computeProjectProgress } from '@/lib/stats'
 import type { TaskListItem } from '@/types/generated'
 import { useDisciplines } from './useDisciplines'
 
+const EMPTY_TASKS: TaskListItem[] = []
+
 export function useDisciplineStats(queryDomain: InvokeQueryDomain = 'workspace') {
   const { disciplines, error: disciplinesError, isLoading: disciplinesLoading } = useDisciplines(queryDomain)
   const {
-    data: tasks = [],
+    data: tasksData,
     isLoading: tasksLoading,
     error: tasksError
   } = useInvoke<TaskListItem[]>('get_task_list_items', undefined, {
     queryDomain
   })
+  const tasks = tasksData ?? EMPTY_TASKS
 
   const statsMap = useMemo(() => computeDisciplineStats(tasks, disciplines), [tasks, disciplines])
   const progress = useMemo(() => computeProjectProgress(tasks), [tasks])

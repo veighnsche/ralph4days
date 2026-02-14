@@ -6,6 +6,8 @@ import { SECTION_REGISTRY } from '@/lib/prompt-builder-registry'
 import type { PromptBuilderConfigData, PromptBuilderConfigInput } from '@/types/generated'
 import type { SectionBlock } from './useSectionConfiguration'
 
+const EMPTY_CUSTOM_PROMPT_BUILDER_NAMES: string[] = []
+
 export function usePromptBuilderManagement(
   open: boolean,
   sections: SectionBlock[],
@@ -19,9 +21,10 @@ export function usePromptBuilderManagement(
   const [loadError, setLoadError] = useState<string | null>(null)
   const promptBuilderChangeGenRef = useRef(0)
 
-  const { data: customPromptBuilderNames = [] } = useInvoke<string[]>('list_prompt_builder_configs', undefined, {
+  const { data: customPromptBuilderNamesData } = useInvoke<string[]>('list_prompt_builder_configs', undefined, {
     enabled: open
   })
+  const customPromptBuilderNames = customPromptBuilderNamesData ?? EMPTY_CUSTOM_PROMPT_BUILDER_NAMES
 
   const initializedRef = useRef(false)
   // biome-ignore lint/correctness/useExhaustiveDependencies: basePrompt and loadPromptBuilderSections intentionally excluded — picker switching is handled by handlePromptBuilderChange, not this init effect

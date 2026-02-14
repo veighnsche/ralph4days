@@ -1,5 +1,6 @@
 import { Filter } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useDebouncedCallback } from 'use-debounce'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -24,6 +25,13 @@ interface FiltersModalProps {
 
 export function FiltersModal({ filters, setters, allTags, onClearFilters }: FiltersModalProps) {
   const [open, setOpen] = useState(false)
+  const [searchValue, setSearchValue] = useState(filters.searchQuery)
+  const commitSearch = useDebouncedCallback((value: string) => setters.setSearchQuery(value), 200)
+
+  useEffect(() => {
+    setSearchValue(filters.searchQuery)
+    commitSearch.cancel()
+  }, [commitSearch, filters.searchQuery])
 
   const hasActiveFilters =
     filters.searchQuery ||
@@ -60,8 +68,18 @@ export function FiltersModal({ filters, setters, allTags, onClearFilters }: Filt
             <Input
               id="search"
               placeholder="Search tasks..."
-              value={filters.searchQuery}
-              onChange={e => setters.setSearchQuery(e.target.value)}
+              value={searchValue}
+              onChange={e => {
+                const next = e.target.value
+                setSearchValue(next)
+                commitSearch(next)
+              }}
+              onBlur={() => commitSearch.flush()}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  commitSearch.flush()
+                }
+              }}
             />
           </div>
 

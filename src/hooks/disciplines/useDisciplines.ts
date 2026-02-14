@@ -40,6 +40,8 @@ function resolveDisciplines(raw: DisciplineConfigWire[]): DisciplineConfig[] {
   }))
 }
 
+const EMPTY_DISCIPLINES: DisciplineConfig[] = []
+
 export function useDisciplines(queryDomain: InvokeQueryDomain = 'app') {
   const { data, error, isLoading } = useInvoke<DisciplineConfigWire[], DisciplineConfig[]>(
     'get_disciplines_config',
@@ -52,7 +54,7 @@ export function useDisciplines(queryDomain: InvokeQueryDomain = 'app') {
   )
 
   return {
-    disciplines: data ?? [],
+    disciplines: data ?? EMPTY_DISCIPLINES,
     error: error ? String(error) : null,
     isLoading
   }

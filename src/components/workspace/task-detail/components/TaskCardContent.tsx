@@ -19,14 +19,17 @@ import { TaskIdDisplay } from '../../../prd/TaskIdDisplay'
 import { AcceptanceCriterionItem } from './AcceptanceCriterionItem'
 import { addAcceptanceCriterion, toggleAcceptanceCriterion, updateAcceptanceCriterionText } from './acceptanceCriteria'
 
+const EMPTY_SUBSYSTEMS: SubsystemData[] = []
+
 export function TaskCardContent({ task }: { task: Task }) {
   const [pendingAutoEditCriteria, setPendingAutoEditCriteria] = useState<string[] | null>(null)
   const currentTab = useWorkspaceTabContext()
   const openTabAfter = useWorkspaceStore(s => s.openTabAfter)
   const { disciplines } = useDisciplines()
-  const { data: subsystems = [] } = useInvoke<SubsystemData[]>('get_subsystems', undefined, {
+  const { data: subsystemsData } = useInvoke<SubsystemData[]>('get_subsystems', undefined, {
     staleTime: 5 * 60 * 1000
   })
+  const subsystems = subsystemsData ?? EMPTY_SUBSYSTEMS
   const subsystemId = subsystems.find(subsystem => subsystem.name === task.subsystem)?.id
   const disciplineId = disciplines.find(discipline => discipline.name === task.discipline)?.id
   const openRelatedTabAfterCurrent = (tab: ReturnType<typeof createTaskDetailTab>) => {

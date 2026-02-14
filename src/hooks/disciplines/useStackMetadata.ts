@@ -1,6 +1,8 @@
 import { type InvokeQueryDomain, useInvoke } from '@/hooks/api'
 import type { StackMetadataData } from '@/types/generated'
 
+const EMPTY_STACKS: StackMetadataData[] = []
+
 export function useStackMetadata(queryDomain: InvokeQueryDomain = 'app') {
   const { data, error, isLoading } = useInvoke<StackMetadataData[]>('get_stack_metadata', undefined, {
     queryDomain,
@@ -8,7 +10,7 @@ export function useStackMetadata(queryDomain: InvokeQueryDomain = 'app') {
   })
 
   return {
-    stacks: data ?? [],
+    stacks: data ?? EMPTY_STACKS,
     error: error ? String(error) : null,
     isLoading
   }

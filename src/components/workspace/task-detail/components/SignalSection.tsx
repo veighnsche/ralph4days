@@ -22,6 +22,9 @@ import { ReplyForm } from './ReplyForm'
 import { SignalDisplay } from './SignalDisplay'
 import { SignalEditor } from './SignalEditor'
 
+const EMPTY_SIGNALS: TaskSignal[] = []
+const EMPTY_REPLIES: TaskSignal[] = []
+
 const VERB_CONFIG: Record<
   string,
   {
@@ -76,9 +79,35 @@ interface SignalsSectionProps {
   task: Task
 }
 
-export function SignalsSection({ task }: SignalsSectionProps) {
-  const allSignals = task.signals ?? []
+function AddSignalCard({
+  disabled,
+  onSubmit
+}: {
+  disabled: boolean
+  onSubmit: (body: string, onSuccess: () => void) => void
+}) {
   const [signalInput, setSignalInput] = useState('')
+
+  const handleAddSignal = () => {
+    const trimmed = signalInput.trim()
+    if (!trimmed) return
+    onSubmit(trimmed, () => setSignalInput(''))
+  }
+
+  return (
+    <SignalEditor
+      value={signalInput}
+      onChange={setSignalInput}
+      onSubmit={handleAddSignal}
+      submitLabel="Signal"
+      placeholder="Add a signal..."
+      disabled={disabled}
+    />
+  )
+}
+
+export function SignalsSection({ task }: SignalsSectionProps) {
+  const allSignals = task.signals ?? EMPTY_SIGNALS
 
   const topLevel: TaskSignal[] = []
   const repliesByParent = new Map<number, TaskSignal[]>()
@@ -125,9 +154,8 @@ export function SignalsSection({ task }: SignalsSectionProps) {
     resetError
   } = useSignalMutations(task.id, 'workspace')
 
-  const handleAddSignal = () => {
-    if (!signalInput.trim()) return
-    addSignal.mutate({ taskId: task.id, body: signalInput.trim() }, { onSuccess: () => setSignalInput('') })
+  const handleAddSignal = (body: string, onSuccess: () => void) => {
+    addSignal.mutate({ taskId: task.id, body }, { onSuccess })
   }
 
   const totalSignals = allSignals.length
@@ -144,21 +172,14 @@ export function SignalsSection({ task }: SignalsSectionProps) {
       <InlineError error={error} onDismiss={resetError} className="mb-3" />
 
       <div className="mb-4">
-        <SignalEditor
-          value={signalInput}
-          onChange={setSignalInput}
-          onSubmit={handleAddSignal}
-          submitLabel="Signal"
-          placeholder="Add a signal..."
-          disabled={isPending}
-        />
+        <AddSignalCard disabled={isPending} onSubmit={handleAddSignal} />
       </div>
 
       {topLevel.length > 0 && (
         <div className="space-y-1">
           {topLevel.map(signal => {
             const isSignal = signal.signal_verb != null
-            const replies = repliesByParent.get(signal.id) || []
+            const replies = repliesByParent.get(signal.id) ?? EMPTY_REPLIES
 
             let signalConfig = null
             let SignalIcon = null

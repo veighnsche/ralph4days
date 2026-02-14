@@ -99,10 +99,6 @@ function ProjectSection({
 }
 
 export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
-  const [initPath, setInitPath] = useState('')
-  const [stack, setStack] = useState<number>(2)
-  const [initializing, setInitializing] = useState(false)
-  const [initError, setInitError] = useState<string | null>(null)
   const [openError, setOpenError] = useState<string | null>(null)
   const [openingPath, setOpeningPath] = useState<string | null>(null)
 
@@ -122,37 +118,6 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
   } = useInvoke<RalphProject[]>('scan_for_ralph_projects')
 
   const discoveredProjects = (scannedProjects ?? []).filter(p => !recentPaths.has(p.path))
-
-  const handleBrowseInit = async () => {
-    try {
-      const selected = await open({
-        directory: true,
-        multiple: false,
-        title: 'Select Directory to Initialize'
-      })
-      if (selected && typeof selected === 'string') {
-        setInitPath(selected)
-      }
-    } catch (e) {
-      console.error('Failed to open folder dialog:', e)
-    }
-  }
-
-  const handleInitialize = async () => {
-    if (!initPath) return
-    setInitError(null)
-    setInitializing(true)
-    try {
-      const title = initPath.split('/').pop() || 'Project'
-      await invoke('initialize_ralph_project', { path: initPath, projectTitle: title, stack })
-      await invoke('set_locked_project', { path: initPath })
-      onProjectSelected(initPath)
-    } catch (err) {
-      setInitError(`Failed to initialize: ${err}`)
-    } finally {
-      setInitializing(false)
-    }
-  }
 
   const handleOpenProject = async (path: string) => {
     setOpenError(null)
@@ -198,55 +163,97 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
       <Separator orientation="vertical" />
 
       {/* Right — branding + init (secondary) */}
-      <div className="flex flex-col justify-center px-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight">Ralph4days</h1>
-          <p className="text-sm text-muted-foreground">Autonomous multi-agent task execution</p>
-        </div>
+      <ProjectInitPanel onProjectSelected={onProjectSelected} />
+    </div>
+  )
+}
 
-        <FieldGroup>
-          <Field>
-            <FieldLabel>Tech Stack</FieldLabel>
-            <div className="flex flex-col gap-1">
-              {STACK_OPTIONS.map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setStack(opt.value)}
-                  className={cn(
-                    'flex flex-col items-start rounded-md border px-3 py-2 text-left transition-colors duration-100 cursor-pointer',
-                    stack === opt.value ? 'border-primary bg-primary/5' : 'hover:bg-accent'
-                  )}>
-                  <span className="text-sm font-medium">{opt.label}</span>
-                  <span className="text-xs text-muted-foreground">{opt.description}</span>
-                </button>
-              ))}
-            </div>
-          </Field>
+function ProjectInitPanel({ onProjectSelected }: { onProjectSelected: (path: string) => void }) {
+  const [initPath, setInitPath] = useState('')
+  const [stack, setStack] = useState<number>(2)
+  const [initializing, setInitializing] = useState(false)
+  const [initError, setInitError] = useState<string | null>(null)
 
-          <Field>
-            <FieldLabel>Project Directory</FieldLabel>
-            <InputGroup>
-              <InputGroupInput
-                value={initPath}
-                onChange={e => setInitPath(e.target.value)}
-                placeholder="/path/to/your-project"
-              />
-              <InputGroupAddon align="inline-end">
-                <InputGroupButton size="icon-xs" onClick={handleBrowseInit}>
-                  <FolderOpen className="h-4 w-4" />
-                </InputGroupButton>
-              </InputGroupAddon>
-            </InputGroup>
-            <FieldDescription>Creates .ralph/ folder with selected disciplines</FieldDescription>
-          </Field>
+  const handleBrowseInit = async () => {
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: 'Select Directory to Initialize'
+      })
+      if (selected && typeof selected === 'string') {
+        setInitPath(selected)
+      }
+    } catch (e) {
+      console.error('Failed to open folder dialog:', e)
+    }
+  }
 
-          <InlineError error={initError} onDismiss={() => setInitError(null)} />
-          <Button onClick={handleInitialize} disabled={!initPath || initializing} className="w-full">
-            {initializing ? 'Initializing...' : 'Add Ralph'}
-          </Button>
-        </FieldGroup>
+  const handleInitialize = async () => {
+    if (!initPath) return
+    setInitError(null)
+    setInitializing(true)
+    try {
+      const title = initPath.split('/').pop() || 'Project'
+      await invoke('initialize_ralph_project', { path: initPath, projectTitle: title, stack })
+      await invoke('set_locked_project', { path: initPath })
+      onProjectSelected(initPath)
+    } catch (err) {
+      setInitError(`Failed to initialize: ${err}`)
+    } finally {
+      setInitializing(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col justify-center px-8">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold tracking-tight">Ralph4days</h1>
+        <p className="text-sm text-muted-foreground">Autonomous multi-agent task execution</p>
       </div>
+
+      <FieldGroup>
+        <Field>
+          <FieldLabel>Tech Stack</FieldLabel>
+          <div className="flex flex-col gap-1">
+            {STACK_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setStack(opt.value)}
+                className={cn(
+                  'flex flex-col items-start rounded-md border px-3 py-2 text-left transition-colors duration-100 cursor-pointer',
+                  stack === opt.value ? 'border-primary bg-primary/5' : 'hover:bg-accent'
+                )}>
+                <span className="text-sm font-medium">{opt.label}</span>
+                <span className="text-xs text-muted-foreground">{opt.description}</span>
+              </button>
+            ))}
+          </div>
+        </Field>
+
+        <Field>
+          <FieldLabel>Project Directory</FieldLabel>
+          <InputGroup>
+            <InputGroupInput
+              value={initPath}
+              onChange={e => setInitPath(e.target.value)}
+              placeholder="/path/to/your-project"
+            />
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton size="icon-xs" onClick={handleBrowseInit}>
+                <FolderOpen className="h-4 w-4" />
+              </InputGroupButton>
+            </InputGroupAddon>
+          </InputGroup>
+          <FieldDescription>Creates .ralph/ folder with selected disciplines</FieldDescription>
+        </Field>
+
+        <InlineError error={initError} onDismiss={() => setInitError(null)} />
+        <Button onClick={handleInitialize} disabled={!initPath || initializing} className="w-full">
+          {initializing ? 'Initializing...' : 'Add Ralph'}
+        </Button>
+      </FieldGroup>
     </div>
   )
 }

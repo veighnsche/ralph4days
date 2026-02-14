@@ -3,15 +3,20 @@ import { type InvokeQueryDomain, useInvoke } from '@/hooks/api'
 import { computeProjectProgress, computeSubsystemStats } from '@/lib/stats'
 import type { SubsystemData, TaskListItem } from '@/types/generated'
 
+const EMPTY_SUBSYSTEMS: SubsystemData[] = []
+const EMPTY_TASKS: TaskListItem[] = []
+
 export function useSubsystemStats(queryDomain: InvokeQueryDomain = 'workspace') {
   const {
-    data: subsystems = [],
+    data: subsystemsData,
     isLoading: subsystemsLoading,
     error: subsystemsError
   } = useInvoke<SubsystemData[]>('get_subsystems', undefined, { queryDomain })
-  const { data: tasks = [], isLoading: tasksLoading } = useInvoke<TaskListItem[]>('get_task_list_items', undefined, {
+  const { data: tasksData, isLoading: tasksLoading } = useInvoke<TaskListItem[]>('get_task_list_items', undefined, {
     queryDomain
   })
+  const subsystems = subsystemsData ?? EMPTY_SUBSYSTEMS
+  const tasks = tasksData ?? EMPTY_TASKS
 
   const statsMap = useMemo(() => computeSubsystemStats(tasks, subsystems), [tasks, subsystems])
   const progress = useMemo(() => computeProjectProgress(tasks), [tasks])

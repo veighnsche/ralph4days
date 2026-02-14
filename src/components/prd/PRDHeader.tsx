@@ -1,4 +1,6 @@
 import { Search } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useDebouncedCallback } from 'use-debounce'
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Progress } from '@/components/ui/progress'
@@ -32,6 +34,14 @@ export function PRDHeader({
   allTags,
   onClearFilters
 }: PRDHeaderProps) {
+  const [searchValue, setSearchValue] = useState(filters.searchQuery)
+  const commitSearch = useDebouncedCallback((value: string) => setters.setSearchQuery(value), 200)
+
+  useEffect(() => {
+    setSearchValue(filters.searchQuery)
+    commitSearch.cancel()
+  }, [commitSearch, filters.searchQuery])
+
   const hasActiveFilters =
     filters.searchQuery ||
     filters.statusFilter !== 'all' ||
@@ -61,8 +71,18 @@ export function PRDHeader({
               <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 placeholder="Search tasks..."
-                value={filters.searchQuery}
-                onChange={e => setters.setSearchQuery(e.target.value)}
+                value={searchValue}
+                onChange={e => {
+                  const next = e.target.value
+                  setSearchValue(next)
+                  commitSearch(next)
+                }}
+                onBlur={() => commitSearch.flush()}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    commitSearch.flush()
+                  }
+                }}
                 className="pl-8 h-8 text-xs"
               />
             </div>
