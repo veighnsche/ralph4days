@@ -27,7 +27,7 @@ Date: 2026-02-14
 
 ## 4. Canonical Source Of Truth
 1. The command registry is `src-tauri/src/lib.rs` under `.invoke_handler(tauri::generate_handler![...])`.
-2. The terminal event contract is defined in Rust (`src-tauri/src/terminal/events.rs`) and in TS (`src/lib/terminal/terminalBridgeContract.ts`).
+2. The terminal event contract is defined in Rust (`crates/ralph-contracts/src/terminal.rs`) and in TS (`src/lib/terminal/terminalBridgeContract.ts`).
 
 ## 5. Breaking Changes (Summary)
 1. Terminal events

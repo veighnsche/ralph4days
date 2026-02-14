@@ -4,7 +4,7 @@
 
 - `terminal_bridge` backend subsystem:
   - commands: `src-tauri/src/commands/terminal_bridge.rs`
-  - event names + payload runtime structs: `src-tauri/src/terminal/events.rs`
+  - event names + payload runtime structs: `crates/ralph-contracts/src/terminal.rs`
   - shared command arg contracts: `src-tauri/src/terminal/contract.rs`
 - `terminal_bridge` frontend subsystem:
   - string constants: `src/lib/terminal/terminalBridgeContract.ts`
@@ -25,9 +25,9 @@
 - [x] 1. Define scope and freeze current contract.
 - [x] 2. Create shared Rust contract types for `terminal_bridge`.
   - Added `#[ipc_type]` command arg structs in `src-tauri/src/terminal/contract.rs`.
-  - Exported event payload types via `#[ipc_type]` in `src-tauri/src/terminal/events.rs`.
+  - Exported event payload types via `#[ipc_type]` in `crates/ralph-contracts/src/terminal.rs`.
 - [x] 3. Export command/event string constants from one Rust location.
-  - Backend event constants remain canonical in `src-tauri/src/terminal/events.rs`.
+  - Backend event constants remain canonical in `crates/ralph-contracts/src/terminal.rs`.
   - TS constant generation intentionally not used (Option A).
 - [x] 4. Replace inline backend command arg usage with shared structs where compatible.
   - `src-tauri/src/commands/terminal_bridge.rs` now routes command wrappers through shared arg structs.
@@ -39,7 +39,7 @@
 - [x] 6. Decide string source of truth for command/event names.
   - Documented above (Option A).
 - [x] 7. Add drift tests for command and event names.
-  - Backend event-name stability test: `src-tauri/src/terminal/events.rs`.
+  - Backend event-name stability test: `crates/ralph-contracts/src/terminal.rs`.
   - Frontend constant drift test: `src/lib/terminal/terminalBridgeContract.test.ts`.
 - [x] 8. Regenerate shared types.
   - Ran `just types`.

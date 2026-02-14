@@ -78,7 +78,7 @@ Evidence:
 Evidence:
 - `src-tauri/src/terminal/manager.rs`
 - `src-tauri/src/terminal/session.rs`
-- `src-tauri/src/terminal/events.rs`
+- `crates/ralph-contracts/src/terminal.rs`
 
 ### Type contract export pipeline
 - `#[ipc_type]` macro for ts-rs export behavior.
