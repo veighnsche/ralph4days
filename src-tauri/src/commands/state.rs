@@ -1,7 +1,7 @@
 use crate::diagnostics;
 use crate::terminal::PTYManager;
 use crate::xdg::XdgDirs;
-use prompt_builder::{CodebaseSnapshot, PromptContext};
+use prompt_builder::CodebaseSnapshot;
 use ralph_errors::{codes, err_string, ToStringErr};
 use sqlite_db::SqliteDb;
 use std::path::PathBuf;
@@ -162,34 +162,6 @@ impl AppState {
                 ))
             }
         })
-    }
-
-    pub(super) fn build_prompt_context(
-        &self,
-        project_path: &std::path::Path,
-        user_input: Option<String>,
-        instruction_overrides: std::collections::HashMap<String, String>,
-        target_task_id: Option<u32>,
-    ) -> Result<PromptContext, String> {
-        let db_guard = self.db.lock().err_str(codes::INTERNAL)?;
-        let db = db_guard.as_ref().ok_or_else(|| {
-            ralph_errors::err_string(codes::PROJECT_LOCK, "No project locked (database not open)")
-        })?;
-
-        let api_port = *self.api_server_port.lock().err_str(codes::INTERNAL)?;
-
-        ralph_backend::prompt_context::build_prompt_context(
-            ralph_backend::prompt_context::PromptContextArgs {
-                db,
-                project_path,
-                mcp_dir: &self.mcp_dir,
-                codebase_snapshot: &self.codebase_snapshot,
-                api_server_port: api_port,
-                user_input,
-                instruction_overrides,
-                target_task_id,
-            },
-        )
     }
 }
 

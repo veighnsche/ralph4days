@@ -1,6 +1,7 @@
 pub mod diagnostics;
 pub mod mcp;
 pub mod project;
+pub mod prompt_builder_preview;
 pub mod prompt_context;
 pub mod session;
 pub mod tasks;
