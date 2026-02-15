@@ -96,3 +96,37 @@ pub struct SubsystemsCommentDeleteArgs {
     pub subsystem_name: String,
     pub comment_id: u32,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn subsystem_data_serializes_required_comments_array_even_when_empty() {
+        let subsystem = SubsystemData {
+            id: 1,
+            name: "core".to_owned(),
+            display_name: "Core".to_owned(),
+            acronym: "CORE".to_owned(),
+            description: None,
+            created: None,
+            status: "active".to_owned(),
+            comments: vec![],
+        };
+
+        let value = serde_json::to_value(subsystem).expect("SubsystemData should serialize");
+        let obj = value
+            .as_object()
+            .expect("SubsystemData should serialize to an object");
+
+        let comments = obj
+            .get("comments")
+            .expect("comments should be present")
+            .as_array()
+            .expect("comments should be an array");
+        assert!(
+            comments.is_empty(),
+            "comments should serialize as an empty array"
+        );
+    }
+}

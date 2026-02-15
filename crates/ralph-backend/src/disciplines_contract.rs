@@ -146,3 +146,66 @@ pub struct DisciplinesCroppedImageGetArgs {
     pub crop: CropBoxData,
     pub label: String,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn discipline_config_serializes_required_arrays_even_when_empty() {
+        let cfg = DisciplineConfig {
+            id: 1,
+            name: "frontend".to_owned(),
+            display_name: "Frontend".to_owned(),
+            icon: "code".to_owned(),
+            color: "#000000".to_owned(),
+            acronym: "FE".to_owned(),
+            description: None,
+            system_prompt: None,
+            agent: None,
+            model: None,
+            effort: None,
+            thinking: None,
+            skills: vec![],
+            conventions: None,
+            mcp_servers: vec![],
+            stack_id: None,
+            image_path: None,
+            crops: None,
+            image_prompt: None,
+            task_templates: vec![],
+        };
+
+        let value = serde_json::to_value(cfg).expect("DisciplineConfig should serialize");
+        let obj = value
+            .as_object()
+            .expect("DisciplineConfig should serialize to an object");
+
+        let skills = obj
+            .get("skills")
+            .expect("skills should be present")
+            .as_array()
+            .expect("skills should be an array");
+        assert!(skills.is_empty(), "skills should serialize as an empty array");
+
+        let mcp_servers = obj
+            .get("mcpServers")
+            .expect("mcpServers should be present")
+            .as_array()
+            .expect("mcpServers should be an array");
+        assert!(
+            mcp_servers.is_empty(),
+            "mcpServers should serialize as an empty array"
+        );
+
+        let task_templates = obj
+            .get("taskTemplates")
+            .expect("taskTemplates should be present")
+            .as_array()
+            .expect("taskTemplates should be an array");
+        assert!(
+            task_templates.is_empty(),
+            "taskTemplates should serialize as an empty array"
+        );
+    }
+}
