@@ -199,26 +199,32 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
 - [x] Create backend-owned DTOs for `project_recent_list`.
   - Owner: (proposed) `crates/ralph-backend/src/project_contract.rs` (new).
   - Acceptance: `just types-check` exports the DTOs exactly once.
-- [ ] Create backend-owned DTOs for `project_scan`.
+- [x] Create backend-owned DTOs for `project_scan`.
   - Owner: (proposed) `crates/ralph-backend/src/project_contract.rs` (new).
   - Acceptance: `just types-check` exports the DTOs exactly once.
-- [ ] Create backend-owned DTOs for `project_info_get`.
+- [x] Create backend-owned DTOs for `project_info_get`.
   - Owner: (proposed) `crates/ralph-backend/src/project_contract.rs` (new).
   - Acceptance: `just types-check` exports the DTOs exactly once.
-- [ ] Create backend-owned DTOs for `agent_sessions_*` commands (even if the commands remain Tauri-only).
+- [x] Create backend-owned DTOs for `agent_sessions_*` commands (even if the commands remain Tauri-only).
   - Owner: (proposed) `crates/ralph-backend/src/agent_sessions_contract.rs` (new).
   - Acceptance: `just types-check` exports the DTOs exactly once.
-- [ ] Rewire `src-tauri/src/commands/project.rs` to use backend-owned project DTOs (and delete the local DTOs).
+- [x] Rewire `src-tauri/src/commands/project.rs` to use backend-owned project DTOs (and delete the local DTOs).
   - Owner: `src-tauri/src/commands/project.rs`.
   - Acceptance: `rg \"#\\[ipc_type\\]\" src-tauri/src/commands/project.rs` returns no project DTOs that are supposed to live in backend.
-- [ ] Rewire `src-tauri/src/commands/agent_sessions.rs` to use backend-owned agent session DTOs (and delete the local DTOs).
+- [x] Rewire `src-tauri/src/commands/agent_sessions.rs` to use backend-owned agent session DTOs (and delete the local DTOs).
   - Owner: `src-tauri/src/commands/agent_sessions.rs`.
   - Acceptance: `rg \"#\\[ipc_type\\]\" src-tauri/src/commands/agent_sessions.rs` returns no DTOs that are supposed to live in backend.
 
 ### 3.3 Strict Decode Policy (Remote)
-- [ ] Decision: strict JSON decode policy for all remote-exposed DTOs.
+- [x] Decision: strict JSON decode policy for all remote-exposed DTOs.
   - Owner: `.docs/077_IPC_SWAP_READINESS_CHECKLIST.md`.
   - Acceptance: policy is written down, including what must use `deny_unknown_fields`.
+
+#### Strict JSON Decode Policy (Remote-Exposed DTOs)
+- Default: every DTO that is deserialized across a transport boundary (remote RPC args, RPC results, remote events) **must** use `#[serde(deny_unknown_fields)]`.
+- `#[serde(default)]` is only allowed when the field is truly optional for forward-compat, and its absence is semantically meaningful. It must not be used to mask missing required fields.
+- Required collections must serialize as arrays even when empty; do not use `skip_serializing_if = "Vec::is_empty"` for required wire fields.
+- Envelopes (`RemoteWireFrame`, `RemoteEventFrame`) must remain strict; unknown tags/fields are protocol errors and must hard-fail.
 - [x] Remote transport envelopes decode strictly (unknown fields hard-fail).
   - Owner: `crates/ralph-contracts/src/transport.rs`.
   - Acceptance: `cargo test -p ralph-contracts` (tests cover unknown tags/fields).
@@ -326,20 +332,41 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
 - [x] `McpServerConfig` has a serialization-shape test for `args` and `env`.
   - Owner: `crates/sqlite-db/src/types.rs`.
   - Acceptance: `cargo test -p sqlite-db`.
-- [ ] Add serialization-shape test for `DisciplineConfig` required arrays (`skills`, `mcpServers`, `taskTemplates`).
+- [x] Add serialization-shape test for `DisciplineConfig` required arrays (`skills`, `mcpServers`, `taskTemplates`).
   - Owner: `crates/ralph-backend/src/disciplines_contract.rs`.
   - Acceptance: `cargo test -p ralph-backend`.
-- [ ] Add serialization-shape test for `SubsystemData.comments` required array.
+- [x] Add serialization-shape test for `SubsystemData.comments` required array.
   - Owner: `crates/ralph-backend/src/subsystems_contract.rs`.
   - Acceptance: `cargo test -p ralph-backend`.
-- [ ] Inventory `skip_serializing_if = \"Vec::is_empty\"` / `HashMap::is_empty` usages in any `#[ipc_type]` DTOs.
+- [x] Inventory `skip_serializing_if = \"Vec::is_empty\"` / `HashMap::is_empty` usages in any `#[ipc_type]` DTOs.
   - Owner: `.docs/077_IPC_SWAP_READINESS_CHECKLIST.md`.
   - Acceptance: this section contains an explicit list of `rg` hits (file + line) and whether each field is required vs optional.
 
+#### `skip_serializing_if = "Vec::is_empty"` / `HashMap::is_empty` inventory
+- Command: `rg -n 'skip_serializing_if = \"(Vec|HashMap)::is_empty\"' crates src-tauri`
+- Hits:
+  - `crates/sqlite-db/src/types.rs:370`: `Subsystem.comments` (not `#[ipc_type]`; optional/omitted-when-empty shape)
+  - `crates/sqlite-db/src/types.rs:424`: `Discipline.skills` (not `#[ipc_type]`; optional/omitted-when-empty shape)
+  - `crates/sqlite-db/src/types.rs:428`: `Discipline.mcp_servers` (not `#[ipc_type]`; optional/omitted-when-empty shape)
+- Result: no `skip_serializing_if = "Vec::is_empty"` / `HashMap::is_empty` usages found in `#[ipc_type]` DTOs.
+
 ### 3.5 64-bit Integers On The Wire
-- [ ] Decision: standardize 64-bit integer representation (JSON number vs string) for all wire fields that can exceed 2^53.
+- [x] Decision: standardize 64-bit integer representation (JSON number vs string) for all wire fields that can exceed 2^53.
   - Owner: `.docs/077_IPC_SWAP_READINESS_CHECKLIST.md`.
   - Acceptance: decision recorded + list of impacted fields.
+
+#### Decision
+- v1 policy: keep 64-bit integers serialized as JSON numbers, but treat values above `Number.MAX_SAFE_INTEGER` as contract violations.
+- Callers must hard-fail when asked to send an out-of-range value; decoders must not silently truncate.
+- This is a stopgap until we migrate specific fields to string encoding (no compat shims).
+
+Impacted fields (current `u64` on Rust side, `bigint` in TS bindings):
+- `RemoteWireFrame.id`
+- Terminal stream sequencing:
+  - `PtyOutputEvent.seq`
+  - `TerminalBridgeReplayOutputArgs.afterSeq`
+  - `TerminalBridgeReplayOutputChunk.seq`
+  - `TerminalBridgeReplayOutputResult.truncatedUntilSeq`
 - [ ] Implement chosen encoding for `RemoteWireFrame.id`.
   - Owner: `crates/ralph-contracts/src/transport.rs`.
   - Acceptance: rust tests + TS bindings match.
@@ -350,30 +377,34 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
 ## 4. Error Model (Must-Have)
 
 ### 4.1 Error Envelope Decision
-- [ ] Decision: keep IPC errors as `Result<T, String>` or migrate to a structured error payload.
+- [x] Decision: keep IPC errors as `Result<T, String>` or migrate to a structured error payload.
   - Owner: `.docs/077_IPC_SWAP_READINESS_CHECKLIST.md`.
   - Acceptance: decision recorded + migration plan (no compat shims for structured errors).
+
+#### Decision
+- Keep IPC errors as `Result<T, String>` (coded `[R-XXXX] ...`) for v1 swap readiness.
+- Defer structured errors until after `ralphd` parity is stable; migration will be all-or-nothing (no compat shims).
 
 ### 4.2 Minimum Standard (While Errors Are Strings)
 - [x] Standard string error format is machine-parsable (stable error code + message).
   - Owner: `crates/ralph-errors` (`[R-XXXX] message` + `parse_ralph_error`).
   - Acceptance: `cargo test -p ralph-errors`.
-- [ ] Enforce coded errors in Tauri project commands (no raw `format!(...)` / `e.to_string()` on error paths).
+- [x] Enforce coded errors in Tauri project commands (no raw `format!(...)` / `e.to_string()` on error paths).
   - Owner: `src-tauri/src/commands/project.rs`.
   - Acceptance: `rg \"Err\\(.*to_string\\(\\)\\)|map_err\\(\\|e\\| e\\.to_string\\(\\)\\)\" src-tauri/src/commands/project.rs` has no hits.
-- [ ] Enforce coded errors in Tauri tasks commands.
+- [x] Enforce coded errors in Tauri tasks commands.
   - Owner: `src-tauri/src/commands/tasks.rs`.
   - Acceptance: `rg \"Err\\(.*to_string\\(\\)\\)|map_err\\(\\|e\\| e\\.to_string\\(\\)\\)\" src-tauri/src/commands/tasks.rs` has no hits.
-- [ ] Enforce coded errors in Tauri subsystems/disciplines commands.
+- [x] Enforce coded errors in Tauri subsystems/disciplines commands.
   - Owner: `src-tauri/src/commands/subsystems.rs`.
   - Acceptance: `rg \"Err\\(.*to_string\\(\\)\\)|map_err\\(\\|e\\| e\\.to_string\\(\\)\\)\" src-tauri/src/commands/subsystems.rs` has no hits.
-- [ ] Enforce coded errors in Tauri prompt builder commands.
+- [x] Enforce coded errors in Tauri prompt builder commands.
   - Owner: `src-tauri/src/commands/prompts.rs`.
   - Acceptance: `rg \"Err\\(.*to_string\\(\\)\\)|map_err\\(\\|e\\| e\\.to_string\\(\\)\\)\" src-tauri/src/commands/prompts.rs` has no hits.
-- [ ] Enforce coded errors in Tauri terminal bridge commands.
+- [x] Enforce coded errors in Tauri terminal bridge commands.
   - Owner: `src-tauri/src/commands/terminal_bridge.rs`.
   - Acceptance: `rg \"Err\\(.*to_string\\(\\)\\)|map_err\\(\\|e\\| e\\.to_string\\(\\)\\)\" src-tauri/src/commands/terminal_bridge.rs` has no hits.
-- [ ] Enforce coded errors in `ralphd` RPC server.
+- [x] Enforce coded errors in `ralphd` RPC server.
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `rg \"RpcErr\" -n src-daemon/src/main.rs` shows coded `[R-XXXX]` strings only.
 
@@ -398,7 +429,7 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
 - [x] Direct `@tauri-apps/api/*` usage is banned outside the boundary modules.
   - Owner: `src/lib/tauri/`.
   - Acceptance: `rg \"@tauri-apps/api/\" src | rg -v \"src/lib/tauri/(invoke|events|window)\\.ts\"` has no hits.
-- [ ] Add a CI/test gate that fails if forbidden `@tauri-apps/api/*` imports are introduced outside boundary modules.
+- [x] Add a CI/test gate that fails if forbidden `@tauri-apps/api/*` imports are introduced outside boundary modules.
   - Owner: (proposed) `src/lib/tauri/tauriImportBoundary.test.ts` (new).
   - Acceptance: `bun test:run src/lib/tauri/tauriImportBoundary.test.ts`.
 
@@ -411,14 +442,14 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
 - [x] Project validate/initialize logic is backend-owned and reused by Tauri + `ralphd`.
   - Owner: `crates/ralph-backend/src/project.rs`.
   - Acceptance: `cargo test -p ralph-backend`.
-- [ ] Project recent-list logic is backend-owned and reused by Tauri + `ralphd`.
-  - Owner: (proposed) `crates/ralph-backend/src/project_scan.rs` (or similar).
+- [x] Project recent-list logic is backend-owned and reused by Tauri + `ralphd`.
+  - Owner: `crates/ralph-backend/src/project_scan.rs`.
   - Acceptance: `cargo test -p ralph-backend`.
-- [ ] Project scanning logic is backend-owned and reused by Tauri + `ralphd`.
-  - Owner: (proposed) `crates/ralph-backend/src/project_scan.rs` (or similar).
+- [x] Project scanning logic is backend-owned and reused by Tauri + `ralphd`.
+  - Owner: `crates/ralph-backend/src/project_scan.rs`.
   - Acceptance: `cargo test -p ralph-backend`.
-- [ ] Project info read logic is backend-owned and reused by Tauri + `ralphd`.
-  - Owner: (proposed) `crates/ralph-backend/src/project_scan.rs` (or similar).
+- [x] Project info read logic is backend-owned and reused by Tauri + `ralphd`.
+  - Owner: `crates/ralph-backend/src/project_scan.rs`.
   - Acceptance: `cargo test -p ralph-backend`.
 - [x] Tasks domain logic is backend-owned and reused by Tauri + `ralphd`.
   - Owner: `crates/ralph-backend/src/tasks.rs`.
@@ -441,10 +472,10 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
 - [x] Terminal bridge adapter is backend-owned (invoke entrypoints to the terminal manager).
   - Owner: `crates/ralph-backend/src/terminal_bridge.rs`.
   - Acceptance: `cargo test -p ralph-backend`.
-- [ ] Agent sessions domain logic is backend-owned (service + DTOs) even if the UI-only commands remain local.
-  - Owner: (proposed) `crates/ralph-backend/src/agent_sessions.rs`.
+- [x] Agent sessions domain logic is backend-owned (service + DTOs) even if the UI-only commands remain local.
+  - Owner: `crates/ralph-backend/src/agent_sessions_service.rs`.
   - Acceptance: `cargo test -p ralph-backend`.
-- [ ] API server logic is transport-agnostic and does not hard-depend on Tauri runtime types.
+- [x] API server logic is transport-agnostic and does not hard-depend on Tauri runtime types.
   - Owner: `src-tauri/src/api_server.rs`.
   - Acceptance: `cargo test --manifest-path src-tauri/Cargo.toml`.
 
@@ -458,13 +489,13 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
 - [ ] `ralphd` `EventSink` implementation broadcasts events over WS as `RemoteWireFrame::Event`.
   - Owner: (proposed) `src-daemon/src/event_sink.rs` (new).
   - Acceptance: remote events arrive in Tauri remote-mode and re-emit locally.
-- [ ] Replace `api-server-error` direct `AppHandle.emit(...)` with the sink interface.
+- [x] Replace `api-server-error` direct `AppHandle.emit(...)` with the sink interface.
   - Owner: `src-tauri/src/api_server.rs`.
   - Acceptance: `rg \"api-server-error\" -n src-tauri/src/api_server.rs` has no hits.
-- [ ] Replace `signal-added` direct `AppHandle.emit(...)` with the sink interface.
+- [x] Replace `signal-added` direct `AppHandle.emit(...)` with the sink interface.
   - Owner: `src-tauri/src/api_server.rs`.
   - Acceptance: `rg \"signal-added\" -n src-tauri/src/api_server.rs` has no hits.
-- [ ] Verify no direct `AppHandle.emit(...)` usage remains outside the sink implementation.
+- [x] Verify no direct `AppHandle.emit(...)` usage remains outside the sink implementation.
   - Owner: `src-tauri/src/event_sink.rs`.
   - Acceptance: `rg \"\\.emit\\(\" src-tauri/src | rg -v \"src-tauri/src/event_sink\\.rs\"` has no hits.
 
@@ -507,13 +538,13 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
 - [x] RPC `project_initialize`.
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `cargo test -p ralphd` (RPC smoke tests).
-- [ ] RPC `project_recent_list`.
+- [x] RPC `project_recent_list`.
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `cargo test -p ralphd` (RPC smoke tests).
-- [ ] RPC `project_scan`.
+- [x] RPC `project_scan`.
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `cargo test -p ralphd` (RPC smoke tests).
-- [ ] RPC `project_info_get`.
+- [x] RPC `project_info_get`.
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `cargo test -p ralphd` (RPC smoke tests).
 - [x] RPC `tasks_get`.
@@ -657,13 +688,13 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
 - [ ] Event stream: emit `terminal:closed`.
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `cargo test -p ralphd` (event smoke tests).
-- [ ] Add `src-daemon` integration test harness for WS `RemoteWireFrame` roundtrips.
+- [x] Add `src-daemon` integration test harness for WS `RemoteWireFrame` roundtrips.
   - Owner: (proposed) `src-daemon/tests/ws_roundtrip_test.rs` (new).
   - Acceptance: `cargo test -p ralphd --test ws_roundtrip_test`.
-- [ ] Add RPC smoke test: `protocol_version_get` yields `RpcOk`.
+- [x] Add RPC smoke test: `protocol_version_get` yields `RpcOk`.
   - Owner: (proposed) `src-daemon/tests/ws_rpc_smoke_test.rs` (new).
   - Acceptance: `cargo test -p ralphd --test ws_rpc_smoke_test`.
-- [ ] Add RPC smoke test: unknown command yields `RpcErr`.
+- [x] Add RPC smoke test: unknown command yields `RpcErr`.
   - Owner: (proposed) `src-daemon/tests/ws_rpc_smoke_test.rs` (new).
   - Acceptance: `cargo test -p ralphd --test ws_rpc_smoke_test`.
 - [ ] Add protocol smoke test: client-sent non-request frames hard-fail.
@@ -674,16 +705,16 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
   - Acceptance: `cargo test -p ralphd --test ws_event_smoke_test`.
 
 ### 6.5 Tauri Commands Must Stay Thin (Adapter-Only)
-- [ ] Extract project scanning logic out of the Tauri command adapter.
+- [x] Extract project scanning logic out of the Tauri command adapter.
   - Owner: `src-tauri/src/commands/project.rs`.
   - Acceptance: `rg \"fn scan_recursive\" -n src-tauri/src/commands/project.rs` has no hits.
-- [ ] Extract recent-projects persistence policy out of the Tauri command adapter (so `ralphd` can serve it too).
+- [x] Extract recent-projects persistence policy out of the Tauri command adapter (so `ralphd` can serve it too).
   - Owner: `src-tauri/src/commands/project.rs`.
   - Acceptance: `rg \"recent_projects\" -n src-tauri/src/commands/project.rs` has no hits.
-- [ ] Extract project info read/mapping out of the Tauri command adapter (so `ralphd` can serve it too).
+- [x] Extract project info read/mapping out of the Tauri command adapter (so `ralphd` can serve it too).
   - Owner: `src-tauri/src/commands/project.rs`.
   - Acceptance: `rg \"db\\.get_project_info\\(\" -n src-tauri/src/commands/project.rs` has no hits.
-- [ ] Move agent-sessions domain logic out of the Tauri command adapter (so remote-mode does not depend on direct DB access).
+- [x] Move agent-sessions domain logic out of the Tauri command adapter (so remote-mode does not depend on direct DB access).
   - Owner: `src-tauri/src/commands/agent_sessions.rs`.
   - Acceptance: `rg \"\\.db\\(\" -n src-tauri/src/commands/agent_sessions.rs` has no hits.
 - [x] Remote connect/disconnect/status commands are control-plane only (no domain logic).
@@ -698,23 +729,42 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
   - Acceptance: backend tests pass.
 
 ### 7.2 Contract Documentation (Not Just Implementation)
-- [ ] Document `sessionId` uniqueness rules.
+- [x] Document `sessionId` uniqueness rules.
   - Owner: `.docs/077_IPC_SWAP_READINESS_CHECKLIST.md`.
   - Acceptance: a dedicated “Terminal Contract” subsection exists and includes `sessionId` rules.
-- [ ] Document `seq` monotonicity rules.
+- [x] Document `seq` monotonicity rules.
   - Owner: `.docs/077_IPC_SWAP_READINESS_CHECKLIST.md`.
   - Acceptance: a dedicated “Terminal Contract” subsection exists and includes `seq` rules.
-- [ ] Document truncation signaling (`truncated`, `truncatedUntilSeq`).
+- [x] Document truncation signaling (`truncated`, `truncatedUntilSeq`).
   - Owner: `.docs/077_IPC_SWAP_READINESS_CHECKLIST.md`.
   - Acceptance: a dedicated “Terminal Contract” subsection exists and includes truncation signaling.
-- [ ] Document replay limits + ordering guarantees.
+- [x] Document replay limits + ordering guarantees.
   - Owner: `.docs/077_IPC_SWAP_READINESS_CHECKLIST.md`.
   - Acceptance: a dedicated “Terminal Contract” subsection exists and includes replay limits/ordering.
 
+#### Terminal Contract (Canonical)
+- `sessionId` uniqueness:
+  - The controller that starts a terminal session chooses `sessionId`.
+  - `sessionId` must be unique among currently-live sessions; attempting to start a session with an already-live `sessionId` must hard-fail (no implicit takeover).
+  - `sessionId` identity is stable for the lifetime of the session and is used as the join key for all output/closed events.
+- `seq` monotonicity:
+  - Output is a per-session ordered stream; each emitted chunk increments `seq` for that `sessionId`.
+  - `seq` is strictly increasing for a given `sessionId` (no duplicates, no reordering).
+  - `seq` is not required to be contiguous (gaps are allowed only if the backend explicitly signals truncation).
+- Truncation signaling:
+  - Replay results may set `truncated=true` when earlier output is no longer available.
+  - When `truncated=true`, `truncatedUntilSeq` communicates the earliest still-available `seq` (any `seq < truncatedUntilSeq` is permanently unavailable for replay).
+- Replay limits + ordering:
+  - Replay returns chunks in ascending `seq` order.
+  - Replay is best-effort bounded by `limit`; `hasMore=true` indicates there is more output after the last returned chunk.
+
 ### 7.3 Multi-Client Attach Policy
-- [ ] Decision: single-controller vs multi-attach policy (v1 likely: hard-fail extra controllers).
+- [x] Decision: single-controller vs multi-attach policy (v1 likely: hard-fail extra controllers).
   - Owner: `.docs/077_IPC_SWAP_READINESS_CHECKLIST.md`.
   - Acceptance: decision recorded.
+
+#### Decision
+- v1: single-controller. Any attempt to attach a second controller to an active `sessionId` must hard-fail.
 - [ ] Implement chosen attach policy (hard-fail path must be explicit).
   - Owner: `crates/ralph-backend/src/terminal/manager.rs`.
   - Acceptance: unit tests cover rejection behavior.
@@ -724,7 +774,7 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
 Canonical checklist owner: this section (moved from `.docs/067_FRONTEND_LOGIC_BACKEND_AUDIT_CHECKLIST.md` to avoid duplication).
 
 ### 8.1 Prompt Builder Domain Ownership
-- [ ] Decision: canonical owner of prompt-builder section metadata is backend.
+- [x] Decision: canonical owner of prompt-builder section metadata is backend.
   - Owner: `.docs/077_IPC_SWAP_READINESS_CHECKLIST.md`.
   - Acceptance: decision recorded (including how frontend consumes it).
 - [ ] Add `enrichment_instructions` section metadata entry to the frontend registry (stopgap until duplication is eliminated).
@@ -733,12 +783,16 @@ Canonical checklist owner: this section (moved from `.docs/067_FRONTEND_LOGIC_BA
 - [ ] Fix backend section metadata category naming (`feature` vs `subsystem`) to match frontend taxonomy (or document canonical mapping).
   - Owner: `crates/prompt-builder/src/sections/metadata.rs`.
   - Acceptance: a unit test (or doc note) proves the mapping is stable and intentional.
-- [ ] Decision: canonical owner of prompt-builder recipe definitions is backend.
+- [x] Decision: canonical owner of prompt-builder recipe definitions is backend.
   - Owner: `.docs/077_IPC_SWAP_READINESS_CHECKLIST.md`.
   - Acceptance: decision recorded (including how frontend consumes it).
-- [ ] Decision: canonical owner of default instruction bodies is backend.
+- [x] Decision: canonical owner of default instruction bodies is backend.
   - Owner: `.docs/077_IPC_SWAP_READINESS_CHECKLIST.md`.
   - Acceptance: decision recorded (including how frontend consumes overrides).
+
+#### Decision Notes
+- Canonical owner for prompt-builder section metadata/recipes/default instruction bodies is backend.
+- Frontend consumes backend-owned registries by rendering and allowing explicit overrides only (no parallel source-of-truth).
 
 ### 8.2 Prompt Preview Assembly
 - [ ] Backend preview is authoritative: it returns final `sections` + `fullPrompt` exactly as used (including user input insertion).
@@ -760,9 +814,13 @@ Canonical checklist owner: this section (moved from `.docs/067_FRONTEND_LOGIC_BA
   - Acceptance: doc note (or code comment) explicitly states backend is canonical for normalization/validation.
 
 ### 8.4 Session Launch Resolution Policy
-- [ ] Decision: canonical launch precedence policy (task -> discipline -> user default) is backend-owned.
+- [x] Decision: canonical launch precedence policy (task -> discipline -> user default) is backend-owned.
   - Owner: `.docs/077_IPC_SWAP_READINESS_CHECKLIST.md`.
   - Acceptance: decision recorded.
+
+#### Decision
+- Canonical precedence: `task` overrides `discipline` overrides `user default`.
+- If an override references an unknown agent/model/effort combination, backend must hard-fail (no coercion).
 - [ ] Add backend DTO for resolved launch config + provenance metadata (what won, and why).
   - Owner: (proposed) `crates/ralph-backend/src/terminal/contract.rs`.
   - Acceptance: `just types-check` exports the DTO exactly once.
@@ -825,22 +883,22 @@ Canonical checklist owner: this section (moved from `.docs/067_FRONTEND_LOGIC_BA
 - [ ] When a new frontend-listened event is added, update the TS drift test to match the Rust list.
   - Owner: `src/lib/tauri/eventsContract.test.ts`.
   - Acceptance: `bun test:run src/lib/tauri/eventsContract.test.ts`.
-- [ ] Add serialization-shape tests for high fan-out task DTOs returned by v1 parity RPC.
+- [x] Add serialization-shape tests for high fan-out task DTOs returned by v1 parity RPC.
   - Owner: `crates/sqlite-db/src/types.rs`.
   - Acceptance: `cargo test -p sqlite-db`.
-- [ ] Add serialization-shape tests for high fan-out disciplines DTOs returned by v1 parity RPC.
+- [x] Add serialization-shape tests for high fan-out disciplines DTOs returned by v1 parity RPC.
   - Owner: `crates/ralph-backend/src/disciplines_contract.rs`.
   - Acceptance: `cargo test -p ralph-backend`.
-- [ ] Add serialization-shape tests for high fan-out subsystems DTOs returned by v1 parity RPC.
+- [x] Add serialization-shape tests for high fan-out subsystems DTOs returned by v1 parity RPC.
   - Owner: `crates/ralph-backend/src/subsystems_contract.rs`.
   - Acceptance: `cargo test -p ralph-backend`.
 
 ### 9.4 Single “Contract CI Gate”
-- [ ] Add `just verify-contract` that runs: `types-check`, Rust contract tests, and frontend drift tests.
+- [x] Add `just verify-contract` that runs: `types-check`, Rust contract tests, and frontend drift tests.
   - Owner: `justfile`.
   - Acceptance: `just verify-contract`.
-- [ ] Add CI config that runs `just verify-contract` on every PR.
-  - Owner: (proposed) `.github/workflows/verify.yml` (new).
+- [x] Add CI config that runs `just verify-contract` on every PR.
+  - Owner: `.github/workflows/verify-contract.yml`.
   - Acceptance: CI fails on stale types/snapshots/drift tests.
 
 ## 10. “Ready For Swap” Definition Of Done
