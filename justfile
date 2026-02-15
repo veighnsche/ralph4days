@@ -104,6 +104,10 @@ check-all: lint fmt-check
 # Quick correctness gate (lint + format + generated types + contract drift tests)
 verify: check-all types-check contract-tests
 
+# Contract-only gate that is CI-friendly (no GUI runtime).
+verify-contract: types-check contract-tests
+    bun test:run src/lib/terminal/terminalBridgeContract.test.ts src/lib/tauri/eventsContract.test.ts src/lib/tauri/tauriImportBoundary.test.ts
+
 # Minimal test surface that catches IPC/type/contract drift without running the full test suite.
 contract-tests:
     cargo test -p ralph-contracts
