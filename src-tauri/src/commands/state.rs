@@ -1,6 +1,6 @@
-use crate::terminal::PTYManager;
 use crate::xdg::XdgDirs;
 use prompt_builder::CodebaseSnapshot;
+use ralph_backend::terminal::PTYManager;
 use ralph_errors::{codes, err_string, RalphResult, RalphResultExt};
 use sqlite_db::SqliteDb;
 use std::path::PathBuf;

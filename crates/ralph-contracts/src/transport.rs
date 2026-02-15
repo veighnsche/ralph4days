@@ -385,7 +385,9 @@ mod tests {
             "id": 1,
             "error": {
                 "code": 8100,
-                "message": "boom"
+                "message": "boom",
+                "location": { "file": "remote-wire-frame.test", "line": 1, "column": 1 },
+                "context": []
             }
         });
         let frame: RemoteWireFrame = serde_json::from_value(json).unwrap();

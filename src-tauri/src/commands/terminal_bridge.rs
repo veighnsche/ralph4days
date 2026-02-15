@@ -1,7 +1,7 @@
 use super::remote_proxy::{remote_invoke_args, remote_invoke_no_args};
 use super::state::{AppState, CommandContext};
 use crate::event_sink::TauriEventSink;
-use crate::terminal::{
+use ralph_backend::terminal::{
     TerminalBridgeEmitSystemMessageArgs, TerminalBridgeListModelFormTreeResult,
     TerminalBridgeReplayOutputArgs, TerminalBridgeReplayOutputResult, TerminalBridgeResizeArgs,
     TerminalBridgeResolveTaskLaunchArgs, TerminalBridgeResolvedLaunchConfig,

@@ -1,7 +1,6 @@
-use ralph4days_lib::ipc_contract::{
-    AgentSessionsByIdArgs, ProjectInfo, ProjectScanArgs, RalphProject, RemoteConnectResult,
-};
-use ralph_backend::project_contract::RecentProject;
+use ralph_backend::agent_sessions_contract::AgentSessionsByIdArgs;
+use ralph_backend::project_contract::{ProjectInfo, ProjectScanArgs, RalphProject, RecentProject};
+use ralph_contracts::remote::RemoteConnectResult;
 use serde::de::DeserializeOwned;
 
 #[test]

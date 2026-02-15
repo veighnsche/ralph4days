@@ -1,47 +1,80 @@
 import { invoke } from '@tauri-apps/api/core'
-import type { RalphError } from '@/types/generated'
+import type { RalphError, RalphErrorContextItem, RalphErrorLocation } from '@/types/generated'
 
 const INTERNAL_ERROR_CODE = 8100
 
+function isRalphErrorLocationLike(value: unknown): value is RalphErrorLocation {
+  if (value == null || typeof value !== 'object') return false
+  const obj = value as { file?: unknown; line?: unknown; column?: unknown }
+  return (
+    typeof obj.file === 'string' &&
+    typeof obj.line === 'number' &&
+    Number.isInteger(obj.line) &&
+    typeof obj.column === 'number' &&
+    Number.isInteger(obj.column)
+  )
+}
+
+function isRalphErrorContextLike(value: unknown): value is RalphErrorContextItem[] {
+  if (!Array.isArray(value)) return false
+  for (const item of value) {
+    if (item == null || typeof item !== 'object') return false
+    const obj = item as { key?: unknown; value?: unknown }
+    if (typeof obj.key !== 'string') return false
+  }
+  return true
+}
+
 function isRalphErrorLike(value: unknown): value is RalphError {
   if (value == null || typeof value !== 'object') return false
-  const obj = value as { code?: unknown; message?: unknown }
-  return typeof obj.code === 'number' && Number.isInteger(obj.code) && typeof obj.message === 'string'
+  const obj = value as { code?: unknown; message?: unknown; location?: unknown; context?: unknown; hint?: unknown }
+  if (typeof obj.code !== 'number' || !Number.isInteger(obj.code)) return false
+  if (typeof obj.message !== 'string') return false
+  if (!isRalphErrorLocationLike(obj.location)) return false
+  if (!isRalphErrorContextLike(obj.context)) return false
+  if (obj.hint !== undefined && typeof obj.hint !== 'string') return false
+  return true
 }
 
-function parseRalphErrorString(value: string): RalphError | null {
-  const match = value.match(/^\[R-(\d{4})\](?:\s(.*))?$/s)
-  if (!match) return null
-  const code = Number(match[1])
-  if (!Number.isInteger(code)) return null
-  return { code, message: match[2] ?? '' }
+function frontendLocation(): RalphErrorLocation {
+  return { file: '<frontend>', line: 0, column: 0 }
 }
 
-function coerceInvokeError(command: string, err: unknown): RalphError {
-  if (isRalphErrorLike(err)) return err
+function attachInvokeContext(command: string, args: Record<string, unknown> | undefined, err: RalphError): RalphError {
+  const extra: RalphErrorContextItem[] = [{ key: 'command', value: command }]
+  if (args !== undefined) extra.push({ key: 'args', value: args })
+  return { ...err, context: [...err.context, ...extra] }
+}
+
+function internalInvokeError(command: string, args: Record<string, unknown> | undefined, raw: unknown): RalphError {
+  return {
+    code: INTERNAL_ERROR_CODE,
+    message: `ralph invariant violated: uncoded IPC error for '${command}': ${String(raw)}`,
+    location: frontendLocation(),
+    context: [
+      { key: 'command', value: command },
+      ...(args === undefined ? [] : [{ key: 'args', value: args }]),
+      { key: 'raw', value: String(raw) }
+    ]
+  }
+}
+
+function coerceInvokeError(command: string, args: Record<string, unknown> | undefined, err: unknown): RalphError {
+  if (isRalphErrorLike(err)) return attachInvokeContext(command, args, err)
 
   if (typeof err === 'string') {
-    return (
-      parseRalphErrorString(err) ?? {
-        code: INTERNAL_ERROR_CODE,
-        message: `ralph invariant violated: uncoded IPC error for '${command}': ${err}`
-      }
-    )
+    return internalInvokeError(command, args, err)
   }
 
   if (err instanceof Error) {
-    return (
-      parseRalphErrorString(err.message) ?? {
-        code: INTERNAL_ERROR_CODE,
-        message: `ralph invariant violated: uncoded IPC error for '${command}': ${err.message}`
-      }
-    )
+    const base = internalInvokeError(command, args, err.message)
+    return {
+      ...base,
+      context: [...base.context, ...(err.stack == null ? [] : [{ key: 'stack', value: err.stack }])]
+    }
   }
 
-  return {
-    code: INTERNAL_ERROR_CODE,
-    message: `ralph invariant violated: uncoded IPC error for '${command}': ${String(err)}`
-  }
+  return internalInvokeError(command, args, err)
 }
 
 export class RalphIpcError extends Error {
@@ -75,6 +108,6 @@ export async function tauriInvoke<TResult>(command: string, args?: Record<string
     }
     return await invoke<TResult>(command, { args })
   } catch (err) {
-    throw new RalphIpcError(command, coerceInvokeError(command, err), err)
+    throw new RalphIpcError(command, coerceInvokeError(command, args, err), err)
   }
 }

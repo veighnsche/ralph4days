@@ -9,6 +9,7 @@ use std::time::Duration;
 use tokio::sync::{mpsc, oneshot, Mutex};
 use tokio_tungstenite::tungstenite::Message;
 
+#[track_caller]
 fn remote_err(message: impl Into<String>) -> RalphError {
     // Dedicated transport/remote error codes don't exist yet; use INTERNAL and fail loudly.
     err_string(codes::INTERNAL, message)

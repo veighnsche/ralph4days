@@ -51,7 +51,7 @@ pub fn project_lock_validated(state: &AppState, path: String) -> RalphResult<()>
         canonical_path.to_string_lossy().to_string(),
         project_name,
     ) {
-        crate::diagnostics::emit_warning(
+        ralph_backend::diagnostics::emit_warning(
             "recent-projects",
             "write-failed",
             &format!("Failed to persist recent projects: {error}"),

@@ -1,10 +1,7 @@
 mod api_server;
 mod commands;
-mod diagnostics;
 mod event_sink;
-pub mod ipc_contract;
 mod remote;
-mod terminal;
 mod xdg;
 
 use commands::AppState;
@@ -31,11 +28,13 @@ fn init_tracing() {
 }
 
 pub fn list_provider_models(agent: Option<&str>) -> Vec<String> {
-    terminal::providers::list_models_for_agent(agent)
+    ralph_backend::terminal::providers::list_models_for_agent(agent)
 }
 
-pub fn list_provider_model_entries(agent: Option<&str>) -> Vec<terminal::providers::ModelEntry> {
-    terminal::providers::list_model_entries_for_agent(agent)
+pub fn list_provider_model_entries(
+    agent: Option<&str>,
+) -> Vec<ralph_backend::terminal::providers::ModelEntry> {
+    ralph_backend::terminal::providers::list_model_entries_for_agent(agent)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -65,7 +64,7 @@ pub fn run() {
             let app_handle = app.handle().clone();
             let sink: std::sync::Arc<dyn ralph_contracts::transport::EventSink> =
                 std::sync::Arc::new(event_sink::TauriEventSink::new(app_handle));
-            diagnostics::register_sink(std::sync::Arc::clone(&sink));
+            ralph_backend::diagnostics::register_sink(std::sync::Arc::clone(&sink));
             let state: tauri::State<AppState> = app.state();
             let mut skip_splash = false;
 
@@ -199,7 +198,7 @@ pub fn run() {
             commands::prompts::prompt_builder_config_get,
             commands::prompts::prompt_builder_config_save,
             commands::prompts::prompt_builder_config_delete,
-            commands::protocol::protocol_version_get,
+            commands::protocol_version_get,
             commands::remote::remote_connect,
             commands::remote::remote_disconnect,
             commands::remote::remote_status_get,

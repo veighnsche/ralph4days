@@ -20,27 +20,36 @@ describe('tauriInvoke', () => {
     expect(mockInvoke).toHaveBeenCalledWith('project_lock_set', { args: { path: '/tmp/x' } })
   })
 
-  it('surfaces coded string errors as RalphIpcError', async () => {
+  it('hard-fails coded string errors as INTERNAL RalphIpcError (no compat shim)', async () => {
     mockInvoke.mockRejectedValueOnce('[R-2000] Failed to open database')
 
     const p = tauriInvoke('project_lock_get')
     await expect(p).rejects.toBeInstanceOf(RalphIpcError)
     await expect(p).rejects.toMatchObject({
-      code: 2000,
-      message: '[R-2000] Failed to open database',
-      ralph: { code: 2000, message: 'Failed to open database' }
+      code: 8100,
+      message: expect.stringContaining("uncoded IPC error for 'project_lock_get': [R-2000] Failed to open database")
     })
   })
 
   it('surfaces structured error payloads as RalphIpcError', async () => {
-    mockInvoke.mockRejectedValueOnce({ code: 7000, message: 'Unknown model' })
+    mockInvoke.mockRejectedValueOnce({
+      code: 7000,
+      message: 'Unknown model',
+      location: { file: 'test', line: 1, column: 1 },
+      context: []
+    })
 
     const p = tauriInvoke('terminal_start_session')
     await expect(p).rejects.toBeInstanceOf(RalphIpcError)
     await expect(p).rejects.toMatchObject({
       code: 7000,
       message: '[R-7000] Unknown model',
-      ralph: { code: 7000, message: 'Unknown model' }
+      ralph: {
+        code: 7000,
+        message: 'Unknown model',
+        location: { file: 'test', line: 1, column: 1 },
+        context: [{ key: 'command', value: 'terminal_start_session' }]
+      }
     })
   })
 

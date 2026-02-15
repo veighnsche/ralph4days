@@ -82,11 +82,17 @@ fn contract_suite_remote_event_frames_roundtrip() {
 
 #[test]
 fn contract_suite_structured_error_shape_is_stable() {
-    let err = RalphError {
-        code: codes::INTERNAL,
-        message: "boom".to_owned(),
-    };
-    let json = serde_json::to_value(err).expect("serialize");
+    let err = RalphError::new(codes::INTERNAL, "boom".to_owned());
+    let json = serde_json::to_value(&err).expect("serialize");
     assert_eq!(json["code"], codes::INTERNAL);
     assert_eq!(json["message"], "boom");
+    assert!(json.get("location").is_some());
+    assert!(json["location"]["file"]
+        .as_str()
+        .unwrap()
+        .ends_with("contract_suite_test.rs"));
+    assert!(json["location"]["line"].as_u64().unwrap() > 0);
+    assert!(json["location"]["column"].as_u64().unwrap() > 0);
+    assert!(json["context"].as_array().unwrap().is_empty());
+    assert!(json["hint"].is_null());
 }

@@ -185,7 +185,15 @@ export type PromptPreviewSection = { name: string; content: string }
 export type ProtocolVersionInfo = { protocolVersion: number }
 export type PtyClosedEvent = { sessionId: string; exitCode: number }
 export type PtyOutputEvent = { sessionId: string; seq: number; data: string }
-export type RalphError = { code: number; message: string }
+export type RalphError = {
+  code: number
+  message: string
+  location: RalphErrorLocation
+  context: RalphErrorContextItem[]
+  hint?: string
+}
+export type RalphErrorContextItem = { key: string; value: unknown }
+export type RalphErrorLocation = { file: string; line: number; column: number }
 export type RalphProject = { name: string; path: string }
 export type RecentProject = { path: string; name: string; lastOpened: string }
 export type RemoteConnectArgs = { wsUrl: string }

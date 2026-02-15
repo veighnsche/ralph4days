@@ -1,22 +1,71 @@
 use ralph_macros::ipc_type;
 
 #[ipc_type]
+pub struct RalphErrorLocation {
+    pub file: String,
+    pub line: u32,
+    pub column: u32,
+}
+
+#[ipc_type]
+pub struct RalphErrorContextItem {
+    pub key: String,
+    #[ts(type = "unknown")]
+    pub value: serde_json::Value,
+}
+
+#[ipc_type]
 pub struct RalphError {
     pub code: u16,
     pub message: String,
+    pub location: RalphErrorLocation,
+    pub context: Vec<RalphErrorContextItem>,
+    pub hint: Option<String>,
 }
 
 pub type RalphResult<T> = Result<T, RalphError>;
 
 impl RalphError {
+    #[track_caller]
     pub fn new(code: u16, message: String) -> Self {
-        let err = Self { code, message };
+        let loc = std::panic::Location::caller();
+        let err = Self {
+            code,
+            message,
+            location: RalphErrorLocation {
+                file: loc.file().to_owned(),
+                line: loc.line(),
+                column: loc.column(),
+            },
+            context: Vec::new(),
+            hint: None,
+        };
         tracing::error!(
             error_code = code,
             error_message = %err.message,
+            error_file = %err.location.file,
+            error_line = err.location.line,
+            error_column = err.location.column,
             "Ralph error created"
         );
         err
+    }
+
+    pub fn with_context(
+        mut self,
+        key: impl Into<String>,
+        value: impl Into<serde_json::Value>,
+    ) -> Self {
+        self.context.push(RalphErrorContextItem {
+            key: key.into(),
+            value: value.into(),
+        });
+        self
+    }
+
+    pub fn with_hint(mut self, hint: impl Into<String>) -> Self {
+        self.hint = Some(hint.into());
+        self
     }
 
     pub fn code_category(&self) -> &str {
@@ -34,11 +83,28 @@ impl RalphError {
     }
 
     pub fn github_issue_template(&self) -> String {
+        let mut context = String::new();
+        for item in &self.context {
+            let rendered = match &item.value {
+                serde_json::Value::String(s) => s.clone(),
+                other => other.to_string(),
+            };
+            context.push_str(&format!("- {}: {}\n", item.key, rendered));
+        }
+
+        let hint = self.hint.as_deref().unwrap_or("(none)");
+
         format!(
             "## Error Report
 
 **Error Code:** R-{:04} ({})
 **Message:** {}
+**Location:** {}:{}:{}
+
+**Context:**
+{}
+
+**Hint:** {}
 
 **Environment:**
 - OS: {}
@@ -61,9 +127,54 @@ impl RalphError {
             self.code,
             self.code_category(),
             self.message,
+            self.location.file,
+            self.location.line,
+            self.location.column,
+            if context.is_empty() {
+                "(none)\n".to_owned()
+            } else {
+                context
+            },
+            hint,
             std::env::consts::OS,
             env!("CARGO_PKG_VERSION"),
             self.message
+        )
+    }
+
+    pub fn github_pr_template(&self) -> String {
+        format!(
+            "## Pull Request
+
+**Fixes:** R-{:04}
+
+### Summary
+- What was broken:
+- What changed:
+
+### Error Context (from Ralph)
+- Code: R-{:04} ({})
+- Message: {}
+- Location: {}:{}:{}
+
+### Root Cause
+
+### Changes
+
+### Tests
+- [ ] `just verify`
+- [ ] `just verify-swap` (if remote/IPC touched)
+
+### Failure Posture
+- No new silent fallbacks. Broken invariants still fail loudly.
+",
+            self.code,
+            self.code,
+            self.code_category(),
+            self.message,
+            self.location.file,
+            self.location.line,
+            self.location.column
         )
     }
 }
@@ -79,8 +190,12 @@ pub trait RalphResultExt<T> {
 }
 
 impl<T, E: std::fmt::Display> RalphResultExt<T> for Result<T, E> {
+    #[track_caller]
     fn ralph_err(self, code: u16, msg: &str) -> RalphResult<T> {
-        self.map_err(|e| RalphError::new(code, format!("{msg}: {e}")))
+        self.map_err(|e| {
+            let source = e.to_string();
+            RalphError::new(code, format!("{msg}: {source}")).with_context("source", source)
+        })
     }
 }
 
@@ -95,20 +210,17 @@ macro_rules! ralph_err {
 #[macro_export]
 macro_rules! ralph_map_err {
     ($code:expr, $msg:expr) => {
-        |e| $crate::RalphError::new($code, format!(concat!($msg, ": {}"), e))
+        |e| {
+            let source = e.to_string();
+            $crate::RalphError::new($code, format!(concat!($msg, ": {}"), source))
+                .with_context("source", source)
+        }
     };
 }
 
+#[track_caller]
 pub fn err_string(code: u16, message: impl Into<String>) -> RalphError {
     RalphError::new(code, message.into())
-}
-
-pub fn parse_ralph_error(error_str: &str) -> Option<RalphError> {
-    let s = error_str.strip_prefix("[R-")?;
-    let (code_str, rest) = s.split_once(']')?;
-    let code: u16 = code_str.parse().ok()?;
-    let message = rest.strip_prefix(' ').unwrap_or(rest).to_owned();
-    Some(RalphError { code, message })
 }
 
 pub mod codes {
@@ -135,70 +247,29 @@ mod tests {
 
     #[test]
     fn test_error_display() {
-        let err = RalphError {
-            code: codes::DB_OPEN,
-            message: "Failed to open database".to_owned(),
-        };
+        let err = RalphError::new(codes::DB_OPEN, "Failed to open database".to_owned());
         assert_eq!(err.to_string(), "[R-2000] Failed to open database");
     }
 
     #[test]
     fn test_code_category() {
         assert_eq!(
-            RalphError {
-                code: codes::PROJECT_PATH,
-                message: "test".to_owned()
-            }
-            .code_category(),
+            RalphError::new(codes::PROJECT_PATH, "test".to_owned()).code_category(),
             "PROJECT"
         );
         assert_eq!(
-            RalphError {
-                code: codes::DB_OPEN,
-                message: "test".to_owned()
-            }
-            .code_category(),
+            RalphError::new(codes::DB_OPEN, "test".to_owned()).code_category(),
             "DATABASE"
         );
         assert_eq!(
-            RalphError {
-                code: codes::TERMINAL,
-                message: "test".to_owned()
-            }
-            .code_category(),
+            RalphError::new(codes::TERMINAL, "test".to_owned()).code_category(),
             "TERMINAL"
         );
     }
 
     #[test]
-    fn test_parse_ralph_error() {
-        let err_str = "[R-2000] Failed to open database";
-        let err = parse_ralph_error(err_str).unwrap();
-        assert_eq!(err.code, 2000);
-        assert_eq!(err.message, "Failed to open database");
-
-        let invalid = "Not a ralph error";
-        assert!(parse_ralph_error(invalid).is_none());
-    }
-
-    #[test]
-    fn test_parse_ralph_error_empty_message() {
-        let err = parse_ralph_error("[R-1000]").unwrap();
-        assert_eq!(err.code, 1000);
-        assert_eq!(err.message, "");
-    }
-
-    #[test]
-    fn test_parse_ralph_error_invalid_code() {
-        assert!(parse_ralph_error("[R-abcd] bad").is_none());
-    }
-
-    #[test]
     fn test_github_issue_template() {
-        let err = RalphError {
-            code: codes::DB_OPEN,
-            message: "Failed to open database".to_owned(),
-        };
+        let err = RalphError::new(codes::DB_OPEN, "Failed to open database".to_owned());
         let template = err.github_issue_template();
         assert!(template.contains("R-2000"));
         assert!(template.contains("DATABASE"));
@@ -218,12 +289,20 @@ mod tests {
     #[test]
     fn test_ralph_result_ext_err() {
         let err: Result<i32, String> = Err("disk full".to_owned());
+        let expected_line = line!() + 1;
         let msg = err
             .ralph_err(codes::DB_WRITE, "Failed to write")
             .unwrap_err();
         let rendered = msg.to_string();
         assert!(rendered.contains("[R-2200]"));
         assert!(rendered.contains("Failed to write: disk full"));
+        assert_eq!(msg.location.file, file!());
+        assert_eq!(msg.location.line, expected_line);
+        assert!(msg
+            .context
+            .iter()
+            .any(|i| i.key == "source"
+                && i.value == serde_json::Value::String("disk full".to_owned())));
     }
 
     #[test]
@@ -255,12 +334,18 @@ mod tests {
 
     #[test]
     fn test_serialize() {
-        let err = RalphError {
-            code: codes::DB_OPEN,
-            message: "test".to_owned(),
-        };
-        let json = serde_json::to_string(&err).unwrap();
-        assert!(json.contains("\"code\":2000"));
-        assert!(json.contains("\"message\":\"test\""));
+        let err = RalphError::new(codes::DB_OPEN, "test".to_owned());
+        let json = serde_json::to_value(&err).unwrap();
+        assert_eq!(json["code"], codes::DB_OPEN);
+        assert_eq!(json["message"], "test");
+        assert!(json.get("location").is_some());
+        assert!(json["location"]["file"]
+            .as_str()
+            .unwrap()
+            .ends_with("lib.rs"));
+        assert!(json["location"]["line"].as_u64().unwrap() > 0);
+        assert!(json["location"]["column"].as_u64().unwrap() > 0);
+        assert!(json["context"].as_array().unwrap().is_empty());
+        assert!(json["hint"].is_null());
     }
 }

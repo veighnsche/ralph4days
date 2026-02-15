@@ -2,6 +2,8 @@ import { describe, expectTypeOf, it } from 'vitest'
 import type {
   PtyOutputEvent,
   RalphError,
+  RalphErrorContextItem,
+  RalphErrorLocation,
   RemoteWireFrame,
   TerminalBridgeReplayOutputArgs,
   TerminalBridgeReplayOutputChunk
@@ -24,6 +26,12 @@ describe('IPC Contract Suite (frontend)', () => {
   })
 
   it('surfaces a canonical structured error payload', () => {
-    expectTypeOf<RalphError>().toEqualTypeOf<{ code: number; message: string }>()
+    expectTypeOf<RalphError>().toEqualTypeOf<{
+      code: number
+      message: string
+      location: RalphErrorLocation
+      context: RalphErrorContextItem[]
+      hint?: string
+    }>()
   })
 })

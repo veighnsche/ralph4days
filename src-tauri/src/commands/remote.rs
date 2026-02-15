@@ -1,27 +1,8 @@
 use super::state::AppState;
-use ralph_contracts::protocol::ProtocolVersionInfo;
+use ralph_contracts::remote::{RemoteConnectArgs, RemoteConnectResult, RemoteStatus};
 use ralph_errors::{codes, err_string, RalphResult};
-use ralph_macros::ipc_type;
 use std::sync::Arc;
 use tauri::{AppHandle, State};
-
-#[ipc_type]
-pub struct RemoteConnectArgs {
-    pub ws_url: String,
-}
-
-#[ipc_type]
-pub struct RemoteConnectResult {
-    pub ws_url: String,
-    pub protocol: ProtocolVersionInfo,
-}
-
-#[ipc_type]
-pub struct RemoteStatus {
-    pub connected: bool,
-    pub ws_url: Option<String>,
-    pub protocol: Option<ProtocolVersionInfo>,
-}
 
 #[tauri::command]
 pub async fn remote_connect(
