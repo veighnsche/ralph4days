@@ -1,5 +1,4 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { getCurrentWindow } from '@tauri-apps/api/window'
 import { AlertCircle, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -14,6 +13,7 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { tauriListen } from '@/lib/tauri/events'
 import { BACKEND_DIAGNOSTIC_EVENT } from '@/lib/tauri/eventsContract'
 import { tauriInvoke } from '@/lib/tauri/invoke'
+import { tauriSetWindowTitle } from '@/lib/tauri/window'
 import { type Page, pageRegistry } from '@/pages/pageRegistry'
 import type { BackendDiagnosticEvent } from '@/types/generated'
 import './index.css'
@@ -74,11 +74,9 @@ function App() {
   useEffect(() => {
     if (lockedProject && isTauri) {
       const projectName = lockedProject.split('/').pop() || 'Unknown'
-      getCurrentWindow()
-        .setTitle(`Ralph4days - ${projectName}`)
-        .catch(err => {
-          console.error('Failed to set window title:', err)
-        })
+      tauriSetWindowTitle(`Ralph4days - ${projectName}`).catch(err => {
+        console.error('Failed to set window title:', err)
+      })
     }
   }, [lockedProject])
 
@@ -88,7 +86,7 @@ function App() {
     queryClient.setQueryData(['project_lock_get'], project)
     const projectName = project.split('/').pop() || 'Unknown'
     try {
-      await getCurrentWindow().setTitle(`Ralph4days - ${projectName}`)
+      await tauriSetWindowTitle(`Ralph4days - ${projectName}`)
     } catch (err) {
       console.error('Failed to set window title:', err)
     }
