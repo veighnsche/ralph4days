@@ -191,38 +191,6 @@ impl AppState {
             },
         )
     }
-
-    pub(super) fn generate_mcp_config(
-        &self,
-        mode: &str,
-        project_path: &std::path::Path,
-    ) -> Result<PathBuf, String> {
-        let api_port = *self.api_server_port.lock().err_str(codes::INTERNAL)?;
-        ralph_backend::mcp::generate_mcp_config(
-            &self.db,
-            &self.codebase_snapshot,
-            &self.mcp_dir,
-            api_port,
-            mode,
-            project_path,
-        )
-    }
-
-    pub(super) fn generate_mcp_config_for_task(
-        &self,
-        task_id: u32,
-        project_path: &std::path::Path,
-    ) -> Result<PathBuf, String> {
-        let api_port = *self.api_server_port.lock().err_str(codes::INTERNAL)?;
-        ralph_backend::mcp::generate_mcp_config_for_task(
-            &self.db,
-            &self.codebase_snapshot,
-            &self.mcp_dir,
-            api_port,
-            task_id,
-            project_path,
-        )
-    }
 }
 
 #[allow(dead_code)]

@@ -5,3 +5,4 @@ pub mod prompt_context;
 pub mod session;
 pub mod tasks;
 pub mod terminal;
+pub mod terminal_bridge;

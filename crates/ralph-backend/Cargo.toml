@@ -10,6 +10,7 @@ workspace = true
 
 [dependencies]
 base64 = "0.22"
+chrono = { workspace = true }
 portable-pty = "0.9"
 prompt-builder = { path = "../prompt-builder" }
 ralph-contracts = { workspace = true }
