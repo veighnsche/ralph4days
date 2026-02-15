@@ -3,7 +3,6 @@ mod commands;
 mod diagnostics;
 mod event_sink;
 pub mod ipc_contract;
-mod recent_projects;
 mod remote;
 mod terminal;
 mod xdg;
@@ -64,14 +63,14 @@ pub fn run() {
         .setup(|app| {
             // Start API server for MCP signal communication
             let app_handle = app.handle().clone();
-            diagnostics::register_sink(std::sync::Arc::new(event_sink::TauriEventSink::new(
-                app_handle.clone(),
-            )));
+            let sink: std::sync::Arc<dyn ralph_contracts::transport::EventSink> =
+                std::sync::Arc::new(event_sink::TauriEventSink::new(app_handle));
+            diagnostics::register_sink(std::sync::Arc::clone(&sink));
             let state: tauri::State<AppState> = app.state();
             let mut skip_splash = false;
 
             tauri::async_runtime::block_on(async {
-                match api_server::start_api_server(app_handle).await {
+                match api_server::start_api_server(sink).await {
                     Ok(port) => {
                         *state.api_server_port.lock().unwrap() = Some(port);
                         tracing::info!("API server started on port {}", port);

@@ -1,5 +1,5 @@
 use ralph4days_lib::ipc_contract::{
-    AgentSessionsByIdArgs, ProjectInfo, ProjectScanArgs, RalphProject,
+    AgentSessionsByIdArgs, ProjectInfo, ProjectScanArgs, RalphProject, RemoteConnectResult,
 };
 use ralph_backend::project_contract::RecentProject;
 use serde::de::DeserializeOwned;
@@ -29,6 +29,11 @@ fn strict_decode_rejects_unknown_fields_in_request_and_result_dtos() {
     assert_rejects_unknown_fields::<ProjectInfo>(
         serde_json::json!({ "title": "t", "description": null, "created": null, "unknown": 1 }),
     );
+    assert_rejects_unknown_fields::<RemoteConnectResult>(serde_json::json!({
+        "wsUrl": "ws://localhost:1234",
+        "protocol": { "protocolVersion": 1 },
+        "unknown": 1
+    }));
 
     // ralph-backend result DTO
     assert_rejects_unknown_fields::<RecentProject>(serde_json::json!({

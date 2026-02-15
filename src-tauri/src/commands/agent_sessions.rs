@@ -1,15 +1,8 @@
 use super::remote_proxy::{remote_invoke_args, remote_invoke_no_args};
-use super::state::{AppState, CommandContext};
-use ralph_macros::ipc_type;
-use serde::{Deserialize, Serialize};
+use super::state::{with_db, AppState};
+use ralph_backend::agent_sessions_contract::AgentSessionsByIdArgs;
+use ralph_backend::agent_sessions_service;
 use tauri::State;
-
-#[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct AgentSessionsByIdArgs {
-    pub id: String,
-}
 
 #[tauri::command]
 pub async fn agent_sessions_create_human(
@@ -20,7 +13,9 @@ pub async fn agent_sessions_create_human(
         return remote_invoke_args(&rpc, "agent_sessions_create_human", args).await;
     }
 
-    CommandContext::from_tauri_state(&state).db(|db| db.create_human_agent_session(args))
+    with_db(&state, |db| {
+        agent_sessions_service::agent_sessions_create_human(db, args)
+    })
 }
 
 #[tauri::command]
@@ -32,7 +27,9 @@ pub async fn agent_sessions_update_human(
         return remote_invoke_args(&rpc, "agent_sessions_update_human", args).await;
     }
 
-    CommandContext::from_tauri_state(&state).db(|db| db.update_human_agent_session(args))
+    with_db(&state, |db| {
+        agent_sessions_service::agent_sessions_update_human(db, args)
+    })
 }
 
 #[tauri::command]
@@ -44,7 +41,9 @@ pub async fn agent_sessions_delete_human(
         return remote_invoke_args(&rpc, "agent_sessions_delete_human", args).await;
     }
 
-    CommandContext::from_tauri_state(&state).db(|db| db.delete_human_agent_session(&args.id))
+    with_db(&state, |db| {
+        agent_sessions_service::agent_sessions_delete_human(db, &args.id)
+    })
 }
 
 #[tauri::command]
@@ -56,7 +55,9 @@ pub async fn agent_sessions_get(
         return remote_invoke_args(&rpc, "agent_sessions_get", args).await;
     }
 
-    CommandContext::from_tauri_state(&state).db(|db| Ok(db.get_agent_session_by_id(&args.id)))
+    with_db(&state, |db| {
+        agent_sessions_service::agent_sessions_get(db, &args.id)
+    })
 }
 
 #[tauri::command]
@@ -67,5 +68,5 @@ pub async fn agent_sessions_list_human(
         return remote_invoke_no_args(&rpc, "agent_sessions_list_human").await;
     }
 
-    CommandContext::from_tauri_state(&state).db(|db| Ok(db.list_human_agent_sessions()))
+    with_db(&state, agent_sessions_service::agent_sessions_list_human)
 }

@@ -1,7 +1,8 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::post, Json, Router};
+use ralph_contracts::events::{BackendDiagnosticEvent, BackendDiagnosticLevel};
+use ralph_contracts::transport::EventSink;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tauri::{AppHandle, Emitter};
 use tokio::sync::RwLock;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -20,16 +21,16 @@ pub struct SignalEvent {
 
 #[derive(Clone)]
 struct AppState {
-    app_handle: AppHandle,
+    sink: Arc<dyn EventSink>,
     db_path: Arc<RwLock<Option<String>>>,
 }
 
-pub async fn start_api_server(app_handle: AppHandle) -> Result<u16, String> {
+pub async fn start_api_server(sink: Arc<dyn EventSink>) -> Result<u16, String> {
     let state = AppState {
-        app_handle,
+        sink,
         db_path: Arc::new(RwLock::new(None)),
     };
-    let app_handle = state.app_handle.clone();
+    let sink = Arc::clone(&state.sink);
 
     let app = Router::new()
         .route("/api/task-signal", post(handle_signal))
@@ -49,10 +50,15 @@ pub async fn start_api_server(app_handle: AppHandle) -> Result<u16, String> {
         if let Err(error) = axum::serve(listener, app).await {
             let message = format!("API server crashed: {error}");
             tracing::error!("{message}");
-            if let Err(event_error) =
-                app_handle.emit("api-server-error", &serde_json::json!({ "error": message }))
-            {
-                tracing::warn!("Failed to emit api-server-error event: {event_error}");
+            if let Err(event_error) = sink.emit_backend_diagnostic(BackendDiagnosticEvent {
+                level: BackendDiagnosticLevel::Error,
+                source: "api-server".to_owned(),
+                code: "crash".to_owned(),
+                message,
+            }) {
+                tracing::warn!(
+                    "Failed to emit backend-diagnostic for api-server crash: {event_error}"
+                );
             }
         }
     });
@@ -114,8 +120,13 @@ async fn handle_signal(
         verb: request.verb.clone(),
     };
 
-    if let Err(e) = state.app_handle.emit("signal-added", &event) {
-        eprintln!("Failed to emit signal-added event: {e}");
+    if let Err(e) = state.sink.emit_backend_diagnostic(BackendDiagnosticEvent {
+        level: BackendDiagnosticLevel::Warning,
+        source: "api-server".to_owned(),
+        code: "task-signal-inserted".to_owned(),
+        message: format!("task_id={}, verb={}", event.task_id, event.verb),
+    }) {
+        tracing::warn!("Failed to emit backend-diagnostic for task-signal-inserted: {e}");
     }
 
     (
