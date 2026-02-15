@@ -1,5 +1,14 @@
 use ralph_errors::{codes, ralph_err};
+use ralph_macros::ipc_type;
+use serde::{Deserialize, Serialize};
 use std::path::Path;
+
+#[ipc_type]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectValidatePathArgs {
+    pub path: String,
+}
 
 pub fn validate_project_path(path: &Path) -> Result<(), String> {
     tracing::debug!(path = %path.display(), "Validating project path");

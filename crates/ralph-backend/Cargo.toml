@@ -10,8 +10,11 @@ workspace = true
 
 [dependencies]
 ralph-errors = { workspace = true }
+ralph-macros = { workspace = true }
+sqlite-db = { path = "../sqlite-db" }
+serde = { workspace = true }
+ts-rs = { workspace = true }
 tracing = "0.1"
 
 [dev-dependencies]
 tempfile = "3"
-

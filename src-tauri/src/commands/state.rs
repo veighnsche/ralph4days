@@ -90,15 +90,6 @@ impl<'a> ProjectSessionService<'a> {
             .cloned()
             .ok_or_else(|| ralph_errors::err_string(codes::PROJECT_LOCK, "No project locked"))
     }
-
-    pub(super) fn maybe_locked_project_path(&self) -> Result<Option<PathBuf>, String> {
-        let locked = self
-            .app_state
-            .locked_project
-            .lock()
-            .err_str(codes::INTERNAL)?;
-        Ok(locked.as_ref().cloned())
-    }
 }
 
 pub(super) struct TransactionService<'a> {
@@ -149,10 +140,6 @@ impl<'a> CommandContext<'a> {
 
     pub(super) fn locked_project_path(&self) -> Result<PathBuf, String> {
         self.session.locked_project_path()
-    }
-
-    pub(super) fn maybe_locked_project_path(&self) -> Result<Option<PathBuf>, String> {
-        self.session.maybe_locked_project_path()
     }
 }
 

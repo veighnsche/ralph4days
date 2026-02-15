@@ -1,162 +1,12 @@
 use super::remote_proxy::{remote_invoke_args, remote_invoke_no_args};
 use super::state::{AppState, CommandContext};
-use ralph_errors::codes;
-use ralph_macros::ipc_type;
-use serde::{Deserialize, Serialize};
+use ralph_backend::tasks::{
+    TasksAskAnswerArgs, TasksCommentReplyAddArgs, TasksCreateArgs, TasksDeleteArgs, TasksGetArgs,
+    TasksSetStatusArgs, TasksSignalAddArgs, TasksSignalCommentDeleteArgs,
+    TasksSignalCommentUpdateArgs, TasksSignalCommentsListArgs, TasksSignalDeleteArgs,
+    TasksSignalSummariesGetArgs, TasksSignalUpdateArgs, TasksUpdateArgs,
+};
 use tauri::State;
-
-fn get_task_or_error(db: &sqlite_db::SqliteDb, id: u32) -> Result<sqlite_db::Task, String> {
-    db.get_task_by_id(id).ok_or_else(|| {
-        ralph_errors::err_string(
-            codes::TASK_OPS,
-            format!("Task {id} not found after mutation"),
-        )
-    })
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TasksCreateArgs {
-    pub subsystem: String,
-    pub discipline: String,
-    pub title: String,
-    pub description: Option<String>,
-    pub priority: Option<sqlite_db::Priority>,
-    pub tags: Vec<String>,
-    pub depends_on: Vec<u32>,
-    pub acceptance_criteria: Vec<String>,
-    pub context_files: Vec<String>,
-    pub output_artifacts: Vec<String>,
-    pub hints: Option<String>,
-    pub estimated_turns: Option<u32>,
-    pub provenance: Option<sqlite_db::TaskProvenance>,
-    pub agent: Option<String>,
-    pub model: Option<String>,
-    pub effort: Option<String>,
-    pub thinking: Option<bool>,
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TasksUpdateArgs {
-    pub id: u32,
-    pub subsystem: String,
-    pub discipline: String,
-    pub title: String,
-    pub description: Option<String>,
-    pub priority: Option<sqlite_db::Priority>,
-    pub tags: Vec<String>,
-    pub depends_on: Vec<u32>,
-    pub acceptance_criteria: Vec<String>,
-    pub context_files: Vec<String>,
-    pub output_artifacts: Vec<String>,
-    pub hints: Option<String>,
-    pub estimated_turns: Option<u32>,
-    pub provenance: Option<sqlite_db::TaskProvenance>,
-    pub agent: Option<String>,
-    pub model: Option<String>,
-    pub effort: Option<String>,
-    pub thinking: Option<bool>,
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TasksSetStatusArgs {
-    pub id: u32,
-    pub status: String,
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TasksDeleteArgs {
-    pub id: u32,
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TasksGetArgs {
-    pub id: u32,
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TasksSignalAddArgs {
-    pub task_id: u32,
-    pub discipline: Option<String>,
-    pub agent_task_id: Option<u32>,
-    pub priority: Option<String>,
-    pub body: String,
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TasksSignalUpdateArgs {
-    pub task_id: u32,
-    pub signal_id: u32,
-    pub body: String,
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TasksSignalDeleteArgs {
-    pub task_id: u32,
-    pub signal_id: u32,
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TasksSignalSummariesGetArgs {
-    pub task_ids: Vec<u32>,
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TasksAskAnswerArgs {
-    pub signal_id: u32,
-    pub answer: String,
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TasksCommentReplyAddArgs {
-    pub task_id: u32,
-    pub parent_comment_id: u32,
-    pub priority: Option<String>,
-    pub body: String,
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TasksSignalCommentUpdateArgs {
-    pub comment_id: u32,
-    pub body: String,
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TasksSignalCommentDeleteArgs {
-    pub comment_id: u32,
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TasksSignalCommentsListArgs {
-    pub signal_id: u32,
-}
 
 #[tauri::command]
 pub async fn tasks_create(
@@ -167,30 +17,7 @@ pub async fn tasks_create(
         return remote_invoke_args(&rpc, "tasks_create", args).await;
     }
 
-    let ctx = CommandContext::from_tauri_state(&state);
-    let task_input = sqlite_db::TaskInput {
-        subsystem: args.subsystem,
-        discipline: args.discipline,
-        title: args.title,
-        description: args.description,
-        status: None,
-        priority: args.priority,
-        tags: args.tags,
-        depends_on: args.depends_on,
-        acceptance_criteria: Some(args.acceptance_criteria),
-        context_files: args.context_files,
-        output_artifacts: args.output_artifacts,
-        hints: args.hints,
-        estimated_turns: args.estimated_turns,
-        provenance: args.provenance,
-        agent: args.agent,
-        model: args.model,
-        effort: args.effort,
-        thinking: args.thinking,
-    };
-
-    let task_id = ctx.db(|db| db.create_task(task_input))?;
-    Ok(task_id.to_string())
+    CommandContext::from_tauri_state(&state).db(|db| ralph_backend::tasks::tasks_create(db, args))
 }
 
 #[tauri::command]
@@ -202,33 +29,7 @@ pub async fn tasks_update(
         return remote_invoke_args(&rpc, "tasks_update", args).await;
     }
 
-    let ctx = CommandContext::from_tauri_state(&state);
-    let task_id = args.id;
-    let task_input = sqlite_db::TaskInput {
-        subsystem: args.subsystem,
-        discipline: args.discipline,
-        title: args.title,
-        description: args.description,
-        status: None,
-        priority: args.priority,
-        tags: args.tags,
-        depends_on: args.depends_on,
-        acceptance_criteria: Some(args.acceptance_criteria),
-        context_files: args.context_files,
-        output_artifacts: args.output_artifacts,
-        hints: args.hints,
-        estimated_turns: args.estimated_turns,
-        provenance: args.provenance,
-        agent: args.agent,
-        model: args.model,
-        effort: args.effort,
-        thinking: args.thinking,
-    };
-
-    ctx.db(|db| {
-        db.update_task(task_id, task_input)?;
-        get_task_or_error(db, task_id)
-    })
+    CommandContext::from_tauri_state(&state).db(|db| ralph_backend::tasks::tasks_update(db, args))
 }
 
 #[tauri::command]
@@ -240,17 +41,8 @@ pub async fn tasks_set_status(
         return remote_invoke_args(&rpc, "tasks_set_status", args).await;
     }
 
-    let ctx = CommandContext::from_tauri_state(&state);
-    let status = sqlite_db::TaskStatus::parse(&args.status).ok_or_else(|| {
-        ralph_errors::err_string(
-            codes::TASK_VALIDATION,
-            format!("Invalid status: {}", args.status),
-        )
-    })?;
-    ctx.db(|db| {
-        db.set_task_status(args.id, status)?;
-        get_task_or_error(db, args.id)
-    })
+    CommandContext::from_tauri_state(&state)
+        .db(|db| ralph_backend::tasks::tasks_set_status(db, args))
 }
 
 #[tauri::command]
@@ -259,7 +51,7 @@ pub async fn tasks_delete(state: State<'_, AppState>, args: TasksDeleteArgs) -> 
         return remote_invoke_args(&rpc, "tasks_delete", args).await;
     }
 
-    CommandContext::from_tauri_state(&state).db(|db| db.delete_task(args.id))
+    CommandContext::from_tauri_state(&state).db(|db| ralph_backend::tasks::tasks_delete(db, args))
 }
 
 #[tauri::command]
@@ -271,16 +63,8 @@ pub async fn tasks_signal_add(
         return remote_invoke_args(&rpc, "tasks_signal_add", args).await;
     }
 
-    CommandContext::from_tauri_state(&state).db(|db| {
-        db.add_signal(
-            args.task_id,
-            args.discipline,
-            args.agent_task_id,
-            args.priority,
-            args.body,
-        )?;
-        get_task_or_error(db, args.task_id)
-    })
+    CommandContext::from_tauri_state(&state)
+        .db(|db| ralph_backend::tasks::tasks_signal_add(db, args))
 }
 
 #[tauri::command]
@@ -292,10 +76,8 @@ pub async fn tasks_signal_update(
         return remote_invoke_args(&rpc, "tasks_signal_update", args).await;
     }
 
-    CommandContext::from_tauri_state(&state).db(|db| {
-        db.update_signal(args.task_id, args.signal_id, args.body)?;
-        get_task_or_error(db, args.task_id)
-    })
+    CommandContext::from_tauri_state(&state)
+        .db(|db| ralph_backend::tasks::tasks_signal_update(db, args))
 }
 
 #[tauri::command]
@@ -307,10 +89,8 @@ pub async fn tasks_signal_delete(
         return remote_invoke_args(&rpc, "tasks_signal_delete", args).await;
     }
 
-    CommandContext::from_tauri_state(&state).db(|db| {
-        db.delete_signal(args.task_id, args.signal_id)?;
-        get_task_or_error(db, args.task_id)
-    })
+    CommandContext::from_tauri_state(&state)
+        .db(|db| ralph_backend::tasks::tasks_signal_delete(db, args))
 }
 
 #[tauri::command]
@@ -319,7 +99,7 @@ pub async fn tasks_list(state: State<'_, AppState>) -> Result<Vec<sqlite_db::Tas
         return remote_invoke_no_args(&rpc, "tasks_list").await;
     }
 
-    CommandContext::from_tauri_state(&state).db(|db| Ok(db.get_tasks()))
+    CommandContext::from_tauri_state(&state).db(ralph_backend::tasks::tasks_list)
 }
 
 #[tauri::command]
@@ -331,7 +111,7 @@ pub async fn tasks_get(
         return remote_invoke_args(&rpc, "tasks_get", args).await;
     }
 
-    CommandContext::from_tauri_state(&state).db(|db| get_task_or_error(db, args.id))
+    CommandContext::from_tauri_state(&state).db(|db| ralph_backend::tasks::tasks_get(db, args))
 }
 
 #[tauri::command]
@@ -342,7 +122,7 @@ pub async fn tasks_list_items(
         return remote_invoke_no_args(&rpc, "tasks_list_items").await;
     }
 
-    CommandContext::from_tauri_state(&state).db(sqlite_db::SqliteDb::get_task_list_items)
+    CommandContext::from_tauri_state(&state).db(ralph_backend::tasks::tasks_list_items)
 }
 
 #[tauri::command]
@@ -354,7 +134,8 @@ pub async fn tasks_signal_summaries_get(
         return remote_invoke_args(&rpc, "tasks_signal_summaries_get", args).await;
     }
 
-    CommandContext::from_tauri_state(&state).db(|db| db.get_signal_summaries(&args.task_ids))
+    CommandContext::from_tauri_state(&state)
+        .db(|db| ralph_backend::tasks::tasks_signal_summaries_get(db, args))
 }
 
 #[tauri::command]
@@ -366,7 +147,8 @@ pub async fn tasks_ask_answer(
         return remote_invoke_args(&rpc, "tasks_ask_answer", args).await;
     }
 
-    CommandContext::from_tauri_state(&state).db(|db| db.answer_ask(args.signal_id, args.answer))
+    CommandContext::from_tauri_state(&state)
+        .db(|db| ralph_backend::tasks::tasks_ask_answer(db, args))
 }
 
 #[tauri::command]
@@ -378,16 +160,8 @@ pub async fn tasks_comment_reply_add(
         return remote_invoke_args(&rpc, "tasks_comment_reply_add", args).await;
     }
 
-    CommandContext::from_tauri_state(&state).db(|db| {
-        db.add_signal_with_parent(
-            args.task_id,
-            None,
-            args.priority,
-            args.body,
-            Some(args.parent_comment_id),
-        )?;
-        get_task_or_error(db, args.task_id)
-    })
+    CommandContext::from_tauri_state(&state)
+        .db(|db| ralph_backend::tasks::tasks_comment_reply_add(db, args))
 }
 
 #[tauri::command]
@@ -399,7 +173,8 @@ pub async fn tasks_signal_comment_add(
         return remote_invoke_args(&rpc, "tasks_signal_comment_add", args).await;
     }
 
-    CommandContext::from_tauri_state(&state).db(|db| db.add_task_signal_comment(args))
+    CommandContext::from_tauri_state(&state)
+        .db(|db| ralph_backend::tasks::tasks_signal_comment_add(db, args))
 }
 
 #[tauri::command]
@@ -412,7 +187,7 @@ pub async fn tasks_signal_comment_update(
     }
 
     CommandContext::from_tauri_state(&state)
-        .db(|db| db.update_task_signal_comment(args.comment_id, args.body))
+        .db(|db| ralph_backend::tasks::tasks_signal_comment_update(db, args))
 }
 
 #[tauri::command]
@@ -424,7 +199,8 @@ pub async fn tasks_signal_comment_delete(
         return remote_invoke_args(&rpc, "tasks_signal_comment_delete", args).await;
     }
 
-    CommandContext::from_tauri_state(&state).db(|db| db.delete_task_signal_comment(args.comment_id))
+    CommandContext::from_tauri_state(&state)
+        .db(|db| ralph_backend::tasks::tasks_signal_comment_delete(db, args))
 }
 
 #[tauri::command]
@@ -437,5 +213,5 @@ pub async fn tasks_signal_comments_list(
     }
 
     CommandContext::from_tauri_state(&state)
-        .db(|db| Ok(db.get_task_signal_comments(args.signal_id)))
+        .db(|db| ralph_backend::tasks::tasks_signal_comments_list(db, args))
 }

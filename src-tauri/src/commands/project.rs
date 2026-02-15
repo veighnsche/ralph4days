@@ -1,9 +1,10 @@
 use super::remote_proxy::{remote_invoke_args, remote_invoke_no_args};
 use super::state::{AppState, CommandContext};
-use ralph_errors::{codes, ralph_err, RalphResultExt, ToStringErr};
+use ralph_backend::project::ProjectValidatePathArgs;
+use ralph_backend::session::ProjectLockSetArgs;
+use ralph_errors::{codes, ralph_err, RalphResultExt};
 use ralph_macros::ipc_type;
 use serde::{Deserialize, Serialize};
-use sqlite_db::SqliteDb;
 use std::path::PathBuf;
 use tauri::{Manager, State};
 
@@ -61,15 +62,8 @@ pub async fn project_validate_path(
     ralph_backend::project::validate_project_path(&path)
 }
 
-#[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProjectValidatePathArgs {
-    pub path: String,
-}
-
 fn seed_disciplines_for_stack(
-    db: &SqliteDb,
+    db: &sqlite_db::SqliteDb,
     stack: u8,
     ralph_dir: Option<&std::path::Path>,
 ) -> Result<(), String> {
@@ -187,7 +181,7 @@ pub async fn project_initialize(
         .ralph_err(codes::PROJECT_INIT, "Failed to create .ralph/db/ directory")?;
 
     let db_path = db_dir.join("ralph.db");
-    let db = SqliteDb::open(&db_path, None)?;
+    let db = sqlite_db::SqliteDb::open(&db_path, None)?;
     seed_disciplines_for_stack(&db, stack, Some(&ralph_dir))?;
     db.initialize_metadata(
         project_title.clone(),
@@ -235,22 +229,11 @@ pub struct ProjectInitializeArgs {
 }
 
 pub fn project_lock_validated(state: &AppState, path: String) -> Result<(), String> {
-    let canonical_path =
-        std::fs::canonicalize(&path).ralph_err(codes::PROJECT_PATH, "Failed to resolve path")?;
-
-    let mut locked = state.locked_project.lock().err_str(codes::INTERNAL)?;
-    if locked.is_some() {
-        return ralph_err!(
-            codes::PROJECT_LOCK,
-            "Project already locked for this session"
-        );
-    }
-
-    let db_path = canonical_path.join(".ralph").join("db").join("ralph.db");
-    let db = SqliteDb::open(&db_path, None)?;
-
-    let mut db_guard = state.db.lock().err_str(codes::INTERNAL)?;
-    *db_guard = Some(db);
+    let canonical_path = ralph_backend::session::project_lock_set(
+        &state.locked_project,
+        &state.db,
+        ProjectLockSetArgs { path },
+    )?;
 
     let project_name = canonical_path
         .file_name()
@@ -261,7 +244,6 @@ pub fn project_lock_validated(state: &AppState, path: String) -> Result<(), Stri
         project_name,
     );
 
-    *locked = Some(canonical_path);
     Ok(())
 }
 
@@ -274,8 +256,6 @@ pub async fn project_lock_set(
         return remote_invoke_args(&rpc, "project_lock_set", args).await;
     }
 
-    let path = PathBuf::from(&args.path);
-    ralph_backend::project::validate_project_path(&path)?;
     project_lock_validated(&state, args.path)
 }
 
@@ -285,8 +265,7 @@ pub async fn project_lock_get(state: State<'_, AppState>) -> Result<Option<Strin
         return remote_invoke_no_args(&rpc, "project_lock_get").await;
     }
 
-    let locked = CommandContext::from_tauri_state(&state).maybe_locked_project_path()?;
-    Ok(locked.as_ref().map(|p| p.to_string_lossy().to_string()))
+    ralph_backend::session::project_lock_get(&state.locked_project)
 }
 
 #[tauri::command]
@@ -469,13 +448,6 @@ pub fn window_open_new() -> Result<(), String> {
         .spawn()
         .ralph_err(codes::INTERNAL, "Failed to spawn new window")?;
     Ok(())
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProjectLockSetArgs {
-    pub path: String,
 }
 
 #[ipc_type]
