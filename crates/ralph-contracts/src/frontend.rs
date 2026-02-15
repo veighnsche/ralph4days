@@ -35,4 +35,3 @@ mod tests {
         assert_eq!(unique.len(), FRONTEND_EVENT_NAMES.len());
     }
 }
-
