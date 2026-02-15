@@ -2,7 +2,7 @@ use crate::diagnostics;
 use crate::terminal::PTYManager;
 use crate::xdg::XdgDirs;
 use prompt_builder::{CodebaseSnapshot, PromptContext};
-use ralph_errors::{codes, err_string, RalphResultExt, ToStringErr};
+use ralph_errors::{codes, err_string, ToStringErr};
 use sqlite_db::SqliteDb;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -171,44 +171,25 @@ impl AppState {
         instruction_overrides: std::collections::HashMap<String, String>,
         target_task_id: Option<u32>,
     ) -> Result<PromptContext, String> {
-        let ralph_dir = project_path.join(".ralph");
-        let db_path = ralph_dir.join("db").join("ralph.db");
-
         let db_guard = self.db.lock().err_str(codes::INTERNAL)?;
         let db = db_guard.as_ref().ok_or_else(|| {
             ralph_errors::err_string(codes::PROJECT_LOCK, "No project locked (database not open)")
         })?;
 
-        let snapshot = {
-            let mut snap_guard = self.codebase_snapshot.lock().err_str(codes::INTERNAL)?;
-            if snap_guard.is_none() {
-                *snap_guard = Some(prompt_builder::snapshot::analyze(project_path));
-            }
-            snap_guard.clone()
-        };
-
         let api_port = *self.api_server_port.lock().err_str(codes::INTERNAL)?;
 
-        Ok(PromptContext {
-            features: db.get_subsystems(),
-            tasks: db.get_tasks(),
-            disciplines: db.get_disciplines(),
-            metadata: db.get_project_info(),
-            file_contents: std::collections::HashMap::new(),
-            progress_txt: None,
-            learnings_txt: None,
-            claude_ralph_md: None,
-            project_path: project_path.to_string_lossy().to_string(),
-            db_path: db_path.to_string_lossy().to_string(),
-            script_dir: self.mcp_dir.to_string_lossy().to_string(),
-            api_server_port: api_port,
-            user_input,
-            target_task_id,
-            target_feature: None,
-            codebase_snapshot: snapshot,
-            instruction_overrides,
-            relevant_comments: None,
-        })
+        ralph_backend::prompt_context::build_prompt_context(
+            ralph_backend::prompt_context::PromptContextArgs {
+                db,
+                project_path,
+                mcp_dir: &self.mcp_dir,
+                codebase_snapshot: &self.codebase_snapshot,
+                api_server_port: api_port,
+                user_input,
+                instruction_overrides,
+                target_task_id,
+            },
+        )
     }
 
     pub(super) fn generate_mcp_config(
@@ -216,28 +197,15 @@ impl AppState {
         mode: &str,
         project_path: &std::path::Path,
     ) -> Result<PathBuf, String> {
-        let prompt_type = match mode {
-            "task_creation" => prompt_builder::PromptType::Braindump,
-            _ => prompt_builder::PromptType::Discuss,
-        };
-
-        let mut overrides = std::collections::HashMap::new();
-        let override_path = project_path
-            .join(".ralph")
-            .join("prompts")
-            .join(format!("{mode}_instructions.md"));
-        if let Ok(text) = std::fs::read_to_string(&override_path) {
-            let section_name = format!("{mode}_instructions");
-            overrides.insert(section_name, text);
-        }
-
-        let recipe = prompt_builder::recipes::get(prompt_type);
-        let ctx = self.build_prompt_context(project_path, None, overrides, None)?;
-
-        let (scripts, config_json) =
-            prompt_builder::mcp::generate(&ctx, recipe.mcp_mode, &recipe.mcp_tools);
-
-        self.write_mcp_artifacts(&scripts, &config_json, format!("mcp-{mode}.json"))
+        let api_port = *self.api_server_port.lock().err_str(codes::INTERNAL)?;
+        ralph_backend::mcp::generate_mcp_config(
+            &self.db,
+            &self.codebase_snapshot,
+            &self.mcp_dir,
+            api_port,
+            mode,
+            project_path,
+        )
     }
 
     pub(super) fn generate_mcp_config_for_task(
@@ -245,46 +213,15 @@ impl AppState {
         task_id: u32,
         project_path: &std::path::Path,
     ) -> Result<PathBuf, String> {
-        let ctx = self.build_prompt_context(
+        let api_port = *self.api_server_port.lock().err_str(codes::INTERNAL)?;
+        ralph_backend::mcp::generate_mcp_config_for_task(
+            &self.db,
+            &self.codebase_snapshot,
+            &self.mcp_dir,
+            api_port,
+            task_id,
             project_path,
-            None,
-            std::collections::HashMap::new(),
-            Some(task_id),
-        )?;
-
-        let recipe = prompt_builder::recipes::get(prompt_builder::PromptType::TaskExecution);
-        let (scripts, config_json) =
-            prompt_builder::mcp::generate(&ctx, recipe.mcp_mode, &recipe.mcp_tools);
-
-        self.write_mcp_artifacts(&scripts, &config_json, format!("mcp-task-{task_id}.json"))
-    }
-
-    fn write_mcp_artifacts(
-        &self,
-        scripts: &[prompt_builder::McpScript],
-        config_json: &str,
-        config_filename: String,
-    ) -> Result<PathBuf, String> {
-        std::fs::create_dir_all(&self.mcp_dir)
-            .ralph_err(codes::FILESYSTEM, "Failed to create MCP dir")?;
-
-        for script in scripts {
-            let script_path = self.mcp_dir.join(&script.filename);
-            std::fs::write(&script_path, &script.content)
-                .ralph_err(codes::FILESYSTEM, "Failed to write MCP script")?;
-            #[cfg(unix)]
-            {
-                use std::os::unix::fs::PermissionsExt;
-                std::fs::set_permissions(&script_path, std::fs::Permissions::from_mode(0o755))
-                    .ralph_err(codes::FILESYSTEM, "Failed to chmod MCP script")?;
-            }
-        }
-
-        let config_path = self.mcp_dir.join(config_filename);
-        std::fs::write(&config_path, config_json)
-            .ralph_err(codes::FILESYSTEM, "Failed to write MCP config")?;
-
-        Ok(config_path)
+        )
     }
 }
 
