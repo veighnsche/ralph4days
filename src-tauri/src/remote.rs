@@ -114,6 +114,10 @@ impl RemoteWireFrameConnection {
         self.remote_protocol.clone()
     }
 
+    pub fn rpc_client(&self) -> RemoteRpcClient {
+        self.rpc.clone()
+    }
+
     pub fn is_connected(&self) -> bool {
         self.rpc.is_connected()
     }

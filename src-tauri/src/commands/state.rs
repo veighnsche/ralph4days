@@ -2,7 +2,7 @@ use crate::diagnostics;
 use crate::terminal::PTYManager;
 use crate::xdg::XdgDirs;
 use prompt_builder::{CodebaseSnapshot, PromptContext};
-use ralph_errors::{codes, RalphResultExt, ToStringErr};
+use ralph_errors::{codes, err_string, RalphResultExt, ToStringErr};
 use sqlite_db::SqliteDb;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -157,6 +157,26 @@ impl<'a> CommandContext<'a> {
 }
 
 impl AppState {
+    pub async fn remote_rpc_client(
+        &self,
+    ) -> Result<Option<crate::remote::RemoteRpcClient>, String> {
+        let guard = self.remote.lock().await;
+
+        guard.as_ref().map_or(Ok(None), |conn| {
+            if conn.is_connected() {
+                Ok(Some(conn.rpc_client()))
+            } else {
+                Err(err_string(
+                    codes::INTERNAL,
+                    format!(
+                        "Remote transport disconnected (wsUrl='{}'). Reconnect.",
+                        conn.ws_url()
+                    ),
+                ))
+            }
+        })
+    }
+
     pub(super) fn build_prompt_context(
         &self,
         project_path: &std::path::Path,

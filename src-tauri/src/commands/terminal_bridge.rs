@@ -1,3 +1,4 @@
+use super::remote_proxy::{remote_invoke_args, remote_invoke_no_args};
 use super::state::{AppState, CommandContext, ProjectSessionService};
 use crate::terminal::providers::{
     list_model_entries_for_agent, resolve_agent_provider, resolve_post_start_preamble,
@@ -349,61 +350,89 @@ fn build_launch_command(config: &SessionConfig) -> String {
 }
 
 #[tauri::command]
-pub fn terminal_start_session(
+pub async fn terminal_start_session(
     app: AppHandle,
     state: State<'_, AppState>,
     args: TerminalBridgeStartSessionArgs,
 ) -> Result<(), String> {
-    start_session_impl(app, state.inner(), args)
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        remote_invoke_args(&rpc, "terminal_start_session", args).await
+    } else {
+        start_session_impl(app, state.inner(), args)
+    }
 }
 
 #[tauri::command]
-pub fn terminal_send_input(
+pub async fn terminal_send_input(
     state: State<'_, AppState>,
     args: TerminalBridgeSendInputArgs,
 ) -> Result<(), String> {
-    send_input_impl(state.inner(), args)
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        remote_invoke_args(&rpc, "terminal_send_input", args).await
+    } else {
+        send_input_impl(state.inner(), args)
+    }
 }
 
 #[tauri::command]
-pub fn terminal_resize(
+pub async fn terminal_resize(
     state: State<'_, AppState>,
     args: TerminalBridgeResizeArgs,
 ) -> Result<(), String> {
-    resize_impl(state.inner(), args)
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        remote_invoke_args(&rpc, "terminal_resize", args).await
+    } else {
+        resize_impl(state.inner(), args)
+    }
 }
 
 #[tauri::command]
-pub fn terminal_terminate(
+pub async fn terminal_terminate(
     state: State<'_, AppState>,
     args: TerminalBridgeTerminateArgs,
 ) -> Result<(), String> {
-    terminate_impl(state.inner(), args)
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        remote_invoke_args(&rpc, "terminal_terminate", args).await
+    } else {
+        terminate_impl(state.inner(), args)
+    }
 }
 
 #[tauri::command]
-pub fn terminal_set_stream_mode(
+pub async fn terminal_set_stream_mode(
     state: State<'_, AppState>,
     args: TerminalBridgeSetStreamModeArgs,
 ) -> Result<(), String> {
-    set_stream_mode_impl(state.inner(), args)
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        remote_invoke_args(&rpc, "terminal_set_stream_mode", args).await
+    } else {
+        set_stream_mode_impl(state.inner(), args)
+    }
 }
 
 #[tauri::command]
-pub fn terminal_replay_output(
+pub async fn terminal_replay_output(
     state: State<'_, AppState>,
     args: TerminalBridgeReplayOutputArgs,
 ) -> Result<TerminalBridgeReplayOutputResult, String> {
-    replay_output_impl(state.inner(), args)
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        remote_invoke_args(&rpc, "terminal_replay_output", args).await
+    } else {
+        replay_output_impl(state.inner(), args)
+    }
 }
 
 #[tauri::command]
-pub fn terminal_start_task_session(
+pub async fn terminal_start_task_session(
     app: AppHandle,
     state: State<'_, AppState>,
     args: TerminalBridgeStartTaskSessionArgs,
 ) -> Result<(), String> {
-    start_task_session_impl(app, state.inner(), args)
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        remote_invoke_args(&rpc, "terminal_start_task_session", args).await
+    } else {
+        start_task_session_impl(app, state.inner(), args)
+    }
 }
 
 #[tauri::command]
@@ -415,11 +444,15 @@ pub fn terminal_emit_system_message(
 }
 
 #[tauri::command]
-pub fn terminal_start_human_session(
+pub async fn terminal_start_human_session(
     app: AppHandle,
     state: State<'_, AppState>,
     args: TerminalBridgeStartHumanSessionArgs,
 ) -> Result<TerminalBridgeStartHumanSessionResult, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "terminal_start_human_session", args).await;
+    }
+
     tracing::debug!(
         terminal_session_id = %args.terminal_session_id,
         kind = %args.kind,
@@ -550,7 +583,13 @@ fn list_models_for_agent(agent: &str) -> TerminalBridgeListModelsResult {
 }
 
 #[tauri::command]
-pub fn terminal_list_model_form_tree() -> TerminalBridgeListModelFormTreeResult {
+pub async fn terminal_list_model_form_tree(
+    state: State<'_, AppState>,
+) -> Result<TerminalBridgeListModelFormTreeResult, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_no_args(&rpc, "terminal_list_model_form_tree").await;
+    }
+
     let mut providers = vec![
         list_models_for_agent(AGENT_CODEX),
         list_models_for_agent(AGENT_CLAUDE),
@@ -559,7 +598,7 @@ pub fn terminal_list_model_form_tree() -> TerminalBridgeListModelFormTreeResult 
         providers.push(list_models_for_agent(AGENT_SHELL));
     }
 
-    TerminalBridgeListModelFormTreeResult { providers }
+    Ok(TerminalBridgeListModelFormTreeResult { providers })
 }
 
 #[cfg(test)]

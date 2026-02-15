@@ -84,6 +84,8 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
 - [x] Implement the Tauri remote-mode adapter (WS RPC + event pump) on top of `RemoteWireFrame`:
   - Remote WS client + event pump: `src-tauri/src/remote.rs` (`RemoteRpcClient` + `RemoteWireFrameConnection`)
   - Frontend-facing control commands: `src-tauri/src/commands/remote.rs` (`remote_connect`, `remote_disconnect`, `remote_status_get`)
+- [x] Proxy the terminal bridge command surface in remote mode (first real parity slice):
+  - Owner: `src-tauri/src/commands/terminal_bridge.rs` (uses `AppState::remote_rpc_client` + `src-tauri/src/commands/remote_proxy.rs`)
 - [ ] Replace remaining direct Tauri `AppHandle.emit(...)` usage with the sink interface (notably `src-tauri/src/api_server.rs` and the remaining direct emits in `src-tauri/src/commands/terminal_bridge.rs`).
 - [ ] Keep Tauri command modules as thin adapters:
   - deserialize args

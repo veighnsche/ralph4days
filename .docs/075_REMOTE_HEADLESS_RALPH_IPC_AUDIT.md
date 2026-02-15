@@ -92,7 +92,8 @@ Related docs (deeper design dumps):
       4. stream gating (`live`/`buffered`)
    4. HTTP server is already in the stack: local Axum server in `src-tauri/src/api_server.rs` (currently for MCP signal ingress).
 2. Weaknesses (increase remote complexity):
-   1. Protocol versioning exists (`crates/ralph-contracts/src/protocol.rs` + `protocol_version_get`), but hard-fail mismatch enforcement is not implemented yet.
+   1. Protocol versioning exists (`crates/ralph-contracts/src/protocol.rs` + `protocol_version_get`), and the local proxy now hard-fails on mismatch during remote connect (`RemoteWireFrameConnection::connect`).
+      1. Remaining work: `ralphd` must implement the same `protocol_version_get` and the rest of the parity surface.
    2. Most command implementations are Tauri-bound entrypoints (`#[tauri::command]` functions) rather than a transport-agnostic service layer.
    3. Event emission is still partially Tauri-coupled (notably `src-tauri/src/api_server.rs`), so `ralphd` still needs an alternate broadcast mechanism.
       1. Note: terminal output/closed + backend diagnostics are now routed via `EventSink`, which is the intended seam for `ralphd`.
@@ -104,7 +105,7 @@ Related docs (deeper design dumps):
 ## 8. Updated Ratings (Based On Current Code)
 1. “IPC contract maturity for remote parity” (1-10, higher is better): **7.5/10**
    1. Why not higher:
-      1. protocol versioning exists but mismatch enforcement is not implemented yet
+      1. remote-mode exists in the local proxy, but `ralphd` parity is not implemented yet
       2. incomplete parity/drift testing outside terminal bridge
       3. business logic still lives inside Tauri command modules
 2. “Remote/headless migration complexity” (1-10, higher is harder): **8/10**
