@@ -22,7 +22,7 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
   - Owner: `src-tauri/tests/invoke_command_list_contract_test.rs` (SHA256 snapshot of sorted command names extracted from `src-tauri/src/lib.rs`).
 - [x] Declare the canonical event name owners per domain (now centralized in `crates/ralph-contracts/src/{terminal.rs,events.rs}`).
 - [x] Add canonical event constants + drift tests for non-terminal events used by UI (done for `backend-diagnostic` in `crates/ralph-contracts/src/events.rs`; expand to other domains as needed).
-- [ ] Add drift tests for every event name constant that the frontend listens to (terminal has this; others should match).
+- [x] Add drift tests for every event name constant that the frontend listens to (terminal has this; others should match).
 - [ ] Write down the “supported surface” for v1 `ralphd` parity:
   - Scope must be explicit: which commands/events are required for “remote UI parity” vs “nice-to-have”.
 
@@ -51,7 +51,7 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
   - Make it explicit and consistent across domains (choose one):
     - Use `u32` where possible.
     - Or represent `u64` as string in JSON (recommended for correctness).
-- [ ] Regeneration must be the only way types move:
+- [x] Regeneration must be the only way types move:
   - `src/types/generated.ts` stays generated only (`just types`), never hand-edited.
 
 ## 4. Error Model (Must-Have)
@@ -94,15 +94,15 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
   - Agent sessions: `src-tauri/src/commands/agent_sessions.rs`
   - Note: several commands were converted to `async` to await remote RPC; this should not change the frontend contract (Tauri `invoke` is already promise-based).
 - [ ] Stand up a headless `ralphd` that speaks `RemoteWireFrame`:
-  - Current state: `crates/ralphd` exists and accepts WS + answers `protocol_version_get`, `project_validate_path`, `project_lock_{set,get}`, and `tasks_*` via `crates/ralph-backend`; full command parity + event streaming are still pending.
-- [ ] Replace remaining direct Tauri `AppHandle.emit(...)` usage with the sink interface (notably `src-tauri/src/api_server.rs` and the remaining direct emits in `src-tauri/src/commands/terminal_bridge.rs`).
+  - Current state: `src-daemon` (crate `ralphd`) exists and accepts WS + answers `protocol_version_get`, `project_validate_path`, `project_lock_{set,get}`, and `tasks_*` via `crates/ralph-backend`; full command parity + event streaming are still pending.
+- [ ] Replace remaining direct Tauri `AppHandle.emit(...)` usage with the sink interface (notably `src-tauri/src/api_server.rs`).
 - [ ] Keep Tauri command modules as thin adapters:
   - deserialize args
   - call backend service
   - return result
 
 ## 7. Streaming/Terminal Contract Hardening (Must-Have For Headless Parity)
-- [x] Keep the current “withhold + replay” model authoritative in the backend (implemented in `src-tauri/src/terminal/manager.rs` + used by `src/lib/terminal/session.ts`).
+- [x] Keep the current “withhold + replay” model authoritative in the backend (implemented in `crates/ralph-backend/src/terminal/manager.rs` + used by `src/lib/terminal/session.ts`).
 - [ ] Document reconnection semantics as contract, not just implementation detail:
   - `sessionId` uniqueness rules
   - `seq` monotonicity rules
@@ -127,7 +127,7 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
   - fails if command list changes without updating the snapshot test
 
 ## 10. “Ready For Swap” Definition Of Done
-- [ ] Protocol version handshake exists in local IPC and is enforced.
+- [x] Protocol version handshake exists in local IPC and is enforced.
 - [ ] Commands/events are inventoried, drift-tested, and type-shared (Rust -> TS) across the board.
 - [ ] Error semantics are stable and documented.
 - [ ] All frontend IPC usage goes through one boundary module.

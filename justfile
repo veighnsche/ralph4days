@@ -109,6 +109,7 @@ test: test-rust test-frontend
 # Run Rust tests
 test-rust:
     cargo test --manifest-path src-tauri/Cargo.toml
+    cargo test -p ralph-contracts
 
 # Run backend terminal-bridge test suite only
 test-terminal-bridge-backend:
