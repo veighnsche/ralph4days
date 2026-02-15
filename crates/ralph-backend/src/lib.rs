@@ -1,9 +1,12 @@
+pub mod agent_sessions_contract;
+pub mod agent_sessions_service;
 pub mod diagnostics;
 pub mod disciplines_contract;
 pub mod disciplines_service;
 pub mod mcp;
 pub mod project;
 pub mod project_contract;
+pub mod project_scan;
 pub mod prompt_builder_configs_contract;
 pub mod prompt_builder_configs_service;
 pub mod prompt_builder_preview;
