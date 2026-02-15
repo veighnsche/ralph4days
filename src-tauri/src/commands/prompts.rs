@@ -1,12 +1,14 @@
 use super::remote_proxy::{remote_invoke_args, remote_invoke_no_args};
 use super::state::{AppState, CommandContext};
+use ralph_backend::prompt_builder_configs_contract::{
+    PromptBuilderConfigDeleteArgs, PromptBuilderConfigGetArgs, PromptBuilderConfigSaveArgs,
+};
+use ralph_backend::prompt_builder_configs_service;
 use ralph_backend::prompt_builder_preview::{
     PromptBuilderPreviewArgs, PromptBuilderPreviewDeps, PromptPreview,
 };
 use ralph_errors::{codes, ToStringErr};
-use ralph_macros::ipc_type;
-use serde::Deserialize;
-use sqlite_db::{PromptBuilderConfigData, PromptBuilderConfigInput};
+use sqlite_db::PromptBuilderConfigData;
 use tauri::State;
 
 #[tauri::command]
@@ -47,14 +49,8 @@ pub async fn prompt_builder_config_list(state: State<'_, AppState>) -> Result<Ve
         return remote_invoke_no_args(&rpc, "prompt_builder_config_list").await;
     }
 
-    CommandContext::from_tauri_state(&state).db(sqlite_db::SqliteDb::list_prompt_builder_configs)
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PromptBuilderConfigGetArgs {
-    pub name: String,
+    CommandContext::from_tauri_state(&state)
+        .db(prompt_builder_configs_service::prompt_builder_config_list)
 }
 
 #[tauri::command]
@@ -66,14 +62,8 @@ pub async fn prompt_builder_config_get(
         return remote_invoke_args(&rpc, "prompt_builder_config_get", args).await;
     }
 
-    CommandContext::from_tauri_state(&state).db(|db| db.get_prompt_builder_config(&args.name))
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PromptBuilderConfigSaveArgs {
-    pub config: PromptBuilderConfigInput,
+    CommandContext::from_tauri_state(&state)
+        .db(|db| prompt_builder_configs_service::prompt_builder_config_get(db, args))
 }
 
 #[tauri::command]
@@ -85,14 +75,8 @@ pub async fn prompt_builder_config_save(
         return remote_invoke_args(&rpc, "prompt_builder_config_save", args).await;
     }
 
-    CommandContext::from_tauri_state(&state).db(|db| db.save_prompt_builder_config(args.config))
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PromptBuilderConfigDeleteArgs {
-    pub name: String,
+    CommandContext::from_tauri_state(&state)
+        .db(|db| prompt_builder_configs_service::prompt_builder_config_save(db, args))
 }
 
 #[tauri::command]
@@ -104,5 +88,6 @@ pub async fn prompt_builder_config_delete(
         return remote_invoke_args(&rpc, "prompt_builder_config_delete", args).await;
     }
 
-    CommandContext::from_tauri_state(&state).db(|db| db.delete_prompt_builder_config(&args.name))
+    CommandContext::from_tauri_state(&state)
+        .db(|db| prompt_builder_configs_service::prompt_builder_config_delete(db, args))
 }
