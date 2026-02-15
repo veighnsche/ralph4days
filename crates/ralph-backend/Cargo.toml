@@ -11,10 +11,12 @@ workspace = true
 [dependencies]
 base64 = "0.22"
 chrono = { workspace = true }
+image = { version = "0.25.6", default-features = false, features = ["png", "jpeg"] }
 portable-pty = "0.9"
 predefined-disciplines = { path = "../predefined-disciplines" }
 prompt-builder = { path = "../prompt-builder" }
 ralph-contracts = { workspace = true }
+ralph-external = { path = "../ralph-external" }
 ralph-errors = { workspace = true }
 ralph-macros = { workspace = true }
 sqlite-db = { path = "../sqlite-db" }

@@ -36,7 +36,7 @@ impl SqliteDb {
         })
     }
 
-    pub fn add_subsystem_comment(&self, input: AddSubsystemCommentInput) -> Result<(), String> {
+    pub fn add_subsystem_comment(&self, input: AddSubsystemCommentInput) -> Result<u32, String> {
         if input.body.trim().is_empty() {
             return ralph_err!(codes::FEATURE_OPS, "Comment body cannot be empty");
         }
@@ -80,7 +80,13 @@ impl SqliteDb {
             )
             .ralph_err(codes::DB_WRITE, "Failed to insert subsystem comment")?;
 
-        Ok(())
+        let row_id = self.conn.last_insert_rowid();
+        u32::try_from(row_id).map_err(|_| {
+            ralph_errors::err_string(
+                codes::DB_WRITE,
+                format!("Invalid new subsystem comment id: {row_id}"),
+            )
+        })
     }
 
     pub fn update_subsystem_comment(

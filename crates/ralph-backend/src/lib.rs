@@ -1,9 +1,15 @@
 pub mod diagnostics;
+pub mod disciplines_contract;
+pub mod disciplines_service;
 pub mod mcp;
 pub mod project;
+pub mod prompt_builder_configs_contract;
+pub mod prompt_builder_configs_service;
 pub mod prompt_builder_preview;
 pub mod prompt_context;
 pub mod session;
+pub mod subsystems_contract;
+pub mod subsystems_service;
 pub mod tasks;
 pub mod terminal;
 pub mod terminal_bridge;
