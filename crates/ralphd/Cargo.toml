@@ -6,9 +6,12 @@ rust-version = "1.75"
 
 [dependencies]
 futures-util = "0.3"
+ralph-backend = { workspace = true }
 ralph-contracts = { workspace = true }
 ralph-errors = { workspace = true }
+serde = { workspace = true }
 serde_json = { workspace = true }
+sqlite-db = { path = "../sqlite-db" }
 tokio = { workspace = true }
 tokio-tungstenite = { version = "0.26", features = ["native-tls"] }
 tracing = "0.1"
@@ -16,4 +19,3 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 
 [lints]
 workspace = true
-

@@ -5,9 +5,9 @@ Date: 2026-02-15
 Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) stable, typed, drift-proof, and transport-agnostic so it can be re-hosted behind `ralphd` with minimal/no UI changes.
 
 ## Current Snapshot (As Of 2026-02-15)
-1. Backend portability (can we reuse “backend core” in both Tauri and `ralphd` today?): **No** (roughly **5/10**).
+1. Backend portability (can we reuse “backend core” in both Tauri and `ralphd` today?): **Partial** (roughly **6/10**).
    1. Major blockers: business logic still lives in `src-tauri/src/commands/*`, and some subsystems still hard-depend on Tauri runtime types (notably `src-tauri/src/api_server.rs`).
-   2. Progress: project path validation moved into a Tauri-free crate (`crates/ralph-backend/src/project.rs`).
+   2. Progress: project path validation + project lock/session + tasks domain logic are now Tauri-free (`crates/ralph-backend/src/{project.rs,session.rs,tasks.rs}`) and reused by both Tauri and `ralphd`.
 2. IPC contract maturity (typed + stable + drift-tested enough to proxy 1:1): **Partial** (roughly **8/10**).
    1. Strongest area: terminal bridge contract (wire types + drift tests + buffering/replay semantics) plus the remote proxy transport (`RemoteWireFrame` + hard-fail protocol handshake).
    2. Weakest area: drift testing for non-terminal event domains, plus error-shape standardization across all commands.
@@ -68,7 +68,7 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
 
 ## 6. Single “Backend Service” Boundary in Rust (Swap Enabler)
 - [ ] Move “real work” out of `#[tauri::command]` functions into a transport-agnostic service layer.
-  - Current status: started (project path validation now lives in `crates/ralph-backend/src/project.rs`).
+  - Current status: started (project path validation + project lock/session + tasks now live in `crates/ralph-backend/src/{project.rs,session.rs,tasks.rs}`; more domains still live in `src-tauri/src/commands/*`).
 - [x] Define an injected event sink interface:
   - Local Tauri mode: sink emits Tauri events.
   - Remote mode: sink broadcasts WS events (or framed stream).
@@ -94,7 +94,7 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
   - Agent sessions: `src-tauri/src/commands/agent_sessions.rs`
   - Note: several commands were converted to `async` to await remote RPC; this should not change the frontend contract (Tauri `invoke` is already promise-based).
 - [ ] Stand up a headless `ralphd` that speaks `RemoteWireFrame`:
-  - Current state: `crates/ralphd` exists and accepts WS + answers `protocol_version_get`; full command parity + event streaming are still pending.
+  - Current state: `crates/ralphd` exists and accepts WS + answers `protocol_version_get`, `project_validate_path`, `project_lock_{set,get}`, and `tasks_*` via `crates/ralph-backend`; full command parity + event streaming are still pending.
 - [ ] Replace remaining direct Tauri `AppHandle.emit(...)` usage with the sink interface (notably `src-tauri/src/api_server.rs` and the remaining direct emits in `src-tauri/src/commands/terminal_bridge.rs`).
 - [ ] Keep Tauri command modules as thin adapters:
   - deserialize args
