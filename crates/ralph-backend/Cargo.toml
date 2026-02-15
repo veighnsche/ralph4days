@@ -12,6 +12,7 @@ workspace = true
 base64 = "0.22"
 chrono = { workspace = true }
 portable-pty = "0.9"
+predefined-disciplines = { path = "../predefined-disciplines" }
 prompt-builder = { path = "../prompt-builder" }
 ralph-contracts = { workspace = true }
 ralph-errors = { workspace = true }

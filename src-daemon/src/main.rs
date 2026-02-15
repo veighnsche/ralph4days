@@ -259,6 +259,12 @@ fn handle_command(
             let locked = ralph_backend::session::project_lock_get(&state.locked_project)?;
             encode_result(command, locked)
         }
+        "project_initialize" => {
+            let args: ralph_backend::project::ProjectInitializeArgs =
+                decode_args(command, payload)?;
+            ralph_backend::project::project_initialize(args)?;
+            Ok(serde_json::Value::Null)
+        }
         "tasks_create" => {
             let args: ralph_backend::tasks::TasksCreateArgs = decode_args(command, payload)?;
             let created = ralph_backend::session::with_db(&state.db, |db| {

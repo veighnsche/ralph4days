@@ -1,6 +1,6 @@
 use super::remote_proxy::{remote_invoke_args, remote_invoke_no_args};
 use super::state::{AppState, CommandContext};
-use ralph_backend::project::ProjectValidatePathArgs;
+use ralph_backend::project::{ProjectInitializeArgs, ProjectValidatePathArgs};
 use ralph_backend::session::ProjectLockSetArgs;
 use ralph_errors::{codes, ralph_err, RalphResultExt};
 use ralph_macros::ipc_type;
@@ -62,82 +62,6 @@ pub async fn project_validate_path(
     ralph_backend::project::validate_project_path(&path)
 }
 
-fn seed_disciplines_for_stack(
-    db: &sqlite_db::SqliteDb,
-    stack: u8,
-    ralph_dir: Option<&std::path::Path>,
-) -> Result<(), String> {
-    let defs = predefined_disciplines::get_disciplines_for_stack(stack);
-    if defs.is_empty() && stack != 0 {
-        return ralph_err!(
-            codes::DISCIPLINE_OPS,
-            "No disciplines defined for stack {stack}"
-        );
-    }
-
-    if let Some(ralph_dir) = ralph_dir {
-        let images_dir = ralph_dir.join("images").join("disciplines");
-        let _ = std::fs::create_dir_all(&images_dir);
-    }
-
-    for d in &defs {
-        let skills_json = serde_json::to_string(&d.skills).map_err(|error| {
-            format!(
-                "Failed to serialize skills for discipline '{}': {error}",
-                d.name
-            )
-        })?;
-
-        let image_path = ralph_dir.and_then(|ralph_dir| {
-            predefined_disciplines::get_discipline_image(stack, &d.name).and_then(|bytes| {
-                let rel = format!("images/disciplines/{}.png", d.name);
-                let abs = ralph_dir.join(&rel);
-                std::fs::write(&abs, bytes).is_ok().then_some(rel)
-            })
-        });
-
-        let crops_json = d.crops.as_ref().and_then(|crops| {
-            serde_json::to_string(crops).ok().or_else(|| {
-                tracing::warn!(
-                    discipline = %d.name,
-                    "Failed to serialize crops; storing no crops"
-                );
-                None
-            })
-        });
-        let image_prompt_json = d.image_prompt.as_ref().and_then(|prompt| {
-            serde_json::to_string(prompt).ok().or_else(|| {
-                tracing::warn!(
-                    discipline = %d.name,
-                    "Failed to serialize image_prompt; storing no prompt"
-                );
-                None
-            })
-        });
-
-        db.create_discipline(sqlite_db::DisciplineInput {
-            name: d.name.clone(),
-            display_name: d.display_name.clone(),
-            acronym: d.acronym.clone(),
-            icon: d.icon.clone(),
-            color: d.color.clone(),
-            description: d.description.clone(),
-            system_prompt: Some(d.system_prompt.clone()),
-            agent: None,
-            model: None,
-            effort: None,
-            thinking: None,
-            skills: skills_json,
-            conventions: Some(d.conventions.clone()),
-            mcp_servers: "[]".to_owned(),
-            image_path,
-            crops: crops_json,
-            image_prompt: image_prompt_json,
-        })?;
-    }
-    Ok(())
-}
-
 #[tauri::command]
 #[tracing::instrument(skip(state))]
 pub async fn project_initialize(
@@ -148,84 +72,7 @@ pub async fn project_initialize(
         return remote_invoke_args(&rpc, "project_initialize", args).await;
     }
 
-    let stack = args.stack;
-    tracing::info!("Initializing Ralph project with stack {}", stack);
-    let project_title = args.project_title.clone();
-    let path = PathBuf::from(&args.path);
-
-    if !path.exists() {
-        return ralph_err!(
-            codes::PROJECT_PATH,
-            "Directory not found: {}",
-            path.display()
-        );
-    }
-    if !path.is_dir() {
-        return ralph_err!(codes::PROJECT_PATH, "Not a directory: {}", path.display());
-    }
-
-    let ralph_dir = path.join(".ralph");
-    if ralph_dir.exists() {
-        return ralph_err!(
-            codes::PROJECT_INIT,
-            ".ralph/ already exists at {}",
-            path.display()
-        );
-    }
-
-    std::fs::create_dir(&ralph_dir)
-        .ralph_err(codes::PROJECT_INIT, "Failed to create .ralph/ directory")?;
-
-    let db_dir = ralph_dir.join("db");
-    std::fs::create_dir(&db_dir)
-        .ralph_err(codes::PROJECT_INIT, "Failed to create .ralph/db/ directory")?;
-
-    let db_path = db_dir.join("ralph.db");
-    let db = sqlite_db::SqliteDb::open(&db_path, None)?;
-    seed_disciplines_for_stack(&db, stack, Some(&ralph_dir))?;
-    db.initialize_metadata(
-        project_title.clone(),
-        Some("Add project description here".to_owned()),
-    )?;
-    let claude_path = ralph_dir.join("CLAUDE.RALPH.md");
-    let claude_template = format!(
-        "# {project_title} - Ralph Context
-
-## Project Overview
-
-Add context about this project that Claude should know when working on it.
-
-## Architecture
-
-Describe the architecture, tech stack, and key components.
-
-## Coding Standards
-
-- List any coding conventions
-- Style guides
-- Best practices
-
-## Important Notes
-
-- Any gotchas or things to watch out for
-- Known issues or limitations
-- Dependencies or external services
-"
-    );
-
-    std::fs::write(&claude_path, claude_template)
-        .ralph_err(codes::FILESYSTEM, "Failed to create CLAUDE.RALPH.md")?;
-
-    Ok(())
-}
-
-#[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProjectInitializeArgs {
-    pub path: String,
-    pub project_title: String,
-    pub stack: u8,
+    ralph_backend::project::project_initialize(args)
 }
 
 pub fn project_lock_validated(state: &AppState, path: String) -> Result<(), String> {
