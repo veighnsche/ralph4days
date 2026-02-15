@@ -128,12 +128,14 @@ export const PlaylistItem = memo(function PlaylistItem({
       <TaskPriorityCorner priority={task.priority} />
 
       {hasHeadshot && (
-        <DisciplineHeadshot disciplineName={task.discipline} faceCrop={crops?.face ?? { x: 0, y: 0, w: 1, h: 1 }} />
+        <div className="hidden sm:block">
+          <DisciplineHeadshot disciplineName={task.discipline} faceCrop={crops?.face ?? { x: 0, y: 0, w: 1, h: 1 }} />
+        </div>
       )}
 
       {/* Col 1: Task ID */}
       <div
-        className={`row-span-full self-start relative z-10 flex flex-col items-start leading-tight font-mono ${hasHeadshot ? 'ml-22' : ''}`}>
+        className={`row-span-full self-start relative z-10 flex flex-col items-start leading-tight font-mono ${hasHeadshot ? 'sm:ml-22' : ''}`}>
         <span className="text-xs text-muted-foreground">{task.subsystemAcronym}</span>
         <DisciplineLabel acronym={task.disciplineAcronym} color={task.disciplineColor} />
         <span className="text-xs text-muted-foreground">

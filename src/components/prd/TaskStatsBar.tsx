@@ -10,7 +10,7 @@ export function TaskStatsBar({ totalTasks, doneTasks, progressPercent }: TaskSta
   const remainingTasks = totalTasks - doneTasks
 
   return (
-    <div className="flex items-center gap-3 text-xs">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
       <div className="flex items-center gap-2">
         <span className="text-muted-foreground">Total:</span>
         <Badge variant="outline" className="h-4">

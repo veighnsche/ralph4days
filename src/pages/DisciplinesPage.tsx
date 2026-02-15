@@ -45,12 +45,12 @@ export function DisciplinesPage() {
       <PageHeader>
         <Card className="py-3">
           <CardContent className="space-y-3">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               <div className="flex items-center gap-2 flex-1">
                 <Layers className="h-4 w-4" />
                 <CardTitle className="text-base">Disciplines</CardTitle>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                 <div className="text-right">
                   <div className="text-sm font-medium">
                     Total: <span className="text-muted-foreground">{disciplines.length}</span>

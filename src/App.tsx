@@ -1,14 +1,16 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { BottomBar, ProjectSelector } from '@/components/app-shell'
 import { ErrorBoundary } from '@/components/shared'
+import { Button } from '@/components/ui/button'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import { Toaster } from '@/components/ui/sonner'
 import { WorkspacePanel } from '@/components/workspace'
 import { useInvoke } from '@/hooks/api'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { tauriListen } from '@/lib/tauri/events'
 import { BACKEND_DIAGNOSTIC_EVENT } from '@/lib/tauri/eventsContract'
 import { tauriInvoke } from '@/lib/tauri/invoke'
@@ -20,7 +22,7 @@ const isTauri = typeof window !== 'undefined' && '__TAURI__' in window
 
 function NoBackendError() {
   return (
-    <div className="flex h-screen items-center justify-center bg-background">
+    <div className="flex min-h-svh items-center justify-center bg-background">
       <div className="max-w-md text-center space-y-4 px-8">
         <AlertCircle className="h-16 w-16 text-destructive mx-auto" />
         <h1 className="text-2xl font-bold">No Backend Connection</h1>
@@ -35,8 +37,11 @@ function NoBackendError() {
 
 function App() {
   const queryClient = useQueryClient()
+  const isMobile = useIsMobile()
 
   const { data: lockedProject, isLoading: isLoadingProject } = useInvoke<string | null>('project_lock_get')
+  const [currentPage, setCurrentPage] = useState<Page>('tasks')
+  const [activePane, setActivePane] = useState<'main' | 'workspace'>('main')
 
   useEffect(() => {
     if (!isTauri) return
@@ -91,7 +96,7 @@ function App() {
 
   if (isLoadingProject) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex min-h-svh items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
       </div>
     )
@@ -101,11 +106,55 @@ function App() {
     return <ProjectSelector onProjectSelected={handleProjectSelected} />
   }
 
+  const PageComponent = pageRegistry[currentPage]
+
+  // Mobile-first: collapse the split view into a single-pane UI (toggle Workspace).
+  if (isMobile) {
+    return (
+      <ErrorBoundary>
+        <div className="flex h-svh flex-col">
+          <div className="flex-1 min-h-0 overflow-hidden relative">
+            {activePane === 'workspace' ? <WorkspacePanel /> : <PageComponent />}
+          </div>
+
+          <BottomBar
+            lockedProject={lockedProject}
+            currentPage={currentPage}
+            onPageChange={page => {
+              setCurrentPage(page)
+              setActivePane('main')
+            }}
+            rightActions={
+              <Button
+                size="icon"
+                variant={activePane === 'workspace' ? 'default' : 'outline'}
+                title={activePane === 'workspace' ? 'Back to main panel' : 'Open workspace'}
+                aria-label={activePane === 'workspace' ? 'Back to main panel' : 'Open workspace'}
+                onClick={() => setActivePane(p => (p === 'main' ? 'workspace' : 'main'))}>
+                {activePane === 'workspace' ? (
+                  <PanelRightClose className="h-4 w-4" />
+                ) : (
+                  <PanelRightOpen className="h-4 w-4" />
+                )}
+              </Button>
+            }
+          />
+          <Toaster />
+        </div>
+      </ErrorBoundary>
+    )
+  }
+
   return (
     <ErrorBoundary>
-      <ResizablePanelGroup orientation="horizontal" className="h-screen">
+      <ResizablePanelGroup orientation="horizontal" className="h-svh">
         <ResizablePanel defaultSize={50} minSize={40}>
-          <MainPanel lockedProject={lockedProject} />
+          <div className="h-full flex flex-col overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-hidden relative">
+              <PageComponent />
+            </div>
+            <BottomBar lockedProject={lockedProject} currentPage={currentPage} onPageChange={setCurrentPage} />
+          </div>
         </ResizablePanel>
 
         <ResizableHandle withHandle />
@@ -118,20 +167,6 @@ function App() {
       </ResizablePanelGroup>
       <Toaster />
     </ErrorBoundary>
-  )
-}
-
-function MainPanel({ lockedProject }: { lockedProject: string }) {
-  const [currentPage, setCurrentPage] = useState<Page>('tasks')
-  const PageComponent = pageRegistry[currentPage]
-
-  return (
-    <div className="h-full flex flex-col overflow-hidden">
-      <div className="flex-1 min-h-0 overflow-hidden relative">
-        <PageComponent />
-      </div>
-      <BottomBar lockedProject={lockedProject} currentPage={currentPage} onPageChange={setCurrentPage} />
-    </div>
   )
 }
 

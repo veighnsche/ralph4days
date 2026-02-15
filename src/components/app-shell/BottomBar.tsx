@@ -11,9 +11,10 @@ interface BottomBarProps {
   lockedProject: string
   currentPage: Page
   onPageChange: (page: Page) => void
+  rightActions?: React.ReactNode
 }
 
-export function BottomBar({ lockedProject: _lockedProject, currentPage, onPageChange }: BottomBarProps) {
+export function BottomBar({ lockedProject: _lockedProject, currentPage, onPageChange, rightActions }: BottomBarProps) {
   const isExecutionEnabled = Boolean(_lockedProject)
 
   const runExecutionCommand = (command: string) => {
@@ -68,7 +69,7 @@ export function BottomBar({ lockedProject: _lockedProject, currentPage, onPageCh
           </Button>
         </ButtonGroup>
 
-        <div className="flex-1" />
+        <div className="flex-1 flex justify-end">{rightActions}</div>
       </div>
     </div>
   )

@@ -132,9 +132,9 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
   }
 
   return (
-    <div className="grid h-screen grid-cols-[1fr_auto_1fr]">
+    <div className="grid min-h-svh grid-cols-1 md:grid-cols-[1fr_auto_1fr]">
       {/* Left — project lists (primary) */}
-      <div className="flex flex-col gap-3 overflow-hidden px-8 py-10">
+      <div className="flex flex-col gap-3 overflow-hidden px-4 py-6 md:px-8 md:py-10">
         <InlineError error={openError} onDismiss={() => setOpenError(null)} />
 
         <ScrollArea className="flex-1">
@@ -160,7 +160,8 @@ export function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
         </ScrollArea>
       </div>
 
-      <Separator orientation="vertical" />
+      <Separator orientation="horizontal" className="md:hidden" />
+      <Separator orientation="vertical" className="hidden md:block" />
 
       {/* Right — branding + init (secondary) */}
       <ProjectInitPanel onProjectSelected={onProjectSelected} />
@@ -206,7 +207,7 @@ function ProjectInitPanel({ onProjectSelected }: { onProjectSelected: (path: str
   }
 
   return (
-    <div className="flex flex-col justify-center px-8">
+    <div className="flex flex-col justify-center px-4 py-6 md:px-8 md:py-0">
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight">Ralph4days</h1>
         <p className="text-sm text-muted-foreground">Autonomous multi-agent task execution</p>

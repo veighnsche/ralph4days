@@ -51,7 +51,7 @@ export function PRDHeader({
   return (
     <Card className="py-3">
       <CardContent className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
           <div className="flex-1 min-w-0">
             <CardTitle className="text-base">{project.title}</CardTitle>
             {project.description && (
@@ -65,8 +65,8 @@ export function PRDHeader({
 
         <Separator bleed="md" />
 
-        <div className="flex items-center gap-2">
-          <div className="flex-1 max-w-xs">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+          <div className="w-full sm:flex-1 sm:max-w-xs">
             <div className="relative">
               <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
@@ -90,14 +90,14 @@ export function PRDHeader({
 
           <FiltersModal filters={filters} setters={setters} allTags={allTags} onClearFilters={onClearFilters} />
 
-          <div className="text-[10px] text-muted-foreground ml-auto whitespace-nowrap">
+          <div className="text-[10px] text-muted-foreground sm:ml-auto whitespace-nowrap">
             Showing {filteredCount} of {totalTasks}
           </div>
         </div>
 
         {/* Active Filters */}
         {hasActiveFilters && (
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex flex-wrap items-center gap-2 pt-1">
             <ActiveFilters filters={filters} setters={setters} />
           </div>
         )}
