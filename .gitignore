@@ -72,5 +72,10 @@ mock/
 .ralph/generated/
 **/.ralph/generated/
 
+# TypeScript build artifacts
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+
 # YOLO model weights
 *.pt
