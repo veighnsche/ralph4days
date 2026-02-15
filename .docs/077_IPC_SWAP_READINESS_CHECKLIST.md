@@ -23,8 +23,77 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
 - [x] Declare the canonical event name owners per domain (now centralized in `crates/ralph-contracts/src/{terminal.rs,events.rs}`).
 - [x] Add canonical event constants + drift tests for non-terminal events used by UI (done for `backend-diagnostic` in `crates/ralph-contracts/src/events.rs`; expand to other domains as needed).
 - [x] Add drift tests for every event name constant that the frontend listens to (terminal has this; others should match).
-- [ ] Write down the “supported surface” for v1 `ralphd` parity:
+- [x] Write down the “supported surface” for v1 `ralphd` parity:
   - Scope must be explicit: which commands/events are required for “remote UI parity” vs “nice-to-have”.
+  - Canonical owners:
+    - Full local IPC command list: `src-tauri/src/lib.rs` (`tauri::generate_handler![...]`).
+    - Frontend-listened event names: `crates/ralph-contracts/src/frontend.rs` (`FRONTEND_EVENT_NAMES`) + `src/lib/tauri/listenedEventsContract.ts`.
+    - This section is the canonical owner of the v1 `ralphd` parity *subset*.
+  - Remote UI parity (v1 MUST support in `ralphd`) — RPC commands (invoked by the frontend today and remote-proxied by Tauri):
+    - `protocol_version_get`
+    - Project:
+      - `project_lock_get`
+      - `project_lock_set`
+      - `project_recent_list`
+      - `project_scan`
+      - `project_initialize`
+      - `project_info_get`
+    - Tasks:
+      - `tasks_get`
+      - `tasks_list_items`
+      - `tasks_update`
+      - `tasks_set_status`
+      - `tasks_signal_add`
+      - `tasks_signal_update`
+      - `tasks_signal_delete`
+      - `tasks_signal_summaries_get`
+      - `tasks_comment_reply_add`
+    - Subsystems:
+      - `subsystems_list`
+      - `subsystems_comment_add`
+      - `subsystems_comment_update`
+      - `subsystems_comment_delete`
+    - Disciplines:
+      - `disciplines_list`
+      - `disciplines_create`
+      - `disciplines_update`
+      - `disciplines_delete`
+      - `disciplines_cropped_image_get`
+    - Prompt builder:
+      - `prompt_builder_preview`
+      - `prompt_builder_config_list`
+      - `prompt_builder_config_get`
+      - `prompt_builder_config_save`
+      - `prompt_builder_config_delete`
+    - Terminal bridge:
+      - `terminal_start_session`
+      - `terminal_start_task_session`
+      - `terminal_start_human_session`
+      - `terminal_list_model_form_tree`
+      - `terminal_send_input`
+      - `terminal_resize`
+      - `terminal_set_stream_mode`
+      - `terminal_replay_output`
+      - `terminal_terminate`
+  - Remote UI parity (v1 MUST support in `ralphd`) — event stream:
+    - `backend-diagnostic`
+    - `terminal:output`
+    - `terminal:closed`
+  - Local-only commands (not implemented by `ralphd`, even in remote mode):
+    - `window_splash_close`
+    - `window_open_new`
+    - `remote_connect`
+    - `remote_disconnect`
+    - `remote_status_get`
+    - `terminal_emit_system_message` (UI-only terminal UX injection; emitted locally)
+    - `stacks_metadata_list` (static local data from `predefined-disciplines`)
+  - Nice-to-have / out-of-scope for v1 `ralphd` parity (commands exist in local IPC, but are not required for remote UI parity today):
+    - Execution engine: `execution_start`, `execution_pause`, `execution_resume`, `execution_stop`, `execution_state_get`
+    - Project/FS helpers: `system_home_dir_get`, `project_validate_path`
+    - Extra tasks: `tasks_create`, `tasks_delete`, `tasks_list`, `tasks_ask_answer`, `tasks_signal_comment_*`, `tasks_signal_comments_list`
+    - Subsystem management: `subsystems_create`, `subsystems_update`, `subsystems_delete`
+    - Disciplines: `disciplines_image_data_get`
+    - Agent sessions: `agent_sessions_*`
 
 ## 2. Protocol Versioning + Handshake (Must-Have)
 - [x] Add a single canonical `PROTOCOL_VERSION` constant (Rust):
@@ -64,11 +133,11 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
 ## 5. Single Transport Adapter Boundary in Frontend (Swap Enabler)
 - [x] Ensure *all* frontend command calls go through a single module boundary (`src/lib/tauri/invoke.ts` is the only `@tauri-apps/api/core` import in `src/**`).
 - [x] Ensure *all* frontend event subscriptions go through a single module boundary (`src/lib/tauri/events.ts` is the only `@tauri-apps/api/event` import in `src/**`).
-- [ ] Ban direct `@tauri-apps/api/*` usage outside that boundary (UI still uses `@tauri-apps/api/window` directly).
+- [x] Ban direct `@tauri-apps/api/*` usage outside that boundary (window API centralized in `src/lib/tauri/window.ts`).
 
 ## 6. Single “Backend Service” Boundary in Rust (Swap Enabler)
 - [ ] Move “real work” out of `#[tauri::command]` functions into a transport-agnostic service layer.
-  - Current status: started (project path validation + project lock/session + tasks now live in `crates/ralph-backend/src/{project.rs,session.rs,tasks.rs}`; more domains still live in `src-tauri/src/commands/*`).
+  - Current status: started (project path validation + project lock/session + tasks now live in `crates/ralph-backend/src/{project.rs,session.rs,tasks.rs}`; prompt builder preview logic moved to `crates/ralph-backend/src/prompt_builder_preview.rs`; more domains still live in `src-tauri/src/commands/*`).
 - [x] Define an injected event sink interface:
   - Local Tauri mode: sink emits Tauri events.
   - Remote mode: sink broadcasts WS events (or framed stream).
@@ -94,7 +163,7 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
   - Agent sessions: `src-tauri/src/commands/agent_sessions.rs`
   - Note: several commands were converted to `async` to await remote RPC; this should not change the frontend contract (Tauri `invoke` is already promise-based).
 - [ ] Stand up a headless `ralphd` that speaks `RemoteWireFrame`:
-  - Current state: `src-daemon` (crate `ralphd`) exists and accepts WS + answers `protocol_version_get`, `project_validate_path`, `project_lock_{set,get}`, and `tasks_*` via `crates/ralph-backend`; full command parity + event streaming are still pending.
+  - Current state: `src-daemon/ralphd` (crate `ralphd`, moved from the earlier `crates/ralphd` location) exists and accepts WS + answers `protocol_version_get`, `project_validate_path`, `project_lock_{set,get}`, and `tasks_*` via `crates/ralph-backend`; full command parity + event streaming are still pending.
 - [ ] Replace remaining direct Tauri `AppHandle.emit(...)` usage with the sink interface (notably `src-tauri/src/api_server.rs`).
 - [ ] Keep Tauri command modules as thin adapters:
   - deserialize args
