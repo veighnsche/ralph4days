@@ -1,8 +1,9 @@
 //! Fixture generator tests
 //!
 //! These tests GENERATE fixtures under `fixtures/`.
+//! They are ignored by default because they mutate the working tree.
 //! Run with:
-//! `cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures -- --nocapture`
+//! `cargo test --manifest-path src-tauri/Cargo.toml --test generate_fixtures -- --ignored --nocapture --test-threads=1`
 //!
 //! Fixtures use `.undetect-ralph/` so they are not auto-detected as live Ralph projects.
 //! The mock workflow (`just dev-mock`) renames `.undetect-ralph/` to `.ralph/`.
@@ -21,6 +22,7 @@ use std::fs;
 use std::path::PathBuf;
 
 #[test]
+#[ignore = "Generates fixtures under fixtures/; run explicitly with --ignored --test-threads=1"]
 fn generate_fixture_00_empty_project() {
     println!("\n=== Generating fixture: 00-empty-project ===");
 
@@ -66,26 +68,31 @@ See `01-desktop-blank` fixture for the after state.
 }
 
 #[test]
+#[ignore = "Generates fixtures under fixtures/; run explicitly with --ignored --test-threads=1"]
 fn generate_fixture_01_desktop_blank() {
     generate_fixtures::fixture_01_blank::generate_fixture_01_desktop_blank();
 }
 
 #[test]
+#[ignore = "Generates fixtures under fixtures/; run explicitly with --ignored --test-threads=1"]
 fn generate_fixture_02_desktop_feature() {
     generate_fixtures::fixture_02_subsystem::generate_fixture_02_desktop_feature();
 }
 
 #[test]
+#[ignore = "Generates fixtures under fixtures/; run explicitly with --ignored --test-threads=1"]
 fn generate_fixture_03_desktop_tasks() {
     generate_fixtures::fixture_03_tasks::generate_fixture_03_desktop_tasks();
 }
 
 #[test]
+#[ignore = "Generates fixtures under fixtures/; run explicitly with --ignored --test-threads=1"]
 fn generate_fixture_04_desktop_dev() {
     generate_fixtures::fixture_04_dev::generate_fixture_04_desktop_dev();
 }
 
 #[test]
+#[ignore = "Generates fixtures under fixtures/; run explicitly with --ignored --test-threads=1"]
 fn generate_fixture_05_desktop_templates() {
     generate_fixtures::fixture_05_templates::generate_fixture_05_desktop_templates();
 }
