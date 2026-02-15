@@ -3,6 +3,8 @@ use ralph_backend::disciplines_contract::{
     DisciplinesCreateArgs, DisciplinesCroppedImageGetArgs, DisciplinesDeleteArgs,
     DisciplinesImageDataGetArgs, DisciplinesUpdateArgs,
 };
+use ralph_backend::project_contract::ProjectScanArgs;
+use ralph_backend::project_scan;
 use ralph_backend::prompt_builder_configs_contract::{
     PromptBuilderConfigDeleteArgs, PromptBuilderConfigGetArgs, PromptBuilderConfigSaveArgs,
 };
@@ -70,6 +72,16 @@ fn parse_bind_addr() -> Result<std::net::SocketAddr, String> {
     })
 }
 
+fn ralph4days_data_dir() -> Result<PathBuf, String> {
+    let base = std::env::var_os("XDG_DATA_HOME")
+        .map(PathBuf::from)
+        .or_else(|| {
+            std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".local").join("share"))
+        })
+        .ok_or_else(|| err_string(codes::FILESYSTEM, "No XDG data directory (missing HOME/XDG_DATA_HOME)"))?;
+    Ok(base.join("ralph4days"))
+}
+
 #[derive(Default)]
 struct RalphdState {
     locked_project: Mutex<Option<PathBuf>>,
@@ -86,7 +98,11 @@ async fn main() -> Result<(), std::io::Error> {
     })?;
 
     let listener = TcpListener::bind(bind).await?;
-    tracing::info!(%bind, "ralphd listening");
+    let local = listener.local_addr()?;
+    tracing::info!(%local, "ralphd listening");
+    if std::env::var_os("RALPHD_PRINT_LISTEN_ADDR").is_some() {
+        println!("RALPHD_LISTEN_ADDR={local}");
+    }
 
     let state = Arc::new(RalphdState::default());
 
@@ -262,8 +278,18 @@ async fn handle_command(
         }
         "project_lock_set" => {
             let args: ralph_backend::session::ProjectLockSetArgs = decode_args(command, payload)?;
-            let _ =
+            let canonical =
                 ralph_backend::session::project_lock_set(&state.locked_project, &state.db, args)?;
+            let project_name = canonical
+                .file_name()
+                .map_or_else(|| "Unknown".to_owned(), |n| n.to_string_lossy().to_string());
+            if let Err(error) = project_scan::recents_add(
+                &ralph4days_data_dir()?,
+                canonical.to_string_lossy().to_string(),
+                project_name,
+            ) {
+                tracing::warn!("Failed to persist recent projects: {error}");
+            }
             Ok(serde_json::Value::Null)
         }
         "project_lock_get" => {
@@ -276,6 +302,22 @@ async fn handle_command(
                 decode_args(command, payload)?;
             ralph_backend::project::project_initialize(args)?;
             Ok(serde_json::Value::Null)
+        }
+        "project_recent_list" => {
+            require_null_payload(command, payload)?;
+            let projects = project_scan::recents_load(&ralph4days_data_dir()?)?;
+            encode_result(command, projects)
+        }
+        "project_scan" => {
+            let args: ProjectScanArgs = decode_args(command, payload)?;
+            let projects = project_scan::project_scan(args)?;
+            encode_result(command, projects)
+        }
+        "project_info_get" => {
+            require_null_payload(command, payload)?;
+            let info =
+                ralph_backend::session::with_db(&state.db, |db| project_scan::project_info_get(db))?;
+            encode_result(command, info)
         }
         "subsystems_list" => {
             require_null_payload(command, payload)?;
