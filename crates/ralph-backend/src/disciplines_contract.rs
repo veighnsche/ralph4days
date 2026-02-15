@@ -1,8 +1,6 @@
 use ralph_macros::ipc_type;
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct McpServerConfigData {
     pub name: String,
     pub command: String,
@@ -11,8 +9,6 @@ pub struct McpServerConfigData {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CropBoxData {
     pub x: f32,
     pub y: f32,
@@ -21,8 +17,6 @@ pub struct CropBoxData {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DisciplineCropsData {
     pub face: CropBoxData,
     pub card: CropBoxData,
@@ -33,16 +27,12 @@ pub struct DisciplineCropsData {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DisciplineImagePromptData {
     pub positive: String,
     pub negative: String,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DisciplineTaskTemplateData {
     pub id: u32,
     pub title: String,
@@ -61,8 +51,6 @@ pub struct DisciplineTaskTemplateData {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DisciplineConfig {
     pub id: u32,
     pub name: String,
@@ -87,8 +75,6 @@ pub struct DisciplineConfig {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DisciplinesCreateArgs {
     pub name: String,
     pub display_name: String,
@@ -106,8 +92,6 @@ pub struct DisciplinesCreateArgs {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DisciplinesUpdateArgs {
     pub name: String,
     pub display_name: String,
@@ -125,22 +109,16 @@ pub struct DisciplinesUpdateArgs {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DisciplinesDeleteArgs {
     pub name: String,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DisciplinesImageDataGetArgs {
     pub discipline_name: String,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DisciplinesCroppedImageGetArgs {
     pub discipline_name: String,
     pub crop: CropBoxData,

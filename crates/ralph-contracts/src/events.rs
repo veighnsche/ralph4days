@@ -1,19 +1,14 @@
 use ralph_macros::ipc_type;
-use serde::{Deserialize, Serialize};
 
 pub const BACKEND_DIAGNOSTIC_EVENT: &str = "backend-diagnostic";
 
-#[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[ipc_type(rename_all = "lowercase")]
 pub enum BackendDiagnosticLevel {
     Warning,
     Error,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct BackendDiagnosticEvent {
     pub level: BackendDiagnosticLevel,
     pub source: String,

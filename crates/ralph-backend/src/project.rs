@@ -1,19 +1,14 @@
 use ralph_errors::{codes, ralph_err};
 use ralph_macros::ipc_type;
-use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::path::PathBuf;
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ProjectValidatePathArgs {
     pub path: String,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ProjectInitializeArgs {
     pub path: String,
     pub project_title: String,

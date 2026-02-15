@@ -164,8 +164,6 @@ pub async fn disciplines_delete(
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct VisualIdentityData {
     pub style: String,
     pub theme: String,
@@ -174,8 +172,6 @@ pub struct VisualIdentityData {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct StackMetadataData {
     pub stack_id: u8,
     pub name: String,

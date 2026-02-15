@@ -1,9 +1,6 @@
 use ralph_macros::ipc_type;
-use serde::{Deserialize, Serialize};
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TerminalBridgeStartSessionArgs {
     pub session_id: String,
     pub agent: Option<String>,
@@ -16,8 +13,6 @@ pub struct TerminalBridgeStartSessionArgs {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TerminalBridgeStartTaskSessionArgs {
     pub session_id: String,
     pub task_id: u32,
@@ -30,8 +25,6 @@ pub struct TerminalBridgeStartTaskSessionArgs {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TerminalBridgeModelOption {
     pub name: String,
     pub display: String,
@@ -41,31 +34,23 @@ pub struct TerminalBridgeModelOption {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TerminalBridgeListModelsResult {
     pub agent: String,
     pub models: Vec<TerminalBridgeModelOption>,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TerminalBridgeListModelFormTreeResult {
     pub providers: Vec<TerminalBridgeListModelsResult>,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TerminalBridgeSendInputArgs {
     pub session_id: String,
     pub data: Vec<u8>,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TerminalBridgeResizeArgs {
     pub session_id: String,
     pub cols: u16,
@@ -73,23 +58,17 @@ pub struct TerminalBridgeResizeArgs {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TerminalBridgeTerminateArgs {
     pub session_id: String,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TerminalBridgeSetStreamModeArgs {
     pub session_id: String,
     pub mode: String,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TerminalBridgeReplayOutputArgs {
     pub session_id: String,
     pub after_seq: u64,
@@ -97,16 +76,12 @@ pub struct TerminalBridgeReplayOutputArgs {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TerminalBridgeReplayOutputChunk {
     pub seq: u64,
     pub data: String,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TerminalBridgeReplayOutputResult {
     pub chunks: Vec<TerminalBridgeReplayOutputChunk>,
     pub has_more: bool,
@@ -115,16 +90,12 @@ pub struct TerminalBridgeReplayOutputResult {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TerminalBridgeEmitSystemMessageArgs {
     pub session_id: String,
     pub text: String,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TerminalBridgeStartHumanSessionArgs {
     pub terminal_session_id: String,
     pub kind: String,
@@ -140,8 +111,6 @@ pub struct TerminalBridgeStartHumanSessionArgs {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TerminalBridgeStartHumanSessionResult {
     pub agent_session_id: String,
     pub agent_session_number: u32,

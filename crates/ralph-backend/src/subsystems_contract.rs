@@ -1,8 +1,6 @@
 use ralph_macros::ipc_type;
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SubsystemCommentData {
     pub id: u32,
     pub category: String,
@@ -24,8 +22,6 @@ pub struct SubsystemCommentData {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SubsystemData {
     pub id: u32,
     pub name: String,
@@ -38,8 +34,6 @@ pub struct SubsystemData {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SubsystemsCreateArgs {
     pub name: String,
     pub display_name: String,
@@ -48,8 +42,6 @@ pub struct SubsystemsCreateArgs {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SubsystemsUpdateArgs {
     pub name: String,
     pub display_name: String,
@@ -58,15 +50,11 @@ pub struct SubsystemsUpdateArgs {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SubsystemsDeleteArgs {
     pub name: String,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SubsystemsCommentAddArgs {
     pub subsystem_name: String,
     pub category: String,
@@ -79,8 +67,6 @@ pub struct SubsystemsCommentAddArgs {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SubsystemsCommentUpdateArgs {
     pub subsystem_name: String,
     pub comment_id: u32,
@@ -90,8 +76,6 @@ pub struct SubsystemsCommentUpdateArgs {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SubsystemsCommentDeleteArgs {
     pub subsystem_name: String,
     pub comment_id: u32,

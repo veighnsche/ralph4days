@@ -134,12 +134,12 @@ export type FeatureLearning = {
   text: string
   reason?: string
   source: LearningSource
-  task_id?: number
+  taskId?: number
   iteration?: number
   created: string
-  hit_count: number
+  hitCount: number
   reviewed: boolean
-  review_count: number
+  reviewCount: number
 }
 export type GroupStats = {
   name: string
@@ -186,17 +186,17 @@ export type ProtocolVersionInfo = { protocolVersion: number }
 export type PtyClosedEvent = { sessionId: string; exitCode: number }
 export type PtyOutputEvent = { sessionId: string; seq: bigint; data: string }
 export type RalphProject = { name: string; path: string }
-export type RecentProject = { path: string; name: string; last_opened: string }
+export type RecentProject = { path: string; name: string; lastOpened: string }
 export type RemoteConnectArgs = { wsUrl: string }
 export type RemoteConnectResult = { wsUrl: string; protocol: ProtocolVersionInfo }
 export type RemoteStatus = { connected: boolean; wsUrl?: string; protocol?: ProtocolVersionInfo }
 export type SectionConfig = { name: string; enabled: boolean; instructionOverride?: string }
 export type SectionInfo = {
   name: string
-  display_name: string
+  displayName: string
   description: string
   category: string
-  is_instruction: boolean
+  isInstruction: boolean
 }
 export type SectionSettingsData = { enabled: boolean; instructionOverride?: string }
 export type StackMetadataData = {
@@ -213,11 +213,11 @@ export type SubsystemComment = {
   id: number
   category: string
   discipline?: string
-  agent_task_id?: number
+  agentTaskId?: number
   body: string
   summary?: string
   reason?: string
-  source_iteration?: number
+  sourceIteration?: number
   created?: string
   updated?: string
 }

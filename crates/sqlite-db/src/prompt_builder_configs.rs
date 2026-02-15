@@ -1,20 +1,15 @@
 use crate::SqliteDb;
 use ralph_errors::{codes, ralph_err, RalphResultExt};
 use ralph_macros::ipc_type;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SectionSettingsData {
     pub enabled: bool,
     pub instruction_override: Option<String>,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PromptBuilderConfigInput {
     pub name: String,
     pub base_prompt: String,
@@ -23,8 +18,6 @@ pub struct PromptBuilderConfigInput {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PromptBuilderConfigData {
     pub name: String,
     pub base_prompt: String,

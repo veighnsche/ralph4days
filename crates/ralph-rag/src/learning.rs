@@ -19,11 +19,10 @@
 //! - **F36**: Custom deserialization — no silent fallback on malformed data
 
 use ralph_macros::ipc_type;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::collections::HashSet;
 
-#[ipc_type]
-#[derive(Debug, Clone, Serialize)]
+#[ipc_type(custom_deserialize)]
 pub struct FeatureLearning {
     pub text: String,
 
@@ -48,8 +47,7 @@ pub struct FeatureLearning {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Copy, PartialEq, Eq)]
 pub enum LearningSource {
     Auto,
     Agent,
@@ -355,56 +353,144 @@ impl<'de> Deserialize<'de> for FeatureLearning {
                 review_count: 0,
             }),
             serde_json::Value::Object(map) => {
-                let text = map
-                    .get("text")
-                    .and_then(|v| v.as_str())
+                // Compatibility: accept both camelCase and snake_case keys for persisted YAML/JSON
+                // while the app transitions to a camelCase IPC contract.
+                //
+                // Removal criteria: once all on-disk learnings are migrated, delete the snake_case
+                // aliases and keep only camelCase.
+                let allowed_keys: std::collections::BTreeSet<&str> = [
+                    "text",
+                    "reason",
+                    "source",
+                    "taskId",
+                    "task_id",
+                    "iteration",
+                    "created",
+                    "hitCount",
+                    "hit_count",
+                    "reviewed",
+                    "reviewCount",
+                    "review_count",
+                ]
+                .into_iter()
+                .collect();
+
+                for k in map.keys() {
+                    if !allowed_keys.contains(k.as_str()) {
+                        return Err(serde::de::Error::custom(format!(
+                            "FeatureLearning has unknown key '{k}'"
+                        )));
+                    }
+                }
+
+                let get_key =
+                    |camel: &str, snake: &str| -> Result<Option<&serde_json::Value>, D::Error> {
+                        let c = map.get(camel);
+                        let s = if camel == snake { None } else { map.get(snake) };
+                        match (c, s) {
+                            (Some(_), Some(_)) => Err(serde::de::Error::custom(format!(
+                                "FeatureLearning must not contain both '{camel}' and '{snake}'"
+                            ))),
+                            (Some(v), None) | (None, Some(v)) => Ok(Some(v)),
+                            (None, None) => Ok(None),
+                        }
+                    };
+
+                let text_v = get_key("text", "text")?.ok_or_else(|| {
+                    serde::de::Error::custom(
+                        "FeatureLearning map must have a 'text' field (string)",
+                    )
+                })?;
+                let text = text_v
+                    .as_str()
                     .ok_or_else(|| {
-                        serde::de::Error::custom(
-                            "FeatureLearning map must have a 'text' field (string)",
-                        )
+                        serde::de::Error::custom("FeatureLearning 'text' must be a string")
                     })?
                     .to_owned();
 
-                let reason = map
-                    .get("reason")
-                    .and_then(|v| v.as_str())
-                    .map(std::borrow::ToOwned::to_owned);
+                let reason = match get_key("reason", "reason")? {
+                    Some(v) => Some(
+                        v.as_str()
+                            .ok_or_else(|| {
+                                serde::de::Error::custom(
+                                    "FeatureLearning 'reason' must be a string",
+                                )
+                            })?
+                            .to_owned(),
+                    ),
+                    None => None,
+                };
 
-                let source =
-                    map.get("source")
-                        .and_then(|v| v.as_str())
-                        .map_or(LearningSource::Auto, |s| match s {
+                let source = match get_key("source", "source")? {
+                    Some(v) => {
+                        let s = v.as_str().ok_or_else(|| {
+                            serde::de::Error::custom("FeatureLearning 'source' must be a string")
+                        })?;
+                        match s {
+                            "auto" => LearningSource::Auto,
                             "agent" => LearningSource::Agent,
                             "human" => LearningSource::Human,
                             "opus_reviewed" => LearningSource::OpusReviewed,
-                            _ => LearningSource::Auto,
-                        });
+                            _ => {
+                                return Err(serde::de::Error::custom(format!(
+                                    "FeatureLearning 'source' must be one of: auto, agent, human, opus_reviewed (got '{s}')"
+                                )))
+                            }
+                        }
+                    }
+                    None => LearningSource::Auto,
+                };
 
-                let task_id = map
-                    .get("task_id")
-                    .and_then(serde_json::Value::as_u64)
-                    .map(|n| n as u32);
-                let iteration = map
-                    .get("iteration")
-                    .and_then(serde_json::Value::as_u64)
-                    .map(|n| n as u32);
-                let created = map
-                    .get("created")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .to_owned();
-                let hit_count = map
-                    .get("hit_count")
-                    .and_then(serde_json::Value::as_u64)
-                    .unwrap_or(1) as u32;
-                let reviewed = map
-                    .get("reviewed")
-                    .and_then(serde_json::Value::as_bool)
-                    .unwrap_or(false);
-                let review_count = map
-                    .get("review_count")
-                    .and_then(serde_json::Value::as_u64)
-                    .unwrap_or(0) as u32;
+                let task_id = match get_key("taskId", "task_id")? {
+                    Some(v) => Some(v.as_u64().ok_or_else(|| {
+                        serde::de::Error::custom(
+                            "FeatureLearning 'taskId'/'task_id' must be a number",
+                        )
+                    })? as u32),
+                    None => None,
+                };
+
+                let iteration = match get_key("iteration", "iteration")? {
+                    Some(v) => Some(v.as_u64().ok_or_else(|| {
+                        serde::de::Error::custom("FeatureLearning 'iteration' must be a number")
+                    })? as u32),
+                    None => None,
+                };
+
+                let created = match get_key("created", "created")? {
+                    Some(v) => v
+                        .as_str()
+                        .ok_or_else(|| {
+                            serde::de::Error::custom("FeatureLearning 'created' must be a string")
+                        })?
+                        .to_owned(),
+                    None => String::new(),
+                };
+
+                let hit_count = match get_key("hitCount", "hit_count")? {
+                    Some(v) => v.as_u64().ok_or_else(|| {
+                        serde::de::Error::custom(
+                            "FeatureLearning 'hitCount'/'hit_count' must be a number",
+                        )
+                    })? as u32,
+                    None => 1,
+                };
+
+                let reviewed = match get_key("reviewed", "reviewed")? {
+                    Some(v) => v.as_bool().ok_or_else(|| {
+                        serde::de::Error::custom("FeatureLearning 'reviewed' must be a boolean")
+                    })?,
+                    None => false,
+                };
+
+                let review_count = match get_key("reviewCount", "review_count")? {
+                    Some(v) => v.as_u64().ok_or_else(|| {
+                        serde::de::Error::custom(
+                            "FeatureLearning 'reviewCount'/'review_count' must be a number",
+                        )
+                    })? as u32,
+                    None => 0,
+                };
 
                 Ok(Self {
                     text,
@@ -543,7 +629,7 @@ mod tests {
         let json = serde_json::json!({
             "text": "Use React Hook Form",
             "source": "opus_reviewed",
-            "hit_count": 3,
+            "hitCount": 3,
             "reviewed": true
         });
         let learning: FeatureLearning = serde_json::from_value(json).unwrap();
@@ -556,6 +642,37 @@ mod tests {
     #[test]
     fn custom_deserialize_rejects_missing_text() {
         let json = serde_json::json!({ "source": "auto" });
+        let result: Result<FeatureLearning, _> = serde_json::from_value(json);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn custom_deserialize_rejects_unknown_keys() {
+        let json = serde_json::json!({
+            "text": "x",
+            "wat": 1,
+        });
+        let result: Result<FeatureLearning, _> = serde_json::from_value(json);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn custom_deserialize_rejects_invalid_types() {
+        let json = serde_json::json!({
+            "text": "x",
+            "hitCount": "nope",
+        });
+        let result: Result<FeatureLearning, _> = serde_json::from_value(json);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn custom_deserialize_rejects_dual_casing_for_same_field() {
+        let json = serde_json::json!({
+            "text": "x",
+            "hitCount": 2,
+            "hit_count": 3,
+        });
         let result: Result<FeatureLearning, _> = serde_json::from_value(json);
         assert!(result.is_err());
     }

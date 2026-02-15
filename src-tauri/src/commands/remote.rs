@@ -6,23 +6,17 @@ use std::sync::Arc;
 use tauri::{AppHandle, State};
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RemoteConnectArgs {
     pub ws_url: String,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RemoteConnectResult {
     pub ws_url: String,
     pub protocol: ProtocolVersionInfo,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RemoteStatus {
     pub connected: bool,
     pub ws_url: Option<String>,

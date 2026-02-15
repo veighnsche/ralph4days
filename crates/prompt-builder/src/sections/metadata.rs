@@ -1,8 +1,6 @@
 use ralph_macros::ipc_type;
-use serde::Serialize;
 
-#[ipc_type]
-#[derive(Debug, Clone, Serialize)]
+#[ipc_type(serialize_only)]
 pub struct SectionInfo {
     pub name: &'static str,
     pub display_name: &'static str,

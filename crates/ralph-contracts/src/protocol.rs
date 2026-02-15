@@ -1,5 +1,4 @@
 use ralph_macros::ipc_type;
-use serde::{Deserialize, Serialize};
 
 /// Bump this when the *frontend-facing* IPC contract changes (commands/events/payload shapes).
 ///
@@ -7,8 +6,6 @@ use serde::{Deserialize, Serialize};
 pub const PROTOCOL_VERSION: u32 = 1;
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ProtocolVersionInfo {
     pub protocol_version: u32,
 }

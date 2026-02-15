@@ -1,31 +1,24 @@
 use crate::prompt_context::{build_prompt_context, PromptContextArgs};
 use prompt_builder::CodebaseSnapshot;
 use ralph_macros::ipc_type;
-use serde::Deserialize;
 use sqlite_db::SqliteDb;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Mutex;
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PromptPreviewSection {
     pub name: String,
     pub content: String,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PromptPreview {
     pub sections: Vec<PromptPreviewSection>,
     pub full_prompt: String,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct SectionConfig {
     pub name: String,
     pub enabled: bool,
@@ -33,8 +26,6 @@ pub struct SectionConfig {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct PromptBuilderPreviewArgs {
     pub sections: Vec<SectionConfig>,
     pub user_input: Option<String>,

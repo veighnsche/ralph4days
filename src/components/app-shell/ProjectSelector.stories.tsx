@@ -28,8 +28,8 @@ export const BothLists: Story = {
       {
         command: 'project_recent_list',
         response: [
-          { name: 'my-app', path: '/home/user/projects/my-app', last_opened: '2026-02-10T15:30:00Z' },
-          { name: 'backend-api', path: '/home/user/projects/backend-api', last_opened: '2026-02-09T12:00:00Z' }
+          { name: 'my-app', path: '/home/user/projects/my-app', lastOpened: '2026-02-10T15:30:00Z' },
+          { name: 'backend-api', path: '/home/user/projects/backend-api', lastOpened: '2026-02-09T12:00:00Z' }
         ]
       },
       {

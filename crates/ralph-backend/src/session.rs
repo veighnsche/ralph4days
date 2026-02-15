@@ -1,14 +1,11 @@
 use crate::project::validate_project_path;
 use ralph_errors::{codes, err_string, ralph_err, RalphResultExt, ToStringErr};
 use ralph_macros::ipc_type;
-use serde::{Deserialize, Serialize};
 use sqlite_db::SqliteDb;
 use std::path::PathBuf;
 use std::sync::Mutex;
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ProjectLockSetArgs {
     pub path: String,
 }

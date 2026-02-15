@@ -1,6 +1,5 @@
 use ralph_errors::codes;
 use ralph_macros::ipc_type;
-use serde::{Deserialize, Serialize};
 use sqlite_db::SqliteDb;
 
 fn get_task_or_error(db: &SqliteDb, id: u32) -> Result<sqlite_db::Task, String> {
@@ -13,8 +12,6 @@ fn get_task_or_error(db: &SqliteDb, id: u32) -> Result<sqlite_db::Task, String> 
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TasksCreateArgs {
     pub subsystem: String,
     pub discipline: String,
@@ -36,8 +33,6 @@ pub struct TasksCreateArgs {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TasksUpdateArgs {
     pub id: u32,
     pub subsystem: String,
@@ -60,30 +55,22 @@ pub struct TasksUpdateArgs {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TasksSetStatusArgs {
     pub id: u32,
     pub status: String,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TasksDeleteArgs {
     pub id: u32,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TasksGetArgs {
     pub id: u32,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TasksSignalAddArgs {
     pub task_id: u32,
     pub discipline: Option<String>,
@@ -93,8 +80,6 @@ pub struct TasksSignalAddArgs {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TasksSignalUpdateArgs {
     pub task_id: u32,
     pub signal_id: u32,
@@ -102,31 +87,23 @@ pub struct TasksSignalUpdateArgs {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TasksSignalDeleteArgs {
     pub task_id: u32,
     pub signal_id: u32,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TasksSignalSummariesGetArgs {
     pub task_ids: Vec<u32>,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TasksAskAnswerArgs {
     pub signal_id: u32,
     pub answer: String,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TasksCommentReplyAddArgs {
     pub task_id: u32,
     pub parent_comment_id: u32,
@@ -135,23 +112,17 @@ pub struct TasksCommentReplyAddArgs {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TasksSignalCommentUpdateArgs {
     pub comment_id: u32,
     pub body: String,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TasksSignalCommentDeleteArgs {
     pub comment_id: u32,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TasksSignalCommentsListArgs {
     pub signal_id: u32,
 }
