@@ -1,4 +1,16 @@
 use futures_util::{SinkExt, StreamExt};
+use ralph_backend::disciplines_contract::{
+    DisciplinesCreateArgs, DisciplinesCroppedImageGetArgs, DisciplinesDeleteArgs,
+    DisciplinesImageDataGetArgs, DisciplinesUpdateArgs,
+};
+use ralph_backend::prompt_builder_configs_contract::{
+    PromptBuilderConfigDeleteArgs, PromptBuilderConfigGetArgs, PromptBuilderConfigSaveArgs,
+};
+use ralph_backend::subsystems_contract::{
+    SubsystemsCommentAddArgs, SubsystemsCommentDeleteArgs, SubsystemsCommentUpdateArgs,
+    SubsystemsCreateArgs, SubsystemsDeleteArgs, SubsystemsUpdateArgs,
+};
+use ralph_backend::{disciplines_service, prompt_builder_configs_service, subsystems_service};
 use ralph_contracts::protocol::ProtocolVersionInfo;
 use ralph_contracts::transport::RemoteWireFrame;
 use ralph_errors::{codes, err_string};
@@ -129,7 +141,7 @@ async fn handle_connection(
                         let tx_clone = tx.clone();
                         let state = Arc::clone(&state);
                         tokio::spawn(async move {
-                            let response = match handle_command(&state, &command, payload) {
+                            let response = match handle_command(&state, &command, payload).await {
                                 Ok(result) => RemoteWireFrame::RpcOk { id, result },
                                 Err(error) => RemoteWireFrame::RpcErr { id, error },
                             };
@@ -231,7 +243,7 @@ fn encode_result<T: serde::Serialize>(
     })
 }
 
-fn handle_command(
+async fn handle_command(
     state: &RalphdState,
     command: &str,
     payload: serde_json::Value,
@@ -263,6 +275,139 @@ fn handle_command(
             let args: ralph_backend::project::ProjectInitializeArgs =
                 decode_args(command, payload)?;
             ralph_backend::project::project_initialize(args)?;
+            Ok(serde_json::Value::Null)
+        }
+        "subsystems_list" => {
+            require_null_payload(command, payload)?;
+            let subsystems = ralph_backend::session::with_db(&state.db, |db| {
+                subsystems_service::subsystems_list(db)
+            })?;
+            encode_result(command, subsystems)
+        }
+        "subsystems_create" => {
+            let args: SubsystemsCreateArgs = decode_args(command, payload)?;
+            let created = ralph_backend::session::with_db(&state.db, |db| {
+                subsystems_service::subsystems_create(db, args)
+            })?;
+            encode_result(command, created)
+        }
+        "subsystems_update" => {
+            let args: SubsystemsUpdateArgs = decode_args(command, payload)?;
+            let updated = ralph_backend::session::with_db(&state.db, |db| {
+                subsystems_service::subsystems_update(db, args)
+            })?;
+            encode_result(command, updated)
+        }
+        "subsystems_delete" => {
+            let args: SubsystemsDeleteArgs = decode_args(command, payload)?;
+            ralph_backend::session::with_db(&state.db, |db| {
+                subsystems_service::subsystems_delete(db, args)
+            })?;
+            Ok(serde_json::Value::Null)
+        }
+        "subsystems_comment_add" => {
+            let args: SubsystemsCommentAddArgs = decode_args(command, payload)?;
+            let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
+
+            let (subsystem, embed_work) = ralph_backend::session::with_db_tx(&state.db, |db| {
+                subsystems_service::subsystems_comment_add_prepare(db, args)
+            })?;
+            subsystems_service::subsystems_comment_apply_embedding(&project_path, embed_work)
+                .await?;
+
+            encode_result(command, subsystem)
+        }
+        "subsystems_comment_update" => {
+            let args: SubsystemsCommentUpdateArgs = decode_args(command, payload)?;
+            let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
+
+            let (subsystem, embed_work) = ralph_backend::session::with_db_tx(&state.db, |db| {
+                subsystems_service::subsystems_comment_update_prepare(db, args)
+            })?;
+
+            if let Some(work) = embed_work {
+                subsystems_service::subsystems_comment_apply_embedding(&project_path, work).await?;
+            }
+
+            encode_result(command, subsystem)
+        }
+        "subsystems_comment_delete" => {
+            let args: SubsystemsCommentDeleteArgs = decode_args(command, payload)?;
+            let updated = ralph_backend::session::with_db(&state.db, |db| {
+                subsystems_service::subsystems_comment_delete(db, args)
+            })?;
+            encode_result(command, updated)
+        }
+        "disciplines_list" => {
+            require_null_payload(command, payload)?;
+            let disciplines = ralph_backend::session::with_db(&state.db, |db| {
+                disciplines_service::disciplines_list(db)
+            })?;
+            encode_result(command, disciplines)
+        }
+        "disciplines_create" => {
+            let args: DisciplinesCreateArgs = decode_args(command, payload)?;
+            let created = ralph_backend::session::with_db(&state.db, |db| {
+                disciplines_service::disciplines_create(db, args)
+            })?;
+            encode_result(command, created)
+        }
+        "disciplines_update" => {
+            let args: DisciplinesUpdateArgs = decode_args(command, payload)?;
+            let updated = ralph_backend::session::with_db(&state.db, |db| {
+                disciplines_service::disciplines_update(db, args)
+            })?;
+            encode_result(command, updated)
+        }
+        "disciplines_delete" => {
+            let args: DisciplinesDeleteArgs = decode_args(command, payload)?;
+            let deleted = ralph_backend::session::with_db(&state.db, |db| {
+                disciplines_service::disciplines_delete(db, args)
+            })?;
+            encode_result(command, deleted)
+        }
+        "disciplines_image_data_get" => {
+            let args: DisciplinesImageDataGetArgs = decode_args(command, payload)?;
+            let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
+            let result = ralph_backend::session::with_db(&state.db, |db| {
+                disciplines_service::disciplines_image_data_get(&project_path, db, args)
+            })?;
+            encode_result(command, result)
+        }
+        "disciplines_cropped_image_get" => {
+            let args: DisciplinesCroppedImageGetArgs = decode_args(command, payload)?;
+            let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
+            let result = ralph_backend::session::with_db(&state.db, |db| {
+                disciplines_service::disciplines_cropped_image_get(&project_path, db, args)
+            })?;
+            encode_result(command, result)
+        }
+        "prompt_builder_config_list" => {
+            require_null_payload(command, payload)?;
+            let names = ralph_backend::session::with_db(&state.db, |db| {
+                prompt_builder_configs_service::prompt_builder_config_list(db)
+            })?;
+            encode_result(command, names)
+        }
+        "prompt_builder_config_get" => {
+            let args: PromptBuilderConfigGetArgs = decode_args(command, payload)?;
+            let config = ralph_backend::session::with_db(&state.db, |db| {
+                prompt_builder_configs_service::prompt_builder_config_get(db, args)
+            })?;
+            encode_result(command, config)
+        }
+        "prompt_builder_config_save" => {
+            let args: PromptBuilderConfigSaveArgs = decode_args(command, payload)?;
+            ralph_backend::session::with_db(&state.db, |db| {
+                prompt_builder_configs_service::prompt_builder_config_save(db, args)
+            })?;
+            Ok(serde_json::Value::Null)
+        }
+        "prompt_builder_config_delete" => {
+            let args: PromptBuilderConfigDeleteArgs = decode_args(command, payload)?;
+            ralph_backend::session::with_db(&state.db, |db| {
+                prompt_builder_configs_service::prompt_builder_config_delete(db, args)
+            })?;
             Ok(serde_json::Value::Null)
         }
         "tasks_create" => {
