@@ -93,6 +93,8 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
   - Prompt builder: `src-tauri/src/commands/prompts.rs`
   - Agent sessions: `src-tauri/src/commands/agent_sessions.rs`
   - Note: several commands were converted to `async` to await remote RPC; this should not change the frontend contract (Tauri `invoke` is already promise-based).
+- [ ] Stand up a headless `ralphd` that speaks `RemoteWireFrame`:
+  - Current state: `crates/ralphd` exists and accepts WS + answers `protocol_version_get`; full command parity + event streaming are still pending.
 - [ ] Replace remaining direct Tauri `AppHandle.emit(...)` usage with the sink interface (notably `src-tauri/src/api_server.rs` and the remaining direct emits in `src-tauri/src/commands/terminal_bridge.rs`).
 - [ ] Keep Tauri command modules as thin adapters:
   - deserialize args
