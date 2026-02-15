@@ -12,13 +12,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { useInvoke } from '@/hooks/api'
 import { tauriInvoke } from '@/lib/tauri/invoke'
 import { cn } from '@/lib/utils'
-import type { RalphProject } from '@/types/generated'
-
-interface RecentProject {
-  path: string
-  name: string
-  last_opened: string
-}
+import type { RalphProject, RecentProject } from '@/types/generated'
 
 interface ProjectSelectorProps {
   onProjectSelected: (path: string) => void

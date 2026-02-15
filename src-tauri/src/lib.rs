@@ -2,6 +2,7 @@ mod api_server;
 mod commands;
 mod diagnostics;
 mod event_sink;
+pub mod ipc_contract;
 mod recent_projects;
 mod remote;
 mod terminal;

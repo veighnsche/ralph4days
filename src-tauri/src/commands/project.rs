@@ -1,6 +1,7 @@
 use super::remote_proxy::{remote_invoke_args, remote_invoke_no_args};
 use super::state::{AppState, CommandContext};
 use ralph_backend::project::{ProjectInitializeArgs, ProjectValidatePathArgs};
+use ralph_backend::project_contract::RecentProject;
 use ralph_backend::session::ProjectLockSetArgs;
 use ralph_errors::{codes, ralph_err, RalphResultExt};
 use ralph_macros::ipc_type;
@@ -116,14 +117,21 @@ pub async fn project_lock_get(state: State<'_, AppState>) -> Result<Option<Strin
 }
 
 #[tauri::command]
-pub async fn project_recent_list(
-    state: State<'_, AppState>,
-) -> Result<Vec<crate::recent_projects::RecentProject>, String> {
+pub async fn project_recent_list(state: State<'_, AppState>) -> Result<Vec<RecentProject>, String> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_no_args(&rpc, "project_recent_list").await;
     }
 
-    crate::recent_projects::load(&state.xdg)
+    crate::recent_projects::load(&state.xdg).map(|projects| {
+        projects
+            .into_iter()
+            .map(|p| RecentProject {
+                path: p.path,
+                name: p.name,
+                last_opened: p.last_opened,
+            })
+            .collect()
+    })
 }
 
 #[tauri::command]
@@ -299,7 +307,7 @@ pub fn window_open_new() -> Result<(), String> {
 
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ProjectScanArgs {
     pub root_dir: Option<String>,
 }

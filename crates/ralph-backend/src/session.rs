@@ -8,7 +8,7 @@ use std::sync::Mutex;
 
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ProjectLockSetArgs {
     pub path: String,
 }

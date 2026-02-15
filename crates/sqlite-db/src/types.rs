@@ -100,7 +100,7 @@ impl TaskProvenance {
 
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TaskSignal {
     pub id: u32,
     pub author: String,
@@ -155,6 +155,7 @@ pub struct TaskSignal {
 
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct McpServerConfig {
     pub name: String,
     pub command: String,
@@ -166,7 +167,7 @@ pub struct McpServerConfig {
 
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Task {
     pub id: u32,
     pub subsystem: String,
@@ -223,7 +224,7 @@ pub struct Task {
 
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TaskListItem {
     pub id: u32,
     pub subsystem: String,
@@ -252,7 +253,7 @@ pub struct TaskListItem {
 
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TaskTemplate {
     pub id: u32,
     pub discipline_id: u32,
@@ -333,6 +334,7 @@ impl SubsystemStatus {
 
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SubsystemComment {
     pub id: u32,
     pub category: String,
@@ -446,7 +448,7 @@ pub struct ProjectMetadata {
 
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TaskSignalSummary {
     pub pending_asks: u32,
     pub flag_count: u32,
@@ -482,7 +484,7 @@ pub struct TaskInput {
 
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AgentSession {
     pub id: String,
     pub session_number: u32,
@@ -519,7 +521,7 @@ pub struct AgentSession {
 
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AgentSessionCreateInput {
     pub id: String,
     pub kind: String,
@@ -533,7 +535,7 @@ pub struct AgentSessionCreateInput {
 
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AgentSessionUpdateInput {
     pub id: String,
     pub kind: Option<String>,
@@ -554,7 +556,7 @@ pub struct AgentSessionUpdateInput {
 
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TaskSignalComment {
     pub id: u32,
     pub signal_id: u32,
@@ -568,7 +570,7 @@ pub struct TaskSignalComment {
 
 #[ipc_type]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TaskSignalCommentCreateInput {
     pub signal_id: u32,
     pub session_id: Option<String>,

@@ -186,6 +186,7 @@ export type ProtocolVersionInfo = { protocolVersion: number }
 export type PtyClosedEvent = { sessionId: string; exitCode: number }
 export type PtyOutputEvent = { sessionId: string; seq: bigint; data: string }
 export type RalphProject = { name: string; path: string }
+export type RecentProject = { path: string; name: string; last_opened: string }
 export type RemoteConnectArgs = { wsUrl: string }
 export type RemoteConnectResult = { wsUrl: string; protocol: ProtocolVersionInfo }
 export type RemoteStatus = { connected: boolean; wsUrl?: string; protocol?: ProtocolVersionInfo }

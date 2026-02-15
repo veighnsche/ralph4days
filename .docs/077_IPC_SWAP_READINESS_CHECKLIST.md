@@ -196,7 +196,7 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
 - [x] Prompt builder preview args/results are owned by `crates/ralph-backend/src/prompt_builder_preview.rs`.
   - Owner: `crates/ralph-backend/src/prompt_builder_preview.rs`.
   - Acceptance: `just types-check`.
-- [ ] Create backend-owned DTOs for `project_recent_list`.
+- [x] Create backend-owned DTOs for `project_recent_list`.
   - Owner: (proposed) `crates/ralph-backend/src/project_contract.rs` (new).
   - Acceptance: `just types-check` exports the DTOs exactly once.
 - [ ] Create backend-owned DTOs for `project_scan`.
@@ -249,73 +249,73 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
 - [x] Strict-decode is enabled for stack metadata DTOs.
   - Owner: `src-tauri/src/commands/subsystems.rs`.
   - Acceptance: `rg \"deny_unknown_fields\" src-tauri/src/commands/subsystems.rs` has hits.
-- [ ] Add `deny_unknown_fields` to `ProjectValidatePathArgs`.
+- [x] Add `deny_unknown_fields` to `ProjectValidatePathArgs`.
   - Owner: `crates/ralph-backend/src/project.rs`.
   - Acceptance: `rg \"ProjectValidatePathArgs\" -n crates/ralph-backend/src/project.rs` shows `deny_unknown_fields` on its serde attrs.
-- [ ] Add `deny_unknown_fields` to `ProjectLockSetArgs`.
+- [x] Add `deny_unknown_fields` to `ProjectLockSetArgs`.
   - Owner: `crates/ralph-backend/src/session.rs`.
   - Acceptance: `rg \"ProjectLockSetArgs\" -n crates/ralph-backend/src/session.rs` shows `deny_unknown_fields` on its serde attrs.
-- [ ] Add `deny_unknown_fields` to tasks create/update DTOs.
+- [x] Add `deny_unknown_fields` to tasks create/update DTOs.
   - Owner: `crates/ralph-backend/src/tasks.rs`.
   - Acceptance: `rg -n -C 2 \"pub struct TasksCreateArgs\" crates/ralph-backend/src/tasks.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct TasksUpdateArgs\" crates/ralph-backend/src/tasks.rs | rg \"deny_unknown_fields\"` both succeed.
-- [ ] Add `deny_unknown_fields` to tasks read/delete/status DTOs.
+- [x] Add `deny_unknown_fields` to tasks read/delete/status DTOs.
   - Owner: `crates/ralph-backend/src/tasks.rs`.
   - Acceptance: `rg -n -C 2 \"pub struct TasksSetStatusArgs\" crates/ralph-backend/src/tasks.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct TasksGetArgs\" crates/ralph-backend/src/tasks.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct TasksDeleteArgs\" crates/ralph-backend/src/tasks.rs | rg \"deny_unknown_fields\"` all succeed.
-- [ ] Add `deny_unknown_fields` to tasks signal mutation DTOs.
+- [x] Add `deny_unknown_fields` to tasks signal mutation DTOs.
   - Owner: `crates/ralph-backend/src/tasks.rs`.
   - Acceptance: `rg -n -C 2 \"pub struct TasksSignalAddArgs\" crates/ralph-backend/src/tasks.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct TasksSignalUpdateArgs\" crates/ralph-backend/src/tasks.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct TasksSignalDeleteArgs\" crates/ralph-backend/src/tasks.rs | rg \"deny_unknown_fields\"` all succeed.
-- [ ] Add `deny_unknown_fields` to tasks signal list/summarize DTOs.
+- [x] Add `deny_unknown_fields` to tasks signal list/summarize DTOs.
   - Owner: `crates/ralph-backend/src/tasks.rs`.
   - Acceptance: `rg -n -C 2 \"pub struct TasksSignalSummariesGetArgs\" crates/ralph-backend/src/tasks.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct TasksSignalCommentsListArgs\" crates/ralph-backend/src/tasks.rs | rg \"deny_unknown_fields\"` both succeed.
-- [ ] Add `deny_unknown_fields` to tasks ask/reply/comment DTOs.
+- [x] Add `deny_unknown_fields` to tasks ask/reply/comment DTOs.
   - Owner: `crates/ralph-backend/src/tasks.rs`.
   - Acceptance: `rg -n -C 2 \"pub struct TasksAskAnswerArgs\" crates/ralph-backend/src/tasks.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct TasksCommentReplyAddArgs\" crates/ralph-backend/src/tasks.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct TasksSignalCommentUpdateArgs\" crates/ralph-backend/src/tasks.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct TasksSignalCommentDeleteArgs\" crates/ralph-backend/src/tasks.rs | rg \"deny_unknown_fields\"` all succeed.
-- [ ] Add `deny_unknown_fields` to terminal session-start DTOs.
+- [x] Add `deny_unknown_fields` to terminal session-start DTOs.
   - Owner: `crates/ralph-backend/src/terminal/contract.rs`.
   - Acceptance: `rg -n -C 2 \"pub struct TerminalBridgeStartSessionArgs\" crates/ralph-backend/src/terminal/contract.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct TerminalBridgeStartTaskSessionArgs\" crates/ralph-backend/src/terminal/contract.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct TerminalBridgeStartHumanSessionArgs\" crates/ralph-backend/src/terminal/contract.rs | rg \"deny_unknown_fields\"` all succeed.
-- [ ] Add `deny_unknown_fields` to terminal model-list DTOs.
+- [x] Add `deny_unknown_fields` to terminal model-list DTOs.
   - Owner: `crates/ralph-backend/src/terminal/contract.rs`.
   - Acceptance: `rg -n -C 2 \"pub struct TerminalBridgeModelOption\" crates/ralph-backend/src/terminal/contract.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct TerminalBridgeListModelFormTreeResult\" crates/ralph-backend/src/terminal/contract.rs | rg \"deny_unknown_fields\"` both succeed.
-- [ ] Add `deny_unknown_fields` to terminal control/input DTOs.
+- [x] Add `deny_unknown_fields` to terminal control/input DTOs.
   - Owner: `crates/ralph-backend/src/terminal/contract.rs`.
   - Acceptance: `rg -n -C 2 \"pub struct TerminalBridgeSendInputArgs\" crates/ralph-backend/src/terminal/contract.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct TerminalBridgeResizeArgs\" crates/ralph-backend/src/terminal/contract.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct TerminalBridgeSetStreamModeArgs\" crates/ralph-backend/src/terminal/contract.rs | rg \"deny_unknown_fields\"` all succeed.
-- [ ] Add `deny_unknown_fields` to terminal replay-output DTOs.
+- [x] Add `deny_unknown_fields` to terminal replay-output DTOs.
   - Owner: `crates/ralph-backend/src/terminal/contract.rs`.
   - Acceptance: `rg -n -C 2 \"pub struct TerminalBridgeReplayOutputArgs\" crates/ralph-backend/src/terminal/contract.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct TerminalBridgeReplayOutputResult\" crates/ralph-backend/src/terminal/contract.rs | rg \"deny_unknown_fields\"` both succeed.
-- [ ] Add `deny_unknown_fields` to prompt builder config section settings DTO.
+- [x] Add `deny_unknown_fields` to prompt builder config section settings DTO.
   - Owner: `crates/sqlite-db/src/prompt_builder_configs.rs`.
   - Acceptance: `rg -n -C 2 \"pub struct SectionSettingsData\" crates/sqlite-db/src/prompt_builder_configs.rs | rg \"deny_unknown_fields\"` succeeds.
-- [ ] Add `deny_unknown_fields` to prompt builder config DTOs.
+- [x] Add `deny_unknown_fields` to prompt builder config DTOs.
   - Owner: `crates/sqlite-db/src/prompt_builder_configs.rs`.
   - Acceptance: `rg -n -C 2 \"pub struct PromptBuilderConfigInput\" crates/sqlite-db/src/prompt_builder_configs.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct PromptBuilderConfigData\" crates/sqlite-db/src/prompt_builder_configs.rs | rg \"deny_unknown_fields\"` both succeed.
-- [ ] Add `deny_unknown_fields` to task signal DTOs.
+- [x] Add `deny_unknown_fields` to task signal DTOs.
   - Owner: `crates/sqlite-db/src/types.rs`.
   - Acceptance: `rg -n -C 2 \"pub struct TaskSignal\" crates/sqlite-db/src/types.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct TaskSignalSummary\" crates/sqlite-db/src/types.rs | rg \"deny_unknown_fields\"` both succeed.
-- [ ] Add `deny_unknown_fields` to MCP config DTO.
+- [x] Add `deny_unknown_fields` to MCP config DTO.
   - Owner: `crates/sqlite-db/src/types.rs`.
   - Acceptance: `rg -n -C 2 \"pub struct McpServerConfig\" crates/sqlite-db/src/types.rs | rg \"deny_unknown_fields\"` succeeds.
-- [ ] Add `deny_unknown_fields` to task DTOs.
+- [x] Add `deny_unknown_fields` to task DTOs.
   - Owner: `crates/sqlite-db/src/types.rs`.
   - Acceptance: `rg -n -C 2 \"pub struct Task\" crates/sqlite-db/src/types.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct TaskListItem\" crates/sqlite-db/src/types.rs | rg \"deny_unknown_fields\"` both succeed.
-- [ ] Add `deny_unknown_fields` to task template DTO.
+- [x] Add `deny_unknown_fields` to task template DTO.
   - Owner: `crates/sqlite-db/src/types.rs`.
   - Acceptance: `rg -n -C 2 \"pub struct TaskTemplate\" crates/sqlite-db/src/types.rs | rg \"deny_unknown_fields\"` succeeds.
-- [ ] Add `deny_unknown_fields` to subsystem comment DTO.
+- [x] Add `deny_unknown_fields` to subsystem comment DTO.
   - Owner: `crates/sqlite-db/src/types.rs`.
   - Acceptance: `rg -n -C 2 \"pub struct SubsystemComment\" crates/sqlite-db/src/types.rs | rg \"deny_unknown_fields\"` succeeds.
-- [ ] Add `deny_unknown_fields` to agent session DTOs.
+- [x] Add `deny_unknown_fields` to agent session DTOs.
   - Owner: `crates/sqlite-db/src/types.rs`.
   - Acceptance: `rg -n -C 2 \"pub struct AgentSession\" crates/sqlite-db/src/types.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct AgentSessionCreateInput\" crates/sqlite-db/src/types.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct AgentSessionUpdateInput\" crates/sqlite-db/src/types.rs | rg \"deny_unknown_fields\"` all succeed.
-- [ ] Add `deny_unknown_fields` to task signal comment DTOs.
+- [x] Add `deny_unknown_fields` to task signal comment DTOs.
   - Owner: `crates/sqlite-db/src/types.rs`.
   - Acceptance: `rg -n -C 2 \"pub struct TaskSignalComment\" crates/sqlite-db/src/types.rs | rg \"deny_unknown_fields\"` and `rg -n -C 2 \"pub struct TaskSignalCommentCreateInput\" crates/sqlite-db/src/types.rs | rg \"deny_unknown_fields\"` both succeed.
-- [ ] Add `deny_unknown_fields` to `ProjectScanArgs`.
+- [x] Add `deny_unknown_fields` to `ProjectScanArgs`.
   - Owner: `src-tauri/src/commands/project.rs`.
   - Acceptance: `rg \"ProjectScanArgs\" -n src-tauri/src/commands/project.rs` shows `deny_unknown_fields` on its serde attrs.
-- [ ] Add `deny_unknown_fields` to `AgentSessionsByIdArgs`.
+- [x] Add `deny_unknown_fields` to `AgentSessionsByIdArgs`.
   - Owner: `src-tauri/src/commands/agent_sessions.rs`.
   - Acceptance: `rg \"AgentSessionsByIdArgs\" -n src-tauri/src/commands/agent_sessions.rs` shows `deny_unknown_fields` on its serde attrs.
-- [ ] Add at least one strict-decode regression test for each crate that decodes remote RPC results (`src-tauri`, `ralph-backend`, `sqlite-db`).
+- [x] Add at least one strict-decode regression test for each crate that decodes remote RPC results (`src-tauri`, `ralph-backend`, `sqlite-db`).
   - Owner: (proposed) `src-tauri/tests/remote_strict_decode_contract_test.rs` (new).
   - Acceptance: `cargo test --manifest-path src-tauri/Cargo.toml --test remote_strict_decode_contract_test` rejects unknown fields in at least one result DTO.
 
