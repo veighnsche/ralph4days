@@ -95,6 +95,9 @@ Instead:
 - The mobile backend proxies these semantics to the remote Linux `ralphd`.
 - If the proxy is not connected, it fails loudly (see Section 1).
 
+Important: this is a build-time diet, not a runtime feature flag.
+- Mobile builds should not compile/link the desktop-host crates and subsystems at all.
+
 Implication for the React UI:
 - Any UI action that implies "pick a local directory" or "scan local disk" must be removed/hidden on mobile, or it will hard-fail by design.
 
@@ -124,7 +127,60 @@ Remote-only mobile requires:
 
 Do not bolt this into the UI in an ad-hoc way. Keep one transport adapter boundary and keep contracts canonical in `crates/ralph-contracts`.
 
-## 4. Distribution Requirements (High-Level)
+Current repo state (already implemented):
+- Remote transport today is a single WebSocket carrying `RemoteWireFrame` (RPC + events) and is already implemented in the local Tauri backend (`src-tauri/src/remote.rs`) and in the headless server (`src-daemon/src/main.rs`).
+- The Tauri proxy connect surface currently takes a `wsUrl` directly (`remote_connect`). SSH port-forwarding / tunnel management is intentionally not part of that layer yet; mobile will need a "connection manager" that establishes SSH (over Tailscale/VPN) and then supplies a local `ws://127.0.0.1:<forwardedPort>` to `remote_connect`.
+
+## 4. Side-Quest Development Already In Repo (Remote Proxy + Ralphd)
+This section exists to prevent re-work. The following modules/crates were introduced specifically to make "remote-only mobile" viable.
+
+Contracts and protocol (Rust canonical owner):
+- `crates/ralph-contracts/src/protocol.rs`: `PROTOCOL_VERSION` + `ProtocolVersionInfo` (typed, deny-unknown-fields).
+- `crates/ralph-contracts/src/terminal.rs`: terminal event payloads + canonical event name constants (`terminal:output`, `terminal:closed`) with drift tests.
+- `crates/ralph-contracts/src/events.rs`: non-terminal event payloads + canonical event name constants (for example `backend-diagnostic`) with drift tests.
+- `crates/ralph-contracts/src/transport.rs`: transport traits (`EventSink`, `RpcClient`) and the one-channel WS framing contract (`RemoteWireFrame`, `RemoteEventFrame`).
+
+Backend extraction (shared by Tauri + ralphd):
+- `crates/ralph-backend/src/{project.rs,session.rs,tasks.rs,...}`: Tauri-free domain logic (the long-term intent is: Tauri command modules become thin adapters).
+
+Headless Linux server (remote authority):
+- `src-daemon/src/main.rs`: WebSocket server that speaks `RemoteWireFrame` and currently implements a parity subset:
+  - `protocol_version_get`
+  - `project_validate_path`
+  - `project_lock_{set,get}`
+  - `tasks_*` (CRUD + signals/comments subset)
+- Status: terminal/PTY parity and broader command parity are not complete yet.
+
+Desktop proxy plumbing (what mobile will reuse, then "diet down"):
+- `src-tauri/src/remote.rs`: `RemoteWireFrameConnection` WS client, protocol handshake (hard-fail on mismatch), event pump into an injected sink, invoke-style RPC client.
+- `src-tauri/src/commands/remote.rs`: `remote_connect`, `remote_disconnect`, `remote_status_get`.
+- `src-tauri/src/commands/remote_proxy.rs`: helpers that enforce canonical invoke payload shape (`{ args: ... }`) when proxying.
+- `src-tauri/src/event_sink.rs`: `TauriEventSink` implements `EventSink` by re-emitting remote events as local Tauri events.
+- `src-tauri/tests/invoke_command_list_contract_test.rs`: drift test that hard-fails if the invoke command list changes unintentionally.
+
+Frontend IPC boundaries (swap enablers):
+- `src/lib/tauri/invoke.ts`: the single frontend boundary for `invoke(...)` calls; enforces the `{ args: ... }` envelope.
+- `src/lib/tauri/events.ts`: the single frontend boundary for `listen(...)` subscriptions.
+- `src/lib/tauri/eventsContract.test.ts` + `src/lib/terminal/terminalBridgeContract.test.ts`: drift tests for event name constants the UI listens to.
+
+UI work that landed (not required for the backend side-quest):
+- A "mobile-first responsive shell + workspace toggle" exists in the frontend history. This can help iOS/Android ergonomics, but is not the core requirement for remote-only proxy mode.
+
+Git breadcrumbs (so we can find this work in history later; as of 2026-02-15):
+- `feat(contracts): introduce ralph-contracts crate`
+- `refactor(backend): route terminal + diagnostics events via EventSink`
+- `refactor(frontend): centralize Tauri event subscriptions`
+- `docs(remote): add headless ralph IPC audit + readiness checklist`
+- `docs(mobile): add Tauri mobile enablement dump`
+- `feat(remote): add RemoteWireFrame remote-mode adapter`
+- `feat(remote): proxy terminal bridge commands in remote mode`
+- `feat(remote): proxy core command surfaces in remote mode`
+- `feat(ralphd): add RemoteWireFrame ws skeleton`
+- `refactor(backend): extract project lock + tasks domains`
+- `feat(ralphd): serve project lock + tasks via ralph-backend`
+- `docs(mobile): note remote-only proxy approach`
+
+## 5. Distribution Requirements (High-Level)
 Android:
 - debug: emulator/device installs (APK)
 - release: Play Store (AAB), signing keys, Play Console configuration
@@ -134,13 +190,13 @@ iOS:
 - TestFlight/App Store Connect distribution
 - macOS runner / Mac build host as a hard dependency
 
-## 5. Testing/Verification Requirements
+## 6. Testing/Verification Requirements
 Minimum gates to claim "mobile support exists":
 - A compile gate for mobile targets (Android at least; iOS on macOS CI/host).
 - Emulator smoke run: app boots, loads the UI, and can perform a representative workflow.
 - Contract tests that prove mobile can speak to `ralphd` and handle version mismatch as a hard error.
 - Tests that assert "disconnected proxy" hard-fails (no silent no-ops).
 
-## 6. Explicitly Out Of Scope (Per Request)
-- GUI responsiveness and small-screen layout work.
+## 7. Explicitly Out Of Scope (Per Request)
+- GUI responsiveness and small-screen layout work (beyond whatever is already landed).
 - UX re-design for touch, keyboard avoidance, and compact navigation.

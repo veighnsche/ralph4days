@@ -18,6 +18,11 @@ This repository is a Tauri desktop app with a React frontend and Rust backend wo
 - `.docs/`: canonical location for implementation notes and design records.
   New docs must use the next chronological numeric prefix in the filename (for example `068_SOME_TITLE.md`).
 
+## Working in Dirty Trees
+- If the git working tree already has changes, assume they are intentional and leave them untouched by default.
+- Do not revert/remove unrelated diffs unless the user explicitly asks to clean up, minimize a PR, or revert specific files.
+- It is still OK to mention that unrelated changes exist when it affects reviewability, submodule pointers, conflicts, or CI noise.
+
 ## Build, Test, and Development Commands
 Use `just` as the primary task runner (`just --list`).
 
