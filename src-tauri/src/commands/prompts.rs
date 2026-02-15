@@ -1,3 +1,4 @@
+use super::remote_proxy::{remote_invoke_args, remote_invoke_no_args};
 use super::state::{AppState, CommandContext};
 use ralph_macros::ipc_type;
 use serde::Deserialize;
@@ -5,16 +6,16 @@ use sqlite_db::{PromptBuilderConfigData, PromptBuilderConfigInput};
 use tauri::State;
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PromptPreviewSection {
     pub name: String,
     pub content: String,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PromptPreview {
     pub sections: Vec<PromptPreviewSection>,
     pub full_prompt: String,
@@ -38,10 +39,14 @@ pub struct PromptBuilderPreviewArgs {
 }
 
 #[tauri::command]
-pub fn prompt_builder_preview(
+pub async fn prompt_builder_preview(
     state: State<'_, AppState>,
     args: PromptBuilderPreviewArgs,
 ) -> Result<PromptPreview, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "prompt_builder_preview", args).await;
+    }
+
     let PromptBuilderPreviewArgs {
         sections,
         user_input,
@@ -92,7 +97,11 @@ pub fn prompt_builder_preview(
 }
 
 #[tauri::command]
-pub fn prompt_builder_config_list(state: State<'_, AppState>) -> Result<Vec<String>, String> {
+pub async fn prompt_builder_config_list(state: State<'_, AppState>) -> Result<Vec<String>, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_no_args(&rpc, "prompt_builder_config_list").await;
+    }
+
     CommandContext::from_tauri_state(&state).db(sqlite_db::SqliteDb::list_prompt_builder_configs)
 }
 
@@ -104,10 +113,14 @@ pub struct PromptBuilderConfigGetArgs {
 }
 
 #[tauri::command]
-pub fn prompt_builder_config_get(
+pub async fn prompt_builder_config_get(
     state: State<'_, AppState>,
     args: PromptBuilderConfigGetArgs,
 ) -> Result<Option<PromptBuilderConfigData>, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "prompt_builder_config_get", args).await;
+    }
+
     CommandContext::from_tauri_state(&state).db(|db| db.get_prompt_builder_config(&args.name))
 }
 
@@ -119,10 +132,14 @@ pub struct PromptBuilderConfigSaveArgs {
 }
 
 #[tauri::command]
-pub fn prompt_builder_config_save(
+pub async fn prompt_builder_config_save(
     state: State<'_, AppState>,
     args: PromptBuilderConfigSaveArgs,
 ) -> Result<(), String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "prompt_builder_config_save", args).await;
+    }
+
     CommandContext::from_tauri_state(&state).db(|db| db.save_prompt_builder_config(args.config))
 }
 
@@ -134,9 +151,13 @@ pub struct PromptBuilderConfigDeleteArgs {
 }
 
 #[tauri::command]
-pub fn prompt_builder_config_delete(
+pub async fn prompt_builder_config_delete(
     state: State<'_, AppState>,
     args: PromptBuilderConfigDeleteArgs,
 ) -> Result<(), String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "prompt_builder_config_delete", args).await;
+    }
+
     CommandContext::from_tauri_state(&state).db(|db| db.delete_prompt_builder_config(&args.name))
 }

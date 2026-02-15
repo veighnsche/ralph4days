@@ -1,3 +1,4 @@
+use super::remote_proxy::{remote_invoke_args, remote_invoke_no_args};
 use super::state::{AppState, CommandContext};
 use ralph_errors::codes;
 use ralph_macros::ipc_type;
@@ -158,7 +159,14 @@ pub struct TasksSignalCommentsListArgs {
 }
 
 #[tauri::command]
-pub fn tasks_create(state: State<'_, AppState>, args: TasksCreateArgs) -> Result<String, String> {
+pub async fn tasks_create(
+    state: State<'_, AppState>,
+    args: TasksCreateArgs,
+) -> Result<String, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "tasks_create", args).await;
+    }
+
     let ctx = CommandContext::from_tauri_state(&state);
     let task_input = sqlite_db::TaskInput {
         subsystem: args.subsystem,
@@ -186,10 +194,14 @@ pub fn tasks_create(state: State<'_, AppState>, args: TasksCreateArgs) -> Result
 }
 
 #[tauri::command]
-pub fn tasks_update(
+pub async fn tasks_update(
     state: State<'_, AppState>,
     args: TasksUpdateArgs,
 ) -> Result<sqlite_db::Task, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "tasks_update", args).await;
+    }
+
     let ctx = CommandContext::from_tauri_state(&state);
     let task_id = args.id;
     let task_input = sqlite_db::TaskInput {
@@ -220,10 +232,14 @@ pub fn tasks_update(
 }
 
 #[tauri::command]
-pub fn tasks_set_status(
+pub async fn tasks_set_status(
     state: State<'_, AppState>,
     args: TasksSetStatusArgs,
 ) -> Result<sqlite_db::Task, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "tasks_set_status", args).await;
+    }
+
     let ctx = CommandContext::from_tauri_state(&state);
     let status = sqlite_db::TaskStatus::parse(&args.status).ok_or_else(|| {
         ralph_errors::err_string(
@@ -238,15 +254,23 @@ pub fn tasks_set_status(
 }
 
 #[tauri::command]
-pub fn tasks_delete(state: State<'_, AppState>, args: TasksDeleteArgs) -> Result<(), String> {
+pub async fn tasks_delete(state: State<'_, AppState>, args: TasksDeleteArgs) -> Result<(), String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "tasks_delete", args).await;
+    }
+
     CommandContext::from_tauri_state(&state).db(|db| db.delete_task(args.id))
 }
 
 #[tauri::command]
-pub fn tasks_signal_add(
+pub async fn tasks_signal_add(
     state: State<'_, AppState>,
     args: TasksSignalAddArgs,
 ) -> Result<sqlite_db::Task, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "tasks_signal_add", args).await;
+    }
+
     CommandContext::from_tauri_state(&state).db(|db| {
         db.add_signal(
             args.task_id,
@@ -260,10 +284,14 @@ pub fn tasks_signal_add(
 }
 
 #[tauri::command]
-pub fn tasks_signal_update(
+pub async fn tasks_signal_update(
     state: State<'_, AppState>,
     args: TasksSignalUpdateArgs,
 ) -> Result<sqlite_db::Task, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "tasks_signal_update", args).await;
+    }
+
     CommandContext::from_tauri_state(&state).db(|db| {
         db.update_signal(args.task_id, args.signal_id, args.body)?;
         get_task_or_error(db, args.task_id)
@@ -271,10 +299,14 @@ pub fn tasks_signal_update(
 }
 
 #[tauri::command]
-pub fn tasks_signal_delete(
+pub async fn tasks_signal_delete(
     state: State<'_, AppState>,
     args: TasksSignalDeleteArgs,
 ) -> Result<sqlite_db::Task, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "tasks_signal_delete", args).await;
+    }
+
     CommandContext::from_tauri_state(&state).db(|db| {
         db.delete_signal(args.task_id, args.signal_id)?;
         get_task_or_error(db, args.task_id)
@@ -282,46 +314,70 @@ pub fn tasks_signal_delete(
 }
 
 #[tauri::command]
-pub fn tasks_list(state: State<'_, AppState>) -> Result<Vec<sqlite_db::Task>, String> {
+pub async fn tasks_list(state: State<'_, AppState>) -> Result<Vec<sqlite_db::Task>, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_no_args(&rpc, "tasks_list").await;
+    }
+
     CommandContext::from_tauri_state(&state).db(|db| Ok(db.get_tasks()))
 }
 
 #[tauri::command]
-pub fn tasks_get(
+pub async fn tasks_get(
     state: State<'_, AppState>,
     args: TasksGetArgs,
 ) -> Result<sqlite_db::Task, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "tasks_get", args).await;
+    }
+
     CommandContext::from_tauri_state(&state).db(|db| get_task_or_error(db, args.id))
 }
 
 #[tauri::command]
-pub fn tasks_list_items(
+pub async fn tasks_list_items(
     state: State<'_, AppState>,
 ) -> Result<Vec<sqlite_db::TaskListItem>, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_no_args(&rpc, "tasks_list_items").await;
+    }
+
     CommandContext::from_tauri_state(&state).db(sqlite_db::SqliteDb::get_task_list_items)
 }
 
 #[tauri::command]
-pub fn tasks_signal_summaries_get(
+pub async fn tasks_signal_summaries_get(
     state: State<'_, AppState>,
     args: TasksSignalSummariesGetArgs,
 ) -> Result<std::collections::HashMap<u32, sqlite_db::TaskSignalSummary>, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "tasks_signal_summaries_get", args).await;
+    }
+
     CommandContext::from_tauri_state(&state).db(|db| db.get_signal_summaries(&args.task_ids))
 }
 
 #[tauri::command]
-pub fn tasks_ask_answer(
+pub async fn tasks_ask_answer(
     state: State<'_, AppState>,
     args: TasksAskAnswerArgs,
 ) -> Result<(), String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "tasks_ask_answer", args).await;
+    }
+
     CommandContext::from_tauri_state(&state).db(|db| db.answer_ask(args.signal_id, args.answer))
 }
 
 #[tauri::command]
-pub fn tasks_comment_reply_add(
+pub async fn tasks_comment_reply_add(
     state: State<'_, AppState>,
     args: TasksCommentReplyAddArgs,
 ) -> Result<sqlite_db::Task, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "tasks_comment_reply_add", args).await;
+    }
+
     CommandContext::from_tauri_state(&state).db(|db| {
         db.add_signal_with_parent(
             args.task_id,
@@ -335,35 +391,51 @@ pub fn tasks_comment_reply_add(
 }
 
 #[tauri::command]
-pub fn tasks_signal_comment_add(
+pub async fn tasks_signal_comment_add(
     state: State<'_, AppState>,
     args: sqlite_db::TaskSignalCommentCreateInput,
 ) -> Result<u32, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "tasks_signal_comment_add", args).await;
+    }
+
     CommandContext::from_tauri_state(&state).db(|db| db.add_task_signal_comment(args))
 }
 
 #[tauri::command]
-pub fn tasks_signal_comment_update(
+pub async fn tasks_signal_comment_update(
     state: State<'_, AppState>,
     args: TasksSignalCommentUpdateArgs,
 ) -> Result<(), String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "tasks_signal_comment_update", args).await;
+    }
+
     CommandContext::from_tauri_state(&state)
         .db(|db| db.update_task_signal_comment(args.comment_id, args.body))
 }
 
 #[tauri::command]
-pub fn tasks_signal_comment_delete(
+pub async fn tasks_signal_comment_delete(
     state: State<'_, AppState>,
     args: TasksSignalCommentDeleteArgs,
 ) -> Result<(), String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "tasks_signal_comment_delete", args).await;
+    }
+
     CommandContext::from_tauri_state(&state).db(|db| db.delete_task_signal_comment(args.comment_id))
 }
 
 #[tauri::command]
-pub fn tasks_signal_comments_list(
+pub async fn tasks_signal_comments_list(
     state: State<'_, AppState>,
     args: TasksSignalCommentsListArgs,
 ) -> Result<Vec<sqlite_db::TaskSignalComment>, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "tasks_signal_comments_list", args).await;
+    }
+
     CommandContext::from_tauri_state(&state)
         .db(|db| Ok(db.get_task_signal_comments(args.signal_id)))
 }

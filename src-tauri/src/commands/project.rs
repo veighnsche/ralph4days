@@ -1,3 +1,4 @@
+use super::remote_proxy::{remote_invoke_args, remote_invoke_no_args};
 use super::state::{AppState, CommandContext};
 use ralph_errors::{codes, ralph_err, RalphResultExt, ToStringErr};
 use ralph_macros::ipc_type;
@@ -30,15 +31,16 @@ const EXCLUDED_DIRS: &[&str] = &[
 ];
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct RalphProject {
     pub name: String,
     pub path: String,
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ProjectInfo {
     pub title: String,
     pub description: Option<String>,
@@ -46,8 +48,15 @@ pub struct ProjectInfo {
 }
 
 #[tauri::command]
-#[tracing::instrument]
-pub fn project_validate_path(args: ProjectValidatePathArgs) -> Result<(), String> {
+#[tracing::instrument(skip(state))]
+pub async fn project_validate_path(
+    state: State<'_, AppState>,
+    args: ProjectValidatePathArgs,
+) -> Result<(), String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "project_validate_path", args).await;
+    }
+
     let path = PathBuf::from(&args.path);
     ralph_backend::project::validate_project_path(&path)
 }
@@ -136,8 +145,15 @@ fn seed_disciplines_for_stack(
 }
 
 #[tauri::command]
-#[tracing::instrument]
-pub fn project_initialize(args: ProjectInitializeArgs) -> Result<(), String> {
+#[tracing::instrument(skip(state))]
+pub async fn project_initialize(
+    state: State<'_, AppState>,
+    args: ProjectInitializeArgs,
+) -> Result<(), String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "project_initialize", args).await;
+    }
+
     let stack = args.stack;
     tracing::info!("Initializing Ralph project with stack {}", stack);
     let project_title = args.project_title.clone();
@@ -250,56 +266,94 @@ pub fn project_lock_validated(state: &AppState, path: String) -> Result<(), Stri
 }
 
 #[tauri::command]
-pub fn project_lock_set(
+pub async fn project_lock_set(
     state: State<'_, AppState>,
     args: ProjectLockSetArgs,
 ) -> Result<(), String> {
-    project_validate_path(ProjectValidatePathArgs {
-        path: args.path.clone(),
-    })?;
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "project_lock_set", args).await;
+    }
+
+    let path = PathBuf::from(&args.path);
+    ralph_backend::project::validate_project_path(&path)?;
     project_lock_validated(&state, args.path)
 }
 
 #[tauri::command]
-pub fn project_lock_get(state: State<'_, AppState>) -> Result<Option<String>, String> {
+pub async fn project_lock_get(state: State<'_, AppState>) -> Result<Option<String>, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_no_args(&rpc, "project_lock_get").await;
+    }
+
     let locked = CommandContext::from_tauri_state(&state).maybe_locked_project_path()?;
     Ok(locked.as_ref().map(|p| p.to_string_lossy().to_string()))
 }
 
 #[tauri::command]
-pub fn project_recent_list(
+pub async fn project_recent_list(
     state: State<'_, AppState>,
 ) -> Result<Vec<crate::recent_projects::RecentProject>, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_no_args(&rpc, "project_recent_list").await;
+    }
+
     crate::recent_projects::load(&state.xdg)
 }
 
 #[tauri::command]
-pub fn execution_start() -> Result<(), String> {
+pub async fn execution_start(state: State<'_, AppState>) -> Result<(), String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_no_args(&rpc, "execution_start").await;
+    }
+
     ralph_err!(codes::LOOP_ENGINE, "Not implemented")
 }
 
 #[tauri::command]
-pub fn execution_pause() -> Result<(), String> {
+pub async fn execution_pause(state: State<'_, AppState>) -> Result<(), String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_no_args(&rpc, "execution_pause").await;
+    }
+
     ralph_err!(codes::LOOP_ENGINE, "Not implemented")
 }
 
 #[tauri::command]
-pub fn execution_resume() -> Result<(), String> {
+pub async fn execution_resume(state: State<'_, AppState>) -> Result<(), String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_no_args(&rpc, "execution_resume").await;
+    }
+
     ralph_err!(codes::LOOP_ENGINE, "Not implemented")
 }
 
 #[tauri::command]
-pub fn execution_stop() -> Result<(), String> {
+pub async fn execution_stop(state: State<'_, AppState>) -> Result<(), String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_no_args(&rpc, "execution_stop").await;
+    }
+
     ralph_err!(codes::LOOP_ENGINE, "Not implemented")
 }
 
 #[tauri::command]
-pub fn execution_state_get() -> Result<(), String> {
+pub async fn execution_state_get(state: State<'_, AppState>) -> Result<(), String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_no_args(&rpc, "execution_state_get").await;
+    }
+
     ralph_err!(codes::LOOP_ENGINE, "Not implemented")
 }
 
 #[tauri::command]
-pub fn project_scan(args: ProjectScanArgs) -> Result<Vec<RalphProject>, String> {
+pub async fn project_scan(
+    state: State<'_, AppState>,
+    args: ProjectScanArgs,
+) -> Result<Vec<RalphProject>, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "project_scan", args).await;
+    }
+
     let scan_path = if let Some(dir) = args.root_dir {
         PathBuf::from(dir)
     } else {
@@ -372,7 +426,11 @@ pub fn project_scan(args: ProjectScanArgs) -> Result<Vec<RalphProject>, String> 
 }
 
 #[tauri::command]
-pub fn system_home_dir_get() -> Result<String, String> {
+pub async fn system_home_dir_get(state: State<'_, AppState>) -> Result<String, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_no_args(&rpc, "system_home_dir_get").await;
+    }
+
     let path = dirs::home_dir().ok_or_else(|| {
         ralph_errors::err_string(codes::FILESYSTEM, "Failed to get home directory")
     })?;
@@ -380,7 +438,11 @@ pub fn system_home_dir_get() -> Result<String, String> {
 }
 
 #[tauri::command]
-pub fn project_info_get(state: State<'_, AppState>) -> Result<ProjectInfo, String> {
+pub async fn project_info_get(state: State<'_, AppState>) -> Result<ProjectInfo, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_no_args(&rpc, "project_info_get").await;
+    }
+
     let info = CommandContext::from_tauri_state(&state).db(|db| Ok(db.get_project_info()))?;
     Ok(ProjectInfo {
         title: info.title.clone(),

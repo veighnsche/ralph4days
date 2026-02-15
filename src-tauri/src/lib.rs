@@ -131,9 +131,8 @@ pub fn run() {
             if let Ok(matches) = app.cli().matches() {
                 if let Some(project_path) = matches.args.get("project") {
                     if let serde_json::Value::String(path_str) = &project_path.value {
-                        if let Err(e) = commands::project_validate_path(commands::project::ProjectValidatePathArgs {
-                            path: path_str.clone(),
-                        }) {
+                        let path = std::path::PathBuf::from(path_str);
+                        if let Err(e) = ralph_backend::project::validate_project_path(&path) {
                             eprintln!("Failed to lock project: {e}");
                             std::process::exit(1);
                         }

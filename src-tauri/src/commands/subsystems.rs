@@ -1,3 +1,4 @@
+use super::remote_proxy::{remote_invoke_args, remote_invoke_no_args};
 use super::state::{AppState, CommandContext};
 use crate::diagnostics;
 use ralph_errors::{codes, RalphResultExt};
@@ -62,8 +63,8 @@ pub struct DisciplineImagePromptData {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DisciplineTaskTemplateData {
     pub id: u32,
     pub title: String,
@@ -82,8 +83,8 @@ pub struct DisciplineTaskTemplateData {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DisciplineConfig {
     pub id: u32,
     pub name: String,
@@ -181,7 +182,11 @@ fn get_discipline_config_or_error(
 }
 
 #[tauri::command]
-pub fn disciplines_list(state: State<'_, AppState>) -> Result<Vec<DisciplineConfig>, String> {
+pub async fn disciplines_list(state: State<'_, AppState>) -> Result<Vec<DisciplineConfig>, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_no_args(&rpc, "disciplines_list").await;
+    }
+
     CommandContext::from_tauri_state(&state).db(|db| {
         Ok(db
             .get_disciplines()
@@ -192,8 +197,8 @@ pub fn disciplines_list(state: State<'_, AppState>) -> Result<Vec<DisciplineConf
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SubsystemCommentData {
     pub id: u32,
     pub category: String,
@@ -215,8 +220,8 @@ pub struct SubsystemCommentData {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SubsystemData {
     pub id: u32,
     pub name: String,
@@ -268,7 +273,11 @@ fn get_subsystem_data_or_error(
 }
 
 #[tauri::command]
-pub fn subsystems_list(state: State<'_, AppState>) -> Result<Vec<SubsystemData>, String> {
+pub async fn subsystems_list(state: State<'_, AppState>) -> Result<Vec<SubsystemData>, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_no_args(&rpc, "subsystems_list").await;
+    }
+
     CommandContext::from_tauri_state(&state)
         .db(|db| Ok(db.get_subsystems().iter().map(to_subsystem_data).collect()))
 }
@@ -284,10 +293,14 @@ pub struct SubsystemsCreateArgs {
 }
 
 #[tauri::command]
-pub fn subsystems_create(
+pub async fn subsystems_create(
     state: State<'_, AppState>,
     args: SubsystemsCreateArgs,
 ) -> Result<SubsystemData, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "subsystems_create", args).await;
+    }
+
     let subsystem_name = args.name.clone();
     CommandContext::from_tauri_state(&state).db(|db| {
         db.create_subsystem(sqlite_db::SubsystemInput {
@@ -311,10 +324,14 @@ pub struct SubsystemsUpdateArgs {
 }
 
 #[tauri::command]
-pub fn subsystems_update(
+pub async fn subsystems_update(
     state: State<'_, AppState>,
     args: SubsystemsUpdateArgs,
 ) -> Result<SubsystemData, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "subsystems_update", args).await;
+    }
+
     let subsystem_name = args.name.clone();
     CommandContext::from_tauri_state(&state).db(|db| {
         db.update_subsystem(sqlite_db::SubsystemInput {
@@ -346,6 +363,10 @@ pub async fn subsystems_comment_add(
     state: State<'_, AppState>,
     args: SubsystemsCommentAddArgs,
 ) -> Result<SubsystemData, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "subsystems_comment_add", args).await;
+    }
+
     let command_ctx = CommandContext::from_tauri_state(&state);
     let path = db_path(&command_ctx)?;
     let (comment_id, embedding_text, subsystem) = command_ctx.db_tx(|db| {
@@ -401,6 +422,10 @@ pub async fn subsystems_comment_update(
     state: State<'_, AppState>,
     args: SubsystemsCommentUpdateArgs,
 ) -> Result<SubsystemData, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "subsystems_comment_update", args).await;
+    }
+
     let command_ctx = CommandContext::from_tauri_state(&state);
     let path = db_path(&command_ctx)?;
     let (embedding_text, needs_embed, subsystem) = command_ctx.db_tx(|db| {
@@ -459,10 +484,14 @@ pub struct SubsystemsCommentDeleteArgs {
 }
 
 #[tauri::command]
-pub fn subsystems_comment_delete(
+pub async fn subsystems_comment_delete(
     state: State<'_, AppState>,
     args: SubsystemsCommentDeleteArgs,
 ) -> Result<SubsystemData, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "subsystems_comment_delete", args).await;
+    }
+
     CommandContext::from_tauri_state(&state).db(|db| {
         db.delete_subsystem_comment(&args.subsystem_name, args.comment_id)?;
         get_subsystem_data_or_error(db, &args.subsystem_name)
@@ -489,10 +518,14 @@ pub struct DisciplinesCreateArgs {
 }
 
 #[tauri::command]
-pub fn disciplines_create(
+pub async fn disciplines_create(
     state: State<'_, AppState>,
     args: DisciplinesCreateArgs,
 ) -> Result<DisciplineConfig, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "disciplines_create", args).await;
+    }
+
     let normalized_name = args
         .name
         .to_lowercase()
@@ -561,10 +594,14 @@ pub struct DisciplinesUpdateArgs {
 }
 
 #[tauri::command]
-pub fn disciplines_update(
+pub async fn disciplines_update(
     state: State<'_, AppState>,
     args: DisciplinesUpdateArgs,
 ) -> Result<DisciplineConfig, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "disciplines_update", args).await;
+    }
+
     let skills_json = serde_json::to_string(&args.skills)
         .ralph_err(codes::DISCIPLINE_OPS, "Failed to serialize skills")?;
 
@@ -608,18 +645,26 @@ pub fn disciplines_update(
 }
 
 #[tauri::command]
-pub fn subsystems_delete(
+pub async fn subsystems_delete(
     state: State<'_, AppState>,
     args: SubsystemsDeleteArgs,
 ) -> Result<(), String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "subsystems_delete", args).await;
+    }
+
     CommandContext::from_tauri_state(&state).db(|db| db.delete_subsystem(args.name))
 }
 
 #[tauri::command]
-pub fn disciplines_delete(
+pub async fn disciplines_delete(
     state: State<'_, AppState>,
     args: DisciplinesDeleteArgs,
 ) -> Result<String, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "disciplines_delete", args).await;
+    }
+
     let deleted_name = args.name.clone();
     CommandContext::from_tauri_state(&state).db(|db| {
         db.delete_discipline(args.name)?;
@@ -642,8 +687,8 @@ pub struct DisciplinesDeleteArgs {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct VisualIdentityData {
     pub style: String,
     pub theme: String,
@@ -652,8 +697,8 @@ pub struct VisualIdentityData {
 }
 
 #[ipc_type]
-#[derive(Debug, Clone, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct StackMetadataData {
     pub stack_id: u8,
     pub name: String,
@@ -688,10 +733,14 @@ pub fn stacks_metadata_list() -> Vec<StackMetadataData> {
 }
 
 #[tauri::command]
-pub fn disciplines_image_data_get(
+pub async fn disciplines_image_data_get(
     state: State<'_, AppState>,
     args: DisciplinesImageDataGetArgs,
 ) -> Result<Option<String>, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "disciplines_image_data_get", args).await;
+    }
+
     use base64::Engine;
 
     let ctx = CommandContext::from_tauri_state(&state);
@@ -727,10 +776,14 @@ pub fn disciplines_image_data_get(
 }
 
 #[tauri::command]
-pub fn disciplines_cropped_image_get(
+pub async fn disciplines_cropped_image_get(
     state: State<'_, AppState>,
     args: DisciplinesCroppedImageGetArgs,
 ) -> Result<Option<String>, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "disciplines_cropped_image_get", args).await;
+    }
+
     use base64::Engine;
     use std::io::Cursor;
 

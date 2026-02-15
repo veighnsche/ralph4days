@@ -1,16 +1,16 @@
 # IPC Swap Readiness Checklist (Make Current IPC “Perfect”)
 
-Date: 2026-02-14
+Date: 2026-02-15
 
 Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) stable, typed, drift-proof, and transport-agnostic so it can be re-hosted behind `ralphd` with minimal/no UI changes.
 
-## Current Snapshot (As Of 2026-02-14)
+## Current Snapshot (As Of 2026-02-15)
 1. Backend portability (can we reuse “backend core” in both Tauri and `ralphd` today?): **No** (roughly **5/10**).
    1. Major blockers: business logic still lives in `src-tauri/src/commands/*`, and some subsystems still hard-depend on Tauri runtime types (notably `src-tauri/src/api_server.rs`).
    2. Progress: project path validation moved into a Tauri-free crate (`crates/ralph-backend/src/project.rs`).
-2. IPC contract maturity (typed + stable + drift-tested enough to proxy 1:1): **Partial** (roughly **7.5/10**).
-   1. Strongest area: terminal bridge contract (wire types + drift tests + buffering/replay semantics).
-   2. Weakest area: protocol mismatch enforcement + drift testing outside terminal/diagnostics.
+2. IPC contract maturity (typed + stable + drift-tested enough to proxy 1:1): **Partial** (roughly **8/10**).
+   1. Strongest area: terminal bridge contract (wire types + drift tests + buffering/replay semantics) plus the remote proxy transport (`RemoteWireFrame` + hard-fail protocol handshake).
+   2. Weakest area: drift testing for non-terminal event domains, plus error-shape standardization across all commands.
 
 ## 0. Definitions
 1. “IPC contract” = command names + request/response JSON shapes + event names + event payload shapes.
@@ -86,6 +86,13 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
   - Frontend-facing control commands: `src-tauri/src/commands/remote.rs` (`remote_connect`, `remote_disconnect`, `remote_status_get`)
 - [x] Proxy the terminal bridge command surface in remote mode (first real parity slice):
   - Owner: `src-tauri/src/commands/terminal_bridge.rs` (uses `AppState::remote_rpc_client` + `src-tauri/src/commands/remote_proxy.rs`)
+- [x] Proxy additional “core UI parity” command surfaces in remote mode:
+  - Project: `src-tauri/src/commands/project.rs`
+  - Tasks: `src-tauri/src/commands/tasks.rs`
+  - Subsystems/Disciplines: `src-tauri/src/commands/subsystems.rs`
+  - Prompt builder: `src-tauri/src/commands/prompts.rs`
+  - Agent sessions: `src-tauri/src/commands/agent_sessions.rs`
+  - Note: several commands were converted to `async` to await remote RPC; this should not change the frontend contract (Tauri `invoke` is already promise-based).
 - [ ] Replace remaining direct Tauri `AppHandle.emit(...)` usage with the sink interface (notably `src-tauri/src/api_server.rs` and the remaining direct emits in `src-tauri/src/commands/terminal_bridge.rs`).
 - [ ] Keep Tauri command modules as thin adapters:
   - deserialize args
