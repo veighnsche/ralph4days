@@ -6,6 +6,7 @@ import {
   terminalBridgeListModelFormTree,
   terminalBridgeReplayOutput,
   terminalBridgeResize,
+  terminalBridgeResolveTaskLaunchConfig,
   terminalBridgeSendInput,
   terminalBridgeSetStreamMode,
   terminalBridgeStartSession,
@@ -85,7 +86,7 @@ describe('terminalBridgeClient', () => {
     await terminalBridgeResize('s1', 120, 40)
     await terminalBridgeTerminate('s1')
     await terminalBridgeSetStreamMode('s1', 'buffered')
-    await terminalBridgeReplayOutput('s1', 42n, 64)
+    await terminalBridgeReplayOutput('s1', 42, 64)
     await terminalBridgeEmitSystemMessage('s1', '[session started]\r\n')
 
     expect(mockInvoke).toHaveBeenCalledWith('terminal_resize', {
@@ -129,22 +130,8 @@ describe('terminalBridgeClient', () => {
     })
   })
 
-  it('accepts string afterSeq payloads in replay requests', async () => {
-    await terminalBridgeReplayOutput('s1', '123')
-
-    expect(mockInvoke).toHaveBeenCalledWith('terminal_replay_output', {
-      args: {
-        sessionId: 's1',
-        afterSeq: 123,
-        limit: 256
-      }
-    })
-  })
-
-  it('rejects malformed string afterSeq payloads in replay requests', async () => {
-    await expect(terminalBridgeReplayOutput('s1', 'bad')).rejects.toThrow(
-      '[terminal_bridge] Invalid afterSeq value: bad'
-    )
+  it('rejects invalid afterSeq payloads in replay requests', async () => {
+    await expect(terminalBridgeReplayOutput('s1', -1)).rejects.toThrow('[terminal_bridge] Invalid afterSeq value: -1')
 
     expect(mockInvoke).not.toHaveBeenCalled()
   })
@@ -168,8 +155,50 @@ describe('terminalBridgeClient', () => {
     })
   })
 
+  it('maps resolve-task-launch-config command', async () => {
+    mockInvoke.mockResolvedValue({
+      agent: 'codex',
+      model: 'gpt-5.3-codex',
+      effort: 'medium',
+      thinking: true,
+      permissionLevel: 'balanced',
+      agentSource: 'default',
+      modelSource: 'default',
+      effortSource: 'default',
+      thinkingSource: 'default',
+      permissionLevelSource: 'default',
+      modelSupportsEffort: true
+    })
+
+    const result = await terminalBridgeResolveTaskLaunchConfig(7, {
+      agent: 'codex',
+      model: 'gpt-5.3-codex',
+      effort: 'medium',
+      thinking: true,
+      permissionLevel: 'balanced'
+    })
+
+    expect(mockInvoke).toHaveBeenCalledWith('terminal_resolve_task_launch_config', {
+      args: {
+        taskId: 7,
+        defaults: {
+          agent: 'codex',
+          model: 'gpt-5.3-codex',
+          effort: 'medium',
+          thinking: true,
+          permissionLevel: 'balanced'
+        }
+      }
+    })
+    expect(result).toMatchObject({
+      agent: 'codex',
+      model: 'gpt-5.3-codex',
+      agentSource: 'default'
+    })
+  })
+
   it('filters output events by session id', async () => {
-    let handler: ((event: { payload: { sessionId: string; seq: bigint; data: string } }) => void) | undefined
+    let handler: ((event: { payload: { sessionId: string; seq: number; data: string } }) => void) | undefined
     mockListen.mockImplementation((eventName: string, cb: unknown) => {
       if (eventName === 'terminal:output') {
         handler = cb as typeof handler
@@ -180,11 +209,11 @@ describe('terminalBridgeClient', () => {
     const onOutput = vi.fn()
     await terminalBridgeListenSessionOutput('target', onOutput)
 
-    handler?.({ payload: { sessionId: 'other', seq: 1n, data: 'x' } })
-    handler?.({ payload: { sessionId: 'target', seq: 2n, data: 'y' } })
+    handler?.({ payload: { sessionId: 'other', seq: 1, data: 'x' } })
+    handler?.({ payload: { sessionId: 'target', seq: 2, data: 'y' } })
 
     expect(onOutput).toHaveBeenCalledTimes(1)
-    expect(onOutput).toHaveBeenCalledWith({ sessionId: 'target', seq: 2n, data: 'y' })
+    expect(onOutput).toHaveBeenCalledWith({ sessionId: 'target', seq: 2, data: 'y' })
   })
 
   it('filters closed events by session id', async () => {

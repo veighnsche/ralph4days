@@ -50,28 +50,12 @@ function encodeSystemMessage(text: string): Uint8Array {
   return new TextEncoder().encode(text)
 }
 
-function normalizeSeq(rawSeq: unknown): bigint {
-  if (typeof rawSeq === 'bigint') {
-    return rawSeq
-  }
-
+function normalizeSeq(rawSeq: unknown): number {
   if (typeof rawSeq === 'number') {
     if (!Number.isSafeInteger(rawSeq) || rawSeq < 0) {
       throw new Error(`[terminal_session] Invalid seq value: ${rawSeq}`)
     }
-    return BigInt(rawSeq)
-  }
-
-  if (typeof rawSeq === 'string') {
-    try {
-      const parsed = BigInt(rawSeq)
-      if (parsed < 0n) {
-        throw new Error()
-      }
-      return parsed
-    } catch {
-      throw new Error(`[terminal_session] Invalid seq value: ${rawSeq}`)
-    }
+    return rawSeq
   }
 
   throw new Error(`[terminal_session] Invalid seq type: ${typeof rawSeq}`)
@@ -86,10 +70,10 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
   const startedNotifiedRef = useRef(false)
   const startRequestedRef = useRef(false)
   const handlersRef = useRef(handlers)
-  const lastDeliveredSeqRef = useRef<bigint>(0n)
+  const lastDeliveredSeqRef = useRef<number>(0)
   const deliveredSystemSeqZeroRef = useRef(false)
   const isResumingRef = useRef(false)
-  const queuedLiveOutputRef = useRef<Array<{ seq: bigint; data: string }>>([])
+  const queuedLiveOutputRef = useRef<Array<{ seq: number; data: string }>>([])
   handlersRef.current = handlers
 
   const isEnabled = config.enabled ?? true
@@ -130,15 +114,15 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
   )
 
   const deliverOutputChunk = useCallback(
-    (seq: bigint, base64Data: string) => {
-      if (seq === 0n) {
+    (seq: number, base64Data: string) => {
+      if (seq === 0) {
         if (deliveredSystemSeqZeroRef.current) return
         deliveredSystemSeqZeroRef.current = true
       } else if (seq <= lastDeliveredSeqRef.current) {
         return
       }
       const bytes = decodeOutputBytes(base64Data)
-      if (seq !== 0n) {
+      if (seq !== 0) {
         lastDeliveredSeqRef.current = seq
       }
       emitOutputBytes(bytes)
@@ -178,7 +162,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
   }, [markSessionStarted, flushPendingInput])
 
   const replayBufferedOutput = useCallback(
-    async (afterSeq: bigint, limit = 256) => {
+    async (afterSeq: number, limit = 256) => {
       let cursor = afterSeq
       let replayLoops = 0
       let truncationNotified = false
@@ -193,8 +177,9 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
         }
 
         for (const chunk of replayResult.chunks) {
-          deliverOutputChunk(normalizeSeq(chunk.seq), chunk.data)
-          cursor = normalizeSeq(chunk.seq)
+          const seq = normalizeSeq(chunk.seq)
+          deliverOutputChunk(seq, chunk.data)
+          cursor = seq
         }
 
         if (!replayResult.hasMore) {
@@ -271,7 +256,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
     outputBufferRef.current = []
     pendingInputRef.current = []
     pendingResizeRef.current = null
-    lastDeliveredSeqRef.current = 0n
+    lastDeliveredSeqRef.current = 0
     deliveredSystemSeqZeroRef.current = false
     isResumingRef.current = false
     queuedLiveOutputRef.current = []
@@ -285,7 +270,7 @@ export function useTerminalSession(config: TerminalSessionConfig, handlers: Term
 
     Promise.all([
       terminalBridgeListenSessionOutput(sessionId, payload => {
-        let seq: bigint
+        let seq: number
         try {
           seq = normalizeSeq(payload.seq)
         } catch (error) {

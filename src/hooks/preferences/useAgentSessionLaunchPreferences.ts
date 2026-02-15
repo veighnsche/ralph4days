@@ -26,7 +26,7 @@ export const useAgentSessionLaunchPreferences = create<AgentSessionLaunchPrefere
       setAgent: value =>
         set(state => {
           if (state.agent === value) return state
-          return { agent: value }
+          return { agent: value, model: getDefaultModel(value) }
         }),
       setModel: value => {
         if (!value.trim()) return

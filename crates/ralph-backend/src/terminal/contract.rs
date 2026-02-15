@@ -71,12 +71,22 @@ pub struct TerminalBridgeSetStreamModeArgs {
 #[ipc_type]
 pub struct TerminalBridgeReplayOutputArgs {
     pub session_id: String,
+    #[serde(
+        serialize_with = "ralph_contracts::json_safe::serialize_u64",
+        deserialize_with = "ralph_contracts::json_safe::deserialize_u64"
+    )]
+    #[ts(type = "number")]
     pub after_seq: u64,
     pub limit: u32,
 }
 
 #[ipc_type]
 pub struct TerminalBridgeReplayOutputChunk {
+    #[serde(
+        serialize_with = "ralph_contracts::json_safe::serialize_u64",
+        deserialize_with = "ralph_contracts::json_safe::deserialize_u64"
+    )]
+    #[ts(type = "number")]
     pub seq: u64,
     pub data: String,
 }
@@ -86,6 +96,11 @@ pub struct TerminalBridgeReplayOutputResult {
     pub chunks: Vec<TerminalBridgeReplayOutputChunk>,
     pub has_more: bool,
     pub truncated: bool,
+    #[serde(
+        serialize_with = "ralph_contracts::json_safe::serialize_option_u64",
+        deserialize_with = "ralph_contracts::json_safe::deserialize_option_u64"
+    )]
+    #[ts(type = "number")]
     pub truncated_until_seq: Option<u64>,
 }
 
@@ -114,4 +129,44 @@ pub struct TerminalBridgeStartHumanSessionArgs {
 pub struct TerminalBridgeStartHumanSessionResult {
     pub agent_session_id: String,
     pub agent_session_number: u32,
+}
+
+#[ipc_type]
+pub enum TerminalBridgeLaunchSource {
+    Task,
+    Discipline,
+    Default,
+    Unset,
+}
+
+#[ipc_type]
+pub struct TerminalBridgeLaunchDefaults {
+    pub agent: Option<String>,
+    pub model: Option<String>,
+    pub effort: Option<String>,
+    pub thinking: Option<bool>,
+    pub permission_level: Option<String>,
+}
+
+#[ipc_type]
+pub struct TerminalBridgeResolveTaskLaunchArgs {
+    pub task_id: u32,
+    pub defaults: TerminalBridgeLaunchDefaults,
+}
+
+#[ipc_type]
+pub struct TerminalBridgeResolvedLaunchConfig {
+    pub agent: Option<String>,
+    pub model: Option<String>,
+    pub effort: Option<String>,
+    pub thinking: Option<bool>,
+    pub permission_level: Option<String>,
+
+    pub agent_source: TerminalBridgeLaunchSource,
+    pub model_source: TerminalBridgeLaunchSource,
+    pub effort_source: TerminalBridgeLaunchSource,
+    pub thinking_source: TerminalBridgeLaunchSource,
+    pub permission_level_source: TerminalBridgeLaunchSource,
+
+    pub model_supports_effort: bool,
 }

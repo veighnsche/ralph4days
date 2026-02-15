@@ -1,0 +1,24 @@
+stack_id: 0
+name: "Empty"
+description: "No predefined disciplines (complete freedom)"
+
+philosophy: |
+  Start from a blank slate: no seeded disciplines, no opinions.
+  Use this when you want to define everything yourself.
+
+visual_identity:
+  style: "Minimal"
+  theme: "Neutral"
+  tone: "Neutral"
+  references: "None"
+
+when_to_use:
+  - "You want to author all disciplines from scratch"
+  - "The stack does not match any built-in templates"
+
+discipline_count: 0
+
+characteristics:
+  - "No seeded disciplines"
+  - "No opinionated defaults"
+

@@ -1,6 +1,6 @@
 import { open } from '@tauri-apps/plugin-dialog'
 import { FolderOpen } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { InlineError } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
 import { useInvoke } from '@/hooks/api'
+import { useStackMetadata } from '@/hooks/disciplines'
 import { tauriInvoke } from '@/lib/tauri/invoke'
 import { cn } from '@/lib/utils'
 import type { RalphProject, RecentProject } from '@/types/generated'
@@ -17,14 +18,6 @@ import type { RalphProject, RecentProject } from '@/types/generated'
 interface ProjectSelectorProps {
   onProjectSelected: (path: string) => void
 }
-
-const STACK_OPTIONS = [
-  { value: 0, label: 'Empty', description: 'No disciplines (complete freedom)' },
-  { value: 1, label: 'Generic', description: '8 mode-based disciplines (language-agnostic)' },
-  { value: 2, label: 'Tauri + React', description: '8 tech-specific disciplines (desktop apps)' },
-  { value: 3, label: 'Next.js SaaS', description: '8 full-stack SaaS disciplines (Next.js + Prisma)' },
-  { value: 4, label: 'Flutter Mobile', description: '8 mobile disciplines (Flutter + Firebase)' }
-] as const
 
 function ProjectListItem({
   project,
@@ -168,6 +161,13 @@ function ProjectInitPanel({ onProjectSelected }: { onProjectSelected: (path: str
   const [stack, setStack] = useState<number>(2)
   const [initializing, setInitializing] = useState(false)
   const [initError, setInitError] = useState<string | null>(null)
+  const { stacks, error: stacksError, isLoading: stacksLoading } = useStackMetadata('app')
+
+  useEffect(() => {
+    if (stacks.length === 0) return
+    if (stacks.some(s => s.stackId === stack)) return
+    setStack(stacks[0]?.stackId ?? 0)
+  }, [stack, stacks])
 
   const handleBrowseInit = async () => {
     try {
@@ -211,19 +211,29 @@ function ProjectInitPanel({ onProjectSelected }: { onProjectSelected: (path: str
         <Field>
           <FieldLabel>Tech Stack</FieldLabel>
           <div className="flex flex-col gap-1">
-            {STACK_OPTIONS.map(opt => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setStack(opt.value)}
-                className={cn(
-                  'flex flex-col items-start rounded-md border px-3 py-2 text-left transition-colors duration-100 cursor-pointer',
-                  stack === opt.value ? 'border-primary bg-primary/5' : 'hover:bg-accent'
-                )}>
-                <span className="text-sm font-medium">{opt.label}</span>
-                <span className="text-xs text-muted-foreground">{opt.description}</span>
-              </button>
-            ))}
+            {stacksLoading ? (
+              <>
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </>
+            ) : stacksError ? (
+              <InlineError error={stacksError} />
+            ) : (
+              stacks.map(s => (
+                <button
+                  key={s.stackId}
+                  type="button"
+                  onClick={() => setStack(s.stackId)}
+                  className={cn(
+                    'flex flex-col items-start rounded-md border px-3 py-2 text-left transition-colors duration-100 cursor-pointer',
+                    stack === s.stackId ? 'border-primary bg-primary/5' : 'hover:bg-accent'
+                  )}>
+                  <span className="text-sm font-medium">{s.name}</span>
+                  <span className="text-xs text-muted-foreground">{s.description}</span>
+                </button>
+              ))
+            )}
           </div>
         </Field>
 

@@ -1,5 +1,6 @@
 use futures_util::{SinkExt, StreamExt};
 use ralph_contracts::transport::RemoteWireFrame;
+use ralph_errors::codes;
 use std::process::Stdio;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
@@ -87,7 +88,8 @@ async fn unknown_command_yields_rpc_err() {
     match resp {
         RemoteWireFrame::RpcErr { id, error } => {
             assert_eq!(id, 1);
-            assert!(!error.is_empty());
+            assert_eq!(error.code, codes::INTERNAL);
+            assert!(!error.message.is_empty());
         }
         other => panic!("unexpected response: {other:?}"),
     }

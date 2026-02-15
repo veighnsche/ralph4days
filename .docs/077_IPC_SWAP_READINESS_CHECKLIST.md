@@ -360,17 +360,17 @@ Goal: make the existing frontend-facing IPC contract (Tauri `invoke` + events) s
 - Callers must hard-fail when asked to send an out-of-range value; decoders must not silently truncate.
 - This is a stopgap until we migrate specific fields to string encoding (no compat shims).
 
-Impacted fields (current `u64` on Rust side, `bigint` in TS bindings):
+Impacted fields (current `u64` on Rust side; serialized as JSON numbers and enforced as <= `Number.MAX_SAFE_INTEGER`):
 - `RemoteWireFrame.id`
 - Terminal stream sequencing:
   - `PtyOutputEvent.seq`
   - `TerminalBridgeReplayOutputArgs.afterSeq`
   - `TerminalBridgeReplayOutputChunk.seq`
   - `TerminalBridgeReplayOutputResult.truncatedUntilSeq`
-- [ ] Implement chosen encoding for `RemoteWireFrame.id`.
+- [x] Implement chosen encoding for `RemoteWireFrame.id`.
   - Owner: `crates/ralph-contracts/src/transport.rs`.
   - Acceptance: rust tests + TS bindings match.
-- [ ] Implement chosen encoding for terminal sequence fields (`seq`, `afterSeq`, `truncatedUntilSeq`).
+- [x] Implement chosen encoding for terminal sequence fields (`seq`, `afterSeq`, `truncatedUntilSeq`).
   - Owner: `crates/ralph-backend/src/terminal/contract.rs`.
   - Acceptance: backend + frontend drift tests updated; no silent truncation.
 
@@ -409,13 +409,13 @@ Impacted fields (current `u64` on Rust side, `bigint` in TS bindings):
   - Acceptance: `rg \"RpcErr\" -n src-daemon/src/main.rs` shows coded `[R-XXXX]` strings only.
 
 ### 4.3 If Moving To Structured Errors (All-Or-Nothing)
-- [ ] Define one canonical structured error DTO and export it to TS.
-  - Owner: (proposed) `crates/ralph-contracts/src/error.rs`.
+- [x] Define one canonical structured error DTO and export it to TS.
+  - Owner: `crates/ralph-errors/src/lib.rs`.
   - Acceptance: `just types` exports it and all call sites can consume it.
-- [ ] Update remote wire `RpcErr` to carry the structured error payload (no string-only compat).
+- [x] Update remote wire `RpcErr` to carry the structured error payload (no string-only compat).
   - Owner: `crates/ralph-contracts/src/transport.rs`.
   - Acceptance: `cargo test -p ralph-contracts`.
-- [ ] Update frontend invoke boundary to surface structured errors (no silent fallback to string).
+- [x] Update frontend invoke boundary to surface structured errors (no silent fallback to string).
   - Owner: `src/lib/tauri/invoke.ts`.
   - Acceptance: `bun test:run` (or a new unit test for error surface).
 
@@ -486,9 +486,9 @@ Impacted fields (current `u64` on Rust side, `bigint` in TS bindings):
 - [x] Tauri `EventSink` implementation exists.
   - Owner: `src-tauri/src/event_sink.rs`.
   - Acceptance: `cargo test --manifest-path src-tauri/Cargo.toml`.
-- [ ] `ralphd` `EventSink` implementation broadcasts events over WS as `RemoteWireFrame::Event`.
-  - Owner: (proposed) `src-daemon/src/event_sink.rs` (new).
-  - Acceptance: remote events arrive in Tauri remote-mode and re-emit locally.
+- [x] `ralphd` `EventSink` implementation broadcasts events over WS as `RemoteWireFrame::Event`.
+  - Owner: `src-daemon/src/event_sink.rs`.
+  - Acceptance: `cargo test -p ralphd`.
 - [x] Replace `api-server-error` direct `AppHandle.emit(...)` with the sink interface.
   - Owner: `src-tauri/src/api_server.rs`.
   - Acceptance: `rg \"api-server-error\" -n src-tauri/src/api_server.rs` has no hits.
@@ -637,7 +637,7 @@ Impacted fields (current `u64` on Rust side, `bigint` in TS bindings):
 - [x] RPC `disciplines_image_data_get`. (Nice-to-have for v1 parity.)
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `cargo test -p ralphd` (RPC smoke tests).
-- [ ] RPC `prompt_builder_preview`.
+- [x] RPC `prompt_builder_preview`.
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `cargo test -p ralphd` (RPC smoke tests).
 - [x] RPC `prompt_builder_config_list`.
@@ -652,40 +652,40 @@ Impacted fields (current `u64` on Rust side, `bigint` in TS bindings):
 - [x] RPC `prompt_builder_config_delete`.
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `cargo test -p ralphd` (RPC smoke tests).
-- [ ] RPC `terminal_start_session`.
+- [x] RPC `terminal_start_session`.
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `cargo test -p ralphd` (RPC smoke tests).
-- [ ] RPC `terminal_start_task_session`.
+- [x] RPC `terminal_start_task_session`.
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `cargo test -p ralphd` (RPC smoke tests).
-- [ ] RPC `terminal_start_human_session`.
+- [x] RPC `terminal_start_human_session`.
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `cargo test -p ralphd` (RPC smoke tests).
-- [ ] RPC `terminal_list_model_form_tree`.
+- [x] RPC `terminal_list_model_form_tree`.
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `cargo test -p ralphd` (RPC smoke tests).
-- [ ] RPC `terminal_send_input`.
+- [x] RPC `terminal_send_input`.
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `cargo test -p ralphd` (RPC smoke tests).
-- [ ] RPC `terminal_resize`.
+- [x] RPC `terminal_resize`.
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `cargo test -p ralphd` (RPC smoke tests).
-- [ ] RPC `terminal_set_stream_mode`.
+- [x] RPC `terminal_set_stream_mode`.
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `cargo test -p ralphd` (RPC smoke tests).
-- [ ] RPC `terminal_replay_output`.
+- [x] RPC `terminal_replay_output`.
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `cargo test -p ralphd` (RPC smoke tests).
-- [ ] RPC `terminal_terminate`.
+- [x] RPC `terminal_terminate`.
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `cargo test -p ralphd` (RPC smoke tests).
-- [ ] Event stream: emit `backend-diagnostic`.
+- [x] Event stream: emit `backend-diagnostic`.
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `cargo test -p ralphd` (event smoke tests).
-- [ ] Event stream: emit `terminal:output`.
+- [x] Event stream: emit `terminal:output`.
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `cargo test -p ralphd` (event smoke tests).
-- [ ] Event stream: emit `terminal:closed`.
+- [x] Event stream: emit `terminal:closed`.
   - Owner: `src-daemon/src/main.rs`.
   - Acceptance: `cargo test -p ralphd` (event smoke tests).
 - [x] Add `src-daemon` integration test harness for WS `RemoteWireFrame` roundtrips.
@@ -697,11 +697,11 @@ Impacted fields (current `u64` on Rust side, `bigint` in TS bindings):
 - [x] Add RPC smoke test: unknown command yields `RpcErr`.
   - Owner: (proposed) `src-daemon/tests/ws_rpc_smoke_test.rs` (new).
   - Acceptance: `cargo test -p ralphd --test ws_rpc_smoke_test`.
-- [ ] Add protocol smoke test: client-sent non-request frames hard-fail.
-  - Owner: (proposed) `src-daemon/tests/ws_protocol_smoke_test.rs` (new).
+- [x] Add protocol smoke test: client-sent non-request frames hard-fail.
+  - Owner: `src-daemon/tests/ws_protocol_smoke_test.rs`.
   - Acceptance: `cargo test -p ralphd --test ws_protocol_smoke_test`.
-- [ ] Add event smoke test: `backend-diagnostic` frame is delivered (once events are implemented).
-  - Owner: (proposed) `src-daemon/tests/ws_event_smoke_test.rs` (new).
+- [x] Add event smoke test: `backend-diagnostic` frame is delivered (once events are implemented).
+  - Owner: `src-daemon/tests/ws_event_smoke_test.rs`.
   - Acceptance: `cargo test -p ralphd --test ws_event_smoke_test`.
 
 ### 6.5 Tauri Commands Must Stay Thin (Adapter-Only)
@@ -765,7 +765,7 @@ Impacted fields (current `u64` on Rust side, `bigint` in TS bindings):
 
 #### Decision
 - v1: single-controller. Any attempt to attach a second controller to an active `sessionId` must hard-fail.
-- [ ] Implement chosen attach policy (hard-fail path must be explicit).
+- [x] Implement chosen attach policy (hard-fail path must be explicit).
   - Owner: `crates/ralph-backend/src/terminal/manager.rs`.
   - Acceptance: unit tests cover rejection behavior.
 
@@ -777,10 +777,10 @@ Canonical checklist owner: this section (moved from `.docs/067_FRONTEND_LOGIC_BA
 - [x] Decision: canonical owner of prompt-builder section metadata is backend.
   - Owner: `.docs/077_IPC_SWAP_READINESS_CHECKLIST.md`.
   - Acceptance: decision recorded (including how frontend consumes it).
-- [ ] Add `enrichment_instructions` section metadata entry to the frontend registry (stopgap until duplication is eliminated).
+- [x] Add `enrichment_instructions` section metadata entry to the frontend registry (stopgap until duplication is eliminated).
   - Owner: `src/lib/prompt-builder-registry.ts`.
   - Acceptance: `rg \"enrichment_instructions\" src/lib/prompt-builder-registry.ts` has hits in both metadata and instructions text.
-- [ ] Fix backend section metadata category naming (`feature` vs `subsystem`) to match frontend taxonomy (or document canonical mapping).
+- [x] Fix backend section metadata category naming (`feature` vs `subsystem`) to match frontend taxonomy (or document canonical mapping).
   - Owner: `crates/prompt-builder/src/sections/metadata.rs`.
   - Acceptance: a unit test (or doc note) proves the mapping is stable and intentional.
 - [x] Decision: canonical owner of prompt-builder recipe definitions is backend.
@@ -795,21 +795,21 @@ Canonical checklist owner: this section (moved from `.docs/067_FRONTEND_LOGIC_BA
 - Frontend consumes backend-owned registries by rendering and allowing explicit overrides only (no parallel source-of-truth).
 
 ### 8.2 Prompt Preview Assembly
-- [ ] Backend preview is authoritative: it returns final `sections` + `fullPrompt` exactly as used (including user input insertion).
+- [x] Backend preview is authoritative: it returns final `sections` + `fullPrompt` exactly as used (including user input insertion).
   - Owner: `crates/ralph-backend/src/prompt_builder_preview.rs`.
   - Acceptance: `cargo test -p ralph-backend` includes a unit test asserting `fullPrompt` matches `sections` order (including user input).
-- [ ] Stop client-side section splicing for `user_input` in preview UI.
+- [x] Stop client-side section splicing for `user_input` in preview UI.
   - Owner: `src/hooks/prompt-builder/usePromptPreview.ts`.
   - Acceptance: `rg \"rebuildPreviewWithUserInput\" src/hooks/prompt-builder/usePromptPreview.ts` has no hits.
 
 ### 8.3 Naming and Canonicalization Invariants
-- [ ] Define and enforce subsystem-name validation in backend (reject `/`, `:`, `\\`) for task create/update.
+- [x] Define and enforce subsystem-name validation in backend (reject `/`, `:`, `\\`) for task create/update.
   - Owner: `crates/ralph-backend/src/tasks.rs`.
   - Acceptance: `cargo test -p ralph-backend` includes a unit test that invalid names hard-fail with a coded error.
-- [ ] Define and enforce subsystem-name normalization in backend (mirror `normalizeFeatureName` semantics) for task create/update.
+- [x] Define and enforce subsystem-name normalization in backend (mirror `normalizeFeatureName` semantics) for task create/update.
   - Owner: `crates/ralph-backend/src/tasks.rs`.
   - Acceptance: `cargo test -p ralph-backend` includes a unit test that normalization is applied.
-- [ ] Keep frontend normalization as UX-only (it may still normalize, but correctness must not depend on it).
+- [x] Keep frontend normalization as UX-only (it may still normalize, but correctness must not depend on it).
   - Owner: `src/lib/schemas/taskSchema.ts`.
   - Acceptance: doc note (or code comment) explicitly states backend is canonical for normalization/validation.
 
@@ -821,24 +821,24 @@ Canonical checklist owner: this section (moved from `.docs/067_FRONTEND_LOGIC_BA
 #### Decision
 - Canonical precedence: `task` overrides `discipline` overrides `user default`.
 - If an override references an unknown agent/model/effort combination, backend must hard-fail (no coercion).
-- [ ] Add backend DTO for resolved launch config + provenance metadata (what won, and why).
-  - Owner: (proposed) `crates/ralph-backend/src/terminal/contract.rs`.
+- [x] Add backend DTO for resolved launch config + provenance metadata (what won, and why).
+  - Owner: `crates/ralph-backend/src/terminal/contract.rs`.
   - Acceptance: `just types-check` exports the DTO exactly once.
-- [ ] Implement backend launch resolver (precedence + validation + explicit hard-fail paths).
-  - Owner: (proposed) `crates/ralph-backend/src/terminal/session.rs`.
+- [x] Implement backend launch resolver (precedence + validation + explicit hard-fail paths).
+  - Owner: `crates/ralph-backend/src/terminal/session.rs`.
   - Acceptance: `cargo test -p ralph-backend` includes unit tests for precedence + rejection paths.
-- [ ] Update terminal start commands to use backend resolver output (no frontend-owned fallback policy).
+- [x] Update terminal start commands to use backend resolver output (no frontend-owned fallback policy).
   - Owner: `src-tauri/src/commands/terminal_bridge.rs`.
   - Acceptance: `rg \"resolveLaunchConfig\" -n src-tauri/src/commands/terminal_bridge.rs` has no hits.
-- [ ] Keep frontend as display-only for launch-source labels (render backend provenance, don’t re-resolve).
+- [x] Keep frontend as display-only for launch-source labels (render backend provenance, don’t re-resolve).
   - Owner: `src/components/workspace/task-detail/hooks/useResolvedTaskLaunch.ts`.
   - Acceptance: the hook no longer computes precedence; it renders backend-provided provenance.
-- [ ] Remove fallback model/effort coercion policy from frontend (or make it an explicit UI-only suggestion).
-  - Owner: `src/components/agent-session-launch/resolveLaunchConfig.ts`.
-  - Acceptance: the function either disappears or is explicitly non-authoritative (no correctness coupling).
+- [x] Remove fallback model/effort coercion policy from frontend (or make it an explicit UI-only suggestion).
+  - Owner: `src/components/agent-session-launch/AgentSessionLaunchButton.tsx`.
+  - Acceptance: `rg \"resolveLaunchConfigAgainstCatalog\" src` has no hits.
 
 ### 8.5 Stack Catalog Source Of Truth
-- [ ] Remove hardcoded stack list from project selector.
+- [x] Remove hardcoded stack list from project selector.
   - Current frontend hardcoded list: `src/components/app-shell/ProjectSelector.tsx`
   - Backend provider: `stacks_metadata_list` in `src-tauri/src/commands/subsystems.rs`
   - Reason: stack definitions are backend/domain data and should not be duplicated.
@@ -846,20 +846,25 @@ Canonical checklist owner: this section (moved from `.docs/067_FRONTEND_LOGIC_BA
   - Acceptance: `rg \"stack\" src/components/app-shell/ProjectSelector.tsx` shows it loads from IPC, not hardcoded literals.
 
 ### 8.6 Nice-to-Have Boundary Tightening
-- [ ] Decision: backend-provided stats payloads for feature/discipline/project progress (only if these become shared product semantics).
+- [x] Decision: backend-provided stats payloads for feature/discipline/project progress (only if these become shared product semantics).
   - Current frontend derived stats: `src/lib/stats.ts`, `src/hooks/features/useFeatureStats.ts`, `src/hooks/disciplines/useDisciplineStats.ts`
   - Existing backend types indicate domain intent: `crates/sqlite-db/src/types.rs` (`GroupStats`, `ProjectProgress`)
   - Owner: `.docs/077_IPC_SWAP_READINESS_CHECKLIST.md`.
   - Acceptance: decision recorded + scope of canonical stats (if any).
 
+#### Decision
+- v1 swap readiness: keep progress/stats derived in the frontend (no new backend “stats RPC” surface).
+- Treat `sqlite-db` stats DTOs (`GroupStats`, `ProjectProgress`) as internal implementation details unless/until they become product semantics shared across transports.
+- If/when stats become canonical domain semantics, add a dedicated backend-owned stats service + explicit IPC DTOs, then delete the frontend derivations.
+
 ## 9. Parity/Drift Test Suite (Must-Have)
 
 ### 9.1 Non-GUI Contract Test Harness
-- [ ] Add a contract test suite that runs without a GUI (Rust-only).
-  - Owner: (proposed) `crates/ralph-contracts/tests/contract_suite_test.rs`.
+- [x] Add a contract test suite that runs without a GUI (Rust-only).
+  - Owner: `crates/ralph-contracts/tests/contract_suite_test.rs`.
   - Acceptance: `cargo test -p ralph-contracts` covers DTO serialization + strict decode.
-- [ ] Add a contract test suite that runs without a GUI (frontend-only).
-  - Owner: (proposed) `src/lib/tauri/contractSuite.test.ts`.
+- [x] Add a contract test suite that runs without a GUI (frontend-only).
+  - Owner: `src/lib/tauri/contractSuite.test.ts`.
   - Acceptance: `bun test:run` covers event name drift + critical TS types.
 
 ### 9.2 Existing Drift Coverage
@@ -877,10 +882,10 @@ Canonical checklist owner: this section (moved from `.docs/067_FRONTEND_LOGIC_BA
   - Acceptance: `bun test:run src/lib/tauri/eventsContract.test.ts`.
 
 ### 9.3 Extend Drift Coverage (Atomic Additions)
-- [ ] When a new event constant is added, add it to `FRONTEND_EVENT_NAMES`.
+- [x] When a new event constant is added, add it to `FRONTEND_EVENT_NAMES`.
   - Owner: `crates/ralph-contracts/src/frontend.rs`.
   - Acceptance: `cargo test -p ralph-contracts`.
-- [ ] When a new frontend-listened event is added, update the TS drift test to match the Rust list.
+- [x] When a new frontend-listened event is added, update the TS drift test to match the Rust list.
   - Owner: `src/lib/tauri/eventsContract.test.ts`.
   - Acceptance: `bun test:run src/lib/tauri/eventsContract.test.ts`.
 - [x] Add serialization-shape tests for high fan-out task DTOs returned by v1 parity RPC.
@@ -906,14 +911,45 @@ Canonical checklist owner: this section (moved from `.docs/067_FRONTEND_LOGIC_BA
 Turn the definition of done into executable gates + one manual smoke runbook.
 
 ### 10.1 Executable Gates
-- [ ] Add `just verify-swap` that runs: `types-check`, contract tests, and `ralphd` WS smoke tests.
+- [x] Add `just verify-swap` that runs: `types-check`, contract tests, and `ralphd` WS smoke tests.
   - Owner: `justfile`.
   - Acceptance: `just verify-swap`.
-- [ ] Add a `ralphd` parity smoke test that exercises the v1 MUST command subset over WS.
+- [x] Add a `ralphd` parity smoke test that exercises the v1 MUST command subset over WS.
   - Owner: `src-daemon` tests (new).
   - Acceptance: `cargo test -p ralphd`.
 
 ### 10.2 Manual Smoke Runbook (Only For UX Checks)
-- [ ] Write a swap smoke runbook: run Tauri in remote mode, connect to `ralphd`, and verify the core UI paths (project lock, tasks CRUD, terminal output).
+- [x] Write a swap smoke runbook: run Tauri in remote mode, connect to `ralphd`, and verify the core UI paths (project lock, tasks CRUD, terminal output).
   - Owner: `.docs/077_IPC_SWAP_READINESS_CHECKLIST.md`.
   - Acceptance: runbook section exists with exact commands and expected output.
+
+#### Swap Smoke Runbook (Local Tauri -> Local `ralphd`)
+
+1. Start `ralphd` (WS server):
+   - `cargo run -p ralphd`
+   - Expected: logs show it is listening on `127.0.0.1:9944` (default bind).
+
+2. Start the Tauri app:
+   - `just dev`
+
+3. Connect Tauri to `ralphd` from the renderer console (devtools):
+   - Run:
+     - `await window.__TAURI__.core.invoke('remote_connect', { args: { wsUrl: 'ws://127.0.0.1:9944' } })`
+   - Expected: resolves with `{ wsUrl, protocol: { protocolVersion } }`.
+   - Optional sanity check:
+     - `await window.__TAURI__.core.invoke('remote_status_get')` should return `{ connected: true, ... }`.
+
+4. Verify core UI paths (now proxied through `ralphd`):
+   - Project lock:
+     - Open an existing project (or initialize one).
+     - Expected: project opens successfully; subsequent calls (tasks/subsystems/etc) work without local-only errors.
+   - Tasks CRUD:
+     - Open a task, edit fields, change status, add a signal.
+     - Expected: changes persist and refresh correctly.
+   - Terminal output:
+     - Start a task session from a task sidebar or create a new terminal tab.
+     - Expected: terminal output appears in the UI; terminal close event is delivered when session ends.
+
+5. Disconnect (optional):
+   - `await window.__TAURI__.core.invoke('remote_disconnect')`
+   - Expected: `remote_status_get` returns `{ connected: false }`.

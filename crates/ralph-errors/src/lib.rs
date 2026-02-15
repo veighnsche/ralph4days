@@ -1,4 +1,6 @@
-#[derive(serde::Serialize)]
+use ralph_macros::ipc_type;
+
+#[ipc_type]
 pub struct RalphError {
     pub code: u16,
     pub message: String,

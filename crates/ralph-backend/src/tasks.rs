@@ -1,4 +1,4 @@
-use ralph_errors::codes;
+use ralph_errors::{codes, err_string};
 use ralph_macros::ipc_type;
 use sqlite_db::SqliteDb;
 
@@ -9,6 +9,46 @@ fn get_task_or_error(db: &SqliteDb, id: u32) -> Result<sqlite_db::Task, String> 
             format!("Task {id} not found after mutation"),
         )
     })
+}
+
+fn validate_subsystem_name(name: &str) -> Result<(), String> {
+    if name.contains('/') || name.contains(':') || name.contains('\\') {
+        return Err(err_string(
+            codes::TASK_VALIDATION,
+            "Subsystem name cannot contain /, :, or \\\\",
+        ));
+    }
+    Ok(())
+}
+
+fn normalize_subsystem_name(name: &str) -> String {
+    // Mirror src/lib/acronym.ts normalizeFeatureName:
+    // - lowercase
+    // - trim
+    // - collapse whitespace runs to "-"
+    // - collapse "_" runs to "-"
+    let lower = name.to_lowercase();
+    let trimmed = lower.trim();
+    let whitespace_normalized = trimmed
+        .split_whitespace()
+        .filter(|s| !s.is_empty())
+        .collect::<Vec<_>>()
+        .join("-");
+
+    let mut out = String::with_capacity(whitespace_normalized.len());
+    let mut in_underscores = false;
+    for ch in whitespace_normalized.chars() {
+        if ch == '_' {
+            if !in_underscores {
+                out.push('-');
+                in_underscores = true;
+            }
+        } else {
+            out.push(ch);
+            in_underscores = false;
+        }
+    }
+    out
 }
 
 #[ipc_type]
@@ -128,8 +168,11 @@ pub struct TasksSignalCommentsListArgs {
 }
 
 pub fn tasks_create(db: &SqliteDb, args: TasksCreateArgs) -> Result<String, String> {
+    validate_subsystem_name(&args.subsystem)?;
+    let normalized_subsystem = normalize_subsystem_name(&args.subsystem);
+
     let task_input = sqlite_db::TaskInput {
-        subsystem: args.subsystem,
+        subsystem: normalized_subsystem,
         discipline: args.discipline,
         title: args.title,
         description: args.description,
@@ -154,9 +197,12 @@ pub fn tasks_create(db: &SqliteDb, args: TasksCreateArgs) -> Result<String, Stri
 }
 
 pub fn tasks_update(db: &SqliteDb, args: TasksUpdateArgs) -> Result<sqlite_db::Task, String> {
+    validate_subsystem_name(&args.subsystem)?;
+    let normalized_subsystem = normalize_subsystem_name(&args.subsystem);
+
     let task_id = args.id;
     let task_input = sqlite_db::TaskInput {
-        subsystem: args.subsystem,
+        subsystem: normalized_subsystem,
         discipline: args.discipline,
         title: args.title,
         description: args.description,
@@ -292,4 +338,26 @@ pub fn tasks_signal_comments_list(
     args: TasksSignalCommentsListArgs,
 ) -> Result<Vec<sqlite_db::TaskSignalComment>, String> {
     Ok(db.get_task_signal_comments(args.signal_id))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn subsystem_name_validation_rejects_forbidden_characters() {
+        let err = validate_subsystem_name("bad/name").unwrap_err();
+        assert!(err.contains("[R-3000]"));
+        assert!(err.contains("Subsystem name cannot contain"));
+
+        assert!(validate_subsystem_name("also:bad").is_err());
+        assert!(validate_subsystem_name(r"also\\bad").is_err());
+    }
+
+    #[test]
+    fn subsystem_name_normalization_matches_frontend_semantics() {
+        assert_eq!(normalize_subsystem_name("  My Feature  "), "my-feature");
+        assert_eq!(normalize_subsystem_name("My__Feature"), "my-feature");
+        assert_eq!(normalize_subsystem_name("My _ Feature"), "my---feature");
+    }
 }

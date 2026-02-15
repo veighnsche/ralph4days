@@ -4,9 +4,13 @@ import type {
   PtyClosedEvent,
   PtyOutputEvent,
   TerminalBridgeEmitSystemMessageArgs,
+  TerminalBridgeLaunchDefaults,
   TerminalBridgeListModelFormTreeResult,
+  TerminalBridgeReplayOutputArgs,
   TerminalBridgeReplayOutputResult,
   TerminalBridgeResizeArgs,
+  TerminalBridgeResolvedLaunchConfig,
+  TerminalBridgeResolveTaskLaunchArgs,
   TerminalBridgeSendInputArgs,
   TerminalBridgeSetStreamModeArgs,
   TerminalBridgeStartSessionArgs,
@@ -43,38 +47,10 @@ function previewText(text: string, maxChars = 220): string {
   return `${text.slice(0, maxChars)}…`
 }
 
-function toReplayAfterSeq(afterSeq: bigint): number {
-  if (afterSeq > BigInt(Number.MAX_SAFE_INTEGER)) {
-    throw new Error(`[terminal_bridge] afterSeq out of JSON-safe range: ${afterSeq}`)
+function assertJsonSafeNonNegativeInt(value: number, label: string) {
+  if (!Number.isSafeInteger(value) || value < 0) {
+    throw new Error(`[terminal_bridge] Invalid ${label} value: ${value}`)
   }
-  return Number(afterSeq)
-}
-
-function toReplayAfterSeqRequest(afterSeq: bigint | number | string): number {
-  if (typeof afterSeq === 'bigint') {
-    if (afterSeq < 0n) {
-      throw new Error(`[terminal_bridge] Invalid afterSeq value: ${afterSeq}`)
-    }
-    return toReplayAfterSeq(afterSeq)
-  }
-
-  if (typeof afterSeq === 'string') {
-    try {
-      const parsed = BigInt(afterSeq)
-      if (parsed < 0n) {
-        throw new Error()
-      }
-      return toReplayAfterSeq(parsed)
-    } catch {
-      throw new Error(`[terminal_bridge] Invalid afterSeq value: ${afterSeq}`)
-    }
-  }
-
-  if (!Number.isSafeInteger(afterSeq) || afterSeq < 0) {
-    throw new Error(`[terminal_bridge] Invalid afterSeq value: ${afterSeq}`)
-  }
-
-  return afterSeq
 }
 
 export type TerminalBridgeStartHumanSessionArgs = {
@@ -104,6 +80,20 @@ export async function terminalBridgeStartSession(params: TerminalBridgeStartSess
 export async function terminalBridgeStartTaskSession(params: TerminalBridgeStartTaskSessionArgs) {
   terminalBridgeDebugLog('tx.startTaskSession', params)
   await tauriInvoke(TERMINAL_BRIDGE_COMMANDS.startTaskSession, params)
+}
+
+export async function terminalBridgeResolveTaskLaunchConfig(
+  taskId: number,
+  defaults: TerminalBridgeLaunchDefaults
+): Promise<TerminalBridgeResolvedLaunchConfig> {
+  const args: TerminalBridgeResolveTaskLaunchArgs = { taskId, defaults }
+  terminalBridgeDebugLog('tx.resolveTaskLaunchConfig', args)
+  const result = await tauriInvoke<TerminalBridgeResolvedLaunchConfig>(
+    TERMINAL_BRIDGE_COMMANDS.resolveTaskLaunchConfig,
+    args
+  )
+  terminalBridgeDebugLog('tx.resolveTaskLaunchConfig.result', result)
+  return result
 }
 
 export async function terminalBridgeListModelFormTree(): Promise<TerminalBridgeListModelFormTreeResult> {
@@ -165,13 +155,13 @@ export async function terminalBridgeSetStreamMode(sessionId: string, mode: 'live
 
 export async function terminalBridgeReplayOutput(
   sessionId: string,
-  afterSeq: bigint | number | string,
+  afterSeq: number,
   limit = 256
 ): Promise<TerminalBridgeReplayOutputResult> {
-  const normalizedAfterSeq = toReplayAfterSeqRequest(afterSeq)
-  const params: { sessionId: string; afterSeq: number; limit: number } = {
+  assertJsonSafeNonNegativeInt(afterSeq, 'afterSeq')
+  const params: TerminalBridgeReplayOutputArgs = {
     sessionId,
-    afterSeq: normalizedAfterSeq,
+    afterSeq,
     limit
   }
   terminalBridgeDebugLog('tx.replayOutput', params)

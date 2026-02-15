@@ -106,3 +106,85 @@ pub fn prompt_builder_preview(
         full_prompt,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::project::{project_initialize, ProjectInitializeArgs};
+    use tempfile::tempdir;
+
+    #[test]
+    fn preview_full_prompt_matches_sections_order_including_user_input() {
+        let dir = tempdir().expect("tempdir");
+        let project_path = dir.path().to_path_buf();
+
+        project_initialize(ProjectInitializeArgs {
+            path: project_path.to_string_lossy().to_string(),
+            project_title: "Preview Test".to_owned(),
+            stack: 1,
+        })
+        .expect("project_initialize");
+
+        let db_path = project_path.join(".ralph").join("db").join("ralph.db");
+        let db = SqliteDb::open(&db_path, None).expect("open db");
+
+        let mcp_dir = project_path.join(".mcp");
+        std::fs::create_dir_all(&mcp_dir).expect("create mcp_dir");
+        let codebase_snapshot = Mutex::new(None);
+
+        let preview = prompt_builder_preview(
+            PromptBuilderPreviewDeps {
+                db: &db,
+                project_path: project_path.as_path(),
+                mcp_dir: mcp_dir.as_path(),
+                codebase_snapshot: &codebase_snapshot,
+                api_server_port: None,
+            },
+            PromptBuilderPreviewArgs {
+                sections: vec![
+                    SectionConfig {
+                        name: "project_metadata".to_owned(),
+                        enabled: true,
+                        instruction_override: None,
+                    },
+                    SectionConfig {
+                        name: "user_input".to_owned(),
+                        enabled: true,
+                        instruction_override: None,
+                    },
+                ],
+                user_input: Some("hello world".to_owned()),
+            },
+        )
+        .expect("prompt_builder_preview");
+
+        let expected_full_prompt = preview
+            .sections
+            .iter()
+            .map(|s| s.content.as_str())
+            .collect::<Vec<_>>()
+            .join("\n\n");
+        assert_eq!(preview.full_prompt, expected_full_prompt);
+
+        let meta_idx = preview
+            .sections
+            .iter()
+            .position(|s| s.name == "project_metadata")
+            .expect("project_metadata section");
+        let user_idx = preview
+            .sections
+            .iter()
+            .position(|s| s.name == "user_input")
+            .expect("user_input section");
+        assert!(
+            meta_idx < user_idx,
+            "expected project_metadata to come before user_input"
+        );
+
+        let user_section = &preview.sections[user_idx];
+        assert!(
+            user_section.content.contains("hello world"),
+            "expected user_input content to include user_input text"
+        );
+    }
+}

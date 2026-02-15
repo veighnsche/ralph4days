@@ -4,6 +4,7 @@ pub use claudecode::ClaudeCodeAdapter;
 pub use codex::CodexAdapter;
 pub use model_catalog::ModelEntry;
 pub use provider_trait::{AgentProvider, AGENT_CLAUDE, AGENT_CODEX, AGENT_SHELL};
+use ralph_errors::{codes, err_string};
 pub use shell::ShellAdapter;
 
 mod claudecode;
@@ -63,9 +64,12 @@ pub fn resolve_session_model_for_agent(
     if let Some(entry) = find_model_entry_for_agent(agent, trimmed) {
         return Ok(Some(entry.session_model.unwrap_or(entry.name)));
     }
-    Err(format!(
-        "Unknown model '{trimmed}' for agent '{}'",
-        resolve_agent_provider(agent).id()
+    Err(err_string(
+        codes::TERMINAL,
+        format!(
+            "Unknown model '{trimmed}' for agent '{}'",
+            resolve_agent_provider(agent).id()
+        ),
     ))
 }
 
@@ -84,9 +88,18 @@ pub fn resolve_session_effort_for_agent(
     let selected_model = model
         .map(str::trim)
         .filter(|name| !name.is_empty())
-        .ok_or_else(|| "Effort requires an explicit model selection".to_owned())?;
-    let model_entry = find_model_entry_for_agent(agent, selected_model)
-        .ok_or_else(|| format!("Effort validation failed: unknown model '{selected_model}'"))?;
+        .ok_or_else(|| {
+            err_string(
+                codes::TERMINAL,
+                "Effort requires an explicit model selection",
+            )
+        })?;
+    let model_entry = find_model_entry_for_agent(agent, selected_model).ok_or_else(|| {
+        err_string(
+            codes::TERMINAL,
+            format!("Effort validation failed: unknown model '{selected_model}'"),
+        )
+    })?;
     if model_entry.effort_options.is_empty() {
         return Ok(None);
     }
@@ -97,10 +110,13 @@ pub fn resolve_session_effort_for_agent(
     {
         Ok(Some(normalized))
     } else {
-        Err(format!(
-            "Invalid effort '{normalized}' for model '{}'. Expected one of: {}",
-            model_entry.name,
-            model_entry.effort_options.join(", ")
+        Err(err_string(
+            codes::TERMINAL,
+            format!(
+                "Invalid effort '{normalized}' for model '{}'. Expected one of: {}",
+                model_entry.name,
+                model_entry.effort_options.join(", ")
+            ),
         ))
     }
 }

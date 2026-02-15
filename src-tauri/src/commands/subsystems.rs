@@ -70,7 +70,7 @@ pub async fn subsystems_comment_add(
     let project_path = ctx.locked_project_path()?;
 
     let (subsystem, embed_work) =
-        ctx.db_tx(|db| subsystems_service::subsystems_comment_add_prepare(db, args))?;
+        ctx.db(|db| subsystems_service::subsystems_comment_add_prepare(db, args))?;
     subsystems_service::subsystems_comment_apply_embedding(&project_path, embed_work).await?;
 
     Ok(subsystem)
@@ -89,7 +89,7 @@ pub async fn subsystems_comment_update(
     let project_path = ctx.locked_project_path()?;
 
     let (subsystem, embed_work) =
-        ctx.db_tx(|db| subsystems_service::subsystems_comment_update_prepare(db, args))?;
+        ctx.db(|db| subsystems_service::subsystems_comment_update_prepare(db, args))?;
 
     if let Some(work) = embed_work {
         subsystems_service::subsystems_comment_apply_embedding(&project_path, work).await?;

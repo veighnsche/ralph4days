@@ -4,6 +4,7 @@ use crate::event_sink::TauriEventSink;
 use crate::terminal::{
     TerminalBridgeEmitSystemMessageArgs, TerminalBridgeListModelFormTreeResult,
     TerminalBridgeReplayOutputArgs, TerminalBridgeReplayOutputResult, TerminalBridgeResizeArgs,
+    TerminalBridgeResolveTaskLaunchArgs, TerminalBridgeResolvedLaunchConfig,
     TerminalBridgeSendInputArgs, TerminalBridgeSetStreamModeArgs,
     TerminalBridgeStartHumanSessionArgs, TerminalBridgeStartHumanSessionResult,
     TerminalBridgeStartSessionArgs, TerminalBridgeStartTaskSessionArgs,
@@ -69,6 +70,20 @@ pub async fn terminal_start_task_session(
         api_server_port: api_server_port(state.inner())?,
     };
     ralph_backend::terminal_bridge::terminal_start_task_session(&ctx, args)
+}
+
+#[tauri::command]
+pub async fn terminal_resolve_task_launch_config(
+    state: State<'_, AppState>,
+    args: TerminalBridgeResolveTaskLaunchArgs,
+) -> Result<TerminalBridgeResolvedLaunchConfig, String> {
+    if let Some(rpc) = state.inner().remote_rpc_client().await? {
+        return remote_invoke_args(&rpc, "terminal_resolve_task_launch_config", args).await;
+    }
+
+    CommandContext::from_tauri_state(&state).db(|db| {
+        ralph_backend::terminal::resolve_task_launch_config(db, args.task_id, args.defaults)
+    })
 }
 
 #[tauri::command]

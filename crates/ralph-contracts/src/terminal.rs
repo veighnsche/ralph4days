@@ -6,6 +6,11 @@ pub const TERMINAL_CLOSED_EVENT: &str = "terminal:closed";
 #[ipc_type]
 pub struct PtyOutputEvent {
     pub session_id: String,
+    #[serde(
+        serialize_with = "crate::json_safe::serialize_u64",
+        deserialize_with = "crate::json_safe::deserialize_u64"
+    )]
+    #[ts(type = "number")]
     pub seq: u64,
     /// Base64-encoded PTY output (avoids JSON number[] serialization overhead)
     pub data: String,
@@ -20,6 +25,7 @@ pub struct PtyClosedEvent {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::json_safe::MAX_JSON_SAFE_INTEGER_U64;
 
     #[test]
     fn terminal_event_names_are_stable() {
@@ -49,5 +55,16 @@ mod tests {
         let json = serde_json::to_value(payload).unwrap();
         assert_eq!(json["sessionId"], "session-42");
         assert_eq!(json["exitCode"], 0);
+    }
+
+    #[test]
+    fn pty_output_event_rejects_seq_out_of_json_safe_range() {
+        let payload = PtyOutputEvent {
+            session_id: "session-42".to_owned(),
+            seq: MAX_JSON_SAFE_INTEGER_U64 + 1,
+            data: "SGVsbG8=".to_owned(),
+        };
+        let err = serde_json::to_value(payload).unwrap_err();
+        assert!(err.to_string().contains("JSON-safe"));
     }
 }

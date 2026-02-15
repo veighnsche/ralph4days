@@ -1,8 +1,10 @@
 use crate::events::BackendDiagnosticEvent;
 use crate::terminal::{PtyClosedEvent, PtyOutputEvent};
+use ralph_errors::RalphError;
 use serde::{Deserialize, Serialize};
 use std::future::Future;
 use std::pin::Pin;
+use ts_rs::TS;
 
 pub trait EventSink: Send + Sync {
     fn emit_backend_diagnostic(&self, payload: BackendDiagnosticEvent) -> Result<(), String>;
@@ -36,6 +38,8 @@ pub trait RpcClient: Send + Sync {
 /// - Unknown event names are protocol errors (must fail loudly, not be silently ignored).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "event", content = "payload", deny_unknown_fields)]
+#[derive(TS)]
+#[ts(export)]
 pub enum RemoteEventFrame {
     #[serde(rename = "backend-diagnostic")]
     BackendDiagnostic(BackendDiagnosticEvent),
@@ -72,20 +76,39 @@ pub trait RemoteEventSource: Send + Sync {
 /// Strict decode is mandatory: unknown frame types/fields are protocol errors.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case", deny_unknown_fields)]
+#[derive(TS)]
+#[ts(export)]
 pub enum RemoteWireFrame {
     RpcRequest {
+        #[serde(
+            serialize_with = "crate::json_safe::serialize_u64",
+            deserialize_with = "crate::json_safe::deserialize_u64"
+        )]
+        #[ts(type = "number")]
         id: u64,
         command: String,
         /// Intended to preserve the existing invoke payload shape (including `{ "args": ... }`).
+        #[ts(type = "unknown")]
         payload: serde_json::Value,
     },
     RpcOk {
+        #[serde(
+            serialize_with = "crate::json_safe::serialize_u64",
+            deserialize_with = "crate::json_safe::deserialize_u64"
+        )]
+        #[ts(type = "number")]
         id: u64,
+        #[ts(type = "unknown")]
         result: serde_json::Value,
     },
     RpcErr {
+        #[serde(
+            serialize_with = "crate::json_safe::serialize_u64",
+            deserialize_with = "crate::json_safe::deserialize_u64"
+        )]
+        #[ts(type = "number")]
         id: u64,
-        error: String,
+        error: RalphError,
     },
     Event {
         #[serde(flatten)]
@@ -97,6 +120,7 @@ pub enum RemoteWireFrame {
 mod tests {
     use super::*;
     use crate::events::{BackendDiagnosticLevel, BACKEND_DIAGNOSTIC_EVENT};
+    use crate::json_safe::MAX_JSON_SAFE_INTEGER_U64;
     use crate::terminal::{TERMINAL_CLOSED_EVENT, TERMINAL_OUTPUT_EVENT};
     use std::sync::Mutex;
 
@@ -359,13 +383,17 @@ mod tests {
         let json = serde_json::json!({
             "type": "rpc-err",
             "id": 1,
-            "error": "[R-0000] boom"
+            "error": {
+                "code": 8100,
+                "message": "boom"
+            }
         });
         let frame: RemoteWireFrame = serde_json::from_value(json).unwrap();
         match frame {
             RemoteWireFrame::RpcErr { id, error } => {
                 assert_eq!(id, 1);
-                assert!(error.contains("boom"));
+                assert_eq!(error.code, 8100);
+                assert_eq!(error.message, "boom");
             }
             other => panic!("Expected RpcErr frame, got {other:?}"),
         }
@@ -391,5 +419,16 @@ mod tests {
             err.to_string().contains("expected"),
             "Expected strict decode error, got: {err}"
         );
+    }
+
+    #[test]
+    fn remote_wire_frame_rejects_id_out_of_json_safe_range() {
+        let frame = RemoteWireFrame::RpcRequest {
+            id: MAX_JSON_SAFE_INTEGER_U64 + 1,
+            command: "cmd".to_owned(),
+            payload: serde_json::Value::Null,
+        };
+        let err = serde_json::to_string(&frame).unwrap_err();
+        assert!(err.to_string().contains("JSON-safe"));
     }
 }

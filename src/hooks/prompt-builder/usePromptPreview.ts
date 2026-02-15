@@ -6,35 +6,7 @@ import type { SectionBlock } from './useSectionConfiguration'
 
 export type { PromptPreview }
 
-function rebuildPreviewWithUserInput(base: PromptPreview, userInput: string, sections: SectionBlock[]): PromptPreview {
-  if (!userInput.trim()) {
-    return base
-  }
-
-  const userInputSection = {
-    name: 'user_input',
-    content: `## User's Input\n\n${userInput}`
-  }
-
-  const userInputIndex = sections.findIndex(s => s.name === 'user_input' && s.enabled)
-
-  if (userInputIndex === -1) {
-    return base
-  }
-
-  const newSections = [...base.sections]
-  newSections.splice(userInputIndex, 0, userInputSection)
-
-  const fullPrompt = newSections.map(s => s.content).join('\n\n')
-
-  return {
-    sections: newSections,
-    fullPrompt
-  }
-}
-
 export function usePromptPreview(open: boolean, sections: SectionBlock[]) {
-  const [basePreview, setBasePreview] = useState<PromptPreview | null>(null)
   const [preview, setPreview] = useState<PromptPreview | null>(null)
   const [previewError, setPreviewError] = useState<string | null>(null)
   const userInputRef = useRef('')
@@ -47,16 +19,16 @@ export function usePromptPreview(open: boolean, sections: SectionBlock[]) {
         enabled: s.enabled,
         instructionOverride: s.instructionOverride ?? undefined
       }))
+      const userInput = userInputRef.current.trim() ? userInputRef.current : undefined
       const result = await tauriInvoke<PromptPreview>('prompt_builder_preview', {
         sections: wireSections,
-        userInput: null
+        userInput
       })
       if (requestId !== latestPreviewRequestRef.current) {
         return
       }
-      setBasePreview(result)
       setPreviewError(null)
-      setPreview(rebuildPreviewWithUserInput(result, userInputRef.current, currentSections))
+      setPreview(result)
     } catch (err) {
       if (requestId !== latestPreviewRequestRef.current) {
         return
@@ -71,7 +43,6 @@ export function usePromptPreview(open: boolean, sections: SectionBlock[]) {
       fetchPreview.cancel()
       latestPreviewRequestRef.current += 1
       userInputRef.current = ''
-      setBasePreview(null)
       setPreview(null)
       return
     }
@@ -89,8 +60,10 @@ export function usePromptPreview(open: boolean, sections: SectionBlock[]) {
 
   const handleUserInputChange = (value: string) => {
     userInputRef.current = value
-    if (basePreview) {
-      setPreview(rebuildPreviewWithUserInput(basePreview, value, sections))
+    if (open && sections.length > 0) {
+      const requestId = latestPreviewRequestRef.current + 1
+      latestPreviewRequestRef.current = requestId
+      fetchPreview(requestId, sections)
     }
   }
 

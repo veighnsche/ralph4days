@@ -1,4 +1,5 @@
 use futures_util::{SinkExt, StreamExt};
+use prompt_builder::CodebaseSnapshot;
 use ralph_backend::disciplines_contract::{
     DisciplinesCreateArgs, DisciplinesCroppedImageGetArgs, DisciplinesDeleteArgs,
     DisciplinesImageDataGetArgs, DisciplinesUpdateArgs,
@@ -8,21 +9,35 @@ use ralph_backend::project_scan;
 use ralph_backend::prompt_builder_configs_contract::{
     PromptBuilderConfigDeleteArgs, PromptBuilderConfigGetArgs, PromptBuilderConfigSaveArgs,
 };
+use ralph_backend::prompt_builder_preview::{PromptBuilderPreviewArgs, PromptBuilderPreviewDeps};
 use ralph_backend::subsystems_contract::{
     SubsystemsCommentAddArgs, SubsystemsCommentDeleteArgs, SubsystemsCommentUpdateArgs,
     SubsystemsCreateArgs, SubsystemsDeleteArgs, SubsystemsUpdateArgs,
 };
-use ralph_backend::{disciplines_service, prompt_builder_configs_service, subsystems_service};
+use ralph_backend::terminal::{
+    PTYManager, TerminalBridgeListModelFormTreeResult, TerminalBridgeReplayOutputArgs,
+    TerminalBridgeReplayOutputResult, TerminalBridgeResizeArgs,
+    TerminalBridgeResolveTaskLaunchArgs, TerminalBridgeResolvedLaunchConfig,
+    TerminalBridgeSendInputArgs, TerminalBridgeSetStreamModeArgs,
+    TerminalBridgeStartHumanSessionArgs, TerminalBridgeStartHumanSessionResult,
+    TerminalBridgeStartSessionArgs, TerminalBridgeStartTaskSessionArgs,
+    TerminalBridgeTerminateArgs,
+};
+use ralph_backend::{
+    disciplines_service, prompt_builder_configs_service, subsystems_service, terminal_bridge,
+};
 use ralph_contracts::protocol::ProtocolVersionInfo;
-use ralph_contracts::transport::RemoteWireFrame;
-use ralph_errors::{codes, err_string};
+use ralph_contracts::transport::{EventSink, RemoteWireFrame};
+use ralph_errors::{codes, err_string, ToStringErr};
 use serde::de::DeserializeOwned;
 use sqlite_db::SqliteDb;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use tokio::net::TcpListener;
-use tokio::sync::mpsc;
+use tokio::sync::{broadcast, mpsc};
 use tokio_tungstenite::tungstenite::Message;
+
+mod event_sink;
 
 fn init_tracing() {
     use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
@@ -87,10 +102,32 @@ fn ralph4days_data_dir() -> Result<PathBuf, String> {
     Ok(base.join("ralph4days"))
 }
 
-#[derive(Default)]
 struct RalphdState {
     locked_project: Mutex<Option<PathBuf>>,
     db: Mutex<Option<SqliteDb>>,
+    codebase_snapshot: Mutex<Option<CodebaseSnapshot>>,
+    pty_manager: PTYManager,
+    mcp_dir: PathBuf,
+    api_server_port: Mutex<Option<u16>>,
+    event_tx: broadcast::Sender<String>,
+    event_sink: Arc<dyn EventSink>,
+}
+
+impl RalphdState {
+    fn new() -> Self {
+        let (event_tx, _) = broadcast::channel::<String>(1024);
+        let sink: Arc<dyn EventSink> = Arc::new(event_sink::RalphdEventSink::new(event_tx.clone()));
+        Self {
+            locked_project: Mutex::new(None),
+            db: Mutex::new(None),
+            codebase_snapshot: Mutex::new(None),
+            pty_manager: PTYManager::new(),
+            mcp_dir: std::env::temp_dir().join(format!("ralphd-mcp-{}", std::process::id())),
+            api_server_port: Mutex::new(None),
+            event_tx,
+            event_sink: sink,
+        }
+    }
 }
 
 #[tokio::main]
@@ -109,7 +146,8 @@ async fn main() -> Result<(), std::io::Error> {
         println!("RALPHD_LISTEN_ADDR={local}");
     }
 
-    let state = Arc::new(RalphdState::default());
+    let state = Arc::new(RalphdState::new());
+    ralph_backend::diagnostics::register_sink(Arc::clone(&state.event_sink));
 
     loop {
         let (stream, peer) = listener.accept().await?;
@@ -141,6 +179,30 @@ async fn handle_connection(
         }
     });
 
+    let mut events = state.event_tx.subscribe();
+    let events_tx = tx.clone();
+    let events_forwarder = tokio::spawn(async move {
+        loop {
+            match events.recv().await {
+                Ok(text) => {
+                    if events_tx.send(Message::Text(text.into())).is_err() {
+                        break;
+                    }
+                }
+                Err(broadcast::error::RecvError::Lagged(skipped)) => {
+                    tracing::warn!(
+                        skipped,
+                        "WS client lagged on event stream; closing connection"
+                    );
+                    let _ = events_tx.send(Message::Close(None));
+                    break;
+                }
+                Err(broadcast::error::RecvError::Closed) => break,
+            }
+        }
+    });
+
+    let mut protocol_error: Option<String> = None;
     while let Some(item) = read.next().await {
         let msg = item.map_err(|e| err_string(codes::INTERNAL, format!("WS read failed: {e}")))?;
 
@@ -164,12 +226,28 @@ async fn handle_connection(
                         tokio::spawn(async move {
                             let response = match handle_command(&state, &command, payload).await {
                                 Ok(result) => RemoteWireFrame::RpcOk { id, result },
-                                Err(error) => RemoteWireFrame::RpcErr { id, error },
+                                Err(error) => {
+                                    // Contract: all errors should be coded. If something violates that invariant,
+                                    // surface it loudly as an INTERNAL error (instead of silently passing raw strings).
+                                    let structured = ralph_errors::parse_ralph_error(&error)
+                                        .unwrap_or_else(|| {
+                                            ralph_errors::RalphError::new(
+                                                codes::INTERNAL,
+                                                format!(
+                                                    "ralphd invariant violated: uncoded rpc error: {error}"
+                                                ),
+                                            )
+                                        });
+                                    RemoteWireFrame::RpcErr {
+                                        id,
+                                        error: structured,
+                                    }
+                                }
                             };
                             let text = serde_json::to_string(&response).unwrap_or_else(|e| {
                                 serde_json::to_string(&RemoteWireFrame::RpcErr {
                                     id,
-                                    error: err_string(
+                                    error: ralph_errors::RalphError::new(
                                         codes::INTERNAL,
                                         format!("Failed to encode rpc response: {e}"),
                                     ),
@@ -182,10 +260,11 @@ async fn handle_connection(
                     RemoteWireFrame::Event { .. }
                     | RemoteWireFrame::RpcOk { .. }
                     | RemoteWireFrame::RpcErr { .. } => {
-                        return Err(err_string(
+                        protocol_error = Some(err_string(
                             codes::INTERNAL,
                             "Remote protocol error: client sent a non-request frame",
                         ));
+                        break;
                     }
                 }
             }
@@ -195,17 +274,25 @@ async fn handle_connection(
             Message::Pong(_) | Message::Frame(_) => {}
             Message::Close(_) => break,
             Message::Binary(_) => {
-                return Err(err_string(
+                protocol_error = Some(err_string(
                     codes::INTERNAL,
                     "Remote protocol error: binary WS frames are not supported",
                 ));
+                break;
             }
         }
     }
 
     writer.abort();
+    events_forwarder.abort();
     let _ = writer.await;
-    Ok(())
+    let _ = events_forwarder.await;
+
+    if let Some(error) = protocol_error {
+        Err(error)
+    } else {
+        Ok(())
+    }
 }
 
 fn require_null_payload(command: &str, payload: serde_json::Value) -> Result<(), String> {
@@ -357,7 +444,7 @@ async fn handle_command(
             let args: SubsystemsCommentAddArgs = decode_args(command, payload)?;
             let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
 
-            let (subsystem, embed_work) = ralph_backend::session::with_db_tx(&state.db, |db| {
+            let (subsystem, embed_work) = ralph_backend::session::with_db(&state.db, |db| {
                 subsystems_service::subsystems_comment_add_prepare(db, args)
             })?;
             subsystems_service::subsystems_comment_apply_embedding(&project_path, embed_work)
@@ -369,7 +456,7 @@ async fn handle_command(
             let args: SubsystemsCommentUpdateArgs = decode_args(command, payload)?;
             let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
 
-            let (subsystem, embed_work) = ralph_backend::session::with_db_tx(&state.db, |db| {
+            let (subsystem, embed_work) = ralph_backend::session::with_db(&state.db, |db| {
                 subsystems_service::subsystems_comment_update_prepare(db, args)
             })?;
 
@@ -456,6 +543,117 @@ async fn handle_command(
             ralph_backend::session::with_db(&state.db, |db| {
                 prompt_builder_configs_service::prompt_builder_config_delete(db, args)
             })?;
+            Ok(serde_json::Value::Null)
+        }
+        "prompt_builder_preview" => {
+            let args: PromptBuilderPreviewArgs = decode_args(command, payload)?;
+            let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
+            let api_server_port = *state.api_server_port.lock().err_str(codes::INTERNAL)?;
+            let preview = ralph_backend::session::with_db(&state.db, |db| {
+                ralph_backend::prompt_builder_preview::prompt_builder_preview(
+                    PromptBuilderPreviewDeps {
+                        db,
+                        project_path: project_path.as_path(),
+                        mcp_dir: state.mcp_dir.as_path(),
+                        codebase_snapshot: &state.codebase_snapshot,
+                        api_server_port,
+                    },
+                    args,
+                )
+            })?;
+            encode_result(command, preview)
+        }
+        "terminal_start_session" => {
+            let args: TerminalBridgeStartSessionArgs = decode_args(command, payload)?;
+            let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
+            let api_server_port = *state.api_server_port.lock().err_str(codes::INTERNAL)?;
+            let ctx = terminal_bridge::TerminalBridgeCtx {
+                pty_manager: &state.pty_manager,
+                sink: Arc::clone(&state.event_sink),
+                locked_project_path: project_path.as_path(),
+                db: &state.db,
+                codebase_snapshot: &state.codebase_snapshot,
+                mcp_dir: state.mcp_dir.as_path(),
+                api_server_port,
+            };
+            terminal_bridge::terminal_start_session(&ctx, args)?;
+            Ok(serde_json::Value::Null)
+        }
+        "terminal_start_task_session" => {
+            let args: TerminalBridgeStartTaskSessionArgs = decode_args(command, payload)?;
+            let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
+            let api_server_port = *state.api_server_port.lock().err_str(codes::INTERNAL)?;
+            let ctx = terminal_bridge::TerminalBridgeCtx {
+                pty_manager: &state.pty_manager,
+                sink: Arc::clone(&state.event_sink),
+                locked_project_path: project_path.as_path(),
+                db: &state.db,
+                codebase_snapshot: &state.codebase_snapshot,
+                mcp_dir: state.mcp_dir.as_path(),
+                api_server_port,
+            };
+            terminal_bridge::terminal_start_task_session(&ctx, args)?;
+            Ok(serde_json::Value::Null)
+        }
+        "terminal_resolve_task_launch_config" => {
+            let args: TerminalBridgeResolveTaskLaunchArgs = decode_args(command, payload)?;
+            let resolved: TerminalBridgeResolvedLaunchConfig =
+                ralph_backend::session::with_db(&state.db, |db| {
+                    ralph_backend::terminal::resolve_task_launch_config(
+                        db,
+                        args.task_id,
+                        args.defaults,
+                    )
+                })?;
+            encode_result(command, resolved)
+        }
+        "terminal_start_human_session" => {
+            let args: TerminalBridgeStartHumanSessionArgs = decode_args(command, payload)?;
+            let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
+            let api_server_port = *state.api_server_port.lock().err_str(codes::INTERNAL)?;
+            let ctx = terminal_bridge::TerminalBridgeCtx {
+                pty_manager: &state.pty_manager,
+                sink: Arc::clone(&state.event_sink),
+                locked_project_path: project_path.as_path(),
+                db: &state.db,
+                codebase_snapshot: &state.codebase_snapshot,
+                mcp_dir: state.mcp_dir.as_path(),
+                api_server_port,
+            };
+            let result: TerminalBridgeStartHumanSessionResult =
+                terminal_bridge::terminal_start_human_session(&ctx, args)?;
+            encode_result(command, result)
+        }
+        "terminal_list_model_form_tree" => {
+            require_null_payload(command, payload)?;
+            let tree: TerminalBridgeListModelFormTreeResult =
+                terminal_bridge::terminal_list_model_form_tree();
+            encode_result(command, tree)
+        }
+        "terminal_send_input" => {
+            let args: TerminalBridgeSendInputArgs = decode_args(command, payload)?;
+            terminal_bridge::terminal_send_input(&state.pty_manager, args)?;
+            Ok(serde_json::Value::Null)
+        }
+        "terminal_resize" => {
+            let args: TerminalBridgeResizeArgs = decode_args(command, payload)?;
+            terminal_bridge::terminal_resize(&state.pty_manager, args)?;
+            Ok(serde_json::Value::Null)
+        }
+        "terminal_set_stream_mode" => {
+            let args: TerminalBridgeSetStreamModeArgs = decode_args(command, payload)?;
+            terminal_bridge::terminal_set_stream_mode(&state.pty_manager, args)?;
+            Ok(serde_json::Value::Null)
+        }
+        "terminal_replay_output" => {
+            let args: TerminalBridgeReplayOutputArgs = decode_args(command, payload)?;
+            let result: TerminalBridgeReplayOutputResult =
+                terminal_bridge::terminal_replay_output(&state.pty_manager, args)?;
+            encode_result(command, result)
+        }
+        "terminal_terminate" => {
+            let args: TerminalBridgeTerminateArgs = decode_args(command, payload)?;
+            terminal_bridge::terminal_terminate(&state.pty_manager, args)?;
             Ok(serde_json::Value::Null)
         }
         "tasks_create" => {
@@ -580,9 +778,16 @@ async fn handle_command(
             })?;
             encode_result(command, comments)
         }
-        other => Err(err_string(
-            codes::INTERNAL,
-            format!("Unknown command: {other}"),
-        )),
+        other => {
+            ralph_backend::diagnostics::emit_warning(
+                "ralphd",
+                "unknown-command",
+                &format!("Unknown command: {other}"),
+            );
+            Err(err_string(
+                codes::INTERNAL,
+                format!("Unknown command: {other}"),
+            ))
+        }
     }
 }

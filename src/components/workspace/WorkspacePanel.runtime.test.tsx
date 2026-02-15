@@ -6,16 +6,7 @@ import type { TerminalSessionConfig, TerminalSessionHandlers } from '@/lib/termi
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import { WorkspacePanel } from './WorkspacePanel'
 
-type AgentSessionLaunchConfig = {
-  agent: 'claude' | 'codex'
-  model: string
-  effort: 'low' | 'medium' | 'high'
-  thinking: boolean
-  permissionLevel: 'safe' | 'balanced' | 'auto' | 'full_auto'
-}
-
-const { resolveLaunchConfigMock, terminalSessionMocks, xtermInstances, fitAddonInvocations } = vi.hoisted(() => ({
-  resolveLaunchConfigMock: vi.fn(async (config: AgentSessionLaunchConfig): Promise<AgentSessionLaunchConfig> => config),
+const { terminalSessionMocks, xtermInstances, fitAddonInvocations } = vi.hoisted(() => ({
   terminalSessionMocks: [] as Array<{
     config: TerminalSessionConfig
     handlers: TerminalSessionHandlers
@@ -36,10 +27,6 @@ const { resolveLaunchConfigMock, terminalSessionMocks, xtermInstances, fitAddonI
   fitAddonInvocations: [] as Array<{
     fit: ReturnType<typeof vi.fn>
   }>
-}))
-
-vi.mock('@/components/agent-session-launch/resolveLaunchConfig', () => ({
-  resolveLaunchConfigAgainstCatalog: resolveLaunchConfigMock
 }))
 
 vi.mock('@/lib/terminal', async () => {
@@ -133,7 +120,6 @@ function resetTerminalRuntimeState() {
 
   localStorage.clear()
 
-  resolveLaunchConfigMock.mockClear()
   terminalSessionMocks.length = 0
   xtermInstances.length = 0
   fitAddonInvocations.length = 0
@@ -170,7 +156,6 @@ describe('WorkspacePanel terminal runtime', () => {
 
     await user.click(screen.getByRole('button', { name: /new terminal/i }))
 
-    await waitFor(() => expect(resolveLaunchConfigMock).toHaveBeenCalledTimes(1))
     await waitFor(() => expect(terminalSessionMocks.length).toBeGreaterThan(0))
     await waitFor(() => expect(xtermInstances.length).toBeGreaterThan(0))
 

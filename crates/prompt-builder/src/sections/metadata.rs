@@ -36,28 +36,28 @@ pub fn all_sections() -> Vec<SectionInfo> {
             name: "feature_listing",
             display_name: "Feature Listing",
             description: "All features with descriptions and stats",
-            category: "feature",
+            category: "subsystem",
             is_instruction: false,
         },
         SectionInfo {
             name: "feature_context",
             display_name: "Feature Context",
             description: "Target feature details, architecture, and learnings",
-            category: "feature",
+            category: "subsystem",
             is_instruction: false,
         },
         SectionInfo {
             name: "feature_files",
             display_name: "Feature Files",
             description: "Inlined contents of feature context files",
-            category: "feature",
+            category: "subsystem",
             is_instruction: false,
         },
         SectionInfo {
             name: "feature_state",
             display_name: "Feature State",
             description: "Tasks grouped by status for the target feature",
-            category: "feature",
+            category: "subsystem",
             is_instruction: false,
         },
         SectionInfo {
@@ -177,4 +177,21 @@ pub fn all_sections() -> Vec<SectionInfo> {
 
 pub fn get_info(name: &str) -> Option<SectionInfo> {
     all_sections().into_iter().find(|s| s.name == name)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn feature_sections_use_subsystem_category() {
+        let listing = get_info("feature_listing").expect("feature_listing exists");
+        assert_eq!(listing.category, "subsystem");
+        let ctx = get_info("feature_context").expect("feature_context exists");
+        assert_eq!(ctx.category, "subsystem");
+        let files = get_info("feature_files").expect("feature_files exists");
+        assert_eq!(files.category, "subsystem");
+        let state = get_info("feature_state").expect("feature_state exists");
+        assert_eq!(state.category, "subsystem");
+    }
 }

@@ -205,6 +205,7 @@ pub fn run() {
             commands::remote::remote_status_get,
             commands::terminal_bridge::terminal_start_session,
             commands::terminal_bridge::terminal_start_task_session,
+            commands::terminal_bridge::terminal_resolve_task_launch_config,
             commands::terminal_bridge::terminal_send_input,
             commands::terminal_bridge::terminal_resize,
             commands::terminal_bridge::terminal_terminate,

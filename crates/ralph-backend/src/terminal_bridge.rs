@@ -1,15 +1,16 @@
 use crate::mcp::{generate_mcp_config, generate_mcp_config_for_task};
-use crate::session::with_db_tx;
+use crate::session::{with_db, with_db_tx};
 use crate::terminal::providers::{
     list_model_entries_for_agent, resolve_agent_provider, resolve_post_start_preamble,
     resolve_session_effort_for_agent, resolve_session_model_for_agent, shell_agent_enabled,
     AGENT_CLAUDE, AGENT_CODEX, AGENT_SHELL,
 };
 use crate::terminal::{
-    PTYManager, PtyOutputEvent, SessionConfig, SessionInitSettings, SessionStreamMode,
-    TerminalBridgeListModelFormTreeResult, TerminalBridgeListModelsResult,
-    TerminalBridgeModelOption, TerminalBridgeReplayOutputArgs, TerminalBridgeReplayOutputResult,
-    TerminalBridgeResizeArgs, TerminalBridgeSendInputArgs, TerminalBridgeSetStreamModeArgs,
+    resolve_task_launch_config, PTYManager, PtyOutputEvent, SessionConfig, SessionInitSettings,
+    SessionStreamMode, TerminalBridgeLaunchDefaults, TerminalBridgeListModelFormTreeResult,
+    TerminalBridgeListModelsResult, TerminalBridgeModelOption, TerminalBridgeReplayOutputArgs,
+    TerminalBridgeReplayOutputResult, TerminalBridgeResizeArgs, TerminalBridgeResolvedLaunchConfig,
+    TerminalBridgeSendInputArgs, TerminalBridgeSetStreamModeArgs,
     TerminalBridgeStartHumanSessionArgs, TerminalBridgeStartHumanSessionResult,
     TerminalBridgeStartSessionArgs, TerminalBridgeStartTaskSessionArgs,
     TerminalBridgeTerminateArgs,
@@ -304,27 +305,52 @@ pub fn terminal_start_task_session(
     ctx: &TerminalBridgeCtx<'_>,
     args: TerminalBridgeStartTaskSessionArgs,
 ) -> Result<(), String> {
+    let TerminalBridgeStartTaskSessionArgs {
+        session_id,
+        task_id,
+        agent,
+        model,
+        effort,
+        permission_level,
+        thinking,
+        post_start_preamble,
+    } = args;
+
     let (project_path, mcp_config) = resolve_start_task_session_context(
         ctx.db,
         ctx.codebase_snapshot,
         ctx.mcp_dir,
         ctx.api_server_port,
         ctx.locked_project_path,
-        args.task_id,
+        task_id,
     )?;
 
+    let resolved = with_db(ctx.db, |db| {
+        resolve_task_launch_config(
+            db,
+            task_id,
+            TerminalBridgeLaunchDefaults {
+                agent,
+                model,
+                effort,
+                thinking,
+                permission_level,
+            },
+        )
+    })?;
+
     let config = build_session_config(
-        args.agent,
-        args.model,
-        args.effort,
-        args.thinking,
-        args.permission_level,
-        args.post_start_preamble,
+        resolved.agent,
+        resolved.model,
+        resolved.effort,
+        resolved.thinking,
+        resolved.permission_level,
+        post_start_preamble,
     )?;
 
     ctx.pty_manager.create_session(
         Arc::clone(&ctx.sink),
-        args.session_id,
+        session_id,
         &project_path,
         Some(mcp_config),
         config,
@@ -394,12 +420,41 @@ pub fn terminal_start_human_session(
     ctx: &TerminalBridgeCtx<'_>,
     args: TerminalBridgeStartHumanSessionArgs,
 ) -> Result<TerminalBridgeStartHumanSessionResult, String> {
+    let resolved = match args.task_id {
+        Some(task_id) => with_db(ctx.db, |db| {
+            resolve_task_launch_config(
+                db,
+                task_id,
+                TerminalBridgeLaunchDefaults {
+                    agent: args.agent.clone(),
+                    model: args.model.clone(),
+                    effort: args.effort.clone(),
+                    thinking: args.thinking,
+                    permission_level: args.permission_level.clone(),
+                },
+            )
+        })?,
+        None => TerminalBridgeResolvedLaunchConfig {
+            agent: args.agent.clone(),
+            model: args.model.clone(),
+            effort: args.effort.clone(),
+            thinking: args.thinking,
+            permission_level: args.permission_level.clone(),
+            agent_source: crate::terminal::TerminalBridgeLaunchSource::Default,
+            model_source: crate::terminal::TerminalBridgeLaunchSource::Default,
+            effort_source: crate::terminal::TerminalBridgeLaunchSource::Default,
+            thinking_source: crate::terminal::TerminalBridgeLaunchSource::Default,
+            permission_level_source: crate::terminal::TerminalBridgeLaunchSource::Default,
+            model_supports_effort: false,
+        },
+    };
+
     let session_config = build_session_config(
-        args.agent.clone(),
-        args.model.clone(),
-        args.effort.clone(),
-        args.thinking,
-        args.permission_level.clone(),
+        resolved.agent.clone(),
+        resolved.model.clone(),
+        resolved.effort.clone(),
+        resolved.thinking,
+        resolved.permission_level.clone(),
         args.post_start_preamble.clone(),
     )?;
     let launch_command = build_launch_command(&session_config);
@@ -412,8 +467,8 @@ pub fn terminal_start_human_session(
             id: agent_session_id.clone(),
             kind: args.kind.clone(),
             task_id: args.task_id,
-            agent: args.agent.clone(),
-            model: args.model.clone(),
+            agent: resolved.agent.clone(),
+            model: resolved.model.clone(),
             launch_command: Some(launch_command),
             post_start_preamble: resolved_post_start_preamble,
             init_prompt: args.init_prompt.clone(),
@@ -435,11 +490,11 @@ pub fn terminal_start_human_session(
             TerminalBridgeStartTaskSessionArgs {
                 session_id: args.terminal_session_id.clone(),
                 task_id,
-                agent: args.agent.clone(),
-                model: args.model.clone(),
-                effort: args.effort.clone(),
-                permission_level: args.permission_level.clone(),
-                thinking: args.thinking,
+                agent: resolved.agent.clone(),
+                model: resolved.model.clone(),
+                effort: resolved.effort.clone(),
+                permission_level: resolved.permission_level.clone(),
+                thinking: resolved.thinking,
                 post_start_preamble: args.post_start_preamble.clone(),
             },
         )
@@ -448,12 +503,12 @@ pub fn terminal_start_human_session(
             ctx,
             TerminalBridgeStartSessionArgs {
                 session_id: args.terminal_session_id.clone(),
-                agent: args.agent.clone(),
+                agent: resolved.agent.clone(),
                 mcp_mode: args.mcp_mode.clone(),
-                model: args.model.clone(),
-                effort: args.effort.clone(),
-                permission_level: args.permission_level.clone(),
-                thinking: args.thinking,
+                model: resolved.model.clone(),
+                effort: resolved.effort.clone(),
+                permission_level: resolved.permission_level.clone(),
+                thinking: resolved.thinking,
                 post_start_preamble: args.post_start_preamble.clone(),
             },
         )

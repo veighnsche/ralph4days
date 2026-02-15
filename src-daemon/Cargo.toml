@@ -6,6 +6,7 @@ rust-version = "1.75"
 
 [dependencies]
 futures-util = "0.3"
+prompt-builder = { path = "../crates/prompt-builder" }
 ralph-backend = { workspace = true }
 ralph-contracts = { workspace = true }
 ralph-errors = { workspace = true }
@@ -16,6 +17,9 @@ tokio = { workspace = true }
 tokio-tungstenite = { version = "0.26", features = ["native-tls"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+[dev-dependencies]
+tempfile = "3"
 
 [lints]
 workspace = true

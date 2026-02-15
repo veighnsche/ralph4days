@@ -86,6 +86,7 @@ pub struct DisciplineDef {
 }
 
 const STACK_ABOUTS: &[(u8, &str)] = &[
+    (0, include_str!("defaults/disciplines/00_empty/ABOUT.yaml")),
     (
         1,
         include_str!("defaults/disciplines/01_generic/ABOUT.yaml"),

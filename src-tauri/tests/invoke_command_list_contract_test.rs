@@ -4,7 +4,7 @@ const LIB_RS: &str = include_str!("../src/lib.rs");
 
 // Update this intentionally when the frontend-facing invoke command surface changes.
 const EXPECTED_INVOKE_COMMAND_LIST_SHA256: &str =
-    "81f7ea0dfb290f18676ba900b328d28f356846e699444091e31bdbfdedde9903";
+    "62cd1147338541a5a9b1a53fe39edf41a9a9ea20c087a367c0926415c0df20d8";
 
 fn sha256_hex(text: &str) -> String {
     hex::encode(Sha256::digest(text.as_bytes()))

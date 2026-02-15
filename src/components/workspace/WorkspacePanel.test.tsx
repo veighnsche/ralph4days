@@ -6,8 +6,7 @@ import type { AgentSessionLaunchConfig } from '@/lib/agent-session-launch-config
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore'
 import { WorkspacePanel } from './WorkspacePanel'
 
-const { resolveLaunchConfigMock, useTerminalSessionMock, sessionCalls } = vi.hoisted(() => ({
-  resolveLaunchConfigMock: vi.fn(async (config: AgentSessionLaunchConfig): Promise<AgentSessionLaunchConfig> => config),
+const { useTerminalSessionMock, sessionCalls } = vi.hoisted(() => ({
   useTerminalSessionMock: vi.fn(),
   sessionCalls: [] as Array<{
     config: unknown
@@ -15,10 +14,6 @@ const { resolveLaunchConfigMock, useTerminalSessionMock, sessionCalls } = vi.hoi
       onError?: (error: string) => void
     }
   }>
-}))
-
-vi.mock('@/components/agent-session-launch/resolveLaunchConfig', () => ({
-  resolveLaunchConfigAgainstCatalog: resolveLaunchConfigMock
 }))
 
 vi.mock('@/lib/terminal', () => ({
@@ -60,7 +55,6 @@ function resetWorkspaceState() {
   })
 
   sessionCalls.length = 0
-  resolveLaunchConfigMock.mockClear()
   useTerminalSessionMock.mockClear()
 
   useAgentSessionLaunchPreferences.getState().setLaunchConfig(CODEX_LAUNCH_CONFIG)
@@ -92,11 +86,6 @@ describe('WorkspacePanel', () => {
 
     const newTabButton = screen.getByRole('button', { name: /new terminal/i })
     await user.click(newTabButton)
-
-    await waitFor(() => {
-      expect(resolveLaunchConfigMock).toHaveBeenCalledTimes(1)
-    })
-    expect(resolveLaunchConfigMock).toHaveBeenCalledWith(CODEX_LAUNCH_CONFIG)
 
     await waitFor(() => expect(sessionCalls.length).toBeGreaterThan(0))
 

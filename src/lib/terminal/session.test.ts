@@ -36,7 +36,7 @@ describe('useTerminalSession', () => {
           chunks: [],
           hasMore: false,
           truncated: false,
-          truncatedUntilSeq: null
+          truncatedUntilSeq: 0
         })
       }
       return Promise.resolve(undefined)
@@ -118,7 +118,10 @@ describe('useTerminalSession', () => {
     renderHook(() => useTerminalSession(defaultConfig, handlers))
 
     await waitFor(() => {
-      expect(handlers.onError).toHaveBeenCalledWith(error)
+      expect(handlers.onError).toHaveBeenCalledTimes(1)
+      const message = handlers.onError.mock.calls[0]?.[0]
+      expect(message).toContain('[R-8100]')
+      expect(message).toContain(error)
     })
   })
 
@@ -144,7 +147,7 @@ describe('useTerminalSession', () => {
       onOutput: vi.fn()
     }
 
-    let outputCallback: ((event: { payload: { sessionId: string; seq: bigint; data: string } }) => void) | undefined
+    let outputCallback: ((event: { payload: { sessionId: string; seq: number; data: string } }) => void) | undefined
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
       if (eventName === 'terminal:output') {
@@ -159,7 +162,7 @@ describe('useTerminalSession', () => {
 
     act(() => {
       outputCallback?.({
-        payload: { sessionId: 'test-session', seq: 1n, data: btoa('Hello') }
+        payload: { sessionId: 'test-session', seq: 1, data: btoa('Hello') }
       })
     })
 
@@ -248,7 +251,7 @@ describe('useTerminalSession', () => {
       onOutput: vi.fn()
     }
 
-    let outputCallback: ((event: { payload: { sessionId: string; seq: bigint; data: string } }) => void) | undefined
+    let outputCallback: ((event: { payload: { sessionId: string; seq: number; data: string } }) => void) | undefined
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
       if (eventName === 'terminal:output') {
@@ -264,7 +267,7 @@ describe('useTerminalSession', () => {
     const bufferedData = new Uint8Array([72, 101, 108, 108, 111]) // "Hello"
     act(() => {
       outputCallback?.({
-        payload: { sessionId: 'test-session', seq: 1n, data: btoa('Hello') }
+        payload: { sessionId: 'test-session', seq: 1, data: btoa('Hello') }
       })
     })
 
@@ -316,7 +319,7 @@ describe('useTerminalSession', () => {
       onOutput: vi.fn()
     }
 
-    let outputCallback: ((event: { payload: { sessionId: string; seq: bigint; data: string } }) => void) | undefined
+    let outputCallback: ((event: { payload: { sessionId: string; seq: number; data: string } }) => void) | undefined
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
       if (eventName === 'terminal:output') {
@@ -333,7 +336,7 @@ describe('useTerminalSession', () => {
 
     act(() => {
       outputCallback?.({
-        payload: { sessionId: 'different-session', seq: 1n, data: btoa('He') }
+        payload: { sessionId: 'different-session', seq: 1, data: btoa('He') }
       })
     })
 
@@ -347,7 +350,7 @@ describe('useTerminalSession', () => {
     }
 
     let closedCallback: ((event: { payload: { sessionId: string; exitCode: number } }) => void) | undefined
-    let outputCallback: ((event: { payload: { sessionId: string; seq: bigint; data: string } }) => void) | undefined
+    let outputCallback: ((event: { payload: { sessionId: string; seq: number; data: string } }) => void) | undefined
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
       if (eventName === 'terminal:closed') {
@@ -366,7 +369,7 @@ describe('useTerminalSession', () => {
 
     act(() => {
       outputCallback?.({
-        payload: { sessionId: 'test-session', seq: 1n, data: btoa('He') }
+        payload: { sessionId: 'test-session', seq: 1, data: btoa('He') }
       })
     })
 
@@ -425,10 +428,10 @@ describe('useTerminalSession', () => {
     mockInvoke.mockImplementation((command: string) => {
       if (command === 'terminal_replay_output') {
         return Promise.resolve({
-          chunks: [{ seq: 2n, data: btoa('Hi') }],
+          chunks: [{ seq: 2, data: btoa('Hi') }],
           hasMore: false,
           truncated: false,
-          truncatedUntilSeq: null
+          truncatedUntilSeq: 0
         })
       }
       return Promise.resolve(undefined)
@@ -474,10 +477,10 @@ describe('useTerminalSession', () => {
     mockInvoke.mockImplementation((command: string) => {
       if (command === 'terminal_replay_output') {
         return Promise.resolve({
-          chunks: [{ seq: 5 as unknown as bigint, data: btoa('Hi') }],
+          chunks: [{ seq: 5, data: btoa('Hi') }],
           hasMore: false,
           truncated: false,
-          truncatedUntilSeq: null
+          truncatedUntilSeq: 0
         })
       }
       return Promise.resolve(undefined)
@@ -569,7 +572,7 @@ describe('useTerminalSession', () => {
       onOutput: vi.fn()
     }
 
-    let outputCallback: ((event: { payload: { sessionId: string; seq: bigint; data: string } }) => void) | undefined
+    let outputCallback: ((event: { payload: { sessionId: string; seq: number; data: string } }) => void) | undefined
 
     mockListen.mockImplementation((eventName: string, callback: unknown) => {
       if (eventName === 'terminal:output') {
@@ -585,7 +588,7 @@ describe('useTerminalSession', () => {
     result.current.markReady()
     act(() => {
       outputCallback?.({
-        payload: { sessionId: 'test-session', seq: 0n, data: btoa('connected') }
+        payload: { sessionId: 'test-session', seq: 0, data: btoa('connected') }
       })
     })
 

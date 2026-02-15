@@ -377,7 +377,8 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
     agentSource,
     modelSource,
     effortSource,
-    thinkingSource
+    thinkingSource,
+    resolveError: launchResolveError
   } = useResolvedTaskLaunch(task)
 
   const approveMutation = useInvokeMutation<{ id: number; status: string }, Task>('tasks_set_status', {
@@ -430,6 +431,7 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
       onDismiss={updateTaskMutation.reset}
       className="mt-1 mb-2"
     />,
+    <InlineError key="launch-error" error={launchResolveError} className="mt-1 mb-2" />,
     buildLaunchSection({
       task,
       resolvedAgent,

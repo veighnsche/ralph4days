@@ -225,7 +225,7 @@ impl RemoteWireFrameConnection {
                                     inner_reader.fail_all_pending(error).await;
                                     break;
                                 };
-                                let _ = tx.send(Err(error));
+                                let _ = tx.send(Err(error.to_string()));
                             }
                             RemoteWireFrame::Event { frame } => {
                                 if let Err(error) = frame.emit_to(sink_reader.as_ref()) {

@@ -2,6 +2,7 @@ export const TERMINAL_BRIDGE_COMMANDS = {
   startSession: 'terminal_start_session',
   startTaskSession: 'terminal_start_task_session',
   startHumanSession: 'terminal_start_human_session',
+  resolveTaskLaunchConfig: 'terminal_resolve_task_launch_config',
   listModelFormTree: 'terminal_list_model_form_tree',
   sendInput: 'terminal_send_input',
   resize: 'terminal_resize',

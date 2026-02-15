@@ -461,6 +461,26 @@ impl PTYManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::terminal::SessionInitSettings;
+    use ralph_contracts::events::BackendDiagnosticEvent;
+    use std::sync::Arc;
+    use tempfile::tempdir;
+
+    struct NoopSink;
+
+    impl EventSink for NoopSink {
+        fn emit_backend_diagnostic(&self, _payload: BackendDiagnosticEvent) -> Result<(), String> {
+            Ok(())
+        }
+
+        fn emit_terminal_output(&self, _payload: PtyOutputEvent) -> Result<(), String> {
+            Ok(())
+        }
+
+        fn emit_terminal_closed(&self, _payload: PtyClosedEvent) -> Result<(), String> {
+            Ok(())
+        }
+    }
 
     #[test]
     fn test_pty_manager_new() {
@@ -537,5 +557,43 @@ mod tests {
         assert_eq!(replay.chunks[1].seq, 2);
         assert!(replay.has_more);
         assert!(!replay.truncated);
+    }
+
+    #[test]
+    fn create_session_rejects_duplicate_session_id() {
+        if !crate::terminal::providers::shell_agent_enabled() {
+            // Safety: shell sessions are only available in debug builds.
+            return;
+        }
+
+        let dir = tempdir().expect("tempdir");
+        let manager = PTYManager::new();
+        let sink: Arc<dyn EventSink> = Arc::new(NoopSink);
+        let config = SessionConfig {
+            agent: Some("shell".to_owned()),
+            model: None,
+            effort: None,
+            thinking: None,
+            permission_level: None,
+            init_settings: SessionInitSettings::default(),
+            post_start_preamble: None,
+        };
+
+        manager
+            .create_session(
+                Arc::clone(&sink),
+                "dup".to_owned(),
+                dir.path(),
+                None,
+                config.clone(),
+            )
+            .expect("first create_session should succeed");
+
+        let err = manager
+            .create_session(sink, "dup".to_owned(), dir.path(), None, config)
+            .unwrap_err();
+        assert!(err.contains("PTY session already exists"));
+
+        let _ = manager.terminate("dup");
     }
 }

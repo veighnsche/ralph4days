@@ -6,7 +6,6 @@ import type { AgentSessionLaunchConfig, Model } from '@/lib/agent-session-launch
 import { cn } from '@/lib/utils'
 import { WORKSPACE_SELECTORS } from '@/test/selectors'
 import { LaunchOptionsReadout } from './LaunchOptionsReadout'
-import { resolveLaunchConfigAgainstCatalog } from './resolveLaunchConfig'
 
 export type { Model }
 
@@ -25,16 +24,14 @@ export function AgentSessionLaunchButton({
 
   const launchConfig: AgentSessionLaunchConfig = { agent, model, effort, thinking, permissionLevel }
 
-  const handleNewTab = async () => {
-    const resolved = await resolveLaunchConfigAgainstCatalog(launchConfig).catch(() => launchConfig)
-    setLaunchConfig(resolved)
-    onNewTab(resolved)
+  const handleNewTab = () => {
+    setLaunchConfig(launchConfig)
+    onNewTab(launchConfig)
   }
 
-  const handleOpenRunForm = async () => {
-    const resolved = await resolveLaunchConfigAgainstCatalog(launchConfig).catch(() => launchConfig)
-    setLaunchConfig(resolved)
-    onOpenRunForm(resolved)
+  const handleOpenRunForm = () => {
+    setLaunchConfig(launchConfig)
+    onOpenRunForm(launchConfig)
   }
 
   return (

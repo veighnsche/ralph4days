@@ -1,93 +1,71 @@
-import { useDisciplines } from '@/hooks/disciplines'
+import { useWorkspaceInvoke } from '@/hooks/api'
 import { useAgentSessionLaunchPreferences } from '@/hooks/preferences'
-import type { Agent, Effort } from '@/lib/agent-session-launch-config'
-import type { Task } from '@/types/generated'
-import { useModelFormTreeByAgent } from '../../tabs/agent-session-config/hooks/useModelFormTreeByAgent'
+import type {
+  Task,
+  TerminalBridgeLaunchDefaults,
+  TerminalBridgeLaunchSource,
+  TerminalBridgeResolvedLaunchConfig
+} from '@/types/generated'
 
-export type LaunchSource = 'task' | 'discipline' | 'default' | 'unset'
-type LaunchSourceWithDefault = Exclude<LaunchSource, 'unset'>
+export type LaunchSource = TerminalBridgeLaunchSource
 
-type ResolvedValueWithSource<T> = {
-  value: T | undefined
-  source: LaunchSourceWithDefault
-}
-
-function asAgent(value?: string): Agent | undefined {
-  return value === 'claude' || value === 'codex' ? value : undefined
-}
-
-function asEffort(value?: string): Effort | undefined {
-  return value === 'low' || value === 'medium' || value === 'high' ? value : undefined
-}
-
-function resolveWithTaskDisciplineDefault<T>(
-  taskValue: T | undefined,
-  disciplineValue: T | undefined,
-  fallback: T | undefined
-): ResolvedValueWithSource<T> {
-  if (taskValue !== undefined) return { value: taskValue, source: 'task' as const }
-  if (disciplineValue !== undefined) return { value: disciplineValue, source: 'discipline' as const }
-  return { value: fallback, source: 'default' as const }
+const FALLBACK_SOURCES: Pick<
+  TerminalBridgeResolvedLaunchConfig,
+  'agentSource' | 'modelSource' | 'effortSource' | 'thinkingSource' | 'permissionLevelSource'
+> = {
+  agentSource: 'unset',
+  modelSource: 'unset',
+  effortSource: 'unset',
+  thinkingSource: 'unset',
+  permissionLevelSource: 'unset'
 }
 
 export function useResolvedTaskLaunch(task: Task): {
-  resolvedAgent: Agent | undefined
+  resolvedAgent: string | undefined
   resolvedModel: string | undefined
-  resolvedEffort: Effort | undefined
+  resolvedEffort: string | undefined
   resolvedThinking: boolean | undefined
   resolvedModelSupportsEffort: boolean
   agentSource: LaunchSource
   modelSource: LaunchSource
   effortSource: LaunchSource
   thinkingSource: LaunchSource
+  resolveError: Error | null
+  isLoading: boolean
 } {
-  const { disciplines } = useDisciplines()
-  const prefAgent = useAgentSessionLaunchPreferences(state => state.agent)
-  const prefModel = useAgentSessionLaunchPreferences(state => state.model)
-  const prefEffort = useAgentSessionLaunchPreferences(state => state.effort)
-  const prefThinking = useAgentSessionLaunchPreferences(state => state.thinking)
-  const resolveDefaultModel = useAgentSessionLaunchPreferences(state => state.getDefaultModel)
-  const { formTreeByAgent } = useModelFormTreeByAgent()
+  const defaultAgent = useAgentSessionLaunchPreferences(state => state.agent)
+  const defaultModel = useAgentSessionLaunchPreferences(state => state.model)
+  const defaultEffort = useAgentSessionLaunchPreferences(state => state.effort)
+  const defaultThinking = useAgentSessionLaunchPreferences(state => state.thinking)
+  const defaultPermissionLevel = useAgentSessionLaunchPreferences(state => state.permissionLevel)
 
-  const disciplineConfig = disciplines.find(discipline => discipline.name === task.discipline)
-  const taskAgent = asAgent(task.agent)
-  const disciplineAgent = asAgent(disciplineConfig?.agent)
-  const resolvedAgent = resolveWithTaskDisciplineDefault(taskAgent, disciplineAgent, prefAgent)
-  const resolvedModelFallback =
-    resolvedAgent.value == null
-      ? undefined
-      : resolvedAgent.value === prefAgent
-        ? prefModel
-        : resolveDefaultModel(resolvedAgent.value)
-  const resolvedModel = resolveWithTaskDisciplineDefault(task.model, disciplineConfig?.model, resolvedModelFallback)
+  const defaults: TerminalBridgeLaunchDefaults = {
+    agent: defaultAgent,
+    model: defaultModel,
+    effort: defaultEffort,
+    thinking: defaultThinking,
+    permissionLevel: defaultPermissionLevel
+  }
 
-  const modelsForResolvedAgent = resolvedModel.value == null ? [] : (formTreeByAgent[resolvedModel.value] ?? [])
-  const resolvedModelOption =
-    resolvedModel.value == null ? undefined : modelsForResolvedAgent.find(model => model.name === resolvedModel.value)
-  const resolvedModelSupportsEffort = (resolvedModelOption?.effortOptions?.length ?? 0) > 0
-
-  const resolvedEffort = resolveWithTaskDisciplineDefault(
-    asEffort(task.effort),
-    asEffort(disciplineConfig?.effort),
-    prefEffort
+  const { data, error, isLoading } = useWorkspaceInvoke<TerminalBridgeResolvedLaunchConfig>(
+    'terminal_resolve_task_launch_config',
+    { taskId: task.id, defaults },
+    {
+      staleTime: 15_000
+    }
   )
-  const resolvedThinking = resolveWithTaskDisciplineDefault(task.thinking, disciplineConfig?.thinking, prefThinking)
-
-  const agentSource =
-    resolvedAgent.source === 'task' ? 'task' : resolvedAgent.source === 'discipline' ? 'discipline' : 'default'
-  const modelSource = resolvedModel.source
-  const effortSource = resolvedEffort.source
-  const thinkingSource = resolvedThinking.source
 
   return {
-    resolvedAgent: resolvedAgent.value,
-    resolvedModel: resolvedModel.value,
-    resolvedEffort: resolvedModelSupportsEffort ? resolvedEffort.value : undefined,
-    resolvedThinking: resolvedThinking.value,
-    resolvedModelSupportsEffort,
-    agentSource,
-    modelSource,
-    effortSource,
-    thinkingSource
+    resolvedAgent: data?.agent ?? undefined,
+    resolvedModel: data?.model ?? undefined,
+    resolvedEffort: data?.modelSupportsEffort ? (data.effort ?? undefined) : undefined,
+    resolvedThinking: data?.thinking ?? undefined,
+    resolvedModelSupportsEffort: data?.modelSupportsEffort ?? false,
+    agentSource: data?.agentSource ?? FALLBACK_SOURCES.agentSource,
+    modelSource: data?.modelSource ?? FALLBACK_SOURCES.modelSource,
+    effortSource: data?.effortSource ?? FALLBACK_SOURCES.effortSource,
+    thinkingSource: data?.thinkingSource ?? FALLBACK_SOURCES.thinkingSource,
+    resolveError: error,
+    isLoading
   }
 }

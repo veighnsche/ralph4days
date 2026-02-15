@@ -184,12 +184,26 @@ export type PromptPreview = { sections: PromptPreviewSection[]; fullPrompt: stri
 export type PromptPreviewSection = { name: string; content: string }
 export type ProtocolVersionInfo = { protocolVersion: number }
 export type PtyClosedEvent = { sessionId: string; exitCode: number }
-export type PtyOutputEvent = { sessionId: string; seq: bigint; data: string }
+export type PtyOutputEvent = { sessionId: string; seq: number; data: string }
+export type RalphError = { code: number; message: string }
 export type RalphProject = { name: string; path: string }
 export type RecentProject = { path: string; name: string; lastOpened: string }
 export type RemoteConnectArgs = { wsUrl: string }
 export type RemoteConnectResult = { wsUrl: string; protocol: ProtocolVersionInfo }
+export type RemoteEventFrame =
+  | { event: 'backend-diagnostic'; payload: BackendDiagnosticEvent }
+  | { event: 'terminal:output'; payload: PtyOutputEvent }
+  | { event: 'terminal:closed'; payload: PtyClosedEvent }
 export type RemoteStatus = { connected: boolean; wsUrl?: string; protocol?: ProtocolVersionInfo }
+export type RemoteWireFrame =
+  | { type: 'rpc-request'; id: number; command: string; payload: unknown }
+  | { type: 'rpc-ok'; id: number; result: unknown }
+  | { type: 'rpc-err'; id: number; error: RalphError }
+  | ({ type: 'event' } & (
+      | { event: 'backend-diagnostic'; payload: BackendDiagnosticEvent }
+      | { event: 'terminal:output'; payload: PtyOutputEvent }
+      | { event: 'terminal:closed'; payload: PtyClosedEvent }
+    ))
 export type SectionConfig = { name: string; enabled: boolean; instructionOverride?: string }
 export type SectionInfo = {
   name: string
@@ -440,6 +454,14 @@ export type TasksUpdateArgs = {
   thinking?: boolean
 }
 export type TerminalBridgeEmitSystemMessageArgs = { sessionId: string; text: string }
+export type TerminalBridgeLaunchDefaults = {
+  agent?: string
+  model?: string
+  effort?: string
+  thinking?: boolean
+  permissionLevel?: string
+}
+export type TerminalBridgeLaunchSource = 'task' | 'discipline' | 'default' | 'unset'
 export type TerminalBridgeListModelFormTreeResult = { providers: TerminalBridgeListModelsResult[] }
 export type TerminalBridgeListModelsResult = { agent: string; models: TerminalBridgeModelOption[] }
 export type TerminalBridgeModelOption = {
@@ -449,15 +471,29 @@ export type TerminalBridgeModelOption = {
   sessionModel?: string
   effortOptions: string[]
 }
-export type TerminalBridgeReplayOutputArgs = { sessionId: string; afterSeq: bigint; limit: number }
-export type TerminalBridgeReplayOutputChunk = { seq: bigint; data: string }
+export type TerminalBridgeReplayOutputArgs = { sessionId: string; afterSeq: number; limit: number }
+export type TerminalBridgeReplayOutputChunk = { seq: number; data: string }
 export type TerminalBridgeReplayOutputResult = {
   chunks: TerminalBridgeReplayOutputChunk[]
   hasMore: boolean
   truncated: boolean
-  truncatedUntilSeq?: bigint
+  truncatedUntilSeq: number
 }
 export type TerminalBridgeResizeArgs = { sessionId: string; cols: number; rows: number }
+export type TerminalBridgeResolveTaskLaunchArgs = { taskId: number; defaults: TerminalBridgeLaunchDefaults }
+export type TerminalBridgeResolvedLaunchConfig = {
+  agent?: string
+  model?: string
+  effort?: string
+  thinking?: boolean
+  permissionLevel?: string
+  agentSource: TerminalBridgeLaunchSource
+  modelSource: TerminalBridgeLaunchSource
+  effortSource: TerminalBridgeLaunchSource
+  thinkingSource: TerminalBridgeLaunchSource
+  permissionLevelSource: TerminalBridgeLaunchSource
+  modelSupportsEffort: boolean
+}
 export type TerminalBridgeSendInputArgs = { sessionId: string; data: number[] }
 export type TerminalBridgeSetStreamModeArgs = { sessionId: string; mode: string }
 export type TerminalBridgeStartHumanSessionArgs = {

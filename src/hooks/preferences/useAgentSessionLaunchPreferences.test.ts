@@ -5,7 +5,7 @@ import { useAgentSessionLaunchPreferences } from './useAgentSessionLaunchPrefere
 
 const BASE_CONFIG: AgentSessionLaunchConfig = {
   agent: 'claude',
-  model: 'claude-sonnet-4',
+  model: 'sonnet',
   effort: 'medium',
   thinking: true,
   permissionLevel: 'balanced'
@@ -38,6 +38,21 @@ describe('useAgentSessionLaunchPreferences', () => {
           agent: 'codex',
           model: 'gpt-5.3-codex'
         })
+      },
+      1
+    )
+
+    expect(useAgentSessionLaunchPreferences.getState()).toMatchObject({
+      agent: 'codex',
+      model: 'gpt-5.3-codex'
+    })
+  })
+
+  it('sets a deterministic default model when agent changes', () => {
+    expectStoreTransitions(
+      useAgentSessionLaunchPreferences,
+      () => {
+        useAgentSessionLaunchPreferences.getState().setAgent('codex')
       },
       1
     )

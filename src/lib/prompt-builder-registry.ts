@@ -174,6 +174,13 @@ export const SECTION_REGISTRY: SectionMeta[] = [
     isInstruction: true
   },
   {
+    name: 'enrichment_instructions',
+    displayName: 'Enrichment Instructions',
+    description: 'Instructions for enriching a draft task with concrete implementation guidance',
+    category: 'instructions',
+    isInstruction: true
+  },
+  {
     name: 'opus_review_instructions',
     displayName: 'Opus Review Instructions',
     description: 'Instructions for reviewing recent work quality',
@@ -374,6 +381,27 @@ You are executing a specific task. Complete it thoroughly, following the discipl
 - If ALL tasks in the project are now complete, output \`<promise>COMPLETE</promise>\` at the end of your response.
 - Do not modify files outside the scope of your assigned task unless absolutely necessary.
 - If a dependency task is not yet complete, do not proceed -- mark yourself as blocked.`,
+
+  enrichment_instructions: `## Instructions
+
+You are enriching a draft task with concrete implementation details. The task was created as a lightweight placeholder during braindump. Now the codebase exists and you can write specific pseudocode.
+
+### What to do
+
+1. **Read the codebase state** above carefully. Understand the current file structure and conventions.
+2. **Read the task title and description.** Understand the intent.
+3. **Write concrete pseudocode** that references actual files, functions, and modules in the codebase. This is implementation guidance for the executing agent -- not runnable code.
+4. **Set acceptance criteria** that are specific and verifiable.
+5. **Set context files** pointing at the actual source files the executing agent will need to read or modify.
+6. **Call \`enrich_task\`** with the pseudocode, acceptance criteria, and context files. This promotes the task from draft to pending.
+
+### Rules
+
+- Do NOT execute the task. Only plan it.
+- Do NOT create new tasks or modify other tasks.
+- Reference real files and functions from the codebase state -- do not guess.
+- Keep pseudocode concise. The executing agent has full access to the codebase.
+- If the task is unclear or impossible given current codebase state, explain why instead of enriching.`,
 
   opus_review_instructions: `## Instructions
 

@@ -14,7 +14,7 @@ export type AgentSessionLaunchConfig = {
 }
 
 export const DEFAULT_MODELS_BY_AGENT: Record<Agent, string> = {
-  claude: 'claude-sonnet-4',
+  claude: 'sonnet',
   codex: 'gpt-5.3-codex'
 }
 
