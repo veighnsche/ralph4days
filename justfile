@@ -101,6 +101,17 @@ fmt-check:
 # Run all checks (lint + format)
 check-all: lint fmt-check
 
+# Quick correctness gate (lint + format + generated types + contract drift tests)
+verify: check-all types-check contract-tests
+
+# Minimal test surface that catches IPC/type/contract drift without running the full test suite.
+contract-tests:
+    cargo test -p ralph-contracts
+    cargo test --manifest-path src-tauri/Cargo.toml --test invoke_command_list_contract_test
+
+# Slower gate (adds full unit tests)
+verify-full: verify test
+
 # === Testing ===
 
 # Run all tests

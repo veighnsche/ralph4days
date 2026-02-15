@@ -36,7 +36,9 @@ Use `just` as the primary task runner (`just --list`).
 - `just refresh-tauri-fixtures-mock`: prepare fresh mocks for GUI.
 - `just test`: run Rust + frontend unit tests.
 - `just lint` / `just fmt-check`: lint and formatting checks.
-- `just check-all`: lint + formatting gate.
+- `just check-all`: lint + formatting gate (not a correctness signal by itself).
+- `just verify`: quick correctness gate: `check-all` + `types-check` + contract drift tests (recommended default before claiming a change is "correct").
+- `just verify-full`: slower gate: `verify` + full unit tests (`just test`).
 - `just build`: production desktop build.
 - `just reset-mock` then `just dev-mock 03`: test against fixture-backed mock project.
 
@@ -97,7 +99,7 @@ Use `just` as the primary task runner (`just --list`).
 ## Commit & Pull Request Guidelines
 - Follow Conventional Commit-style prefixes seen in history: `feat(...)`, `fix(...)`, `refactor(...)`, `chore(...)`, `docs(...)`.
 - Keep commits scoped and functional; avoid mixing unrelated frontend/backend changes when possible.
-- Before opening a PR, run `just check-all` and `just test`.
+- Before opening a PR, run `just verify-full` (or at minimum `just verify` + `just test` if you need separate output buckets).
 - `git commit --no-verify` is completely forbidden.
 - Never bypass git hooks. If hooks fail, stop, surface the failure, and fix the underlying issue before committing.
 
