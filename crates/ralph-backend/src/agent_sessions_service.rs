@@ -25,4 +25,3 @@ pub fn agent_sessions_get(db: &SqliteDb, id: &str) -> Result<Option<AgentSession
 pub fn agent_sessions_list_human(db: &SqliteDb) -> Result<Vec<AgentSession>, String> {
     Ok(db.list_human_agent_sessions())
 }
-

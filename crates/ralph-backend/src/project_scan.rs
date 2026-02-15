@@ -43,8 +43,10 @@ pub fn recents_load(data_dir: &Path) -> Result<Vec<RecentProject>, String> {
 }
 
 pub fn recents_add(data_dir: &Path, path: String, name: String) -> Result<(), String> {
-    std::fs::create_dir_all(data_dir)
-        .ralph_err(codes::FILESYSTEM, "Failed to create recent projects directory")?;
+    std::fs::create_dir_all(data_dir).ralph_err(
+        codes::FILESYSTEM,
+        "Failed to create recent projects directory",
+    )?;
 
     let mut projects = recents_load(data_dir)?;
     projects.retain(|p| p.path != path);
@@ -71,8 +73,9 @@ pub fn project_scan(args: ProjectScanArgs) -> Result<Vec<RalphProject>, String> 
     let scan_path = if let Some(dir) = args.root_dir {
         PathBuf::from(dir)
     } else {
-        dirs::home_dir()
-            .ok_or_else(|| ralph_errors::err_string(codes::FILESYSTEM, "Failed to get home directory"))?
+        dirs::home_dir().ok_or_else(|| {
+            ralph_errors::err_string(codes::FILESYSTEM, "Failed to get home directory")
+        })?
     };
 
     fn scan_recursive(

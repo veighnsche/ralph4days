@@ -78,7 +78,12 @@ fn ralph4days_data_dir() -> Result<PathBuf, String> {
         .or_else(|| {
             std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".local").join("share"))
         })
-        .ok_or_else(|| err_string(codes::FILESYSTEM, "No XDG data directory (missing HOME/XDG_DATA_HOME)"))?;
+        .ok_or_else(|| {
+            err_string(
+                codes::FILESYSTEM,
+                "No XDG data directory (missing HOME/XDG_DATA_HOME)",
+            )
+        })?;
     Ok(base.join("ralph4days"))
 }
 
@@ -315,8 +320,9 @@ async fn handle_command(
         }
         "project_info_get" => {
             require_null_payload(command, payload)?;
-            let info =
-                ralph_backend::session::with_db(&state.db, |db| project_scan::project_info_get(db))?;
+            let info = ralph_backend::session::with_db(&state.db, |db| {
+                project_scan::project_info_get(db)
+            })?;
             encode_result(command, info)
         }
         "subsystems_list" => {

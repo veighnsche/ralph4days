@@ -94,4 +94,3 @@ async fn unknown_command_yields_rpc_err() {
 
     let _ = child.kill().await;
 }
-

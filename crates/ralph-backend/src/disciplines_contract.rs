@@ -186,7 +186,10 @@ mod tests {
             .expect("skills should be present")
             .as_array()
             .expect("skills should be an array");
-        assert!(skills.is_empty(), "skills should serialize as an empty array");
+        assert!(
+            skills.is_empty(),
+            "skills should serialize as an empty array"
+        );
 
         let mcp_servers = obj
             .get("mcpServers")

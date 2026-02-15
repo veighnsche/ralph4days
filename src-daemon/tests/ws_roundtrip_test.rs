@@ -63,4 +63,3 @@ async fn ws_roundtrip_protocol_version_get() {
 
     let _ = child.kill().await;
 }
-
