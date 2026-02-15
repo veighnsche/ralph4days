@@ -2,7 +2,7 @@ use crate::subsystems_contract::{
     SubsystemCommentData, SubsystemData, SubsystemsCommentAddArgs, SubsystemsCommentDeleteArgs,
     SubsystemsCommentUpdateArgs, SubsystemsCreateArgs, SubsystemsDeleteArgs, SubsystemsUpdateArgs,
 };
-use ralph_errors::{codes, err_string};
+use ralph_errors::{codes, err_string, RalphResult};
 use sqlite_db::SqliteDb;
 use std::path::{Path, PathBuf};
 
@@ -55,8 +55,8 @@ fn to_subsystem_data(subsystem: &sqlite_db::Subsystem) -> SubsystemData {
     }
 }
 
-fn get_subsystem_data_or_error(db: &SqliteDb, name: &str) -> Result<SubsystemData, String> {
-    let subsystems = db.get_subsystems();
+fn get_subsystem_data_or_error(db: &SqliteDb, name: &str) -> RalphResult<SubsystemData> {
+    let subsystems = db.get_subsystems()?;
     let subsystem = subsystems
         .iter()
         .find(|f| f.name == name)
@@ -64,14 +64,11 @@ fn get_subsystem_data_or_error(db: &SqliteDb, name: &str) -> Result<SubsystemDat
     Ok(to_subsystem_data(subsystem))
 }
 
-pub fn subsystems_list(db: &SqliteDb) -> Result<Vec<SubsystemData>, String> {
-    Ok(db.get_subsystems().iter().map(to_subsystem_data).collect())
+pub fn subsystems_list(db: &SqliteDb) -> RalphResult<Vec<SubsystemData>> {
+    Ok(db.get_subsystems()?.iter().map(to_subsystem_data).collect())
 }
 
-pub fn subsystems_create(
-    db: &SqliteDb,
-    args: SubsystemsCreateArgs,
-) -> Result<SubsystemData, String> {
+pub fn subsystems_create(db: &SqliteDb, args: SubsystemsCreateArgs) -> RalphResult<SubsystemData> {
     let name = args.name.clone();
     db.create_subsystem(sqlite_db::SubsystemInput {
         name: args.name,
@@ -82,10 +79,7 @@ pub fn subsystems_create(
     get_subsystem_data_or_error(db, &name)
 }
 
-pub fn subsystems_update(
-    db: &SqliteDb,
-    args: SubsystemsUpdateArgs,
-) -> Result<SubsystemData, String> {
+pub fn subsystems_update(db: &SqliteDb, args: SubsystemsUpdateArgs) -> RalphResult<SubsystemData> {
     let name = args.name.clone();
     db.update_subsystem(sqlite_db::SubsystemInput {
         name: args.name,
@@ -96,14 +90,14 @@ pub fn subsystems_update(
     get_subsystem_data_or_error(db, &name)
 }
 
-pub fn subsystems_delete(db: &SqliteDb, args: SubsystemsDeleteArgs) -> Result<(), String> {
+pub fn subsystems_delete(db: &SqliteDb, args: SubsystemsDeleteArgs) -> RalphResult<()> {
     db.delete_subsystem(args.name)
 }
 
 pub fn subsystems_comment_add_prepare(
     db: &SqliteDb,
     args: SubsystemsCommentAddArgs,
-) -> Result<(SubsystemData, SubsystemCommentEmbeddingWork), String> {
+) -> RalphResult<(SubsystemData, SubsystemCommentEmbeddingWork)> {
     let subsystem_name = args.subsystem_name.clone();
 
     db.with_transaction(|db| {
@@ -139,7 +133,7 @@ pub fn subsystems_comment_add_prepare(
 pub fn subsystems_comment_update_prepare(
     db: &SqliteDb,
     args: SubsystemsCommentUpdateArgs,
-) -> Result<(SubsystemData, Option<SubsystemCommentEmbeddingWork>), String> {
+) -> RalphResult<(SubsystemData, Option<SubsystemCommentEmbeddingWork>)> {
     let comment_id = args.comment_id;
     db.with_transaction(|db| {
         db.update_subsystem_comment(
@@ -164,7 +158,7 @@ pub fn subsystems_comment_update_prepare(
             &category,
             &args.body,
             args.reason.as_deref(),
-        );
+        )?;
 
         Ok((
             subsystem,
@@ -179,11 +173,14 @@ pub fn subsystems_comment_update_prepare(
 pub async fn subsystems_comment_apply_embedding(
     project_path: &Path,
     work: SubsystemCommentEmbeddingWork,
-) -> Result<(), String> {
-    let ext_config = ralph_external::ExternalServicesConfig::load()?;
+) -> RalphResult<()> {
+    let ext_config = ralph_external::ExternalServicesConfig::load()
+        .map_err(|e| err_string(codes::FEATURE_OPS, e))?;
     let embed_config = build_embedding_config(&ext_config);
     let result =
-        ralph_external::comment_embeddings::embed_text(&embed_config, &work.embedding_text).await?;
+        ralph_external::comment_embeddings::embed_text(&embed_config, &work.embedding_text)
+            .await
+            .map_err(|e| err_string(codes::FEATURE_OPS, e))?;
 
     let path = comment_embeddings_db_path(project_path);
     let db = SqliteDb::open(&path, None)?;
@@ -194,7 +191,7 @@ pub async fn subsystems_comment_apply_embedding(
 pub fn subsystems_comment_delete(
     db: &SqliteDb,
     args: SubsystemsCommentDeleteArgs,
-) -> Result<SubsystemData, String> {
+) -> RalphResult<SubsystemData> {
     db.delete_subsystem_comment(&args.subsystem_name, args.comment_id)?;
     get_subsystem_data_or_error(db, &args.subsystem_name)
 }

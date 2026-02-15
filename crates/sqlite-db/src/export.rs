@@ -1,4 +1,5 @@
 use crate::SqliteDb;
+use ralph_errors::RalphResult;
 
 /// Escape a string for safe inclusion in double-quoted YAML values.
 /// Handles: backslashes, double quotes, newlines, tabs.
@@ -13,11 +14,11 @@ fn yaml_escape(s: &str) -> String {
 impl SqliteDb {
     /// Export database contents as YAML-formatted text for prompt builder.
     /// Output is deterministic: same DB state always produces identical text.
-    pub fn export_prd_yaml(&self) -> Result<String, String> {
+    pub fn export_prd_yaml(&self) -> RalphResult<String> {
         let mut output = String::new();
 
         // Section 1: metadata
-        let meta = self.get_project_info();
+        let meta = self.get_project_info()?;
         output.push_str("schema_version: \"1.0\"\n");
         output.push_str("project:\n");
         output.push_str(&format!("  title: \"{}\"\n", yaml_escape(&meta.title)));
@@ -30,7 +31,7 @@ impl SqliteDb {
         output.push('\n');
 
         // Section 2: subsystems (sorted by name via ORDER BY)
-        let subsystems = self.get_subsystems();
+        let subsystems = self.get_subsystems()?;
         if !subsystems.is_empty() {
             output.push_str("subsystems:\n");
             for f in &subsystems {
@@ -71,7 +72,7 @@ impl SqliteDb {
         }
 
         // Section 3: disciplines (sorted by name via ORDER BY)
-        let disciplines = self.get_disciplines();
+        let disciplines = self.get_disciplines()?;
         if !disciplines.is_empty() {
             output.push_str("disciplines:\n");
             for d in &disciplines {
@@ -90,7 +91,7 @@ impl SqliteDb {
         }
 
         // Section 4: tasks (sorted by id via ORDER BY)
-        let tasks = self.get_tasks();
+        let tasks = self.get_tasks()?;
         if !tasks.is_empty() {
             output.push_str("tasks:\n");
             for t in &tasks {

@@ -1,5 +1,5 @@
 use crate::SqliteDb;
-use ralph_errors::{codes, ralph_err, RalphResultExt};
+use ralph_errors::{codes, ralph_err, RalphResult, RalphResultExt};
 use ralph_macros::ipc_type;
 use std::collections::HashMap;
 
@@ -28,10 +28,7 @@ pub struct PromptBuilderConfigData {
 }
 
 impl SqliteDb {
-    pub fn save_prompt_builder_config(
-        &self,
-        input: PromptBuilderConfigInput,
-    ) -> Result<(), String> {
+    pub fn save_prompt_builder_config(&self, input: PromptBuilderConfigInput) -> RalphResult<()> {
         let now = self.now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         let section_order_json =
             serde_json::to_string(&input.section_order).ralph_err(codes::DB_WRITE, "JSON error")?;
@@ -84,7 +81,7 @@ impl SqliteDb {
     pub fn get_prompt_builder_config(
         &self,
         name: &str,
-    ) -> Result<Option<PromptBuilderConfigData>, String> {
+    ) -> RalphResult<Option<PromptBuilderConfigData>> {
         let mut stmt = self
             .conn
             .prepare(
@@ -131,7 +128,7 @@ impl SqliteDb {
         }
     }
 
-    pub fn list_prompt_builder_configs(&self) -> Result<Vec<String>, String> {
+    pub fn list_prompt_builder_configs(&self) -> RalphResult<Vec<String>> {
         let mut stmt = self
             .conn
             .prepare("SELECT name FROM prompt_builder_configs ORDER BY name")
@@ -149,7 +146,7 @@ impl SqliteDb {
         Ok(names)
     }
 
-    pub fn delete_prompt_builder_config(&self, name: &str) -> Result<(), String> {
+    pub fn delete_prompt_builder_config(&self, name: &str) -> RalphResult<()> {
         let rows = self
             .conn
             .execute("DELETE FROM prompt_builder_configs WHERE name = ?1", [name])

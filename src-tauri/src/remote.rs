@@ -1,7 +1,7 @@
 use futures_util::{SinkExt, StreamExt};
 use ralph_contracts::protocol::{ProtocolVersionInfo, PROTOCOL_VERSION};
 use ralph_contracts::transport::{BoxFuture, EventSink, RemoteWireFrame, RpcClient};
-use ralph_errors::{codes, err_string};
+use ralph_errors::{codes, err_string, RalphError, RalphResult};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
@@ -9,22 +9,21 @@ use std::time::Duration;
 use tokio::sync::{mpsc, oneshot, Mutex};
 use tokio_tungstenite::tungstenite::Message;
 
-fn remote_err(message: impl Into<String>) -> String {
-    // Dedicated transport/remote error codes don't exist yet; use INTERNAL to keep the string
-    // machine-parsable and to fail loudly.
+fn remote_err(message: impl Into<String>) -> RalphError {
+    // Dedicated transport/remote error codes don't exist yet; use INTERNAL and fail loudly.
     err_string(codes::INTERNAL, message)
 }
 
 #[derive(Debug)]
 struct RemoteWireInner {
     write_tx: mpsc::UnboundedSender<Message>,
-    pending: Mutex<HashMap<u64, oneshot::Sender<Result<serde_json::Value, String>>>>,
+    pending: Mutex<HashMap<u64, oneshot::Sender<RalphResult<serde_json::Value>>>>,
     next_id: AtomicU64,
     disconnected: AtomicBool,
 }
 
 impl RemoteWireInner {
-    async fn fail_all_pending(&self, error: String) {
+    async fn fail_all_pending(&self, error: RalphError) {
         let mut pending = self.pending.lock().await;
         for (_, tx) in pending.drain() {
             let _ = tx.send(Err(error.clone()));
@@ -48,7 +47,7 @@ impl RpcClient for RemoteRpcClient {
         &self,
         command: String,
         args: serde_json::Value,
-    ) -> BoxFuture<'_, Result<serde_json::Value, String>> {
+    ) -> BoxFuture<'_, RalphResult<serde_json::Value>> {
         let inner = Arc::clone(&self.inner);
         Box::pin(async move {
             if inner.disconnected.load(Ordering::SeqCst) {
@@ -56,7 +55,7 @@ impl RpcClient for RemoteRpcClient {
             }
 
             let id = inner.next_id.fetch_add(1, Ordering::Relaxed);
-            let (tx, rx) = oneshot::channel::<Result<serde_json::Value, String>>();
+            let (tx, rx) = oneshot::channel::<RalphResult<serde_json::Value>>();
 
             let mut pending = inner.pending.lock().await;
             // This should be impossible because ids are monotonic.
@@ -122,7 +121,7 @@ impl RemoteWireFrameConnection {
         self.rpc.is_connected()
     }
 
-    pub async fn connect(ws_url: String, sink: Arc<dyn EventSink>) -> Result<Self, String> {
+    pub async fn connect(ws_url: String, sink: Arc<dyn EventSink>) -> RalphResult<Self> {
         let (ws_stream, _) = tokio_tungstenite::connect_async(&ws_url)
             .await
             .map_err(|e| {
@@ -225,7 +224,7 @@ impl RemoteWireFrameConnection {
                                     inner_reader.fail_all_pending(error).await;
                                     break;
                                 };
-                                let _ = tx.send(Err(error.to_string()));
+                                let _ = tx.send(Err(error));
                             }
                             RemoteWireFrame::Event { frame } => {
                                 if let Err(error) = frame.emit_to(sink_reader.as_ref()) {
@@ -304,7 +303,7 @@ impl RemoteWireFrameConnection {
         Ok(conn)
     }
 
-    pub async fn shutdown(mut self) -> Result<(), String> {
+    pub async fn shutdown(mut self) -> RalphResult<()> {
         self.rpc.inner.disconnected.store(true, Ordering::SeqCst);
         self.rpc
             .inner
@@ -439,7 +438,7 @@ mod tests {
             .await
             .unwrap_err();
 
-        assert!(err.contains("Protocol mismatch"), "err={err}");
+        assert!(err.to_string().contains("Protocol mismatch"), "err={err}");
     }
 
     #[tokio::test]

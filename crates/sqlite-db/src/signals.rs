@@ -2,7 +2,7 @@ use crate::types::{
     TaskSignal, TaskSignalComment, TaskSignalCommentCreateInput, TaskSignalSummary,
 };
 use crate::SqliteDb;
-use ralph_errors::{codes, ralph_err, RalphResultExt};
+use ralph_errors::{codes, ralph_err, RalphError, RalphResult, RalphResultExt};
 use std::collections::HashMap;
 
 pub struct DoneSignalInput {
@@ -73,7 +73,7 @@ impl SqliteDb {
         task_id: u32,
         started_by: &str,
         kind: &str,
-    ) -> Result<(), String> {
+    ) -> RalphResult<()> {
         let exists: bool = self
             .conn
             .query_row(
@@ -106,7 +106,7 @@ impl SqliteDb {
         _agent_task_id: Option<u32>,
         priority: Option<String>,
         body: String,
-    ) -> Result<(), String> {
+    ) -> RalphResult<()> {
         self.add_signal_with_parent(task_id, None, priority, body, None)
     }
 
@@ -117,7 +117,7 @@ impl SqliteDb {
         _priority: Option<String>,
         body: String,
         _parent_signal_id: Option<u32>,
-    ) -> Result<(), String> {
+    ) -> RalphResult<()> {
         if body.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "Signal body cannot be empty");
         }
@@ -154,7 +154,7 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn update_signal(&self, task_id: u32, signal_id: u32, body: String) -> Result<(), String> {
+    pub fn update_signal(&self, task_id: u32, signal_id: u32, body: String) -> RalphResult<()> {
         if body.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "Signal body cannot be empty");
         }
@@ -189,7 +189,7 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn delete_signal(&self, task_id: u32, signal_id: u32) -> Result<(), String> {
+    pub fn delete_signal(&self, task_id: u32, signal_id: u32) -> RalphResult<()> {
         let task_exists: bool = self
             .conn
             .query_row(
@@ -220,8 +220,8 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub(crate) fn get_signals_for_task(&self, task_id: u32) -> Vec<TaskSignal> {
-        let Ok(mut stmt) = self.conn.prepare(
+    pub(crate) fn get_signals_for_task(&self, task_id: u32) -> RalphResult<Vec<TaskSignal>> {
+        let mut stmt = self.conn.prepare(
             "SELECT tc.id, COALESCE(s.started_by, 'system') as author, \
              COALESCE(tc.text, tc.summary, tc.reason, tc.question, tc.what, tc.remaining, '') as body, \
              tc.created, tc.session_id, tc.verb, \
@@ -232,77 +232,80 @@ impl SqliteDb {
              LEFT JOIN agent_sessions s ON tc.session_id = s.id \
              WHERE tc.task_id = ?1 \
              ORDER BY tc.id DESC",
-        ) else {
-            return vec![];
-        };
+        ).ralph_err(codes::DB_READ, "Failed to prepare task signals query")?;
 
-        stmt.query_map([task_id], |row| {
-            let blocking_int: Option<i32> = row.get(12)?;
-            let options_str: Option<String> = row.get(18)?;
+        let rows = stmt
+            .query_map([task_id], |row| {
+                let blocking_int: Option<i32> = row.get(12)?;
+                let options_str: Option<String> = row.get(18)?;
 
-            Ok(TaskSignal {
-                id: row.get(0)?,
-                author: row.get(1)?,
-                body: row.get(2)?,
-                created: row.get(3)?,
-                session_id: row.get(4)?,
-                signal_verb: row.get(5)?,
-                parent_signal_id: None,
-                priority: None,
-                summary: row.get(6)?,
-                remaining: row.get(7)?,
-                reason: row.get(8)?,
-                question: row.get(9)?,
-                what: row.get(10)?,
-                on: row.get(11)?,
-                blocking: blocking_int.map(|b| b != 0),
-                severity: row.get(13)?,
-                category: row.get(14)?,
-                kind: row.get(15)?,
-                scope: row.get(16)?,
-                preferred: row.get(17)?,
-                options: options_str.map(|s| s.lines().map(str::to_owned).collect()),
-                rationale: row.get(19)?,
-                why: row.get(20)?,
-                detail: row.get(21)?,
-                text: row.get(22)?,
-                answer: row.get(23)?,
+                Ok(TaskSignal {
+                    id: row.get(0)?,
+                    author: row.get(1)?,
+                    body: row.get(2)?,
+                    created: row.get(3)?,
+                    session_id: row.get(4)?,
+                    signal_verb: row.get(5)?,
+                    parent_signal_id: None,
+                    priority: None,
+                    summary: row.get(6)?,
+                    remaining: row.get(7)?,
+                    reason: row.get(8)?,
+                    question: row.get(9)?,
+                    what: row.get(10)?,
+                    on: row.get(11)?,
+                    blocking: blocking_int.map(|b| b != 0),
+                    severity: row.get(13)?,
+                    category: row.get(14)?,
+                    kind: row.get(15)?,
+                    scope: row.get(16)?,
+                    preferred: row.get(17)?,
+                    options: options_str.map(|s| s.lines().map(str::to_owned).collect()),
+                    rationale: row.get(19)?,
+                    why: row.get(20)?,
+                    detail: row.get(21)?,
+                    text: row.get(22)?,
+                    answer: row.get(23)?,
+                })
             })
-        })
-        .map_or_else(
-            |_| vec![],
-            |rows| rows.filter_map(std::result::Result::ok).collect(),
-        )
+            .ralph_err(codes::DB_READ, "Failed to query task signals")?;
+
+        let mut out = Vec::new();
+        for row in rows {
+            out.push(row.ralph_err(codes::DB_READ, "Failed to decode task signal row")?);
+        }
+        Ok(out)
     }
 
-    pub(crate) fn get_all_signals_by_task(&self) -> HashMap<u32, Vec<TaskSignal>> {
-        let Ok(mut stmt) = self
+    pub(crate) fn get_all_signals_by_task(&self) -> RalphResult<HashMap<u32, Vec<TaskSignal>>> {
+        let mut stmt = self
             .conn
             .prepare("SELECT DISTINCT task_id FROM task_signals")
-        else {
-            return HashMap::new();
-        };
+            .ralph_err(codes::DB_READ, "Failed to prepare task ids query")?;
 
-        let Ok(task_id_rows) = stmt.query_map([], |row| row.get::<_, u32>(0)) else {
-            return HashMap::new();
-        };
+        let task_id_rows = stmt
+            .query_map([], |row| row.get::<_, u32>(0))
+            .ralph_err(codes::DB_READ, "Failed to query task ids")?;
 
-        let task_ids: Vec<u32> = task_id_rows.filter_map(std::result::Result::ok).collect();
+        let mut task_ids: Vec<u32> = Vec::new();
+        for row in task_id_rows {
+            task_ids.push(row.ralph_err(codes::DB_READ, "Failed to decode task id row")?);
+        }
 
         let mut map = HashMap::new();
         for task_id in task_ids {
-            let signals = self.get_signals_for_task(task_id);
+            let signals = self.get_signals_for_task(task_id)?;
             if !signals.is_empty() {
                 map.insert(task_id, signals);
             }
         }
-        map
+        Ok(map)
     }
 
     pub fn get_signal_summaries(
         &self,
         task_ids: &[u32],
-    ) -> Result<HashMap<u32, TaskSignalSummary>, String> {
+    ) -> RalphResult<HashMap<u32, TaskSignalSummary>> {
         if task_ids.is_empty() {
             return Ok(HashMap::new());
         }
@@ -342,8 +345,9 @@ impl SqliteDb {
         let mut map: HashMap<u32, TaskSignalSummary> = HashMap::new();
         let mut sessions_per_task: HashMap<u32, std::collections::HashSet<String>> = HashMap::new();
 
-        for row in rows.flatten() {
-            let (task_id, verb, blocking, severity, answered, session_id) = row;
+        for row in rows {
+            let (task_id, verb, blocking, severity, answered, session_id) =
+                row.ralph_err(codes::DB_READ, "Failed to decode summary row")?;
             let summary = map.entry(task_id).or_insert_with(|| TaskSignalSummary {
                 pending_asks: 0,
                 flag_count: 0,
@@ -393,7 +397,7 @@ impl SqliteDb {
         Ok(map)
     }
 
-    pub fn answer_ask(&self, signal_id: u32, answer: String) -> Result<(), String> {
+    pub fn answer_ask(&self, signal_id: u32, answer: String) -> RalphResult<()> {
         if answer.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "Answer cannot be empty");
         }
@@ -416,10 +420,7 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn add_task_signal_comment(
-        &self,
-        input: TaskSignalCommentCreateInput,
-    ) -> Result<u32, String> {
+    pub fn add_task_signal_comment(&self, input: TaskSignalCommentCreateInput) -> RalphResult<u32> {
         if input.body.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "Comment body cannot be empty");
         }
@@ -457,10 +458,15 @@ impl SqliteDb {
             .ralph_err(codes::DB_WRITE, "Failed to insert task signal comment")?;
 
         let id = self.conn.last_insert_rowid();
-        Ok(u32::try_from(id).unwrap_or_default())
+        u32::try_from(id).map_err(|_| {
+            RalphError::new(
+                codes::DB_WRITE,
+                format!("Invalid new task_signal_comment id: {id}"),
+            )
+        })
     }
 
-    pub fn update_task_signal_comment(&self, comment_id: u32, body: String) -> Result<(), String> {
+    pub fn update_task_signal_comment(&self, comment_id: u32, body: String) -> RalphResult<()> {
         if body.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "Comment body cannot be empty");
         }
@@ -480,7 +486,7 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn delete_task_signal_comment(&self, comment_id: u32) -> Result<(), String> {
+    pub fn delete_task_signal_comment(&self, comment_id: u32) -> RalphResult<()> {
         let affected = self
             .conn
             .execute(
@@ -496,35 +502,40 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn get_task_signal_comments(&self, signal_id: u32) -> Vec<TaskSignalComment> {
-        let Ok(mut stmt) = self.conn.prepare(
-            "SELECT id, signal_id, session_id, author_type, body, created \
+    pub fn get_task_signal_comments(&self, signal_id: u32) -> RalphResult<Vec<TaskSignalComment>> {
+        let mut stmt = self
+            .conn
+            .prepare(
+                "SELECT id, signal_id, session_id, author_type, body, created \
              FROM task_signal_comments WHERE signal_id = ?1 ORDER BY id ASC",
-        ) else {
-            return vec![];
-        };
+            )
+            .ralph_err(codes::DB_READ, "Failed to prepare signal comments query")?;
 
-        stmt.query_map([signal_id], |row| {
-            Ok(TaskSignalComment {
-                id: row.get(0)?,
-                signal_id: row.get(1)?,
-                session_id: row.get(2)?,
-                author_type: row.get(3)?,
-                body: row.get(4)?,
-                created: row.get(5)?,
+        let rows = stmt
+            .query_map([signal_id], |row| {
+                Ok(TaskSignalComment {
+                    id: row.get(0)?,
+                    signal_id: row.get(1)?,
+                    session_id: row.get(2)?,
+                    author_type: row.get(3)?,
+                    body: row.get(4)?,
+                    created: row.get(5)?,
+                })
             })
-        })
-        .map_or_else(
-            |_| vec![],
-            |rows| rows.filter_map(std::result::Result::ok).collect(),
-        )
+            .ralph_err(codes::DB_READ, "Failed to query signal comments")?;
+
+        let mut out = Vec::new();
+        for row in rows {
+            out.push(row.ralph_err(codes::DB_READ, "Failed to decode signal comment row")?);
+        }
+        Ok(out)
     }
 
     pub fn insert_done_signal(
         &self,
         _discipline_name: Option<&str>,
         input: DoneSignalInput,
-    ) -> Result<(), String> {
+    ) -> RalphResult<()> {
         if input.summary.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "Summary cannot be empty");
         }
@@ -551,7 +562,7 @@ impl SqliteDb {
         &self,
         _discipline_name: Option<&str>,
         input: PartialSignalInput,
-    ) -> Result<(), String> {
+    ) -> RalphResult<()> {
         if input.summary.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "Summary cannot be empty");
         }
@@ -587,7 +598,7 @@ impl SqliteDb {
         &self,
         _discipline_name: Option<&str>,
         input: StuckSignalInput,
-    ) -> Result<(), String> {
+    ) -> RalphResult<()> {
         if input.reason.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "Reason cannot be empty");
         }
@@ -614,7 +625,7 @@ impl SqliteDb {
         &self,
         _discipline_name: Option<&str>,
         input: AskSignalInput,
-    ) -> Result<(), String> {
+    ) -> RalphResult<()> {
         if input.question.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "Question cannot be empty");
         }
@@ -651,7 +662,7 @@ impl SqliteDb {
         &self,
         _discipline_name: Option<&str>,
         input: FlagSignalInput,
-    ) -> Result<(), String> {
+    ) -> RalphResult<()> {
         if input.what.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "What cannot be empty");
         }
@@ -685,7 +696,7 @@ impl SqliteDb {
         &self,
         _discipline_name: Option<&str>,
         input: LearnedSignalInput,
-    ) -> Result<(), String> {
+    ) -> RalphResult<()> {
         if input.text.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "Text cannot be empty");
         }
@@ -720,7 +731,7 @@ impl SqliteDb {
         &self,
         _discipline_name: Option<&str>,
         input: SuggestSignalInput,
-    ) -> Result<(), String> {
+    ) -> RalphResult<()> {
         if input.what.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "What cannot be empty");
         }
@@ -757,7 +768,7 @@ impl SqliteDb {
         &self,
         _discipline_name: Option<&str>,
         input: BlockedSignalInput,
-    ) -> Result<(), String> {
+    ) -> RalphResult<()> {
         if input.on.trim().is_empty() {
             return ralph_err!(codes::SIGNAL_OPS, "On cannot be empty");
         }

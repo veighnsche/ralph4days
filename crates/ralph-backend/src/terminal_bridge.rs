@@ -18,7 +18,7 @@ use crate::terminal::{
 use base64::{engine::general_purpose::STANDARD, Engine};
 use prompt_builder::CodebaseSnapshot;
 use ralph_contracts::transport::EventSink;
-use ralph_errors::{codes, ralph_err};
+use ralph_errors::{codes, err_string, ralph_err, RalphResult, RalphResultExt};
 use sqlite_db::SqliteDb;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -49,8 +49,9 @@ pub fn emit_system_message(
     sink: &dyn EventSink,
     session_id: String,
     text: String,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     sink.emit_terminal_output(build_system_message_event(session_id, text))
+        .ralph_err(codes::INTERNAL, "Failed to emit terminal output")
 }
 
 fn resolve_session_post_start_preamble(
@@ -79,7 +80,7 @@ fn build_session_config(
     thinking: Option<bool>,
     permission_level: Option<String>,
     post_start_preamble: Option<String>,
-) -> Result<SessionConfig, String> {
+) -> RalphResult<SessionConfig> {
     let provider_id = resolve_agent_provider(agent.as_deref()).id();
     if provider_id == AGENT_SHELL {
         if !shell_agent_enabled() {
@@ -221,7 +222,7 @@ pub fn resolve_start_session_context(
     api_server_port: Option<u16>,
     project_path: &Path,
     mcp_mode: Option<&str>,
-) -> Result<(PathBuf, Option<PathBuf>), String> {
+) -> RalphResult<(PathBuf, Option<PathBuf>)> {
     if !project_path.is_dir() {
         return ralph_err!(
             codes::PROJECT_LOCK,
@@ -251,7 +252,7 @@ pub fn resolve_start_task_session_context(
     api_server_port: Option<u16>,
     project_path: &Path,
     task_id: u32,
-) -> Result<(PathBuf, PathBuf), String> {
+) -> RalphResult<(PathBuf, PathBuf)> {
     if !project_path.is_dir() {
         return ralph_err!(
             codes::PROJECT_LOCK,
@@ -273,7 +274,7 @@ pub fn resolve_start_task_session_context(
 pub fn terminal_start_session(
     ctx: &TerminalBridgeCtx<'_>,
     args: TerminalBridgeStartSessionArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     let (project_path, mcp_config) = resolve_start_session_context(
         ctx.db,
         ctx.codebase_snapshot,
@@ -304,7 +305,7 @@ pub fn terminal_start_session(
 pub fn terminal_start_task_session(
     ctx: &TerminalBridgeCtx<'_>,
     args: TerminalBridgeStartTaskSessionArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     let TerminalBridgeStartTaskSessionArgs {
         session_id,
         task_id,
@@ -360,28 +361,28 @@ pub fn terminal_start_task_session(
 pub fn terminal_send_input(
     pty_manager: &PTYManager,
     args: TerminalBridgeSendInputArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     pty_manager.send_input(&args.session_id, &args.data)
 }
 
 pub fn terminal_resize(
     pty_manager: &PTYManager,
     args: TerminalBridgeResizeArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     pty_manager.resize(&args.session_id, args.cols, args.rows)
 }
 
 pub fn terminal_terminate(
     pty_manager: &PTYManager,
     args: TerminalBridgeTerminateArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     pty_manager.terminate(&args.session_id)
 }
 
 pub fn terminal_set_stream_mode(
     pty_manager: &PTYManager,
     args: TerminalBridgeSetStreamModeArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     let mode = SessionStreamMode::parse(&args.mode)?;
     pty_manager.set_stream_mode(&args.session_id, mode)
 }
@@ -389,7 +390,7 @@ pub fn terminal_set_stream_mode(
 pub fn terminal_replay_output(
     pty_manager: &PTYManager,
     args: TerminalBridgeReplayOutputArgs,
-) -> Result<TerminalBridgeReplayOutputResult, String> {
+) -> RalphResult<TerminalBridgeReplayOutputResult> {
     pty_manager.replay_output(&args.session_id, args.after_seq, args.limit as usize)
 }
 
@@ -419,7 +420,7 @@ pub fn terminal_list_model_form_tree() -> TerminalBridgeListModelFormTreeResult 
 pub fn terminal_start_human_session(
     ctx: &TerminalBridgeCtx<'_>,
     args: TerminalBridgeStartHumanSessionArgs,
-) -> Result<TerminalBridgeStartHumanSessionResult, String> {
+) -> RalphResult<TerminalBridgeStartHumanSessionResult> {
     let resolved = match args.task_id {
         Some(task_id) => with_db(ctx.db, |db| {
             resolve_task_launch_config(
@@ -474,14 +475,15 @@ pub fn terminal_start_human_session(
             init_prompt: args.init_prompt.clone(),
         })?;
 
-        db.get_agent_session_by_id(&agent_session_id)
-            .map(|s| s.session_number)
+        let session = db
+            .get_agent_session_by_id(&agent_session_id)?
             .ok_or_else(|| {
-                ralph_errors::err_string(
+                err_string(
                     codes::INTERNAL,
                     format!("Failed to load newly created agent session '{agent_session_id}'"),
                 )
-            })
+            })?;
+        Ok(session.session_number)
     })?;
 
     let start_result = if let Some(task_id) = args.task_id {
@@ -515,7 +517,7 @@ pub fn terminal_start_human_session(
     };
 
     if let Err(err) = start_result {
-        let _ = crate::session::with_db(ctx.db, |db| {
+        if let Err(update_err) = crate::session::with_db(ctx.db, |db| {
             db.update_human_agent_session(sqlite_db::AgentSessionUpdateInput {
                 id: agent_session_id.clone(),
                 kind: None,
@@ -531,9 +533,15 @@ pub fn terminal_start_human_session(
                 status: Some("crashed".to_owned()),
                 prompt_hash: None,
                 output_bytes: None,
-                error_text: Some(err.clone()),
+                error_text: Some(err.to_string()),
             })
-        });
+        }) {
+            tracing::warn!(
+                error = %update_err,
+                agent_session_id = %agent_session_id,
+                "Failed to persist agent session crash details"
+            );
+        }
         return Err(err);
     }
 
@@ -650,7 +658,9 @@ mod tests {
             },
         )
         .unwrap_err();
-        assert!(err.contains("No terminal bridge session: missing-session"));
+        assert!(err
+            .to_string()
+            .contains("No terminal bridge session: missing-session"));
     }
 
     #[test]
@@ -665,7 +675,9 @@ mod tests {
             },
         )
         .unwrap_err();
-        assert!(err.contains("No terminal bridge session: missing-session"));
+        assert!(err
+            .to_string()
+            .contains("No terminal bridge session: missing-session"));
     }
 
     #[test]
@@ -691,7 +703,7 @@ mod tests {
             },
         )
         .unwrap_err();
-        assert!(err.contains("Invalid stream mode"));
+        assert!(err.to_string().contains("Invalid stream mode"));
     }
 
     #[test]
@@ -706,7 +718,9 @@ mod tests {
             },
         )
         .unwrap_err();
-        assert!(err.contains("No terminal bridge session: missing-session"));
+        assert!(err
+            .to_string()
+            .contains("No terminal bridge session: missing-session"));
     }
 
     #[test]
@@ -748,7 +762,7 @@ mod tests {
             Some("interactive"),
         )
         .unwrap_err();
-        assert!(err.contains("database not open"));
+        assert!(err.to_string().contains("database not open"));
     }
 
     #[test]
@@ -768,7 +782,7 @@ mod tests {
             42,
         )
         .unwrap_err();
-        assert!(err.contains("database not open"));
+        assert!(err.to_string().contains("database not open"));
     }
 
     #[test]
@@ -812,6 +826,6 @@ mod tests {
         )
         .unwrap_err();
 
-        assert!(!err.trim().is_empty());
+        assert!(!err.to_string().trim().is_empty());
     }
 }

@@ -4,7 +4,7 @@ pub use claudecode::ClaudeCodeAdapter;
 pub use codex::CodexAdapter;
 pub use model_catalog::ModelEntry;
 pub use provider_trait::{AgentProvider, AGENT_CLAUDE, AGENT_CODEX, AGENT_SHELL};
-use ralph_errors::{codes, err_string};
+use ralph_errors::{codes, err_string, RalphResult};
 pub use shell::ShellAdapter;
 
 mod claudecode;
@@ -53,7 +53,7 @@ fn find_model_entry_for_agent(agent: Option<&str>, selected_model: &str) -> Opti
 pub fn resolve_session_model_for_agent(
     agent: Option<&str>,
     model: Option<String>,
-) -> Result<Option<String>, String> {
+) -> RalphResult<Option<String>> {
     let Some(selected) = model else {
         return Ok(None);
     };
@@ -77,7 +77,7 @@ pub fn resolve_session_effort_for_agent(
     agent: Option<&str>,
     model: Option<&str>,
     effort: Option<String>,
-) -> Result<Option<String>, String> {
+) -> RalphResult<Option<String>> {
     let Some(selected) = effort else {
         return Ok(None);
     };
@@ -218,13 +218,13 @@ mod tests {
         let err =
             resolve_session_effort_for_agent(Some("claude"), Some("opus"), Some("max".into()))
                 .unwrap_err();
-        assert!(err.contains("Invalid effort"));
+        assert!(err.to_string().contains("Invalid effort"));
     }
 
     #[test]
     fn rejects_unknown_model_for_agent() {
         let err = resolve_session_model_for_agent(Some("claude"), Some("not-a-real-model".into()))
             .unwrap_err();
-        assert!(err.contains("Unknown model"));
+        assert!(err.to_string().contains("Unknown model"));
     }
 }

@@ -4,7 +4,7 @@ use ralph_backend::project::{ProjectInitializeArgs, ProjectValidatePathArgs};
 use ralph_backend::project_contract::{ProjectInfo, ProjectScanArgs, RalphProject, RecentProject};
 use ralph_backend::project_scan;
 use ralph_backend::session::ProjectLockSetArgs;
-use ralph_errors::{codes, ralph_err, RalphResultExt};
+use ralph_errors::{codes, ralph_err, RalphResult, RalphResultExt};
 use std::path::PathBuf;
 use tauri::{Manager, State};
 
@@ -13,7 +13,7 @@ use tauri::{Manager, State};
 pub async fn project_validate_path(
     state: State<'_, AppState>,
     args: ProjectValidatePathArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "project_validate_path", args).await;
     }
@@ -27,7 +27,7 @@ pub async fn project_validate_path(
 pub async fn project_initialize(
     state: State<'_, AppState>,
     args: ProjectInitializeArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "project_initialize", args).await;
     }
@@ -35,7 +35,7 @@ pub async fn project_initialize(
     ralph_backend::project::project_initialize(args)
 }
 
-pub fn project_lock_validated(state: &AppState, path: String) -> Result<(), String> {
+pub fn project_lock_validated(state: &AppState, path: String) -> RalphResult<()> {
     let canonical_path = ralph_backend::session::project_lock_set(
         &state.locked_project,
         &state.db,
@@ -65,7 +65,7 @@ pub fn project_lock_validated(state: &AppState, path: String) -> Result<(), Stri
 pub async fn project_lock_set(
     state: State<'_, AppState>,
     args: ProjectLockSetArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "project_lock_set", args).await;
     }
@@ -74,7 +74,7 @@ pub async fn project_lock_set(
 }
 
 #[tauri::command]
-pub async fn project_lock_get(state: State<'_, AppState>) -> Result<Option<String>, String> {
+pub async fn project_lock_get(state: State<'_, AppState>) -> RalphResult<Option<String>> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_no_args(&rpc, "project_lock_get").await;
     }
@@ -83,7 +83,7 @@ pub async fn project_lock_get(state: State<'_, AppState>) -> Result<Option<Strin
 }
 
 #[tauri::command]
-pub async fn project_recent_list(state: State<'_, AppState>) -> Result<Vec<RecentProject>, String> {
+pub async fn project_recent_list(state: State<'_, AppState>) -> RalphResult<Vec<RecentProject>> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_no_args(&rpc, "project_recent_list").await;
     }
@@ -93,7 +93,7 @@ pub async fn project_recent_list(state: State<'_, AppState>) -> Result<Vec<Recen
 }
 
 #[tauri::command]
-pub async fn execution_start(state: State<'_, AppState>) -> Result<(), String> {
+pub async fn execution_start(state: State<'_, AppState>) -> RalphResult<()> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_no_args(&rpc, "execution_start").await;
     }
@@ -102,7 +102,7 @@ pub async fn execution_start(state: State<'_, AppState>) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn execution_pause(state: State<'_, AppState>) -> Result<(), String> {
+pub async fn execution_pause(state: State<'_, AppState>) -> RalphResult<()> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_no_args(&rpc, "execution_pause").await;
     }
@@ -111,7 +111,7 @@ pub async fn execution_pause(state: State<'_, AppState>) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn execution_resume(state: State<'_, AppState>) -> Result<(), String> {
+pub async fn execution_resume(state: State<'_, AppState>) -> RalphResult<()> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_no_args(&rpc, "execution_resume").await;
     }
@@ -120,7 +120,7 @@ pub async fn execution_resume(state: State<'_, AppState>) -> Result<(), String> 
 }
 
 #[tauri::command]
-pub async fn execution_stop(state: State<'_, AppState>) -> Result<(), String> {
+pub async fn execution_stop(state: State<'_, AppState>) -> RalphResult<()> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_no_args(&rpc, "execution_stop").await;
     }
@@ -129,7 +129,7 @@ pub async fn execution_stop(state: State<'_, AppState>) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn execution_state_get(state: State<'_, AppState>) -> Result<(), String> {
+pub async fn execution_state_get(state: State<'_, AppState>) -> RalphResult<()> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_no_args(&rpc, "execution_state_get").await;
     }
@@ -141,7 +141,7 @@ pub async fn execution_state_get(state: State<'_, AppState>) -> Result<(), Strin
 pub async fn project_scan(
     state: State<'_, AppState>,
     args: ProjectScanArgs,
-) -> Result<Vec<RalphProject>, String> {
+) -> RalphResult<Vec<RalphProject>> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "project_scan", args).await;
     }
@@ -150,7 +150,7 @@ pub async fn project_scan(
 }
 
 #[tauri::command]
-pub async fn system_home_dir_get(state: State<'_, AppState>) -> Result<String, String> {
+pub async fn system_home_dir_get(state: State<'_, AppState>) -> RalphResult<String> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_no_args(&rpc, "system_home_dir_get").await;
     }
@@ -162,7 +162,7 @@ pub async fn system_home_dir_get(state: State<'_, AppState>) -> Result<String, S
 }
 
 #[tauri::command]
-pub async fn project_info_get(state: State<'_, AppState>) -> Result<ProjectInfo, String> {
+pub async fn project_info_get(state: State<'_, AppState>) -> RalphResult<ProjectInfo> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_no_args(&rpc, "project_info_get").await;
     }
@@ -181,7 +181,7 @@ pub fn window_splash_close(app: tauri::AppHandle) {
 }
 
 #[tauri::command]
-pub fn window_open_new() -> Result<(), String> {
+pub fn window_open_new() -> RalphResult<()> {
     let exe = std::env::current_exe()
         .ralph_err(codes::INTERNAL, "Failed to get current executable path")?;
     std::process::Command::new(exe)

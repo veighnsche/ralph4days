@@ -57,9 +57,9 @@ async fn should_embed_new_comment() {
         source_iteration: None,
     })
     .unwrap();
-    let comment_id = db.get_subsystems()[0].comments[0].id;
+    let comment_id = db.get_subsystems().unwrap()[0].comments[0].id;
 
-    let result = should_embed(&db, comment_id, "gotcha", "Use JWT", None);
+    let result = should_embed(&db, comment_id, "gotcha", "Use JWT", None).unwrap();
     assert!(result.is_some());
 }
 
@@ -84,14 +84,14 @@ async fn should_embed_unchanged_comment() {
         source_iteration: None,
     })
     .unwrap();
-    let comment_id = db.get_subsystems()[0].comments[0].id;
+    let comment_id = db.get_subsystems().unwrap()[0].comments[0].id;
 
     let text = build_embedding_text("gotcha", "Use JWT", None);
     let hash = ralph_rag::embedding::hash_text(&text);
     db.upsert_comment_embedding(comment_id, &[0.1; 768], "test", &hash)
         .unwrap();
 
-    let result = should_embed(&db, comment_id, "gotcha", "Use JWT", None);
+    let result = should_embed(&db, comment_id, "gotcha", "Use JWT", None).unwrap();
     assert!(result.is_none());
 }
 
@@ -116,12 +116,12 @@ async fn should_embed_changed_comment() {
         source_iteration: None,
     })
     .unwrap();
-    let comment_id = db.get_subsystems()[0].comments[0].id;
+    let comment_id = db.get_subsystems().unwrap()[0].comments[0].id;
 
     db.upsert_comment_embedding(comment_id, &[0.1; 768], "test", "old_stale_hash")
         .unwrap();
 
-    let result = should_embed(&db, comment_id, "gotcha", "Use JWT", None);
+    let result = should_embed(&db, comment_id, "gotcha", "Use JWT", None).unwrap();
     assert!(result.is_some());
 }
 

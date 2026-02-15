@@ -95,7 +95,7 @@ async fn smoke_embed_store_search_render() {
     }
 
     // 3. Embed every comment (this is the real Ollama call)
-    let all_features = db.get_subsystems();
+    let all_features = db.get_subsystems().unwrap();
     for f in &all_features {
         for c in &f.comments {
             let text = build_embedding_text(&c.category, &c.body, c.reason.as_deref());
@@ -114,8 +114,12 @@ async fn smoke_embed_store_search_render() {
     let query_vec = embed_query(&cfg, "How should we hash passwords?")
         .await
         .unwrap();
-    let auth_hits = db.search_subsystem_comments("auth", &query_vec, 3, 0.3);
-    let billing_hits = db.search_subsystem_comments("billing", &query_vec, 3, 0.3);
+    let auth_hits = db
+        .search_subsystem_comments("auth", &query_vec, 3, 0.3)
+        .unwrap();
+    let billing_hits = db
+        .search_subsystem_comments("billing", &query_vec, 3, 0.3)
+        .unwrap();
 
     println!("\nQuery: 'How should we hash passwords?'");
     println!("  Auth hits:");

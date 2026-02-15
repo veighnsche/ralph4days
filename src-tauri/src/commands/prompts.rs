@@ -7,7 +7,7 @@ use ralph_backend::prompt_builder_configs_service;
 use ralph_backend::prompt_builder_preview::{
     PromptBuilderPreviewArgs, PromptBuilderPreviewDeps, PromptPreview,
 };
-use ralph_errors::{codes, ToStringErr};
+use ralph_errors::{codes, RalphResult, RalphResultExt};
 use sqlite_db::PromptBuilderConfigData;
 use tauri::State;
 
@@ -15,7 +15,7 @@ use tauri::State;
 pub async fn prompt_builder_preview(
     state: State<'_, AppState>,
     args: PromptBuilderPreviewArgs,
-) -> Result<PromptPreview, String> {
+) -> RalphResult<PromptPreview> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "prompt_builder_preview", args).await;
     }
@@ -27,7 +27,7 @@ pub async fn prompt_builder_preview(
         .inner()
         .api_server_port
         .lock()
-        .err_str(codes::INTERNAL)?;
+        .ralph_err(codes::INTERNAL, "API server port mutex poisoned")?;
 
     ctx.db(|db| {
         ralph_backend::prompt_builder_preview::prompt_builder_preview(
@@ -44,7 +44,7 @@ pub async fn prompt_builder_preview(
 }
 
 #[tauri::command]
-pub async fn prompt_builder_config_list(state: State<'_, AppState>) -> Result<Vec<String>, String> {
+pub async fn prompt_builder_config_list(state: State<'_, AppState>) -> RalphResult<Vec<String>> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_no_args(&rpc, "prompt_builder_config_list").await;
     }
@@ -57,7 +57,7 @@ pub async fn prompt_builder_config_list(state: State<'_, AppState>) -> Result<Ve
 pub async fn prompt_builder_config_get(
     state: State<'_, AppState>,
     args: PromptBuilderConfigGetArgs,
-) -> Result<Option<PromptBuilderConfigData>, String> {
+) -> RalphResult<Option<PromptBuilderConfigData>> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "prompt_builder_config_get", args).await;
     }
@@ -70,7 +70,7 @@ pub async fn prompt_builder_config_get(
 pub async fn prompt_builder_config_save(
     state: State<'_, AppState>,
     args: PromptBuilderConfigSaveArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "prompt_builder_config_save", args).await;
     }
@@ -83,7 +83,7 @@ pub async fn prompt_builder_config_save(
 pub async fn prompt_builder_config_delete(
     state: State<'_, AppState>,
     args: PromptBuilderConfigDeleteArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "prompt_builder_config_delete", args).await;
     }

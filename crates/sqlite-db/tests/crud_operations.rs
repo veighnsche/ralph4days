@@ -101,7 +101,7 @@ fn test_create_task() {
         .unwrap();
 
     assert_eq!(task_id, 1);
-    let tasks = db.get_tasks();
+    let tasks = db.get_tasks().unwrap();
     assert_eq!(tasks.len(), 1);
     assert_eq!(tasks[0].created, Some("2026-01-01".into()));
 }
@@ -118,6 +118,7 @@ fn test_create_task_empty_subsystem_rejected() {
     assert!(result.is_err());
     assert!(result
         .unwrap_err()
+        .to_string()
         .contains("Subsystem name cannot be empty"));
 }
 
@@ -133,6 +134,7 @@ fn test_create_task_empty_discipline_rejected() {
     assert!(result.is_err());
     assert!(result
         .unwrap_err()
+        .to_string()
         .contains("Discipline name cannot be empty"));
 }
 
@@ -146,7 +148,10 @@ fn test_create_task_empty_title_rejected() {
         ..Default::default()
     });
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("Task title cannot be empty"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("Task title cannot be empty"));
 }
 
 #[test]
@@ -159,7 +164,7 @@ fn test_create_task_nonexistent_subsystem_rejected() {
         ..Default::default()
     });
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("does not exist"));
+    assert!(result.unwrap_err().to_string().contains("does not exist"));
 }
 
 #[test]
@@ -174,7 +179,7 @@ fn test_create_task_nonexistent_discipline_rejected() {
         ..Default::default()
     });
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("does not exist"));
+    assert!(result.unwrap_err().to_string().contains("does not exist"));
 }
 
 // === READ tests ===
@@ -195,7 +200,10 @@ fn test_get_task_by_id() {
         })
         .unwrap();
 
-    let task = db.get_task_by_id(task_id).unwrap();
+    let task = db
+        .get_task_by_id(task_id)
+        .unwrap()
+        .expect("task should exist");
     assert_eq!(task.id, task_id);
     assert_eq!(task.title, "Test Task");
     assert_eq!(task.priority, Some(Priority::Medium));
@@ -204,7 +212,7 @@ fn test_get_task_by_id() {
 #[test]
 fn test_get_task_by_id_not_found() {
     let db = create_test_db();
-    assert!(db.get_task_by_id(999).is_none());
+    assert!(db.get_task_by_id(999).unwrap().is_none());
 }
 
 // === UPDATE tests ===
@@ -242,7 +250,10 @@ fn test_update_task() {
     )
     .unwrap();
 
-    let task = db.get_task_by_id(task_id).unwrap();
+    let task = db
+        .get_task_by_id(task_id)
+        .unwrap()
+        .expect("task should exist");
     assert_eq!(task.title, "New Title");
     assert_eq!(task.description, Some("New description".into()));
     assert_eq!(task.priority, Some(Priority::High));
@@ -267,7 +278,7 @@ fn test_update_nonexistent_task() {
         },
     );
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("does not exist"));
+    assert!(result.unwrap_err().to_string().contains("does not exist"));
 }
 
 #[test]
@@ -296,7 +307,10 @@ fn test_update_task_self_dependency_rejected() {
         },
     );
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("cannot depend on itself"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("cannot depend on itself"));
 }
 
 #[test]
@@ -336,7 +350,10 @@ fn test_update_task_circular_dependency_rejected() {
         },
     );
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("Circular dependency"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("Circular dependency"));
 }
 
 #[test]
@@ -384,7 +401,10 @@ fn test_update_task_complex_circular_dependency() {
         },
     );
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("Circular dependency"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("Circular dependency"));
 }
 
 #[test]
@@ -403,7 +423,10 @@ fn test_update_task_preserves_status() {
         .unwrap();
 
     // Status is "pending" by default
-    let task = db.get_task_by_id(task_id).unwrap();
+    let task = db
+        .get_task_by_id(task_id)
+        .unwrap()
+        .expect("task should exist");
     assert_eq!(task.status, TaskStatus::Pending);
 
     // Update should preserve status
@@ -418,7 +441,10 @@ fn test_update_task_preserves_status() {
     )
     .unwrap();
 
-    let task = db.get_task_by_id(task_id).unwrap();
+    let task = db
+        .get_task_by_id(task_id)
+        .unwrap()
+        .expect("task should exist");
     assert_eq!(task.status, TaskStatus::Pending);
     assert_eq!(task.title, "Updated");
 }
@@ -440,10 +466,10 @@ fn test_delete_task() {
         })
         .unwrap();
 
-    assert_eq!(db.get_tasks().len(), 1);
+    assert_eq!(db.get_tasks().unwrap().len(), 1);
     db.delete_task(task_id).unwrap();
-    assert_eq!(db.get_tasks().len(), 0);
-    assert!(db.get_task_by_id(task_id).is_none());
+    assert_eq!(db.get_tasks().unwrap().len(), 0);
+    assert!(db.get_task_by_id(task_id).unwrap().is_none());
 }
 
 #[test]
@@ -451,7 +477,7 @@ fn test_delete_nonexistent_task() {
     let db = create_test_db();
     let result = db.delete_task(999);
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("does not exist"));
+    assert!(result.unwrap_err().to_string().contains("does not exist"));
 }
 
 #[test]
@@ -479,7 +505,7 @@ fn test_delete_task_with_dependents_rejected() {
 
     let result = db.delete_task(a);
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("depends on it"));
+    assert!(result.unwrap_err().to_string().contains("depends on it"));
 }
 
 #[test]
@@ -508,7 +534,7 @@ fn test_delete_dependent_then_dependency() {
 
     db.delete_task(b).unwrap();
     db.delete_task(a).unwrap();
-    assert_eq!(db.get_tasks().len(), 0);
+    assert_eq!(db.get_tasks().unwrap().len(), 0);
 }
 
 // === FEATURE tests ===
@@ -523,7 +549,7 @@ fn test_create_subsystem() {
         description: Some("Auth subsystem".into()),
     })
     .unwrap();
-    let subsystems = db.get_subsystems();
+    let subsystems = db.get_subsystems().unwrap();
     let f = subsystems.iter().find(|f| f.name == "auth").unwrap();
     assert_eq!(f.created, Some("2026-01-01".into()));
 }
@@ -535,7 +561,7 @@ fn test_create_duplicate_subsystem_rejected() {
         .unwrap();
     let result = db.create_subsystem(subsystem("auth", "Auth2", "AUT2"));
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("already exists"));
+    assert!(result.unwrap_err().to_string().contains("already exists"));
 }
 
 #[test]
@@ -545,7 +571,7 @@ fn test_create_subsystem_duplicate_acronym_rejected() {
         .unwrap();
     let result = db.create_subsystem(subsystem("other", "Other", "AUTH"));
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("already used"));
+    assert!(result.unwrap_err().to_string().contains("already used"));
 }
 
 #[test]
@@ -561,7 +587,7 @@ fn test_update_subsystem() {
     })
     .unwrap();
 
-    let subsystems = db.get_subsystems();
+    let subsystems = db.get_subsystems().unwrap();
     let f = subsystems.iter().find(|f| f.name == "auth").unwrap();
     assert_eq!(f.display_name, "Authentication");
     assert_eq!(f.description, Some("Updated".into()));
@@ -573,9 +599,9 @@ fn test_delete_subsystem() {
     let db = create_test_db();
     db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
         .unwrap();
-    let initial = db.get_subsystems().len();
+    let initial = db.get_subsystems().unwrap().len();
     db.delete_subsystem("auth".into()).unwrap();
-    assert_eq!(db.get_subsystems().len(), initial - 1);
+    assert_eq!(db.get_subsystems().unwrap().len(), initial - 1);
 }
 
 #[test]
@@ -583,7 +609,7 @@ fn test_delete_subsystem_nonexistent() {
     let db = create_test_db();
     let result = db.delete_subsystem("nope".into());
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("does not exist"));
+    assert!(result.unwrap_err().to_string().contains("does not exist"));
 }
 
 #[test]
@@ -601,7 +627,10 @@ fn test_delete_subsystem_with_tasks_rejected() {
 
     let result = db.delete_subsystem("auth".into());
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("Cannot delete subsystem"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("Cannot delete subsystem"));
 }
 
 // === FEATURE fields tests ===
@@ -623,7 +652,7 @@ fn test_update_subsystem_preserves_comments() {
     })
     .unwrap();
 
-    let subsystems = db.get_subsystems();
+    let subsystems = db.get_subsystems().unwrap();
     let f = subsystems.iter().find(|f| f.name == "auth").unwrap();
     assert_eq!(f.display_name, "Authentication");
     assert_eq!(f.comments.len(), 1);
@@ -644,7 +673,7 @@ fn test_add_subsystem_comment_basic() {
     })
     .unwrap();
 
-    let subsystems = db.get_subsystems();
+    let subsystems = db.get_subsystems().unwrap();
     let f = subsystems.iter().find(|f| f.name == "auth").unwrap();
     assert_eq!(f.comments.len(), 1);
     assert_eq!(f.comments[0].category, "architecture");
@@ -661,7 +690,7 @@ fn test_add_subsystem_comment_empty_body_rejected() {
 
     let result = db.add_subsystem_comment(comment("auth", "architecture", "   "));
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("cannot be empty"));
+    assert!(result.unwrap_err().to_string().contains("cannot be empty"));
 }
 
 #[test]
@@ -672,7 +701,10 @@ fn test_add_subsystem_comment_empty_category_rejected() {
 
     let result = db.add_subsystem_comment(comment("auth", "  ", "body"));
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("category cannot be empty"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("category cannot be empty"));
 }
 
 #[test]
@@ -680,7 +712,7 @@ fn test_add_subsystem_comment_nonexistent_subsystem() {
     let db = create_test_db();
     let result = db.add_subsystem_comment(comment("nope", "architecture", "body"));
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("does not exist"));
+    assert!(result.unwrap_err().to_string().contains("does not exist"));
 }
 
 #[test]
@@ -692,7 +724,7 @@ fn test_update_subsystem_comment() {
     db.add_subsystem_comment(comment("auth", "gotcha", "Original"))
         .unwrap();
 
-    let subsystems = db.get_subsystems();
+    let subsystems = db.get_subsystems().unwrap();
     let comment_id = subsystems
         .iter()
         .find(|f| f.name == "auth")
@@ -709,7 +741,7 @@ fn test_update_subsystem_comment() {
     )
     .unwrap();
 
-    let subsystems = db.get_subsystems();
+    let subsystems = db.get_subsystems().unwrap();
     let f = subsystems.iter().find(|f| f.name == "auth").unwrap();
     assert_eq!(f.comments[0].body, "Edited");
     assert_eq!(f.comments[0].reason, Some("new reason".into()));
@@ -727,13 +759,13 @@ fn test_delete_subsystem_comment() {
     db.add_subsystem_comment(comment("auth", "convention", "Second"))
         .unwrap();
 
-    let subsystems = db.get_subsystems();
+    let subsystems = db.get_subsystems().unwrap();
     let f = subsystems.iter().find(|f| f.name == "auth").unwrap();
     let first_id = f.comments.iter().find(|c| c.body == "First").unwrap().id;
 
     db.delete_subsystem_comment("auth", first_id).unwrap();
 
-    let subsystems = db.get_subsystems();
+    let subsystems = db.get_subsystems().unwrap();
     let f = subsystems.iter().find(|f| f.name == "auth").unwrap();
     assert_eq!(f.comments.len(), 1);
     assert_eq!(f.comments[0].body, "Second");
@@ -750,7 +782,11 @@ fn test_delete_subsystem_cascades_comments() {
     db.delete_subsystem("auth".into()).unwrap();
 
     // Subsystem and its comments are gone
-    assert!(db.get_subsystems().iter().all(|f| f.name != "auth"));
+    assert!(db
+        .get_subsystems()
+        .unwrap()
+        .iter()
+        .all(|f| f.name != "auth"));
 }
 
 // === FEATURE COMMENT EXTENDED tests ===
@@ -772,6 +808,7 @@ fn test_subsystem_comment_with_all_fields() {
 
     let f = db
         .get_subsystems()
+        .unwrap()
         .into_iter()
         .find(|f| f.name == "auth")
         .unwrap();
@@ -796,6 +833,7 @@ fn test_subsystem_comment_update_clears_reason() {
 
     let comment_id = db
         .get_subsystems()
+        .unwrap()
         .into_iter()
         .find(|f| f.name == "auth")
         .unwrap()
@@ -807,6 +845,7 @@ fn test_subsystem_comment_update_clears_reason() {
 
     let f = db
         .get_subsystems()
+        .unwrap()
         .into_iter()
         .find(|f| f.name == "auth")
         .unwrap();
@@ -828,6 +867,7 @@ fn test_subsystem_comment_ordering() {
 
     let f = db
         .get_subsystems()
+        .unwrap()
         .into_iter()
         .find(|f| f.name == "auth")
         .unwrap();
@@ -872,7 +912,7 @@ fn test_multiple_subsystems_comments_isolated() {
     db.add_subsystem_comment(comment("billing", "convention", "Billing comment"))
         .unwrap();
 
-    let subsystems = db.get_subsystems();
+    let subsystems = db.get_subsystems().unwrap();
     let auth = subsystems.iter().find(|f| f.name == "auth").unwrap();
     let billing = subsystems.iter().find(|f| f.name == "billing").unwrap();
 
@@ -909,7 +949,7 @@ fn test_create_discipline() {
         image_prompt: None,
     })
     .unwrap();
-    let disciplines = db.get_disciplines();
+    let disciplines = db.get_disciplines().unwrap();
     assert!(disciplines.iter().any(|d| d.name == "custom"));
 }
 
@@ -937,7 +977,7 @@ fn test_create_duplicate_discipline_rejected() {
         image_prompt: None,
     });
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("already exists"));
+    assert!(result.unwrap_err().to_string().contains("already exists"));
 }
 
 #[test]
@@ -984,7 +1024,7 @@ fn test_update_discipline() {
     })
     .unwrap();
 
-    let disciplines = db.get_disciplines();
+    let disciplines = db.get_disciplines().unwrap();
     let d = disciplines.iter().find(|d| d.name == "custom").unwrap();
     assert_eq!(d.display_name, "Custom Updated");
     assert_eq!(d.icon, "Star");
@@ -1014,9 +1054,9 @@ fn test_delete_discipline() {
         image_prompt: None,
     })
     .unwrap();
-    let initial = db.get_disciplines().len();
+    let initial = db.get_disciplines().unwrap().len();
     db.delete_discipline("custom".into()).unwrap();
-    assert_eq!(db.get_disciplines().len(), initial - 1);
+    assert_eq!(db.get_disciplines().unwrap().len(), initial - 1);
 }
 
 #[test]
@@ -1024,7 +1064,7 @@ fn test_delete_discipline_nonexistent() {
     let db = create_test_db();
     let result = db.delete_discipline("nope".into());
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("does not exist"));
+    assert!(result.unwrap_err().to_string().contains("does not exist"));
 }
 
 #[test]
@@ -1042,7 +1082,10 @@ fn test_delete_discipline_with_tasks_rejected() {
 
     let result = db.delete_discipline("backend".into());
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("Cannot delete discipline"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("Cannot delete discipline"));
 }
 
 // === COMMENT tests ===
@@ -1064,7 +1107,10 @@ fn test_add_human_comment() {
     db.add_signal(task_id, None, None, None, "Use bcrypt".into())
         .unwrap();
 
-    let task = db.get_task_by_id(task_id).unwrap();
+    let task = db
+        .get_task_by_id(task_id)
+        .unwrap()
+        .expect("task should exist");
     assert_eq!(task.signals.len(), 1);
     assert_eq!(task.signals[0].body, "Use bcrypt");
     assert_eq!(task.signals[0].author, "human");
@@ -1094,7 +1140,10 @@ fn test_add_agent_comment() {
     )
     .unwrap();
 
-    let task = db.get_task_by_id(task_id).unwrap();
+    let task = db
+        .get_task_by_id(task_id)
+        .unwrap()
+        .expect("task should exist");
     assert_eq!(task.signals[0].author, "human");
 }
 
@@ -1114,7 +1163,7 @@ fn test_add_comment_empty_body_rejected() {
 
     let result = db.add_signal(task_id, None, None, None, "   ".into());
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("cannot be empty"));
+    assert!(result.unwrap_err().to_string().contains("cannot be empty"));
 }
 
 #[test]
@@ -1122,7 +1171,7 @@ fn test_add_comment_nonexistent_task() {
     let db = create_test_db();
     let result = db.add_signal(999, None, None, None, "Hello".into());
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("does not exist"));
+    assert!(result.unwrap_err().to_string().contains("does not exist"));
 }
 
 #[test]
@@ -1142,13 +1191,19 @@ fn test_update_comment_by_id() {
     db.add_signal(task_id, None, None, None, "Original".into())
         .unwrap();
 
-    let task = db.get_task_by_id(task_id).unwrap();
+    let task = db
+        .get_task_by_id(task_id)
+        .unwrap()
+        .expect("task should exist");
     let comment_id = task.signals[0].id;
 
     db.update_signal(task_id, comment_id, "Edited".into())
         .unwrap();
 
-    let task = db.get_task_by_id(task_id).unwrap();
+    let task = db
+        .get_task_by_id(task_id)
+        .unwrap()
+        .expect("task should exist");
     assert_eq!(task.signals[0].body, "Edited");
 }
 
@@ -1173,13 +1228,19 @@ fn test_delete_comment_by_id() {
     db.add_signal(task_id, None, None, None, "Third".into())
         .unwrap();
 
-    let task = db.get_task_by_id(task_id).unwrap();
+    let task = db
+        .get_task_by_id(task_id)
+        .unwrap()
+        .expect("task should exist");
     let second_id = task.signals.iter().find(|c| c.body == "Second").unwrap().id;
 
     // Delete middle comment by stable ID
     db.delete_signal(task_id, second_id).unwrap();
 
-    let task = db.get_task_by_id(task_id).unwrap();
+    let task = db
+        .get_task_by_id(task_id)
+        .unwrap()
+        .expect("task should exist");
     assert_eq!(task.signals.len(), 2);
     assert_eq!(task.signals[0].body, "Third");
     assert_eq!(task.signals[1].body, "First");
@@ -1213,7 +1274,10 @@ fn test_update_task_preserves_comments() {
     )
     .unwrap();
 
-    let task = db.get_task_by_id(task_id).unwrap();
+    let task = db
+        .get_task_by_id(task_id)
+        .unwrap()
+        .expect("task should exist");
     assert_eq!(task.title, "Updated");
     assert_eq!(task.signals.len(), 1);
     assert_eq!(task.signals[0].body, "Keep me");
@@ -1239,7 +1303,7 @@ fn test_enriched_tasks() {
     })
     .unwrap();
 
-    let enriched = db.get_tasks();
+    let enriched = db.get_tasks().unwrap();
     assert_eq!(enriched.len(), 1);
     assert_eq!(enriched[0].subsystem_display_name, "Authentication");
     assert_eq!(enriched[0].subsystem_acronym, "AUTH");
@@ -1263,7 +1327,7 @@ fn test_enriched_tasks_comments_visible() {
     db.add_signal(1, None, None, None, "Visible in enriched".into())
         .unwrap();
 
-    let enriched = db.get_tasks();
+    let enriched = db.get_tasks().unwrap();
     assert_eq!(enriched[0].signals.len(), 1);
     assert_eq!(enriched[0].signals[0].body, "Visible in enriched");
 }
@@ -1280,7 +1344,7 @@ fn test_project_info() {
     db.initialize_metadata("My Project".into(), Some("Description".into()))
         .unwrap();
 
-    let info = db.get_project_info();
+    let info = db.get_project_info().unwrap();
     assert_eq!(info.title, "My Project");
     assert_eq!(info.description, Some("Description".into()));
     assert!(info.created.is_some());
@@ -1327,7 +1391,10 @@ fn test_crud_lifecycle() {
         })
         .unwrap();
 
-    let task = db.get_task_by_id(task_id).unwrap();
+    let task = db
+        .get_task_by_id(task_id)
+        .unwrap()
+        .expect("task should exist");
     assert_eq!(task.title, "Initial");
     assert_eq!(task.status, TaskStatus::Pending);
 
@@ -1344,12 +1411,15 @@ fn test_crud_lifecycle() {
     )
     .unwrap();
 
-    let task = db.get_task_by_id(task_id).unwrap();
+    let task = db
+        .get_task_by_id(task_id)
+        .unwrap()
+        .expect("task should exist");
     assert_eq!(task.title, "Updated");
     assert_eq!(task.discipline, "frontend");
 
     db.delete_task(task_id).unwrap();
-    assert!(db.get_task_by_id(task_id).is_none());
+    assert!(db.get_task_by_id(task_id).unwrap().is_none());
 }
 
 // === SET TASK STATUS tests ===
@@ -1369,20 +1439,29 @@ fn test_set_task_status() {
         .unwrap();
 
     // Default is pending
-    let task = db.get_task_by_id(task_id).unwrap();
+    let task = db
+        .get_task_by_id(task_id)
+        .unwrap()
+        .expect("task should exist");
     assert_eq!(task.status, TaskStatus::Pending);
     assert!(task.completed.is_none());
 
     // Transition to in_progress
     db.set_task_status(task_id, TaskStatus::InProgress).unwrap();
-    let task = db.get_task_by_id(task_id).unwrap();
+    let task = db
+        .get_task_by_id(task_id)
+        .unwrap()
+        .expect("task should exist");
     assert_eq!(task.status, TaskStatus::InProgress);
     assert!(task.completed.is_none());
     assert!(task.updated.is_some());
 
     // Transition to done — should set completed timestamp
     db.set_task_status(task_id, TaskStatus::Done).unwrap();
-    let task = db.get_task_by_id(task_id).unwrap();
+    let task = db
+        .get_task_by_id(task_id)
+        .unwrap()
+        .expect("task should exist");
     assert_eq!(task.status, TaskStatus::Done);
     assert!(task.completed.is_some());
 }
@@ -1392,7 +1471,7 @@ fn test_set_task_status_nonexistent() {
     let db = create_test_db();
     let result = db.set_task_status(999, TaskStatus::Done);
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("does not exist"));
+    assert!(result.unwrap_err().to_string().contains("does not exist"));
 }
 
 // === YAML EXPORT ESCAPING test ===
@@ -1400,6 +1479,7 @@ fn test_set_task_status_nonexistent() {
 #[test]
 fn test_export_yaml_escapes_special_chars() {
     let db = create_test_db();
+    db.initialize_metadata("Test".into(), None).unwrap();
     db.create_subsystem(SubsystemInput {
         name: "test".into(),
         display_name: "Test \"Subsystem\"".into(),

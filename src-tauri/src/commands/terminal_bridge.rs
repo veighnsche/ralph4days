@@ -11,17 +11,21 @@ use crate::terminal::{
     TerminalBridgeTerminateArgs,
 };
 use ralph_contracts::transport::EventSink;
-use ralph_errors::{codes, ToStringErr};
+use ralph_errors::{codes, RalphResult, RalphResultExt};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::{AppHandle, State};
 
-fn locked_project_path(state: &State<'_, AppState>) -> Result<PathBuf, String> {
+fn locked_project_path(state: &State<'_, AppState>) -> RalphResult<PathBuf> {
     CommandContext::from_tauri_state(state).locked_project_path()
 }
 
-fn api_server_port(state: &AppState) -> Result<Option<u16>, String> {
-    Ok(*state.api_server_port.lock().err_str(codes::INTERNAL)?)
+fn api_server_port(state: &AppState) -> RalphResult<Option<u16>> {
+    let guard = state
+        .api_server_port
+        .lock()
+        .ralph_err(codes::INTERNAL, "API server port mutex poisoned")?;
+    Ok(*guard)
 }
 
 #[tauri::command]
@@ -29,7 +33,7 @@ pub async fn terminal_start_session(
     app: AppHandle,
     state: State<'_, AppState>,
     args: TerminalBridgeStartSessionArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "terminal_start_session", args).await;
     }
@@ -53,7 +57,7 @@ pub async fn terminal_start_task_session(
     app: AppHandle,
     state: State<'_, AppState>,
     args: TerminalBridgeStartTaskSessionArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "terminal_start_task_session", args).await;
     }
@@ -76,7 +80,7 @@ pub async fn terminal_start_task_session(
 pub async fn terminal_resolve_task_launch_config(
     state: State<'_, AppState>,
     args: TerminalBridgeResolveTaskLaunchArgs,
-) -> Result<TerminalBridgeResolvedLaunchConfig, String> {
+) -> RalphResult<TerminalBridgeResolvedLaunchConfig> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "terminal_resolve_task_launch_config", args).await;
     }
@@ -90,7 +94,7 @@ pub async fn terminal_resolve_task_launch_config(
 pub async fn terminal_send_input(
     state: State<'_, AppState>,
     args: TerminalBridgeSendInputArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "terminal_send_input", args).await;
     }
@@ -102,7 +106,7 @@ pub async fn terminal_send_input(
 pub async fn terminal_resize(
     state: State<'_, AppState>,
     args: TerminalBridgeResizeArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "terminal_resize", args).await;
     }
@@ -114,7 +118,7 @@ pub async fn terminal_resize(
 pub async fn terminal_terminate(
     state: State<'_, AppState>,
     args: TerminalBridgeTerminateArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "terminal_terminate", args).await;
     }
@@ -126,7 +130,7 @@ pub async fn terminal_terminate(
 pub async fn terminal_set_stream_mode(
     state: State<'_, AppState>,
     args: TerminalBridgeSetStreamModeArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "terminal_set_stream_mode", args).await;
     }
@@ -138,7 +142,7 @@ pub async fn terminal_set_stream_mode(
 pub async fn terminal_replay_output(
     state: State<'_, AppState>,
     args: TerminalBridgeReplayOutputArgs,
-) -> Result<TerminalBridgeReplayOutputResult, String> {
+) -> RalphResult<TerminalBridgeReplayOutputResult> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "terminal_replay_output", args).await;
     }
@@ -150,7 +154,7 @@ pub async fn terminal_replay_output(
 pub fn terminal_emit_system_message(
     app: AppHandle,
     args: TerminalBridgeEmitSystemMessageArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     let sink = TauriEventSink::new(app);
     ralph_backend::terminal_bridge::emit_system_message(&sink, args.session_id, args.text)
 }
@@ -160,7 +164,7 @@ pub async fn terminal_start_human_session(
     app: AppHandle,
     state: State<'_, AppState>,
     args: TerminalBridgeStartHumanSessionArgs,
-) -> Result<TerminalBridgeStartHumanSessionResult, String> {
+) -> RalphResult<TerminalBridgeStartHumanSessionResult> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "terminal_start_human_session", args).await;
     }
@@ -182,7 +186,7 @@ pub async fn terminal_start_human_session(
 #[tauri::command]
 pub async fn terminal_list_model_form_tree(
     state: State<'_, AppState>,
-) -> Result<TerminalBridgeListModelFormTreeResult, String> {
+) -> RalphResult<TerminalBridgeListModelFormTreeResult> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_no_args(&rpc, "terminal_list_model_form_tree").await;
     }

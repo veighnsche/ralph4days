@@ -1,5 +1,6 @@
 use crate::config::OllamaConfig;
 use crate::ollama;
+use ralph_errors::RalphResult;
 use ralph_rag::embedding;
 
 pub struct CommentEmbeddingConfig<'a> {
@@ -26,17 +27,17 @@ pub fn should_embed(
     category: &str,
     body: &str,
     reason: Option<&str>,
-) -> Option<String> {
+) -> RalphResult<Option<String>> {
     let embedding_text = embedding::build_embedding_text(category, body, reason);
     let hash = embedding::hash_text(&embedding_text);
 
-    if let Some(existing_hash) = db.get_embedding_hash(comment_id) {
+    if let Some(existing_hash) = db.get_embedding_hash(comment_id)? {
         if existing_hash == hash {
-            return None;
+            return Ok(None);
         }
     }
 
-    Some(embedding_text)
+    Ok(Some(embedding_text))
 }
 
 pub async fn embed_text(

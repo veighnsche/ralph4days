@@ -1,5 +1,5 @@
 use prompt_builder::{CodebaseSnapshot, PromptContext};
-use ralph_errors::{codes, ToStringErr};
+use ralph_errors::{codes, RalphResult, RalphResultExt};
 use sqlite_db::SqliteDb;
 use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
@@ -19,7 +19,7 @@ pub struct PromptContextArgs<'a> {
     pub target_task_id: Option<u32>,
 }
 
-pub fn build_prompt_context(args: PromptContextArgs<'_>) -> Result<PromptContext, String> {
+pub fn build_prompt_context(args: PromptContextArgs<'_>) -> RalphResult<PromptContext> {
     let PromptContextArgs {
         db,
         project_path,
@@ -35,7 +35,9 @@ pub fn build_prompt_context(args: PromptContextArgs<'_>) -> Result<PromptContext
     let db_path = ralph_dir.join("db").join("ralph.db");
 
     let snapshot = {
-        let mut snap_guard = codebase_snapshot.lock().err_str(codes::INTERNAL)?;
+        let mut snap_guard = codebase_snapshot
+            .lock()
+            .ralph_err(codes::INTERNAL, "Codebase snapshot mutex poisoned")?;
         if snap_guard.is_none() {
             *snap_guard = Some(prompt_builder::snapshot::analyze(project_path));
         }
@@ -43,10 +45,10 @@ pub fn build_prompt_context(args: PromptContextArgs<'_>) -> Result<PromptContext
     };
 
     Ok(PromptContext {
-        features: db.get_subsystems(),
-        tasks: db.get_tasks(),
-        disciplines: db.get_disciplines(),
-        metadata: db.get_project_info(),
+        features: db.get_subsystems()?,
+        tasks: db.get_tasks()?,
+        disciplines: db.get_disciplines()?,
+        metadata: db.get_project_info()?,
         file_contents: HashMap::new(),
         progress_txt: None,
         learnings_txt: None,

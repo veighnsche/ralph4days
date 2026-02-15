@@ -122,7 +122,7 @@ fn seed_feature_with_comments(db: &SqliteDb) {
 }
 
 async fn embed_all_comments(db: &SqliteDb, config: &CommentEmbeddingConfig<'_>) {
-    for feature in db.get_subsystems() {
+    for feature in db.get_subsystems().unwrap() {
         for comment in &feature.comments {
             let text = ralph_external::comment_embeddings::build_embedding_text(
                 &comment.category,
@@ -154,7 +154,9 @@ async fn semantic_search_surfaces_relevant_auth_comments() {
     .await
     .unwrap();
 
-    let results = db.search_subsystem_comments("auth", &query_vec, 3, 0.3);
+    let results = db
+        .search_subsystem_comments("auth", &query_vec, 3, 0.3)
+        .unwrap();
 
     println!("\n=== Query: password hashing ===");
     for r in &results {
@@ -185,8 +187,12 @@ async fn semantic_search_isolates_features() {
         .await
         .unwrap();
 
-    let auth_results = db.search_subsystem_comments("auth", &query_vec, 10, 0.3);
-    let billing_results = db.search_subsystem_comments("billing", &query_vec, 10, 0.3);
+    let auth_results = db
+        .search_subsystem_comments("auth", &query_vec, 10, 0.3)
+        .unwrap();
+    let billing_results = db
+        .search_subsystem_comments("billing", &query_vec, 10, 0.3)
+        .unwrap();
 
     println!("\n=== Query: credit card payments ===");
     println!("  Auth results: {}", auth_results.len());
@@ -222,7 +228,9 @@ async fn semantic_search_feeds_into_prompt_builder() {
         .await
         .unwrap();
 
-    let results = db.search_subsystem_comments("auth", &query_vec, 5, 0.3);
+    let results = db
+        .search_subsystem_comments("auth", &query_vec, 5, 0.3)
+        .unwrap();
 
     println!("\n=== Query: login endpoint with rate limiting ===");
     for r in &results {
@@ -249,6 +257,7 @@ async fn semantic_search_feeds_into_prompt_builder() {
 
     let feature = db
         .get_subsystems()
+        .unwrap()
         .into_iter()
         .find(|f| f.name == "auth")
         .unwrap();

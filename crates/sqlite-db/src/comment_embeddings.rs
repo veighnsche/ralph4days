@@ -1,5 +1,6 @@
 use crate::SqliteDb;
-use ralph_errors::{codes, RalphResultExt};
+use ralph_errors::{codes, err_string, RalphResult, RalphResultExt};
+use rusqlite::OptionalExtension;
 
 impl SqliteDb {
     pub fn upsert_comment_embedding(
@@ -8,7 +9,7 @@ impl SqliteDb {
         embedding: &[f32],
         model: &str,
         hash: &str,
-    ) -> Result<(), String> {
+    ) -> RalphResult<()> {
         let blob = embedding_to_blob(embedding);
         self.conn
             .execute(
@@ -24,7 +25,7 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn delete_comment_embedding(&self, comment_id: u32) -> Result<(), String> {
+    pub fn delete_comment_embedding(&self, comment_id: u32) -> RalphResult<()> {
         self.conn
             .execute(
                 "DELETE FROM comment_embeddings WHERE comment_id = ?1",
@@ -40,48 +41,83 @@ impl SqliteDb {
         query_embedding: &[f32],
         limit: usize,
         min_score: f32,
-    ) -> Vec<ScoredCommentRow> {
-        let Ok(mut stmt) = self.conn.prepare(
-            "SELECT ce.comment_id, ce.embedding, fc.category, fc.body, fc.summary, fc.reason
+    ) -> RalphResult<Vec<ScoredCommentRow>> {
+        if query_embedding.is_empty() {
+            return Err(err_string(
+                codes::TASK_VALIDATION,
+                "Query embedding cannot be empty",
+            ));
+        }
+
+        let mut stmt = self
+            .conn
+            .prepare(
+                "SELECT ce.comment_id, ce.embedding, fc.category, fc.body, fc.summary, fc.reason
              FROM comment_embeddings ce
              JOIN subsystem_comments fc ON fc.id = ce.comment_id
              JOIN subsystems f ON fc.subsystem_id = f.id
              WHERE f.name = ?1",
-        ) else {
-            return vec![];
-        };
+            )
+            .ralph_err(
+                codes::DB_READ,
+                "Failed to prepare comment embedding search query",
+            )?;
 
-        let Ok(rows) = stmt.query_map([subsystem_name], |row| {
-            let comment_id: u32 = row.get(0)?;
-            let blob: Vec<u8> = row.get(1)?;
-            let category: String = row.get(2)?;
-            let body: String = row.get(3)?;
-            let summary: Option<String> = row.get(4)?;
-            let reason: Option<String> = row.get(5)?;
-            Ok((comment_id, blob, category, body, summary, reason))
-        }) else {
-            return vec![];
-        };
-
-        let mut results: Vec<ScoredCommentRow> = rows
-            .filter_map(Result::ok)
-            .filter_map(|(comment_id, blob, category, body, summary, reason)| {
-                let stored = blob_to_embedding(&blob)?;
-                let score = cosine_similarity(query_embedding, &stored);
-                if score >= min_score {
-                    Some(ScoredCommentRow {
-                        comment_id,
-                        category,
-                        body,
-                        summary,
-                        reason,
-                        score,
-                    })
-                } else {
-                    None
-                }
+        let rows = stmt
+            .query_map([subsystem_name], |row| {
+                let comment_id: u32 = row.get(0)?;
+                let blob: Vec<u8> = row.get(1)?;
+                let category: String = row.get(2)?;
+                let body: String = row.get(3)?;
+                let summary: Option<String> = row.get(4)?;
+                let reason: Option<String> = row.get(5)?;
+                Ok((comment_id, blob, category, body, summary, reason))
             })
-            .collect();
+            .ralph_err(
+                codes::DB_READ,
+                "Failed to query comment embedding search rows",
+            )?;
+
+        let mut results: Vec<ScoredCommentRow> = Vec::new();
+        for row in rows {
+            let (comment_id, blob, category, body, summary, reason) = row.ralph_err(
+                codes::DB_READ,
+                "Failed to decode comment embedding search row",
+            )?;
+
+            let stored = blob_to_embedding(&blob).ok_or_else(|| {
+                err_string(
+                    codes::DB_READ,
+                    format!(
+                        "Invalid embedding blob for comment_id={comment_id} (len={})",
+                        blob.len()
+                    ),
+                )
+            })?;
+
+            if query_embedding.len() != stored.len() {
+                return Err(err_string(
+                    codes::INTERNAL,
+                    format!(
+                        "Embedding dimension mismatch: query_dim={}, stored_dim={}, comment_id={comment_id}",
+                        query_embedding.len(),
+                        stored.len()
+                    ),
+                ));
+            }
+
+            let score = cosine_similarity(query_embedding, &stored);
+            if score >= min_score {
+                results.push(ScoredCommentRow {
+                    comment_id,
+                    category,
+                    body,
+                    summary,
+                    reason,
+                    score,
+                });
+            }
+        }
 
         results.sort_by(|a, b| {
             b.score
@@ -89,27 +125,34 @@ impl SqliteDb {
                 .unwrap_or(std::cmp::Ordering::Equal)
         });
         results.truncate(limit);
-        results
+        Ok(results)
     }
 
-    pub fn has_comment_embedding(&self, comment_id: u32) -> bool {
-        self.conn
+    pub fn has_comment_embedding(&self, comment_id: u32) -> RalphResult<bool> {
+        Ok(self
+            .conn
             .query_row(
                 "SELECT 1 FROM comment_embeddings WHERE comment_id = ?1",
                 [comment_id],
                 |_| Ok(()),
             )
-            .is_ok()
+            .optional()
+            .ralph_err(
+                codes::DB_READ,
+                "Failed to check comment embedding existence",
+            )?
+            .is_some())
     }
 
-    pub fn get_embedding_hash(&self, comment_id: u32) -> Option<String> {
+    pub fn get_embedding_hash(&self, comment_id: u32) -> RalphResult<Option<String>> {
         self.conn
             .query_row(
                 "SELECT embedding_hash FROM comment_embeddings WHERE comment_id = ?1",
                 [comment_id],
                 |row| row.get(0),
             )
-            .ok()
+            .optional()
+            .ralph_err(codes::DB_READ, "Failed to query comment embedding hash")
     }
 }
 
@@ -220,18 +263,23 @@ mod tests {
         })
         .unwrap();
 
-        let subsystems = db.get_subsystems();
+        let subsystems = db.get_subsystems().unwrap();
         let comment_id = subsystems[0].comments[0].id;
 
         let embedding = vec![0.5_f32; 768];
         db.upsert_comment_embedding(comment_id, &embedding, "nomic-embed-text", "abc123")
             .unwrap();
 
-        assert!(db.has_comment_embedding(comment_id));
-        assert_eq!(db.get_embedding_hash(comment_id), Some("abc123".to_owned()));
+        assert!(db.has_comment_embedding(comment_id).unwrap());
+        assert_eq!(
+            db.get_embedding_hash(comment_id).unwrap(),
+            Some("abc123".to_owned())
+        );
 
         let query = vec![0.5_f32; 768];
-        let results = db.search_subsystem_comments("auth", &query, 10, 0.0);
+        let results = db
+            .search_subsystem_comments("auth", &query, 10, 0.0)
+            .unwrap();
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].body, "Use JWT not sessions");
         assert!((results[0].score - 1.0).abs() < 1e-6);
@@ -261,7 +309,7 @@ mod tests {
         })
         .unwrap();
 
-        let subsystems = db.get_subsystems();
+        let subsystems = db.get_subsystems().unwrap();
         let comment_id = subsystems[0].comments[0].id;
 
         let embedding = vec![1.0, 0.0, 0.0];
@@ -269,7 +317,9 @@ mod tests {
             .unwrap();
 
         let query = vec![0.0, 1.0, 0.0];
-        let results = db.search_subsystem_comments("auth", &query, 10, 0.4);
+        let results = db
+            .search_subsystem_comments("auth", &query, 10, 0.4)
+            .unwrap();
         assert!(results.is_empty());
     }
 
@@ -296,15 +346,15 @@ mod tests {
             source_iteration: None,
         })
         .unwrap();
-        let subsystems = db.get_subsystems();
+        let subsystems = db.get_subsystems().unwrap();
         let comment_id = subsystems[0].comments[0].id;
 
         db.upsert_comment_embedding(comment_id, &[0.5; 768], "test", "hash1")
             .unwrap();
-        assert!(db.has_comment_embedding(comment_id));
+        assert!(db.has_comment_embedding(comment_id).unwrap());
 
         db.delete_subsystem_comment("auth", comment_id).unwrap();
-        assert!(!db.has_comment_embedding(comment_id));
+        assert!(!db.has_comment_embedding(comment_id).unwrap());
     }
 
     #[test]
@@ -330,14 +380,14 @@ mod tests {
             source_iteration: None,
         })
         .unwrap();
-        let comment_id = db.get_subsystems()[0].comments[0].id;
+        let comment_id = db.get_subsystems().unwrap()[0].comments[0].id;
 
         db.upsert_comment_embedding(comment_id, &[0.5; 768], "test", "hash1")
             .unwrap();
-        assert!(db.has_comment_embedding(comment_id));
+        assert!(db.has_comment_embedding(comment_id).unwrap());
 
         db.delete_comment_embedding(comment_id).unwrap();
-        assert!(!db.has_comment_embedding(comment_id));
+        assert!(!db.has_comment_embedding(comment_id).unwrap());
     }
 
     #[test]
@@ -363,19 +413,19 @@ mod tests {
             source_iteration: None,
         })
         .unwrap();
-        let comment_id = db.get_subsystems()[0].comments[0].id;
+        let comment_id = db.get_subsystems().unwrap()[0].comments[0].id;
 
         db.upsert_comment_embedding(comment_id, &[0.1; 768], "test", "hash_old")
             .unwrap();
         assert_eq!(
-            db.get_embedding_hash(comment_id),
+            db.get_embedding_hash(comment_id).unwrap(),
             Some("hash_old".to_owned())
         );
 
         db.upsert_comment_embedding(comment_id, &[0.9; 768], "test", "hash_new")
             .unwrap();
         assert_eq!(
-            db.get_embedding_hash(comment_id),
+            db.get_embedding_hash(comment_id).unwrap(),
             Some("hash_new".to_owned())
         );
     }
@@ -419,7 +469,7 @@ mod tests {
         })
         .unwrap();
 
-        let subsystems = db.get_subsystems();
+        let subsystems = db.get_subsystems().unwrap();
         let auth_cid = subsystems
             .iter()
             .find(|f| f.name == "auth")
@@ -439,11 +489,13 @@ mod tests {
         db.upsert_comment_embedding(bill_cid, &emb, "test", "h2")
             .unwrap();
 
-        let auth_results = db.search_subsystem_comments("auth", &emb, 10, 0.0);
+        let auth_results = db.search_subsystem_comments("auth", &emb, 10, 0.0).unwrap();
         assert_eq!(auth_results.len(), 1);
         assert_eq!(auth_results[0].body, "Auth only");
 
-        let billing_results = db.search_subsystem_comments("billing", &emb, 10, 0.0);
+        let billing_results = db
+            .search_subsystem_comments("billing", &emb, 10, 0.0)
+            .unwrap();
         assert_eq!(billing_results.len(), 1);
         assert_eq!(billing_results[0].body, "Billing only");
     }
@@ -484,7 +536,7 @@ mod tests {
         })
         .unwrap();
 
-        let subsystems = db.get_subsystems();
+        let subsystems = db.get_subsystems().unwrap();
         let comments = &subsystems
             .iter()
             .find(|f| f.name == "auth")
@@ -501,7 +553,9 @@ mod tests {
             .unwrap();
 
         let query = vec![0.0, 1.0, 0.0];
-        let results = db.search_subsystem_comments("auth", &query, 10, 0.0);
+        let results = db
+            .search_subsystem_comments("auth", &query, 10, 0.0)
+            .unwrap();
         assert_eq!(results.len(), 2);
         assert_eq!(results[0].body, "High match");
         assert_eq!(results[1].body, "Low match");

@@ -4,13 +4,13 @@ use crate::disciplines_contract::{
     DisciplinesImageDataGetArgs, DisciplinesUpdateArgs, McpServerConfigData,
 };
 use base64::{engine::general_purpose::STANDARD, Engine};
-use ralph_errors::{codes, err_string, RalphResultExt};
+use ralph_errors::{codes, err_string, RalphResult, RalphResultExt};
 use sqlite_db::SqliteDb;
 use std::io::Cursor;
 use std::path::Path;
 
-fn to_discipline_config(db: &SqliteDb, d: &sqlite_db::Discipline) -> DisciplineConfig {
-    DisciplineConfig {
+fn to_discipline_config(db: &SqliteDb, d: &sqlite_db::Discipline) -> RalphResult<DisciplineConfig> {
+    Ok(DisciplineConfig {
         id: d.id,
         name: d.name.clone(),
         display_name: d.display_name.clone(),
@@ -40,13 +40,29 @@ fn to_discipline_config(db: &SqliteDb, d: &sqlite_db::Discipline) -> DisciplineC
         crops: d
             .crops
             .as_deref()
-            .and_then(|s| serde_json::from_str::<DisciplineCropsData>(s).ok()),
+            .map(|s| {
+                serde_json::from_str::<DisciplineCropsData>(s).map_err(|e| {
+                    err_string(
+                        codes::DISCIPLINE_OPS,
+                        format!("Invalid crops JSON for discipline '{}': {e}", d.name),
+                    )
+                })
+            })
+            .transpose()?,
         image_prompt: d
             .image_prompt
             .as_deref()
-            .and_then(|s| serde_json::from_str::<DisciplineImagePromptData>(s).ok()),
+            .map(|s| {
+                serde_json::from_str::<DisciplineImagePromptData>(s).map_err(|e| {
+                    err_string(
+                        codes::DISCIPLINE_OPS,
+                        format!("Invalid imagePrompt JSON for discipline '{}': {e}", d.name),
+                    )
+                })
+            })
+            .transpose()?,
         task_templates: db
-            .get_active_task_templates_for_discipline(d.id)
+            .get_active_task_templates_for_discipline(d.id)?
             .into_iter()
             .map(|template| DisciplineTaskTemplateData {
                 id: template.id,
@@ -65,32 +81,32 @@ fn to_discipline_config(db: &SqliteDb, d: &sqlite_db::Discipline) -> DisciplineC
                 pulled_count: template.pulled_count,
             })
             .collect(),
-    }
+    })
 }
 
-fn get_discipline_config_or_error(db: &SqliteDb, name: &str) -> Result<DisciplineConfig, String> {
-    let disciplines = db.get_disciplines();
+fn get_discipline_config_or_error(db: &SqliteDb, name: &str) -> RalphResult<DisciplineConfig> {
+    let disciplines = db.get_disciplines()?;
     let discipline = disciplines.iter().find(|d| d.name == name).ok_or_else(|| {
         err_string(
             codes::DISCIPLINE_OPS,
             format!("Discipline '{name}' not found"),
         )
     })?;
-    Ok(to_discipline_config(db, discipline))
+    to_discipline_config(db, discipline)
 }
 
-pub fn disciplines_list(db: &SqliteDb) -> Result<Vec<DisciplineConfig>, String> {
-    Ok(db
-        .get_disciplines()
+pub fn disciplines_list(db: &SqliteDb) -> RalphResult<Vec<DisciplineConfig>> {
+    let disciplines = db.get_disciplines()?;
+    disciplines
         .iter()
         .map(|d| to_discipline_config(db, d))
-        .collect())
+        .collect::<Result<Vec<_>, _>>()
 }
 
 pub fn disciplines_create(
     db: &SqliteDb,
     args: DisciplinesCreateArgs,
-) -> Result<DisciplineConfig, String> {
+) -> RalphResult<DisciplineConfig> {
     let normalized_name = args
         .name
         .to_lowercase()
@@ -141,7 +157,7 @@ pub fn disciplines_create(
 pub fn disciplines_update(
     db: &SqliteDb,
     args: DisciplinesUpdateArgs,
-) -> Result<DisciplineConfig, String> {
+) -> RalphResult<DisciplineConfig> {
     let skills_json = serde_json::to_string(&args.skills)
         .ralph_err(codes::DISCIPLINE_OPS, "Failed to serialize skills")?;
 
@@ -183,7 +199,7 @@ pub fn disciplines_update(
     get_discipline_config_or_error(db, &discipline_name)
 }
 
-pub fn disciplines_delete(db: &SqliteDb, args: DisciplinesDeleteArgs) -> Result<String, String> {
+pub fn disciplines_delete(db: &SqliteDb, args: DisciplinesDeleteArgs) -> RalphResult<String> {
     let deleted_name = args.name.clone();
     db.delete_discipline(args.name)?;
     Ok(deleted_name)
@@ -193,9 +209,9 @@ pub fn disciplines_image_data_get(
     project_path: &Path,
     db: &SqliteDb,
     args: DisciplinesImageDataGetArgs,
-) -> Result<Option<String>, String> {
+) -> RalphResult<Option<String>> {
     let disc = db
-        .get_disciplines()
+        .get_disciplines()?
         .into_iter()
         .find(|d| d.name == args.discipline_name);
 
@@ -225,9 +241,9 @@ pub fn disciplines_cropped_image_get(
     project_path: &Path,
     db: &SqliteDb,
     args: DisciplinesCroppedImageGetArgs,
-) -> Result<Option<String>, String> {
+) -> RalphResult<Option<String>> {
     let disc = db
-        .get_disciplines()
+        .get_disciplines()?
         .into_iter()
         .find(|d| d.name == args.discipline_name);
 

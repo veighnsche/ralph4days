@@ -1,4 +1,4 @@
-use ralph_errors::{codes, RalphResultExt};
+use ralph_errors::{codes, RalphResult, RalphResultExt};
 use std::path::{Path, PathBuf};
 
 const APP_NAME: &str = "ralph4days";
@@ -13,17 +13,7 @@ pub struct XdgDirs {
 
 #[allow(dead_code)]
 impl XdgDirs {
-    pub fn fallback() -> Self {
-        let base = std::env::temp_dir().join(format!("{APP_NAME}-fallback"));
-        Self {
-            data: base.join("data"),
-            config: base.join("config"),
-            cache: base.join("cache"),
-            state: base.join("state"),
-        }
-    }
-
-    pub fn resolve() -> Result<Self, String> {
+    pub fn resolve() -> RalphResult<Self> {
         let data = dirs::data_dir()
             .ok_or_else(|| ralph_errors::err_string(codes::FILESYSTEM, "No XDG data directory"))?
             .join(APP_NAME);
@@ -64,25 +54,25 @@ impl XdgDirs {
         &self.state
     }
 
-    pub fn ensure_data(&self) -> Result<&Path, String> {
+    pub fn ensure_data(&self) -> RalphResult<&Path> {
         std::fs::create_dir_all(&self.data)
             .ralph_err(codes::FILESYSTEM, "Failed to create XDG data directory")?;
         Ok(&self.data)
     }
 
-    pub fn ensure_config(&self) -> Result<&Path, String> {
+    pub fn ensure_config(&self) -> RalphResult<&Path> {
         std::fs::create_dir_all(&self.config)
             .ralph_err(codes::FILESYSTEM, "Failed to create XDG config directory")?;
         Ok(&self.config)
     }
 
-    pub fn ensure_cache(&self) -> Result<&Path, String> {
+    pub fn ensure_cache(&self) -> RalphResult<&Path> {
         std::fs::create_dir_all(&self.cache)
             .ralph_err(codes::FILESYSTEM, "Failed to create XDG cache directory")?;
         Ok(&self.cache)
     }
 
-    pub fn ensure_state(&self) -> Result<&Path, String> {
+    pub fn ensure_state(&self) -> RalphResult<&Path> {
         std::fs::create_dir_all(&self.state)
             .ralph_err(codes::FILESYSTEM, "Failed to create XDG state directory")?;
         Ok(&self.state)

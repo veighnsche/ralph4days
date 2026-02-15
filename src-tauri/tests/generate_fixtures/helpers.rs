@@ -7,7 +7,7 @@ pub(crate) fn initialize_project_for_fixture(
     path: PathBuf,
     project_title: String,
     use_undetect: bool,
-) -> Result<(), String> {
+) -> ralph_errors::RalphResult<()> {
     fixture_project::initialize_project_for_fixture(
         path,
         project_title,

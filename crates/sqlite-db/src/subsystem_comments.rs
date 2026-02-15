@@ -1,6 +1,6 @@
 use crate::types::SubsystemComment;
 use crate::SqliteDb;
-use ralph_errors::{codes, ralph_err, RalphResultExt};
+use ralph_errors::{codes, err_string, ralph_err, RalphResult, RalphResultExt};
 use rusqlite::OptionalExtension;
 use std::collections::HashMap;
 
@@ -16,7 +16,7 @@ pub struct AddSubsystemCommentInput {
 }
 
 impl SqliteDb {
-    fn resolve_subsystem_id(&self, subsystem_name: &str) -> Result<i64, String> {
+    fn resolve_subsystem_id(&self, subsystem_name: &str) -> RalphResult<i64> {
         let subsystem_id: Option<i64> = self
             .conn
             .query_row(
@@ -28,15 +28,14 @@ impl SqliteDb {
             .ralph_err(codes::DB_READ, "Failed to check subsystem")?;
 
         subsystem_id.ok_or_else(|| {
-            format!(
-                "[R-{}] Subsystem '{}' does not exist",
+            err_string(
                 codes::FEATURE_OPS,
-                subsystem_name
+                format!("Subsystem '{subsystem_name}' does not exist"),
             )
         })
     }
 
-    pub fn add_subsystem_comment(&self, input: AddSubsystemCommentInput) -> Result<u32, String> {
+    pub fn add_subsystem_comment(&self, input: AddSubsystemCommentInput) -> RalphResult<u32> {
         if input.body.trim().is_empty() {
             return ralph_err!(codes::FEATURE_OPS, "Comment body cannot be empty");
         }
@@ -82,7 +81,7 @@ impl SqliteDb {
 
         let row_id = self.conn.last_insert_rowid();
         u32::try_from(row_id).map_err(|_| {
-            ralph_errors::err_string(
+            err_string(
                 codes::DB_WRITE,
                 format!("Invalid new subsystem comment id: {row_id}"),
             )
@@ -96,7 +95,7 @@ impl SqliteDb {
         body: &str,
         summary: Option<String>,
         reason: Option<String>,
-    ) -> Result<(), String> {
+    ) -> RalphResult<()> {
         if body.trim().is_empty() {
             return ralph_err!(codes::FEATURE_OPS, "Comment body cannot be empty");
         }
@@ -128,7 +127,7 @@ impl SqliteDb {
         &self,
         subsystem_name: &str,
         comment_id: u32,
-    ) -> Result<(), String> {
+    ) -> RalphResult<()> {
         let subsystem_id = self.resolve_subsystem_id(subsystem_name)?;
 
         let affected = self
@@ -149,43 +148,45 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub(crate) fn get_all_comments_by_subsystem(&self) -> HashMap<String, Vec<SubsystemComment>> {
-        let Ok(mut stmt) = self.conn.prepare(
+    pub(crate) fn get_all_comments_by_subsystem(
+        &self,
+    ) -> RalphResult<HashMap<String, Vec<SubsystemComment>>> {
+        let mut stmt = self.conn.prepare(
             "SELECT fc.id, f.name, fc.category, d.name, fc.agent_task_id, fc.body, fc.summary, fc.reason, fc.source_iteration, fc.created, fc.updated \
              FROM subsystem_comments fc \
              JOIN subsystems f ON fc.subsystem_id = f.id \
              LEFT JOIN disciplines d ON fc.discipline_id = d.id \
              ORDER BY f.name, fc.id DESC",
-        ) else {
-            return HashMap::new();
-        };
+        ).ralph_err(codes::DB_READ, "Failed to prepare subsystem comments query")?;
 
         let mut map: HashMap<String, Vec<SubsystemComment>> = HashMap::new();
 
-        let Ok(rows) = stmt.query_map([], |row| {
-            Ok((
-                row.get::<_, String>(1)?,
-                SubsystemComment {
-                    id: row.get(0)?,
-                    category: row.get(2)?,
-                    discipline: row.get(3)?,
-                    agent_task_id: row.get(4)?,
-                    body: row.get(5)?,
-                    summary: row.get(6)?,
-                    reason: row.get(7)?,
-                    source_iteration: row.get(8)?,
-                    created: row.get(9)?,
-                    updated: row.get(10)?,
-                },
-            ))
-        }) else {
-            return HashMap::new();
-        };
+        let rows = stmt
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, String>(1)?,
+                    SubsystemComment {
+                        id: row.get(0)?,
+                        category: row.get(2)?,
+                        discipline: row.get(3)?,
+                        agent_task_id: row.get(4)?,
+                        body: row.get(5)?,
+                        summary: row.get(6)?,
+                        reason: row.get(7)?,
+                        source_iteration: row.get(8)?,
+                        created: row.get(9)?,
+                        updated: row.get(10)?,
+                    },
+                ))
+            })
+            .ralph_err(codes::DB_READ, "Failed to query subsystem comments")?;
 
-        for row in rows.flatten() {
-            map.entry(row.0).or_default().push(row.1);
+        for row in rows {
+            let (name, comment) =
+                row.ralph_err(codes::DB_READ, "Failed to decode subsystem comment row")?;
+            map.entry(name).or_default().push(comment);
         }
 
-        map
+        Ok(map)
     }
 }

@@ -29,7 +29,7 @@ pub use types::{
     TaskSignalCommentCreateInput, TaskSignalSummary, TaskStatus, TaskTemplate,
 };
 
-use ralph_errors::{codes, RalphResultExt};
+use ralph_errors::{codes, RalphError, RalphResult, RalphResultExt};
 use rusqlite::Connection;
 use rusqlite_migration::{Migrations, M};
 use std::path::Path;
@@ -58,7 +58,7 @@ pub struct SqliteDb {
 }
 
 impl SqliteDb {
-    pub fn open(path: &Path, clock: Option<Box<dyn Clock>>) -> Result<Self, String> {
+    pub fn open(path: &Path, clock: Option<Box<dyn Clock>>) -> RalphResult<Self> {
         let mut conn =
             Connection::open(path).ralph_err(codes::DB_OPEN, "Failed to open database")?;
 
@@ -85,9 +85,9 @@ impl SqliteDb {
         self.clock.now()
     }
 
-    pub fn with_transaction<T, F>(&self, f: F) -> Result<T, String>
+    pub fn with_transaction<T, F>(&self, f: F) -> RalphResult<T>
     where
-        F: FnOnce(&Self) -> Result<T, String>,
+        F: FnOnce(&Self) -> RalphResult<T>,
     {
         self.conn
             .execute_batch("BEGIN IMMEDIATE TRANSACTION;")
@@ -102,9 +102,11 @@ impl SqliteDb {
             }
             Err(err) => {
                 if let Err(rollback_err) = self.conn.execute_batch("ROLLBACK;") {
-                    return Err(format!(
-                        "{err} (rollback failed: [R-{}] {rollback_err})",
-                        codes::DB_WRITE
+                    return Err(RalphError::new(
+                        codes::DB_WRITE,
+                        format!(
+                            "Transaction failed and rollback failed: original_error={err}, rollback_error={rollback_err}"
+                        ),
                     ));
                 }
                 Err(err)
@@ -126,7 +128,7 @@ impl SqliteDb {
     // The API server and fixture generator MUST use the same typed interface that
     // agents use via MCP. No exceptions.
 
-    pub fn open_in_memory(clock: Option<Box<dyn Clock>>) -> Result<Self, String> {
+    pub fn open_in_memory(clock: Option<Box<dyn Clock>>) -> RalphResult<Self> {
         let mut conn = Connection::open_in_memory()
             .ralph_err(codes::DB_OPEN, "Failed to open in-memory database")?;
 

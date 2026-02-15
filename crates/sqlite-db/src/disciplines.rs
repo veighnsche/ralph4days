@@ -1,9 +1,9 @@
 use crate::types::*;
 use crate::SqliteDb;
-use ralph_errors::{codes, ralph_err, RalphResultExt};
+use ralph_errors::{codes, err_string, ralph_err, RalphResult, RalphResultExt};
 
 impl SqliteDb {
-    pub fn create_discipline(&self, input: crate::types::DisciplineInput) -> Result<(), String> {
+    pub fn create_discipline(&self, input: crate::types::DisciplineInput) -> RalphResult<()> {
         if input.name.trim().is_empty() {
             return ralph_err!(codes::DISCIPLINE_OPS, "Discipline name cannot be empty");
         }
@@ -60,7 +60,8 @@ impl SqliteDb {
 
         let discipline_id = self.conn.last_insert_rowid();
 
-        let skills: Vec<String> = serde_json::from_str(&input.skills).unwrap_or_default();
+        let skills: Vec<String> = serde_json::from_str(&input.skills)
+            .map_err(|e| err_string(codes::DISCIPLINE_OPS, format!("Invalid skills JSON: {e}")))?;
         self.insert_string_list(
             "discipline_skills",
             "discipline_id",
@@ -70,13 +71,18 @@ impl SqliteDb {
         )?;
 
         let mcp_servers: Vec<McpServerConfig> =
-            serde_json::from_str(&input.mcp_servers).unwrap_or_default();
+            serde_json::from_str(&input.mcp_servers).map_err(|e| {
+                err_string(
+                    codes::DISCIPLINE_OPS,
+                    format!("Invalid mcpServers JSON: {e}"),
+                )
+            })?;
         self.insert_mcp_servers(discipline_id, &mcp_servers)?;
 
         Ok(())
     }
 
-    pub fn update_discipline(&self, input: crate::types::DisciplineInput) -> Result<(), String> {
+    pub fn update_discipline(&self, input: crate::types::DisciplineInput) -> RalphResult<()> {
         if input.display_name.trim().is_empty() {
             return ralph_err!(
                 codes::DISCIPLINE_OPS,
@@ -157,7 +163,8 @@ impl SqliteDb {
             )
             .ralph_err(codes::DB_WRITE, "Failed to delete old MCP servers")?;
 
-        let skills: Vec<String> = serde_json::from_str(&input.skills).unwrap_or_default();
+        let skills: Vec<String> = serde_json::from_str(&input.skills)
+            .map_err(|e| err_string(codes::DISCIPLINE_OPS, format!("Invalid skills JSON: {e}")))?;
         self.insert_string_list(
             "discipline_skills",
             "discipline_id",
@@ -167,13 +174,18 @@ impl SqliteDb {
         )?;
 
         let mcp_servers: Vec<McpServerConfig> =
-            serde_json::from_str(&input.mcp_servers).unwrap_or_default();
+            serde_json::from_str(&input.mcp_servers).map_err(|e| {
+                err_string(
+                    codes::DISCIPLINE_OPS,
+                    format!("Invalid mcpServers JSON: {e}"),
+                )
+            })?;
         self.insert_mcp_servers(discipline_id, &mcp_servers)?;
 
         Ok(())
     }
 
-    pub fn delete_discipline(&self, name: String) -> Result<(), String> {
+    pub fn delete_discipline(&self, name: String) -> RalphResult<()> {
         let discipline_id = self.get_id_from_name("disciplines", &name)?;
 
         let mut stmt = self
@@ -186,13 +198,16 @@ impl SqliteDb {
             )
             .ralph_err(codes::DB_READ, "Failed to prepare query")?;
 
-        let tasks: Vec<(u32, String)> = stmt
+        let tasks = stmt
             .query_map([discipline_id], |row| Ok((row.get(0)?, row.get(1)?)))
-            .ralph_err(codes::DB_READ, "Failed to query tasks")?
-            .filter_map(std::result::Result::ok)
-            .collect();
+            .ralph_err(codes::DB_READ, "Failed to query tasks")?;
 
-        if let Some((task_id, task_title)) = tasks.first() {
+        let mut tasks_out: Vec<(u32, String)> = Vec::new();
+        for row in tasks {
+            tasks_out.push(row.ralph_err(codes::DB_READ, "Failed to decode task row")?);
+        }
+
+        if let Some((task_id, task_title)) = tasks_out.first() {
             return ralph_err!(
                 codes::DISCIPLINE_OPS,
                 "Cannot delete discipline '{name}': task {task_id} ('{task_title}') belongs to it"
@@ -211,53 +226,56 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn get_disciplines(&self) -> Vec<Discipline> {
-        let Ok(mut stmt) = self.conn.prepare(
+    pub fn get_disciplines(&self) -> RalphResult<Vec<Discipline>> {
+        let mut stmt = self.conn.prepare(
             "SELECT id, name, display_name, acronym, icon, color, description, system_prompt, \
              agent, model, effort, thinking, conventions, stack_id, image_path, crops, image_prompt \
              FROM disciplines ORDER BY rowid",
-        ) else {
-            return vec![];
-        };
+        ).ralph_err(codes::DB_READ, "Failed to prepare disciplines list query")?;
 
-        let Ok(rows) = stmt.query_map([], |row| {
-            Ok((
-                row.get::<_, i64>(0)?,
-                Discipline {
-                    id: row.get(0)?,
-                    name: row.get(1)?,
-                    display_name: row.get(2)?,
-                    acronym: row.get(3)?,
-                    icon: row.get(4)?,
-                    color: row.get(5)?,
-                    description: row.get(6)?,
-                    system_prompt: row.get(7)?,
-                    agent: row.get(8)?,
-                    model: row.get(9)?,
-                    effort: row.get(10)?,
-                    thinking: row.get(11)?,
-                    skills: vec![],
-                    conventions: row.get(12)?,
-                    mcp_servers: vec![],
-                    stack_id: row.get(13)?,
-                    image_path: row.get(14)?,
-                    crops: row.get(15)?,
-                    image_prompt: row.get(16)?,
-                },
-            ))
-        }) else {
-            return vec![];
-        };
+        let rows = stmt
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, i64>(0)?,
+                    Discipline {
+                        id: row.get(0)?,
+                        name: row.get(1)?,
+                        display_name: row.get(2)?,
+                        acronym: row.get(3)?,
+                        icon: row.get(4)?,
+                        color: row.get(5)?,
+                        description: row.get(6)?,
+                        system_prompt: row.get(7)?,
+                        agent: row.get(8)?,
+                        model: row.get(9)?,
+                        effort: row.get(10)?,
+                        thinking: row.get(11)?,
+                        skills: vec![],
+                        conventions: row.get(12)?,
+                        mcp_servers: vec![],
+                        stack_id: row.get(13)?,
+                        image_path: row.get(14)?,
+                        crops: row.get(15)?,
+                        image_prompt: row.get(16)?,
+                    },
+                ))
+            })
+            .ralph_err(codes::DB_READ, "Failed to query disciplines")?;
 
         let mut disciplines: Vec<Discipline> = vec![];
-        for row in rows.filter_map(std::result::Result::ok) {
-            let (discipline_id, mut discipline) = row;
-            discipline.skills =
-                self.read_string_list("discipline_skills", "discipline_id", discipline_id, "skill");
-            discipline.mcp_servers = self.read_mcp_servers(discipline_id);
+        for row in rows {
+            let (discipline_id, mut discipline) =
+                row.ralph_err(codes::DB_READ, "Failed to decode discipline row")?;
+            discipline.skills = self.read_string_list(
+                "discipline_skills",
+                "discipline_id",
+                discipline_id,
+                "skill",
+            )?;
+            discipline.mcp_servers = self.read_mcp_servers(discipline_id)?;
             disciplines.push(discipline);
         }
 
-        disciplines
+        Ok(disciplines)
     }
 }

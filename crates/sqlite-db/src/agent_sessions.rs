@@ -1,9 +1,10 @@
 use crate::types::{AgentSession, AgentSessionCreateInput, AgentSessionUpdateInput};
 use crate::SqliteDb;
-use ralph_errors::{codes, ralph_err, RalphResultExt};
+use ralph_errors::{codes, err_string, ralph_err, RalphResult, RalphResultExt};
+use rusqlite::OptionalExtension;
 
 impl SqliteDb {
-    pub fn create_human_agent_session(&self, input: AgentSessionCreateInput) -> Result<(), String> {
+    pub fn create_human_agent_session(&self, input: AgentSessionCreateInput) -> RalphResult<()> {
         if input.id.trim().is_empty() {
             return ralph_err!(codes::TASK_VALIDATION, "Session id cannot be empty");
         }
@@ -39,16 +40,15 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn update_human_agent_session(&self, input: AgentSessionUpdateInput) -> Result<(), String> {
+    pub fn update_human_agent_session(&self, input: AgentSessionUpdateInput) -> RalphResult<()> {
         if input.id.trim().is_empty() {
             return ralph_err!(codes::TASK_VALIDATION, "Session id cannot be empty");
         }
 
-        let existing = self.get_agent_session_by_id(&input.id).ok_or_else(|| {
-            format!(
-                "[R-{}] Session '{}' does not exist",
+        let existing = self.get_agent_session_by_id(&input.id)?.ok_or_else(|| {
+            err_string(
                 codes::TASK_OPS,
-                input.id
+                format!("Session '{}' does not exist", input.id),
             )
         })?;
 
@@ -103,7 +103,7 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn delete_human_agent_session(&self, id: &str) -> Result<(), String> {
+    pub fn delete_human_agent_session(&self, id: &str) -> RalphResult<()> {
         if id.trim().is_empty() {
             return ralph_err!(codes::TASK_VALIDATION, "Session id cannot be empty");
         }
@@ -127,42 +127,63 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn get_agent_session_by_id(&self, id: &str) -> Option<AgentSession> {
+    pub fn get_agent_session_by_id(&self, id: &str) -> RalphResult<Option<AgentSession>> {
+        let mut stmt = self
+            .conn
+            .prepare(
+                "SELECT id, kind, started_by, task_id, agent, model, launch_command, \
+             post_start_preamble, init_prompt, started, ended, exit_code, closing_verb, \
+             status, prompt_hash, output_bytes, error_text, session_number \
+             FROM agent_sessions WHERE id = ?1",
+            )
+            .ralph_err(codes::DB_READ, "Failed to prepare agent session query")?;
+
+        stmt.query_row([id], Self::row_to_agent_session)
+            .optional()
+            .ralph_err(codes::DB_READ, "Failed to query agent session by id")
+    }
+
+    pub fn list_human_agent_sessions(&self) -> RalphResult<Vec<AgentSession>> {
         let mut stmt = self
             .conn
             .prepare(
                 "SELECT id, kind, started_by, task_id, agent, model, launch_command, \
                  post_start_preamble, init_prompt, started, ended, exit_code, closing_verb, \
                  status, prompt_hash, output_bytes, error_text, session_number \
-                 FROM agent_sessions WHERE id = ?1",
-            )
-            .ok()?;
-
-        stmt.query_row([id], Self::row_to_agent_session).ok()
-    }
-
-    pub fn list_human_agent_sessions(&self) -> Vec<AgentSession> {
-        let Ok(mut stmt) = self.conn.prepare(
-            "SELECT id, kind, started_by, task_id, agent, model, launch_command, \
-                 post_start_preamble, init_prompt, started, ended, exit_code, closing_verb, \
-                 status, prompt_hash, output_bytes, error_text, session_number \
                  FROM agent_sessions WHERE started_by = 'human' ORDER BY session_number DESC",
-        ) else {
-            return vec![];
-        };
+            )
+            .ralph_err(
+                codes::DB_READ,
+                "Failed to prepare human agent sessions list query",
+            )?;
 
-        stmt.query_map([], Self::row_to_agent_session).map_or_else(
-            |_| vec![],
-            |rows| rows.filter_map(std::result::Result::ok).collect(),
-        )
+        let rows = stmt
+            .query_map([], Self::row_to_agent_session)
+            .ralph_err(codes::DB_READ, "Failed to query human agent sessions list")?;
+
+        let mut out = Vec::new();
+        for row in rows {
+            out.push(row.ralph_err(codes::DB_READ, "Failed to decode human agent session row")?);
+        }
+        Ok(out)
     }
 
     fn row_to_agent_session(row: &rusqlite::Row<'_>) -> rusqlite::Result<AgentSession> {
         let output_bytes_i64: Option<i64> = row.get(15)?;
         let session_number_i64: i64 = row.get(17)?;
+
+        let output_bytes = match output_bytes_i64 {
+            Some(v) => Some(
+                u32::try_from(v).map_err(|_| rusqlite::Error::IntegralValueOutOfRange(15, v))?,
+            ),
+            None => None,
+        };
+        let session_number = u32::try_from(session_number_i64)
+            .map_err(|_| rusqlite::Error::IntegralValueOutOfRange(17, session_number_i64))?;
+
         Ok(AgentSession {
             id: row.get(0)?,
-            session_number: u32::try_from(session_number_i64).unwrap_or_default(),
+            session_number,
             kind: row.get(1)?,
             started_by: row.get(2)?,
             task_id: row.get(3)?,
@@ -177,7 +198,7 @@ impl SqliteDb {
             closing_verb: row.get(12)?,
             status: row.get(13)?,
             prompt_hash: row.get(14)?,
-            output_bytes: output_bytes_i64.map(|v| v as u32),
+            output_bytes,
             error_text: row.get(16)?,
         })
     }

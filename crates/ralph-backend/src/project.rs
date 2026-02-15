@@ -1,4 +1,4 @@
-use ralph_errors::{codes, ralph_err};
+use ralph_errors::{codes, ralph_err, RalphResult};
 use ralph_macros::ipc_type;
 use std::path::Path;
 use std::path::PathBuf;
@@ -19,7 +19,7 @@ fn seed_disciplines_for_stack(
     db: &sqlite_db::SqliteDb,
     stack: u8,
     ralph_dir: &Path,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     let defs = predefined_disciplines::get_disciplines_for_stack(stack);
     if defs.is_empty() && stack != 0 {
         return ralph_err!(
@@ -115,7 +115,7 @@ fn seed_disciplines_for_stack(
     Ok(())
 }
 
-pub fn project_initialize(args: ProjectInitializeArgs) -> Result<(), String> {
+pub fn project_initialize(args: ProjectInitializeArgs) -> RalphResult<()> {
     let stack = args.stack;
     let project_title = args.project_title.clone();
     let path = PathBuf::from(&args.path);
@@ -200,7 +200,7 @@ Describe the architecture, tech stack, and key components.
     Ok(())
 }
 
-pub fn validate_project_path(path: &Path) -> Result<(), String> {
+pub fn validate_project_path(path: &Path) -> RalphResult<()> {
     tracing::debug!(path = %path.display(), "Validating project path");
 
     if !path.exists() {
@@ -274,8 +274,9 @@ mod tests {
         let dir = tempdir().unwrap();
         let missing = dir.path().join("missing");
         let err = validate_project_path(&missing).unwrap_err();
-        assert!(err.contains("[R-1000]"));
-        assert!(err.contains("Directory not found"));
+        let rendered = err.to_string();
+        assert!(rendered.contains("[R-1000]"));
+        assert!(rendered.contains("Directory not found"));
     }
 
     #[test]
@@ -284,16 +285,18 @@ mod tests {
         let file = dir.path().join("file");
         std::fs::write(&file, "x").unwrap();
         let err = validate_project_path(&file).unwrap_err();
-        assert!(err.contains("[R-1000]"));
-        assert!(err.contains("Not a directory"));
+        let rendered = err.to_string();
+        assert!(rendered.contains("[R-1000]"));
+        assert!(rendered.contains("Not a directory"));
     }
 
     #[test]
     fn validate_project_path_errors_when_missing_ralph_dir() {
         let dir = tempdir().unwrap();
         let err = validate_project_path(dir.path()).unwrap_err();
-        assert!(err.contains("[R-1000]"));
-        assert!(err.contains("No .ralph/ folder"));
+        let rendered = err.to_string();
+        assert!(rendered.contains("[R-1000]"));
+        assert!(rendered.contains("No .ralph/ folder"));
     }
 
     #[test]
@@ -301,8 +304,9 @@ mod tests {
         let dir = tempdir().unwrap();
         std::fs::create_dir(dir.path().join(".ralph")).unwrap();
         let err = validate_project_path(dir.path()).unwrap_err();
-        assert!(err.contains("[R-1000]"));
-        assert!(err.contains("No .ralph/db/ralph.db found"));
+        let rendered = err.to_string();
+        assert!(rendered.contains("[R-1000]"));
+        assert!(rendered.contains("No .ralph/db/ralph.db found"));
     }
 
     #[test]

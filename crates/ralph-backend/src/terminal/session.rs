@@ -1,5 +1,5 @@
 use portable_pty::MasterPty;
-use ralph_errors::{codes, err_string};
+use ralph_errors::{codes, err_string, RalphResult};
 use sqlite_db::SqliteDb;
 use std::io::Write;
 use std::sync::{Arc, Mutex};
@@ -93,7 +93,7 @@ fn resolve_bool_with_sources(
     (None, TerminalBridgeLaunchSource::Unset)
 }
 
-fn validate_agent(agent: Option<&str>) -> Result<(), String> {
+fn validate_agent(agent: Option<&str>) -> RalphResult<()> {
     let Some(agent) = agent else {
         return Ok(());
     };
@@ -128,8 +128,8 @@ pub fn resolve_task_launch_config(
     db: &SqliteDb,
     task_id: u32,
     defaults: TerminalBridgeLaunchDefaults,
-) -> Result<TerminalBridgeResolvedLaunchConfig, String> {
-    let task = db.get_task_by_id(task_id).ok_or_else(|| {
+) -> RalphResult<TerminalBridgeResolvedLaunchConfig> {
+    let task = db.get_task_by_id(task_id)?.ok_or_else(|| {
         err_string(
             codes::TASK_OPS,
             format!("Task '{task_id}' not found for terminal launch resolution"),
@@ -137,7 +137,7 @@ pub fn resolve_task_launch_config(
     })?;
 
     let discipline = db
-        .get_disciplines()
+        .get_disciplines()?
         .into_iter()
         .find(|d| d.name == task.discipline)
         .ok_or_else(|| {
@@ -373,6 +373,7 @@ mod tests {
         // Make the discipline provide claude defaults.
         let discipline = db
             .get_disciplines()
+            .expect("get_disciplines")
             .into_iter()
             .find(|d| d.name == "implementation")
             .expect("implementation discipline exists");
@@ -497,6 +498,7 @@ mod tests {
         // Give the discipline a claude-only model.
         let discipline = db
             .get_disciplines()
+            .expect("get_disciplines")
             .into_iter()
             .find(|d| d.name == "implementation")
             .expect("implementation discipline exists");
@@ -568,9 +570,10 @@ mod tests {
         )
         .unwrap_err();
 
+        let rendered = err.to_string();
         assert!(
-            err.contains("[R-7000]") || err.contains("[R-8100]"),
-            "expected a coded error, got: {err}"
+            rendered.contains("[R-7000]") || rendered.contains("[R-8100]"),
+            "expected a coded error, got: {rendered}"
         );
     }
 }

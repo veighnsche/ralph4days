@@ -11,7 +11,7 @@ use super::{TerminalBridgeReplayOutputChunk, TerminalBridgeReplayOutputResult};
 use ralph_contracts::terminal::{PtyClosedEvent, PtyOutputEvent};
 use ralph_contracts::transport::EventSink;
 
-use ralph_errors::{codes, RalphResultExt, ToStringErr};
+use ralph_errors::{codes, err_string, RalphResult, RalphResultExt};
 
 const DEFAULT_REPLAY_BUFFER_BYTES: usize = 8 * 1024 * 1024;
 
@@ -31,11 +31,11 @@ pub enum SessionStreamMode {
 }
 
 impl SessionStreamMode {
-    pub fn parse(mode: &str) -> Result<Self, String> {
+    pub fn parse(mode: &str) -> RalphResult<Self> {
         match mode.trim().to_ascii_lowercase().as_str() {
             "live" => Ok(Self::Live),
             "buffered" => Ok(Self::Buffered),
-            _ => Err(ralph_errors::err_string(
+            _ => Err(err_string(
                 codes::TERMINAL,
                 format!("Invalid stream mode: {mode}. Expected 'live' or 'buffered'"),
             )),
@@ -157,7 +157,7 @@ impl PTYManager {
         working_dir: &Path,
         mcp_config: Option<PathBuf>,
         config: SessionConfig,
-    ) -> Result<(), String> {
+    ) -> RalphResult<()> {
         tracing::info!(
             working_dir = %working_dir.display(),
             agent = ?config.agent,
@@ -167,7 +167,10 @@ impl PTYManager {
         );
 
         {
-            let sessions = self.sessions.lock().err_str(codes::INTERNAL)?;
+            let sessions = self
+                .sessions
+                .lock()
+                .ralph_err(codes::INTERNAL, "PTY sessions mutex poisoned")?;
             if sessions.contains_key(&session_id) {
                 tracing::error!("PTY session already exists");
                 return ralph_errors::ralph_err!(
@@ -224,18 +227,21 @@ impl PTYManager {
             .try_clone_reader()
             .ralph_err(codes::TERMINAL, "Failed to clone PTY reader")?;
 
-        self.sessions.lock().err_str(codes::INTERNAL)?.insert(
-            session_id.clone(),
-            ManagedSession {
-                pty: PTYSession {
-                    writer: Arc::clone(&writer),
-                    master: pair.master,
-                    child: Arc::clone(&child),
-                    reader_handle: None,
+        self.sessions
+            .lock()
+            .ralph_err(codes::INTERNAL, "PTY sessions mutex poisoned")?
+            .insert(
+                session_id.clone(),
+                ManagedSession {
+                    pty: PTYSession {
+                        writer: Arc::clone(&writer),
+                        master: pair.master,
+                        child: Arc::clone(&child),
+                        reader_handle: None,
+                    },
+                    stream: SessionStreamState::new(),
                 },
-                stream: SessionStreamState::new(),
-            },
-        );
+            );
 
         let sid = session_id.clone();
         let sink_clone = sink;
@@ -269,21 +275,21 @@ impl PTYManager {
                         let encoded_data = STANDARD.encode(&buf[..n]);
                         let mut output_event: Option<PtyOutputEvent> = None;
 
-                        if let Ok(mut sessions) = sessions_ref.lock() {
-                            if let Some(session) = sessions.get_mut(&sid) {
-                                let seq = session.stream.append_chunk(
-                                    encoded_data.clone(),
-                                    n,
-                                    replay_buffer_bytes,
-                                );
+                        let mut sessions =
+                            sessions_ref.lock().expect("PTY sessions mutex poisoned");
+                        if let Some(session) = sessions.get_mut(&sid) {
+                            let seq = session.stream.append_chunk(
+                                encoded_data.clone(),
+                                n,
+                                replay_buffer_bytes,
+                            );
 
-                                if session.stream.mode == SessionStreamMode::Live {
-                                    output_event = Some(PtyOutputEvent {
-                                        session_id: sid.clone(),
-                                        seq,
-                                        data: encoded_data,
-                                    });
-                                }
+                            if session.stream.mode == SessionStreamMode::Live {
+                                output_event = Some(PtyOutputEvent {
+                                    session_id: sid.clone(),
+                                    seq,
+                                    data: encoded_data,
+                                });
                             }
                         }
 
@@ -324,12 +330,15 @@ impl PTYManager {
                 );
             }
 
-            if let Ok(mut sessions) = sessions_ref.lock() {
-                sessions.remove(&sid);
-            }
+            let mut sessions = sessions_ref.lock().expect("PTY sessions mutex poisoned");
+            sessions.remove(&sid);
         });
 
-        if let Ok(mut sessions) = self.sessions.lock().err_str(codes::INTERNAL) {
+        {
+            let mut sessions = self
+                .sessions
+                .lock()
+                .ralph_err(codes::INTERNAL, "PTY sessions mutex poisoned")?;
             if let Some(session) = sessions.get_mut(&session_id) {
                 session.pty.reader_handle = Some(reader_handle);
             }
@@ -341,7 +350,9 @@ impl PTYManager {
                 line_count = preamble.lines().filter(|line| !line.trim().is_empty()).count(),
                 "Applying post-start preamble"
             );
-            let mut guard = writer.lock().err_str(codes::INTERNAL)?;
+            let mut guard = writer
+                .lock()
+                .ralph_err(codes::INTERNAL, "PTY writer mutex poisoned")?;
             for line in preamble.lines().filter(|line| !line.trim().is_empty()) {
                 guard
                     .write_all(line.as_bytes())
@@ -358,7 +369,7 @@ impl PTYManager {
     }
 
     #[tracing::instrument(skip(self, data), fields(session_id, bytes = data.len()))]
-    pub fn send_input(&self, session_id: &str, data: &[u8]) -> Result<(), String> {
+    pub fn send_input(&self, session_id: &str, data: &[u8]) -> RalphResult<()> {
         tracing::debug!(
             session_id,
             bytes = data.len(),
@@ -366,16 +377,21 @@ impl PTYManager {
             "terminal_bridge_input_chunk"
         );
         let writer = {
-            let sessions = self.sessions.lock().err_str(codes::INTERNAL)?;
+            let sessions = self
+                .sessions
+                .lock()
+                .ralph_err(codes::INTERNAL, "PTY sessions mutex poisoned")?;
             let session = sessions.get(session_id).ok_or_else(|| {
-                ralph_errors::err_string(
+                err_string(
                     codes::TERMINAL,
                     format!("No terminal bridge session: {session_id}"),
                 )
             })?;
             Arc::clone(&session.pty.writer)
         };
-        let mut guard = writer.lock().err_str(codes::INTERNAL)?;
+        let mut guard = writer
+            .lock()
+            .ralph_err(codes::INTERNAL, "PTY writer mutex poisoned")?;
         guard
             .write_all(data)
             .ralph_err(codes::TERMINAL, "Failed to write to PTY")?;
@@ -385,10 +401,13 @@ impl PTYManager {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn resize(&self, session_id: &str, cols: u16, rows: u16) -> Result<(), String> {
-        let sessions = self.sessions.lock().err_str(codes::INTERNAL)?;
+    pub fn resize(&self, session_id: &str, cols: u16, rows: u16) -> RalphResult<()> {
+        let sessions = self
+            .sessions
+            .lock()
+            .ralph_err(codes::INTERNAL, "PTY sessions mutex poisoned")?;
         let session = sessions.get(session_id).ok_or_else(|| {
-            ralph_errors::err_string(
+            err_string(
                 codes::TERMINAL,
                 format!("No terminal bridge session: {session_id}"),
             )
@@ -409,9 +428,12 @@ impl PTYManager {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn terminate(&self, session_id: &str) -> Result<(), String> {
+    pub fn terminate(&self, session_id: &str) -> RalphResult<()> {
         let session = {
-            let mut sessions = self.sessions.lock().err_str(codes::INTERNAL)?;
+            let mut sessions = self
+                .sessions
+                .lock()
+                .ralph_err(codes::INTERNAL, "PTY sessions mutex poisoned")?;
             sessions.remove(session_id)
         };
 
@@ -429,10 +451,13 @@ impl PTYManager {
         Ok(())
     }
 
-    pub fn set_stream_mode(&self, session_id: &str, mode: SessionStreamMode) -> Result<(), String> {
-        let mut sessions = self.sessions.lock().err_str(codes::INTERNAL)?;
+    pub fn set_stream_mode(&self, session_id: &str, mode: SessionStreamMode) -> RalphResult<()> {
+        let mut sessions = self
+            .sessions
+            .lock()
+            .ralph_err(codes::INTERNAL, "PTY sessions mutex poisoned")?;
         let session = sessions.get_mut(session_id).ok_or_else(|| {
-            ralph_errors::err_string(
+            err_string(
                 codes::TERMINAL,
                 format!("No terminal bridge session: {session_id}"),
             )
@@ -446,10 +471,13 @@ impl PTYManager {
         session_id: &str,
         after_seq: u64,
         limit: usize,
-    ) -> Result<TerminalBridgeReplayOutputResult, String> {
-        let sessions = self.sessions.lock().err_str(codes::INTERNAL)?;
+    ) -> RalphResult<TerminalBridgeReplayOutputResult> {
+        let sessions = self
+            .sessions
+            .lock()
+            .ralph_err(codes::INTERNAL, "PTY sessions mutex poisoned")?;
         let session = sessions.get(session_id).ok_or_else(|| {
-            ralph_errors::err_string(
+            err_string(
                 codes::TERMINAL,
                 format!("No terminal bridge session: {session_id}"),
             )
@@ -500,14 +528,18 @@ mod tests {
     fn test_send_input_fails_for_missing_session() {
         let manager = PTYManager::new();
         let err = manager.send_input("missing-session", b"hello").unwrap_err();
-        assert!(err.contains("No terminal bridge session: missing-session"));
+        assert!(err
+            .to_string()
+            .contains("No terminal bridge session: missing-session"));
     }
 
     #[test]
     fn test_resize_fails_for_missing_session() {
         let manager = PTYManager::new();
         let err = manager.resize("missing-session", 80, 24).unwrap_err();
-        assert!(err.contains("No terminal bridge session: missing-session"));
+        assert!(err
+            .to_string()
+            .contains("No terminal bridge session: missing-session"));
     }
 
     #[test]
@@ -592,7 +624,7 @@ mod tests {
         let err = manager
             .create_session(sink, "dup".to_owned(), dir.path(), None, config)
             .unwrap_err();
-        assert!(err.contains("PTY session already exists"));
+        assert!(err.to_string().contains("PTY session already exists"));
 
         let _ = manager.terminate("dup");
     }

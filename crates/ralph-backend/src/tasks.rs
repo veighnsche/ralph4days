@@ -1,17 +1,17 @@
-use ralph_errors::{codes, err_string};
+use ralph_errors::{codes, err_string, RalphResult};
 use ralph_macros::ipc_type;
 use sqlite_db::SqliteDb;
 
-fn get_task_or_error(db: &SqliteDb, id: u32) -> Result<sqlite_db::Task, String> {
-    db.get_task_by_id(id).ok_or_else(|| {
-        ralph_errors::err_string(
+fn get_task_or_error(db: &SqliteDb, id: u32) -> RalphResult<sqlite_db::Task> {
+    db.get_task_by_id(id)?.ok_or_else(|| {
+        err_string(
             codes::TASK_OPS,
             format!("Task {id} not found after mutation"),
         )
     })
 }
 
-fn validate_subsystem_name(name: &str) -> Result<(), String> {
+fn validate_subsystem_name(name: &str) -> RalphResult<()> {
     if name.contains('/') || name.contains(':') || name.contains('\\') {
         return Err(err_string(
             codes::TASK_VALIDATION,
@@ -167,7 +167,7 @@ pub struct TasksSignalCommentsListArgs {
     pub signal_id: u32,
 }
 
-pub fn tasks_create(db: &SqliteDb, args: TasksCreateArgs) -> Result<String, String> {
+pub fn tasks_create(db: &SqliteDb, args: TasksCreateArgs) -> RalphResult<String> {
     validate_subsystem_name(&args.subsystem)?;
     let normalized_subsystem = normalize_subsystem_name(&args.subsystem);
 
@@ -196,7 +196,7 @@ pub fn tasks_create(db: &SqliteDb, args: TasksCreateArgs) -> Result<String, Stri
     Ok(task_id.to_string())
 }
 
-pub fn tasks_update(db: &SqliteDb, args: TasksUpdateArgs) -> Result<sqlite_db::Task, String> {
+pub fn tasks_update(db: &SqliteDb, args: TasksUpdateArgs) -> RalphResult<sqlite_db::Task> {
     validate_subsystem_name(&args.subsystem)?;
     let normalized_subsystem = normalize_subsystem_name(&args.subsystem);
 
@@ -226,12 +226,9 @@ pub fn tasks_update(db: &SqliteDb, args: TasksUpdateArgs) -> Result<sqlite_db::T
     get_task_or_error(db, task_id)
 }
 
-pub fn tasks_set_status(
-    db: &SqliteDb,
-    args: TasksSetStatusArgs,
-) -> Result<sqlite_db::Task, String> {
+pub fn tasks_set_status(db: &SqliteDb, args: TasksSetStatusArgs) -> RalphResult<sqlite_db::Task> {
     let status = sqlite_db::TaskStatus::parse(&args.status).ok_or_else(|| {
-        ralph_errors::err_string(
+        err_string(
             codes::TASK_VALIDATION,
             format!("Invalid status: {}", args.status),
         )
@@ -241,14 +238,11 @@ pub fn tasks_set_status(
     get_task_or_error(db, args.id)
 }
 
-pub fn tasks_delete(db: &SqliteDb, args: TasksDeleteArgs) -> Result<(), String> {
+pub fn tasks_delete(db: &SqliteDb, args: TasksDeleteArgs) -> RalphResult<()> {
     db.delete_task(args.id)
 }
 
-pub fn tasks_signal_add(
-    db: &SqliteDb,
-    args: TasksSignalAddArgs,
-) -> Result<sqlite_db::Task, String> {
+pub fn tasks_signal_add(db: &SqliteDb, args: TasksSignalAddArgs) -> RalphResult<sqlite_db::Task> {
     db.add_signal(
         args.task_id,
         args.discipline,
@@ -262,7 +256,7 @@ pub fn tasks_signal_add(
 pub fn tasks_signal_update(
     db: &SqliteDb,
     args: TasksSignalUpdateArgs,
-) -> Result<sqlite_db::Task, String> {
+) -> RalphResult<sqlite_db::Task> {
     db.update_signal(args.task_id, args.signal_id, args.body)?;
     get_task_or_error(db, args.task_id)
 }
@@ -270,38 +264,38 @@ pub fn tasks_signal_update(
 pub fn tasks_signal_delete(
     db: &SqliteDb,
     args: TasksSignalDeleteArgs,
-) -> Result<sqlite_db::Task, String> {
+) -> RalphResult<sqlite_db::Task> {
     db.delete_signal(args.task_id, args.signal_id)?;
     get_task_or_error(db, args.task_id)
 }
 
-pub fn tasks_list(db: &SqliteDb) -> Result<Vec<sqlite_db::Task>, String> {
-    Ok(db.get_tasks())
+pub fn tasks_list(db: &SqliteDb) -> RalphResult<Vec<sqlite_db::Task>> {
+    db.get_tasks()
 }
 
-pub fn tasks_get(db: &SqliteDb, args: TasksGetArgs) -> Result<sqlite_db::Task, String> {
+pub fn tasks_get(db: &SqliteDb, args: TasksGetArgs) -> RalphResult<sqlite_db::Task> {
     get_task_or_error(db, args.id)
 }
 
-pub fn tasks_list_items(db: &SqliteDb) -> Result<Vec<sqlite_db::TaskListItem>, String> {
+pub fn tasks_list_items(db: &SqliteDb) -> RalphResult<Vec<sqlite_db::TaskListItem>> {
     db.get_task_list_items()
 }
 
 pub fn tasks_signal_summaries_get(
     db: &SqliteDb,
     args: TasksSignalSummariesGetArgs,
-) -> Result<std::collections::HashMap<u32, sqlite_db::TaskSignalSummary>, String> {
+) -> RalphResult<std::collections::HashMap<u32, sqlite_db::TaskSignalSummary>> {
     db.get_signal_summaries(&args.task_ids)
 }
 
-pub fn tasks_ask_answer(db: &SqliteDb, args: TasksAskAnswerArgs) -> Result<(), String> {
+pub fn tasks_ask_answer(db: &SqliteDb, args: TasksAskAnswerArgs) -> RalphResult<()> {
     db.answer_ask(args.signal_id, args.answer)
 }
 
 pub fn tasks_comment_reply_add(
     db: &SqliteDb,
     args: TasksCommentReplyAddArgs,
-) -> Result<sqlite_db::Task, String> {
+) -> RalphResult<sqlite_db::Task> {
     db.add_signal_with_parent(
         args.task_id,
         None,
@@ -315,29 +309,29 @@ pub fn tasks_comment_reply_add(
 pub fn tasks_signal_comment_add(
     db: &SqliteDb,
     args: sqlite_db::TaskSignalCommentCreateInput,
-) -> Result<u32, String> {
+) -> RalphResult<u32> {
     db.add_task_signal_comment(args)
 }
 
 pub fn tasks_signal_comment_update(
     db: &SqliteDb,
     args: TasksSignalCommentUpdateArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     db.update_task_signal_comment(args.comment_id, args.body)
 }
 
 pub fn tasks_signal_comment_delete(
     db: &SqliteDb,
     args: TasksSignalCommentDeleteArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     db.delete_task_signal_comment(args.comment_id)
 }
 
 pub fn tasks_signal_comments_list(
     db: &SqliteDb,
     args: TasksSignalCommentsListArgs,
-) -> Result<Vec<sqlite_db::TaskSignalComment>, String> {
-    Ok(db.get_task_signal_comments(args.signal_id))
+) -> RalphResult<Vec<sqlite_db::TaskSignalComment>> {
+    db.get_task_signal_comments(args.signal_id)
 }
 
 #[cfg(test)]
@@ -347,8 +341,9 @@ mod tests {
     #[test]
     fn subsystem_name_validation_rejects_forbidden_characters() {
         let err = validate_subsystem_name("bad/name").unwrap_err();
-        assert!(err.contains("[R-3000]"));
-        assert!(err.contains("Subsystem name cannot contain"));
+        let rendered = err.to_string();
+        assert!(rendered.contains("[R-3000]"));
+        assert!(rendered.contains("Subsystem name cannot contain"));
 
         assert!(validate_subsystem_name("also:bad").is_err());
         assert!(validate_subsystem_name(r"also\\bad").is_err());

@@ -21,6 +21,7 @@ impl RalphdEventSink {
                 codes::INTERNAL,
                 format!("Failed to encode remote event frame: {e}"),
             )
+            .to_string()
         })?;
 
         // It's not an error if there are currently no connected clients.

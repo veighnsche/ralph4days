@@ -1,3 +1,4 @@
+use ralph_errors::{codes, RalphError, RalphResult, RalphResultExt};
 use sqlite_db::SqliteDb;
 use std::fs;
 use std::path::PathBuf;
@@ -35,12 +36,18 @@ pub(crate) fn initialize_project_for_fixture(
     project_title: String,
     use_undetect: bool,
     clock: Option<Box<dyn sqlite_db::Clock>>,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     if !path.exists() {
-        return Err(format!("Directory not found: {}", path.display()));
+        return Err(RalphError::new(
+            codes::PROJECT_PATH,
+            format!("Directory not found: {}", path.display()),
+        ));
     }
     if !path.is_dir() {
-        return Err(format!("Not a directory: {}", path.display()));
+        return Err(RalphError::new(
+            codes::PROJECT_PATH,
+            format!("Not a directory: {}", path.display()),
+        ));
     }
 
     let ralph_dir = if use_undetect {
@@ -50,44 +57,57 @@ pub(crate) fn initialize_project_for_fixture(
     };
 
     if ralph_dir.exists() {
-        return Err(format!(
-            "{} already exists at {}",
-            if use_undetect {
-                ".undetect-ralph/"
-            } else {
-                ".ralph/"
-            },
-            path.display()
+        return Err(RalphError::new(
+            codes::PROJECT_INIT,
+            format!(
+                "{} already exists at {}",
+                if use_undetect {
+                    ".undetect-ralph/"
+                } else {
+                    ".ralph/"
+                },
+                path.display()
+            ),
         ));
     }
 
-    fs::create_dir(&ralph_dir).map_err(|e| format!("Failed to create ralph directory: {e}"))?;
+    fs::create_dir(&ralph_dir).ralph_err(codes::FILESYSTEM, "Failed to create ralph directory")?;
 
     let db_dir = ralph_dir.join("db");
-    fs::create_dir(&db_dir).map_err(|e| format!("Failed to create db/ directory: {e}"))?;
+    fs::create_dir(&db_dir).ralph_err(codes::FILESYSTEM, "Failed to create db/ directory")?;
 
     let images_dir = ralph_dir.join("images").join("disciplines");
-    let _ = fs::create_dir_all(&images_dir);
+    fs::create_dir_all(&images_dir).ralph_err(
+        codes::FILESYSTEM,
+        "Failed to create images/disciplines directory",
+    )?;
 
     let db_path = db_dir.join("ralph.db");
     let db = SqliteDb::open(&db_path, clock)?;
 
     for d in predefined_disciplines::get_disciplines_for_stack(2) {
-        let skills_json = serde_json::to_string(&d.skills).unwrap_or_else(|_| "[]".to_owned());
+        let skills_json = serde_json::to_string(&d.skills)
+            .ralph_err(codes::INTERNAL, "Failed to serialize skills")?;
 
         let image_path =
             if let Some(bytes) = predefined_disciplines::get_discipline_image(2, &d.name) {
                 let rel = format!("images/disciplines/{}.png", d.name);
                 let abs = ralph_dir.join(&rel);
-                let _ = fs::write(&abs, bytes);
+                fs::write(&abs, bytes)
+                    .ralph_err(codes::FILESYSTEM, "Failed to write discipline image")?;
                 Some(rel)
             } else {
                 None
             };
 
-        let crops_json = d.crops.as_ref().and_then(|c| serde_json::to_string(c).ok());
+        let crops_json = if let Some(c) = d.crops.as_ref() {
+            Some(serde_json::to_string(c).ralph_err(codes::INTERNAL, "Failed to serialize crops")?)
+        } else {
+            None
+        };
         let (agent, model, effort, thinking) = stack_02_launch_defaults(&d.name);
 
+        let discipline_name = d.name.clone();
         db.create_discipline(sqlite_db::DisciplineInput {
             name: d.name,
             display_name: d.display_name,
@@ -107,7 +127,15 @@ pub(crate) fn initialize_project_for_fixture(
             description: None,
             image_prompt: None,
         })
-        .map_err(|e| format!("Failed to seed discipline: {e}"))?;
+        .map_err(move |e| {
+            RalphError::new(
+                e.code,
+                format!(
+                    "Failed to seed discipline {}: {}",
+                    discipline_name, e.message
+                ),
+            )
+        })?;
     }
 
     db.initialize_metadata(
@@ -142,7 +170,7 @@ Describe the architecture, tech stack, and key components.
     );
 
     fs::write(&claude_path, claude_template)
-        .map_err(|e| format!("Failed to create CLAUDE.RALPH.md: {e}"))?;
+        .ralph_err(codes::FILESYSTEM, "Failed to create CLAUDE.RALPH.md")?;
 
     Ok(())
 }

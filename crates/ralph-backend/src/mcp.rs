@@ -1,7 +1,7 @@
 use crate::prompt_context::{build_prompt_context, PromptContextArgs};
 use crate::session::with_db;
 use prompt_builder::CodebaseSnapshot;
-use ralph_errors::{codes, RalphResultExt};
+use ralph_errors::{codes, RalphResult, RalphResultExt};
 use sqlite_db::SqliteDb;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -14,7 +14,7 @@ pub fn generate_mcp_config(
     api_server_port: Option<u16>,
     mode: &str,
     project_path: &Path,
-) -> Result<PathBuf, String> {
+) -> RalphResult<PathBuf> {
     let prompt_type = match mode {
         "task_creation" => prompt_builder::PromptType::Braindump,
         _ => prompt_builder::PromptType::Discuss,
@@ -57,7 +57,7 @@ pub fn generate_mcp_config_for_task(
     api_server_port: Option<u16>,
     task_id: u32,
     project_path: &Path,
-) -> Result<PathBuf, String> {
+) -> RalphResult<PathBuf> {
     with_db(db, |db| {
         let ctx = build_prompt_context(PromptContextArgs {
             db,
@@ -88,7 +88,7 @@ fn write_mcp_artifacts(
     scripts: &[prompt_builder::McpScript],
     config_json: &str,
     config_filename: String,
-) -> Result<PathBuf, String> {
+) -> RalphResult<PathBuf> {
     std::fs::create_dir_all(mcp_dir).ralph_err(codes::FILESYSTEM, "Failed to create MCP dir")?;
 
     for script in scripts {

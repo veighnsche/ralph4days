@@ -6,13 +6,14 @@ use ralph_backend::tasks::{
     TasksSignalCommentUpdateArgs, TasksSignalCommentsListArgs, TasksSignalDeleteArgs,
     TasksSignalSummariesGetArgs, TasksSignalUpdateArgs, TasksUpdateArgs,
 };
+use ralph_errors::RalphResult;
 use tauri::State;
 
 #[tauri::command]
 pub async fn tasks_create(
     state: State<'_, AppState>,
     args: TasksCreateArgs,
-) -> Result<String, String> {
+) -> RalphResult<String> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "tasks_create", args).await;
     }
@@ -24,7 +25,7 @@ pub async fn tasks_create(
 pub async fn tasks_update(
     state: State<'_, AppState>,
     args: TasksUpdateArgs,
-) -> Result<sqlite_db::Task, String> {
+) -> RalphResult<sqlite_db::Task> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "tasks_update", args).await;
     }
@@ -36,7 +37,7 @@ pub async fn tasks_update(
 pub async fn tasks_set_status(
     state: State<'_, AppState>,
     args: TasksSetStatusArgs,
-) -> Result<sqlite_db::Task, String> {
+) -> RalphResult<sqlite_db::Task> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "tasks_set_status", args).await;
     }
@@ -46,7 +47,7 @@ pub async fn tasks_set_status(
 }
 
 #[tauri::command]
-pub async fn tasks_delete(state: State<'_, AppState>, args: TasksDeleteArgs) -> Result<(), String> {
+pub async fn tasks_delete(state: State<'_, AppState>, args: TasksDeleteArgs) -> RalphResult<()> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "tasks_delete", args).await;
     }
@@ -58,7 +59,7 @@ pub async fn tasks_delete(state: State<'_, AppState>, args: TasksDeleteArgs) -> 
 pub async fn tasks_signal_add(
     state: State<'_, AppState>,
     args: TasksSignalAddArgs,
-) -> Result<sqlite_db::Task, String> {
+) -> RalphResult<sqlite_db::Task> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "tasks_signal_add", args).await;
     }
@@ -71,7 +72,7 @@ pub async fn tasks_signal_add(
 pub async fn tasks_signal_update(
     state: State<'_, AppState>,
     args: TasksSignalUpdateArgs,
-) -> Result<sqlite_db::Task, String> {
+) -> RalphResult<sqlite_db::Task> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "tasks_signal_update", args).await;
     }
@@ -84,7 +85,7 @@ pub async fn tasks_signal_update(
 pub async fn tasks_signal_delete(
     state: State<'_, AppState>,
     args: TasksSignalDeleteArgs,
-) -> Result<sqlite_db::Task, String> {
+) -> RalphResult<sqlite_db::Task> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "tasks_signal_delete", args).await;
     }
@@ -94,7 +95,7 @@ pub async fn tasks_signal_delete(
 }
 
 #[tauri::command]
-pub async fn tasks_list(state: State<'_, AppState>) -> Result<Vec<sqlite_db::Task>, String> {
+pub async fn tasks_list(state: State<'_, AppState>) -> RalphResult<Vec<sqlite_db::Task>> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_no_args(&rpc, "tasks_list").await;
     }
@@ -106,7 +107,7 @@ pub async fn tasks_list(state: State<'_, AppState>) -> Result<Vec<sqlite_db::Tas
 pub async fn tasks_get(
     state: State<'_, AppState>,
     args: TasksGetArgs,
-) -> Result<sqlite_db::Task, String> {
+) -> RalphResult<sqlite_db::Task> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "tasks_get", args).await;
     }
@@ -117,7 +118,7 @@ pub async fn tasks_get(
 #[tauri::command]
 pub async fn tasks_list_items(
     state: State<'_, AppState>,
-) -> Result<Vec<sqlite_db::TaskListItem>, String> {
+) -> RalphResult<Vec<sqlite_db::TaskListItem>> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_no_args(&rpc, "tasks_list_items").await;
     }
@@ -129,7 +130,7 @@ pub async fn tasks_list_items(
 pub async fn tasks_signal_summaries_get(
     state: State<'_, AppState>,
     args: TasksSignalSummariesGetArgs,
-) -> Result<std::collections::HashMap<u32, sqlite_db::TaskSignalSummary>, String> {
+) -> RalphResult<std::collections::HashMap<u32, sqlite_db::TaskSignalSummary>> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "tasks_signal_summaries_get", args).await;
     }
@@ -142,7 +143,7 @@ pub async fn tasks_signal_summaries_get(
 pub async fn tasks_ask_answer(
     state: State<'_, AppState>,
     args: TasksAskAnswerArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "tasks_ask_answer", args).await;
     }
@@ -155,7 +156,7 @@ pub async fn tasks_ask_answer(
 pub async fn tasks_comment_reply_add(
     state: State<'_, AppState>,
     args: TasksCommentReplyAddArgs,
-) -> Result<sqlite_db::Task, String> {
+) -> RalphResult<sqlite_db::Task> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "tasks_comment_reply_add", args).await;
     }
@@ -168,7 +169,7 @@ pub async fn tasks_comment_reply_add(
 pub async fn tasks_signal_comment_add(
     state: State<'_, AppState>,
     args: sqlite_db::TaskSignalCommentCreateInput,
-) -> Result<u32, String> {
+) -> RalphResult<u32> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "tasks_signal_comment_add", args).await;
     }
@@ -181,7 +182,7 @@ pub async fn tasks_signal_comment_add(
 pub async fn tasks_signal_comment_update(
     state: State<'_, AppState>,
     args: TasksSignalCommentUpdateArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "tasks_signal_comment_update", args).await;
     }
@@ -194,7 +195,7 @@ pub async fn tasks_signal_comment_update(
 pub async fn tasks_signal_comment_delete(
     state: State<'_, AppState>,
     args: TasksSignalCommentDeleteArgs,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "tasks_signal_comment_delete", args).await;
     }
@@ -207,7 +208,7 @@ pub async fn tasks_signal_comment_delete(
 pub async fn tasks_signal_comments_list(
     state: State<'_, AppState>,
     args: TasksSignalCommentsListArgs,
-) -> Result<Vec<sqlite_db::TaskSignalComment>, String> {
+) -> RalphResult<Vec<sqlite_db::TaskSignalComment>> {
     if let Some(rpc) = state.inner().remote_rpc_client().await? {
         return remote_invoke_args(&rpc, "tasks_signal_comments_list", args).await;
     }

@@ -1,6 +1,6 @@
-use ralph_errors::{codes, ralph_err};
+use ralph_errors::{codes, ralph_err, RalphResult};
 
-pub fn validate_acronym_format(acronym: &str) -> Result<(), String> {
+pub fn validate_acronym_format(acronym: &str) -> RalphResult<()> {
     if acronym.len() != 4 {
         return ralph_err!(
             codes::TASK_VALIDATION,

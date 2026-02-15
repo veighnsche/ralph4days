@@ -1,10 +1,11 @@
 use crate::types::*;
 use crate::SqliteDb;
-use ralph_errors::{codes, ralph_err, RalphResultExt};
+use ralph_errors::{codes, err_string, ralph_err, RalphError, RalphResult, RalphResultExt};
+use rusqlite::OptionalExtension;
 use std::collections::{HashMap, HashSet};
 
 impl SqliteDb {
-    fn delete_task_related_rows(&self, table: &str, task_id: u32) -> Result<(), String> {
+    fn delete_task_related_rows(&self, table: &str, task_id: u32) -> RalphResult<()> {
         self.conn
             .execute(
                 &format!("DELETE FROM {table} WHERE task_id = ?1"),
@@ -19,7 +20,7 @@ impl SqliteDb {
         discipline = %input.discipline,
         title = %input.title
     ))]
-    pub fn create_task(&self, input: TaskInput) -> Result<u32, String> {
+    pub fn create_task(&self, input: TaskInput) -> RalphResult<u32> {
         tracing::debug!("Creating task");
 
         if input.subsystem.trim().is_empty() {
@@ -38,20 +39,24 @@ impl SqliteDb {
         let subsystem_id = self
             .get_id_from_name("subsystems", &input.subsystem)
             .map_err(|_| {
-                format!(
-                    "[R-{}] Subsystem '{}' does not exist. Create it first.",
+                err_string(
                     codes::TASK_VALIDATION,
-                    input.subsystem
+                    format!(
+                        "Subsystem '{}' does not exist. Create it first.",
+                        input.subsystem
+                    ),
                 )
             })?;
 
         let discipline_id = self
             .get_id_from_name("disciplines", &input.discipline)
             .map_err(|_| {
-                format!(
-                    "[R-{}] Discipline '{}' does not exist. Create it first.",
+                err_string(
                     codes::TASK_VALIDATION,
-                    input.discipline
+                    format!(
+                        "Discipline '{}' does not exist. Create it first.",
+                        input.discipline
+                    ),
                 )
             })?;
 
@@ -125,10 +130,16 @@ impl SqliteDb {
 
         let ac = input.acceptance_criteria.unwrap_or_default();
         for (idx, criterion) in ac.iter().enumerate() {
+            let order = i64::try_from(idx).map_err(|_| {
+                RalphError::new(
+                    codes::INTERNAL,
+                    format!("Acceptance criteria index out of range for sqlite i64: {idx}"),
+                )
+            })?;
             self.conn
                 .execute(
                     "INSERT INTO task_acceptance_criteria (task_id, criterion, criterion_order) VALUES (?1, ?2, ?3)",
-                    rusqlite::params![task_id, criterion, i64::try_from(idx).unwrap_or(0)],
+                    rusqlite::params![task_id, criterion, order],
                 )
                 .ralph_err(codes::DB_WRITE, "Failed to insert acceptance criterion")?;
         }
@@ -160,7 +171,7 @@ impl SqliteDb {
     }
 
     #[tracing::instrument(skip(self, update), fields(task_id = id))]
-    pub fn update_task(&self, id: u32, update: TaskInput) -> Result<(), String> {
+    pub fn update_task(&self, id: u32, update: TaskInput) -> RalphResult<()> {
         tracing::debug!("Updating task");
 
         if !self.check_exists("runtime_tasks", "id", &id.to_string())? {
@@ -170,20 +181,24 @@ impl SqliteDb {
         let subsystem_id = self
             .get_id_from_name("subsystems", &update.subsystem)
             .map_err(|_| {
-                format!(
-                    "[R-{}] Subsystem '{}' does not exist. Create it first.",
+                err_string(
                     codes::TASK_VALIDATION,
-                    update.subsystem
+                    format!(
+                        "Subsystem '{}' does not exist. Create it first.",
+                        update.subsystem
+                    ),
                 )
             })?;
 
         let discipline_id = self
             .get_id_from_name("disciplines", &update.discipline)
             .map_err(|_| {
-                format!(
-                    "[R-{}] Discipline '{}' does not exist. Create it first.",
+                err_string(
                     codes::TASK_VALIDATION,
-                    update.discipline
+                    format!(
+                        "Discipline '{}' does not exist. Create it first.",
+                        update.discipline
+                    ),
                 )
             })?;
 
@@ -264,10 +279,16 @@ impl SqliteDb {
         self.delete_task_related_rows("task_acceptance_criteria", id)?;
         let ac = update.acceptance_criteria.unwrap_or_default();
         for (idx, criterion) in ac.iter().enumerate() {
+            let order = i64::try_from(idx).map_err(|_| {
+                RalphError::new(
+                    codes::INTERNAL,
+                    format!("Acceptance criteria index out of range for sqlite i64: {idx}"),
+                )
+            })?;
             self.conn
                 .execute(
                     "INSERT INTO task_acceptance_criteria (task_id, criterion, criterion_order) VALUES (?1, ?2, ?3)",
-                    rusqlite::params![id, criterion, i64::try_from(idx).unwrap_or(0)],
+                    rusqlite::params![id, criterion, order],
                 )
                 .ralph_err(codes::DB_WRITE, "Failed to insert acceptance criterion")?;
         }
@@ -293,7 +314,7 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn set_task_status(&self, id: u32, status: TaskStatus) -> Result<(), String> {
+    pub fn set_task_status(&self, id: u32, status: TaskStatus) -> RalphResult<()> {
         if !self.check_exists("runtime_tasks", "id", &id.to_string())? {
             return ralph_err!(codes::TASK_OPS, "Task {id} does not exist");
         }
@@ -327,7 +348,7 @@ impl SqliteDb {
         id: u32,
         status: TaskStatus,
         date: &str,
-    ) -> Result<(), String> {
+    ) -> RalphResult<()> {
         if !self.check_exists("runtime_tasks", "id", &id.to_string())? {
             return ralph_err!(codes::TASK_OPS, "Task {id} does not exist");
         }
@@ -354,7 +375,7 @@ impl SqliteDb {
     /// Set task provenance
     ///
     /// **For test fixture generation only.** Production tasks set provenance at creation.
-    pub fn set_task_provenance(&self, id: u32, provenance: TaskProvenance) -> Result<(), String> {
+    pub fn set_task_provenance(&self, id: u32, provenance: TaskProvenance) -> RalphResult<()> {
         if !self.check_exists("runtime_tasks", "id", &id.to_string())? {
             return ralph_err!(codes::TASK_OPS, "Task {id} does not exist");
         }
@@ -375,7 +396,7 @@ impl SqliteDb {
         pseudocode: &str,
         acceptance_criteria: Option<Vec<String>>,
         context_files: Option<Vec<String>>,
-    ) -> Result<(), String> {
+    ) -> RalphResult<()> {
         let current_status: String = self
             .conn
             .query_row(
@@ -418,10 +439,16 @@ impl SqliteDb {
 
         self.delete_task_related_rows("task_acceptance_criteria", id)?;
         for (idx, criterion) in acceptance_criteria.unwrap_or_default().iter().enumerate() {
+            let order = i64::try_from(idx).map_err(|_| {
+                RalphError::new(
+                    codes::INTERNAL,
+                    format!("Acceptance criteria index out of range for sqlite i64: {idx}"),
+                )
+            })?;
             self.conn
                 .execute(
                     "INSERT INTO task_acceptance_criteria (task_id, criterion, criterion_order) VALUES (?1, ?2, ?3)",
-                    rusqlite::params![id, criterion, i64::try_from(idx).unwrap_or(0)],
+                    rusqlite::params![id, criterion, order],
                 )
                 .ralph_err(codes::DB_WRITE, "Failed to insert acceptance criterion")?;
         }
@@ -438,7 +465,7 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn delete_task(&self, id: u32) -> Result<(), String> {
+    pub fn delete_task(&self, id: u32) -> RalphResult<()> {
         let mut stmt = self
             .conn
             .prepare("SELECT task_id FROM task_dependencies WHERE depends_on_task_id = ?1 LIMIT 1")
@@ -463,10 +490,8 @@ impl SqliteDb {
         Ok(())
     }
 
-    pub fn get_task_by_id(&self, id: u32) -> Option<Task> {
-        let mut stmt = self
-            .conn
-            .prepare(
+    pub fn get_task_by_id(&self, id: u32) -> RalphResult<Option<Task>> {
+        let mut stmt = self.conn.prepare(
                 "SELECT t.id, t.subsystem_id, td.discipline_id, td.title, td.description, t.status, \
                  td.priority, t.created, t.updated, t.completed, td.hints, td.estimated_turns, \
                  t.provenance, td.agent, td.model, td.effort, td.thinking, td.pseudocode, t.enriched_at, \
@@ -477,32 +502,37 @@ impl SqliteDb {
                  JOIN subsystems f ON t.subsystem_id = f.id \
                  JOIN disciplines d ON td.discipline_id = d.id \
                  WHERE t.id = ?1",
-            )
-            .ok()?;
+            ).ralph_err(codes::DB_READ, "Failed to prepare task query")?;
 
-        let mut task = stmt.query_row([id], |row| Ok(self.row_to_task(row))).ok()?;
+        let task = stmt
+            .query_row([id], |row| self.row_to_task(row))
+            .optional()
+            .ralph_err(codes::DB_READ, "Failed to query task by id")?;
+        let Some(mut task) = task else {
+            return Ok(None);
+        };
 
-        task.tags = self.read_string_list("task_tags", "task_id", i64::from(task.id), "tag");
-        task.depends_on = self.read_task_dependencies(task.id);
-        task.acceptance_criteria = self.read_acceptance_criteria(task.id);
+        task.tags = self.read_string_list("task_tags", "task_id", i64::from(task.id), "tag")?;
+        task.depends_on = self.read_task_dependencies(task.id)?;
+        task.acceptance_criteria = self.read_acceptance_criteria(task.id)?;
         task.context_files = self.read_string_list(
             "task_context_files",
             "task_id",
             i64::from(task.id),
             "file_path",
-        );
+        )?;
         task.output_artifacts = self.read_string_list(
             "task_output_artifacts",
             "task_id",
             i64::from(task.id),
             "artifact_path",
-        );
-        task.signals = self.get_signals_for_task(task.id);
+        )?;
+        task.signals = self.get_signals_for_task(task.id)?;
 
-        Some(task)
+        Ok(Some(task))
     }
 
-    pub fn get_task_list_items(&self) -> Result<Vec<TaskListItem>, String> {
+    pub fn get_task_list_items(&self) -> RalphResult<Vec<TaskListItem>> {
         let mut stmt = self
             .conn
             .prepare(
@@ -610,8 +640,8 @@ impl SqliteDb {
         Ok(tasks)
     }
 
-    pub fn get_tasks(&self) -> Vec<Task> {
-        let Ok(mut stmt) = self.conn.prepare(
+    pub fn get_tasks(&self) -> RalphResult<Vec<Task>> {
+        let mut stmt = self.conn.prepare(
             "SELECT t.id, t.subsystem_id, td.discipline_id, td.title, td.description, t.status, \
              td.priority, t.created, t.updated, t.completed, td.hints, td.estimated_turns, \
              t.provenance, td.agent, td.model, td.effort, td.thinking, td.pseudocode, t.enriched_at, \
@@ -622,51 +652,52 @@ impl SqliteDb {
              JOIN subsystems f ON t.subsystem_id = f.id \
              JOIN disciplines d ON td.discipline_id = d.id \
              ORDER BY t.id",
-        ) else {
-            return vec![];
-        };
+        ).ralph_err(codes::DB_READ, "Failed to prepare tasks query")?;
 
-        let Ok(rows) = stmt.query_map([], |row| Ok(self.row_to_task(row))) else {
-            return vec![];
-        };
+        let rows = stmt
+            .query_map([], |row| self.row_to_task(row))
+            .ralph_err(codes::DB_READ, "Failed to query tasks")?;
 
-        let mut tasks: Vec<Task> = rows.filter_map(std::result::Result::ok).collect();
+        let mut tasks: Vec<Task> = Vec::new();
+        for row in rows {
+            tasks.push(row.ralph_err(codes::DB_READ, "Failed to decode task row")?);
+        }
 
         for task in &mut tasks {
-            task.tags = self.read_string_list("task_tags", "task_id", i64::from(task.id), "tag");
-            task.depends_on = self.read_task_dependencies(task.id);
-            task.acceptance_criteria = self.read_acceptance_criteria(task.id);
+            task.tags = self.read_string_list("task_tags", "task_id", i64::from(task.id), "tag")?;
+            task.depends_on = self.read_task_dependencies(task.id)?;
+            task.acceptance_criteria = self.read_acceptance_criteria(task.id)?;
             task.context_files = self.read_string_list(
                 "task_context_files",
                 "task_id",
                 i64::from(task.id),
                 "file_path",
-            );
+            )?;
             task.output_artifacts = self.read_string_list(
                 "task_output_artifacts",
                 "task_id",
                 i64::from(task.id),
                 "artifact_path",
-            );
+            )?;
         }
 
-        let comment_map = self.get_all_signals_by_task();
+        let comment_map = self.get_all_signals_by_task()?;
 
-        tasks
-            .into_iter()
-            .map(|mut t| {
-                t.signals = comment_map.get(&t.id).cloned().unwrap_or_default();
-                t
-            })
-            .collect()
+        for t in &mut tasks {
+            t.signals = comment_map.get(&t.id).cloned().unwrap_or_default();
+        }
+
+        Ok(tasks)
     }
 
     pub fn get_active_task_templates_for_discipline(
         &self,
         discipline_id: u32,
-    ) -> Vec<TaskTemplate> {
-        let Ok(mut stmt) = self.conn.prepare(
-            "SELECT tt.id, td.discipline_id, td.title, td.description, td.priority, td.hints, \
+    ) -> RalphResult<Vec<TaskTemplate>> {
+        let mut stmt = self
+            .conn
+            .prepare(
+                "SELECT tt.id, td.discipline_id, td.title, td.description, td.priority, td.hints, \
              td.estimated_turns, td.agent, td.model, td.effort, td.thinking, td.pseudocode, \
              td.created, td.updated, \
              (SELECT COUNT(*) FROM runtime_tasks rt WHERE rt.template_id = tt.id) AS pulled_count \
@@ -674,75 +705,119 @@ impl SqliteDb {
              JOIN task_details td ON tt.details_id = td.id \
              WHERE tt.is_active = 1 AND td.discipline_id = ?1 \
              ORDER BY tt.id",
-        ) else {
-            return vec![];
-        };
+            )
+            .ralph_err(codes::DB_READ, "Failed to prepare task templates query")?;
 
-        let Ok(rows) = stmt.query_map([discipline_id], |row| {
-            let priority_str: Option<String> = row.get(4).ok();
-            Ok(TaskTemplate {
-                id: row.get(0)?,
-                discipline_id: row.get(1)?,
-                title: row.get(2)?,
-                description: row.get(3)?,
-                priority: priority_str.and_then(|s| Priority::parse(&s)),
-                hints: row.get(5)?,
-                estimated_turns: row.get(6)?,
-                agent: row.get(7)?,
-                model: row.get(8)?,
-                effort: row.get(9)?,
-                thinking: row.get(10)?,
-                pseudocode: row.get(11)?,
-                created: row.get(12)?,
-                updated: row.get(13)?,
-                pulled_count: row.get(14)?,
+        let rows = stmt
+            .query_map([discipline_id], |row| {
+                let priority_str: Option<String> = row.get(4).ok();
+                Ok(TaskTemplate {
+                    id: row.get(0)?,
+                    discipline_id: row.get(1)?,
+                    title: row.get(2)?,
+                    description: row.get(3)?,
+                    priority: priority_str.and_then(|s| Priority::parse(&s)),
+                    hints: row.get(5)?,
+                    estimated_turns: row.get(6)?,
+                    agent: row.get(7)?,
+                    model: row.get(8)?,
+                    effort: row.get(9)?,
+                    thinking: row.get(10)?,
+                    pseudocode: row.get(11)?,
+                    created: row.get(12)?,
+                    updated: row.get(13)?,
+                    pulled_count: row.get(14)?,
+                })
             })
-        }) else {
-            return vec![];
-        };
+            .ralph_err(codes::DB_READ, "Failed to query task templates")?;
 
-        rows.filter_map(std::result::Result::ok).collect()
+        let mut out = Vec::new();
+        for row in rows {
+            out.push(row.ralph_err(codes::DB_READ, "Failed to decode task template row")?);
+        }
+
+        Ok(out)
     }
 
     #[allow(clippy::unused_self)]
-    fn row_to_task(&self, row: &rusqlite::Row) -> Task {
-        let status_str: String = row.get(5).unwrap_or_else(|_| "pending".to_owned());
-        let priority_str: Option<String> = row.get(6).ok();
-        let provenance_str: Option<String> = row.get(12).ok();
+    fn row_to_task(&self, row: &rusqlite::Row) -> rusqlite::Result<Task> {
+        let status_str: String = row.get(5)?;
+        let status = TaskStatus::parse(&status_str).ok_or_else(|| {
+            rusqlite::Error::FromSqlConversionFailure(
+                5,
+                rusqlite::types::Type::Text,
+                Box::new(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!("Invalid task status: {status_str}"),
+                )),
+            )
+        })?;
 
-        Task {
-            id: row.get(0).unwrap_or(0),
-            subsystem: row.get(19).unwrap_or_default(),
-            discipline: row.get(22).unwrap_or_default(),
-            title: row.get(3).unwrap_or_default(),
-            description: row.get(4).unwrap_or_default(),
-            status: TaskStatus::parse(&status_str).unwrap_or(TaskStatus::Pending),
-            priority: priority_str.and_then(|s| Priority::parse(&s)),
+        let priority_str: Option<String> = row.get(6)?;
+        let priority = priority_str
+            .map(|p| {
+                Priority::parse(&p).ok_or_else(|| {
+                    rusqlite::Error::FromSqlConversionFailure(
+                        6,
+                        rusqlite::types::Type::Text,
+                        Box::new(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            format!("Invalid task priority: {p}"),
+                        )),
+                    )
+                })
+            })
+            .transpose()?;
+
+        let provenance_str: Option<String> = row.get(12)?;
+        let provenance = provenance_str
+            .map(|p| {
+                TaskProvenance::parse(&p).ok_or_else(|| {
+                    rusqlite::Error::FromSqlConversionFailure(
+                        12,
+                        rusqlite::types::Type::Text,
+                        Box::new(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            format!("Invalid task provenance: {p}"),
+                        )),
+                    )
+                })
+            })
+            .transpose()?;
+
+        Ok(Task {
+            id: row.get(0)?,
+            subsystem: row.get(19)?,
+            discipline: row.get(22)?,
+            title: row.get(3)?,
+            description: row.get(4)?,
+            status,
+            priority,
             tags: vec![],
             depends_on: vec![],
-            created: row.get(7).unwrap_or_default(),
-            updated: row.get(8).ok(),
-            completed: row.get(9).ok(),
+            created: row.get(7)?,
+            updated: row.get(8)?,
+            completed: row.get(9)?,
             acceptance_criteria: vec![],
             context_files: vec![],
             output_artifacts: vec![],
-            hints: row.get(10).ok(),
-            estimated_turns: row.get(11).ok(),
-            provenance: provenance_str.and_then(|s| TaskProvenance::parse(&s)),
-            agent: row.get(13).ok(),
-            model: row.get(14).ok(),
-            effort: row.get(15).ok(),
-            thinking: row.get(16).ok(),
-            pseudocode: row.get(17).ok(),
-            enriched_at: row.get(18).ok(),
+            hints: row.get(10)?,
+            estimated_turns: row.get(11)?,
+            provenance,
+            agent: row.get(13)?,
+            model: row.get(14)?,
+            effort: row.get(15)?,
+            thinking: row.get(16)?,
+            pseudocode: row.get(17)?,
+            enriched_at: row.get(18)?,
             signals: vec![],
-            subsystem_display_name: row.get(20).unwrap_or_default(),
-            subsystem_acronym: row.get(21).unwrap_or_default(),
-            discipline_display_name: row.get(23).unwrap_or_default(),
-            discipline_acronym: row.get(24).unwrap_or_default(),
-            discipline_icon: row.get(25).unwrap_or_else(|_| "Circle".to_owned()),
-            discipline_color: row.get(26).unwrap_or_else(|_| "#94a3b8".to_owned()),
-        }
+            subsystem_display_name: row.get(20)?,
+            subsystem_acronym: row.get(21)?,
+            discipline_display_name: row.get(23)?,
+            discipline_acronym: row.get(24)?,
+            discipline_icon: row.get(25)?,
+            discipline_color: row.get(26)?,
+        })
     }
 
     #[allow(clippy::unused_self)]
@@ -813,35 +888,42 @@ impl SqliteDb {
         })
     }
 
-    fn read_task_dependencies(&self, task_id: u32) -> Vec<u32> {
-        let Ok(mut stmt) = self.conn.prepare(
-            "SELECT depends_on_task_id FROM task_dependencies WHERE task_id = ? ORDER BY id",
-        ) else {
-            return vec![];
-        };
+    fn read_task_dependencies(&self, task_id: u32) -> RalphResult<Vec<u32>> {
+        let mut stmt = self
+            .conn
+            .prepare(
+                "SELECT depends_on_task_id FROM task_dependencies WHERE task_id = ? ORDER BY id",
+            )
+            .ralph_err(codes::DB_READ, "Failed to prepare task dependencies query")?;
 
-        let Ok(rows) = stmt.query_map([task_id], |row| row.get::<_, u32>(0)) else {
-            return vec![];
-        };
+        let rows = stmt
+            .query_map([task_id], |row| row.get::<_, u32>(0))
+            .ralph_err(codes::DB_READ, "Failed to query task dependencies")?;
 
-        rows.filter_map(std::result::Result::ok).collect()
+        let mut out = Vec::new();
+        for row in rows {
+            out.push(row.ralph_err(codes::DB_READ, "Failed to decode task dependency row")?);
+        }
+        Ok(out)
     }
 
-    fn read_acceptance_criteria(&self, task_id: u32) -> Vec<String> {
-        let Ok(mut stmt) = self.conn.prepare(
+    fn read_acceptance_criteria(&self, task_id: u32) -> RalphResult<Vec<String>> {
+        let mut stmt = self.conn.prepare(
             "SELECT criterion FROM task_acceptance_criteria WHERE task_id = ? ORDER BY criterion_order",
-        ) else {
-            return vec![];
-        };
+        ).ralph_err(codes::DB_READ, "Failed to prepare acceptance criteria query")?;
 
-        let Ok(rows) = stmt.query_map([task_id], |row| row.get::<_, String>(0)) else {
-            return vec![];
-        };
+        let rows = stmt
+            .query_map([task_id], |row| row.get::<_, String>(0))
+            .ralph_err(codes::DB_READ, "Failed to query acceptance criteria")?;
 
-        rows.filter_map(std::result::Result::ok).collect()
+        let mut out = Vec::new();
+        for row in rows {
+            out.push(row.ralph_err(codes::DB_READ, "Failed to decode acceptance criterion")?);
+        }
+        Ok(out)
     }
 
-    fn has_circular_dependency(&self, task_id: u32, dep_id: u32) -> Result<bool, String> {
+    fn has_circular_dependency(&self, task_id: u32, dep_id: u32) -> RalphResult<bool> {
         let mut stmt = self
             .conn
             .prepare("SELECT task_id, depends_on_task_id FROM task_dependencies")
@@ -849,13 +931,13 @@ impl SqliteDb {
 
         let mut deps_map: std::collections::HashMap<u32, Vec<u32>> =
             std::collections::HashMap::new();
-        let Ok(rows) = stmt.query_map([], |row| Ok((row.get::<_, u32>(0)?, row.get::<_, u32>(1)?)))
-        else {
-            return Ok(false);
-        };
+        let rows = stmt
+            .query_map([], |row| Ok((row.get::<_, u32>(0)?, row.get::<_, u32>(1)?)))
+            .ralph_err(codes::DB_READ, "Failed to query dependencies")?;
 
-        for row in rows.filter_map(std::result::Result::ok) {
-            deps_map.entry(row.0).or_default().push(row.1);
+        for row in rows {
+            let (a, b) = row.ralph_err(codes::DB_READ, "Failed to decode dependency row")?;
+            deps_map.entry(a).or_default().push(b);
         }
 
         let mut visited = HashSet::new();

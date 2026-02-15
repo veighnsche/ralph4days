@@ -6,6 +6,8 @@ pub struct RalphError {
     pub message: String,
 }
 
+pub type RalphResult<T> = Result<T, RalphError>;
+
 impl RalphError {
     pub fn new(code: u16, message: String) -> Self {
         let err = Self { code, message };
@@ -72,29 +74,13 @@ impl std::fmt::Display for RalphError {
     }
 }
 
-impl From<RalphError> for String {
-    fn from(e: RalphError) -> Self {
-        e.to_string()
-    }
-}
-
-pub trait ToStringErr<T> {
-    fn err_str(self, code: u16) -> Result<T, String>;
-}
-
-impl<T, E: std::fmt::Display> ToStringErr<T> for Result<T, E> {
-    fn err_str(self, code: u16) -> Result<T, String> {
-        self.map_err(|e| RalphError::new(code, e.to_string()).to_string())
-    }
-}
-
 pub trait RalphResultExt<T> {
-    fn ralph_err(self, code: u16, msg: &str) -> Result<T, String>;
+    fn ralph_err(self, code: u16, msg: &str) -> RalphResult<T>;
 }
 
 impl<T, E: std::fmt::Display> RalphResultExt<T> for Result<T, E> {
-    fn ralph_err(self, code: u16, msg: &str) -> Result<T, String> {
-        self.map_err(|e| RalphError::new(code, format!("{msg}: {e}")).to_string())
+    fn ralph_err(self, code: u16, msg: &str) -> RalphResult<T> {
+        self.map_err(|e| RalphError::new(code, format!("{msg}: {e}")))
     }
 }
 
@@ -102,19 +88,19 @@ impl<T, E: std::fmt::Display> RalphResultExt<T> for Result<T, E> {
 macro_rules! ralph_err {
     ($code:expr, $($arg:tt)*) => {{
         let err = $crate::RalphError::new($code, format!($($arg)*));
-        Err(err.to_string())
+        Err(err)
     }};
 }
 
 #[macro_export]
 macro_rules! ralph_map_err {
     ($code:expr, $msg:expr) => {
-        |e| $crate::RalphError::new($code, format!(concat!($msg, ": {}"), e)).to_string()
+        |e| $crate::RalphError::new($code, format!(concat!($msg, ": {}"), e))
     };
 }
 
-pub fn err_string(code: u16, message: impl Into<String>) -> String {
-    RalphError::new(code, message.into()).to_string()
+pub fn err_string(code: u16, message: impl Into<String>) -> RalphError {
+    RalphError::new(code, message.into())
 }
 
 pub fn parse_ralph_error(error_str: &str) -> Option<RalphError> {
@@ -221,17 +207,6 @@ mod tests {
     }
 
     #[test]
-    fn test_to_string_err_trait() {
-        let ok_result: Result<i32, std::io::Error> = Ok(42);
-        assert_eq!(ok_result.err_str(codes::INTERNAL).unwrap(), 42);
-
-        let err_result: Result<i32, String> = Err("something broke".to_owned());
-        let err = err_result.err_str(codes::INTERNAL).unwrap_err();
-        assert!(err.contains("[R-8100]"));
-        assert!(err.contains("something broke"));
-    }
-
-    #[test]
     fn test_ralph_result_ext_ok() {
         let ok: Result<i32, String> = Ok(42);
         assert_eq!(
@@ -246,32 +221,36 @@ mod tests {
         let msg = err
             .ralph_err(codes::DB_WRITE, "Failed to write")
             .unwrap_err();
-        assert!(msg.contains("[R-2200]"));
-        assert!(msg.contains("Failed to write: disk full"));
+        let rendered = msg.to_string();
+        assert!(rendered.contains("[R-2200]"));
+        assert!(rendered.contains("Failed to write: disk full"));
     }
 
     #[test]
     fn test_ralph_err_macro() {
-        let result: Result<(), String> = ralph_err!(codes::DB_OPEN, "test error {}", 42);
+        let result: Result<(), RalphError> = ralph_err!(codes::DB_OPEN, "test error {}", 42);
         let err = result.unwrap_err();
-        assert!(err.contains("[R-2000]"));
-        assert!(err.contains("test error 42"));
+        let rendered = err.to_string();
+        assert!(rendered.contains("[R-2000]"));
+        assert!(rendered.contains("test error 42"));
     }
 
     #[test]
     fn test_err_string() {
-        let s = err_string(codes::TERMINAL, "session not found");
-        assert!(s.contains("[R-7000]"));
-        assert!(s.contains("session not found"));
+        let err = err_string(codes::TERMINAL, "session not found");
+        let rendered = err.to_string();
+        assert!(rendered.contains("[R-7000]"));
+        assert!(rendered.contains("session not found"));
     }
 
     #[test]
     fn test_ralph_map_err_macro() {
-        let result: Result<(), String> =
+        let result: Result<(), RalphError> =
             Err("original".to_owned()).map_err(ralph_map_err!(codes::DB_WRITE, "wrapping"));
         let err = result.unwrap_err();
-        assert!(err.contains("[R-2200]"));
-        assert!(err.contains("wrapping: original"));
+        let rendered = err.to_string();
+        assert!(rendered.contains("[R-2200]"));
+        assert!(rendered.contains("wrapping: original"));
     }
 
     #[test]

@@ -1,12 +1,12 @@
 use ralph_contracts::transport::RpcClient;
-use ralph_errors::{codes, err_string};
+use ralph_errors::{codes, err_string, RalphResult};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 pub(crate) async fn remote_invoke_no_args<TResult: DeserializeOwned>(
     rpc: &dyn RpcClient,
     command: &str,
-) -> Result<TResult, String> {
+) -> RalphResult<TResult> {
     let value = rpc
         .invoke(command.to_owned(), serde_json::Value::Null)
         .await?;
@@ -22,7 +22,7 @@ pub(crate) async fn remote_invoke_args<TArgs: Serialize, TResult: DeserializeOwn
     rpc: &dyn RpcClient,
     command: &str,
     args: TArgs,
-) -> Result<TResult, String> {
+) -> RalphResult<TResult> {
     let payload = serde_json::json!({ "args": args });
     let value = rpc.invoke(command.to_owned(), payload).await?;
     serde_json::from_value::<TResult>(value).map_err(|e| {

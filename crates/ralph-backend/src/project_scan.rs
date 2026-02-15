@@ -1,5 +1,5 @@
 use crate::project_contract::{ProjectInfo, ProjectScanArgs, RalphProject, RecentProject};
-use ralph_errors::{codes, RalphResultExt};
+use ralph_errors::{codes, RalphResult, RalphResultExt};
 use sqlite_db::SqliteDb;
 use std::path::{Path, PathBuf};
 
@@ -29,7 +29,7 @@ const EXCLUDED_DIRS: &[&str] = &[
     "Applications",
 ];
 
-pub fn recents_load(data_dir: &Path) -> Result<Vec<RecentProject>, String> {
+pub fn recents_load(data_dir: &Path) -> RalphResult<Vec<RecentProject>> {
     let file = data_dir.join(RECENT_PROJECTS_FILENAME);
     if !file.exists() {
         return Ok(Vec::new());
@@ -42,7 +42,7 @@ pub fn recents_load(data_dir: &Path) -> Result<Vec<RecentProject>, String> {
     Ok(projects)
 }
 
-pub fn recents_add(data_dir: &Path, path: String, name: String) -> Result<(), String> {
+pub fn recents_add(data_dir: &Path, path: String, name: String) -> RalphResult<()> {
     std::fs::create_dir_all(data_dir).ralph_err(
         codes::FILESYSTEM,
         "Failed to create recent projects directory",
@@ -69,7 +69,7 @@ pub fn recents_add(data_dir: &Path, path: String, name: String) -> Result<(), St
     Ok(())
 }
 
-pub fn project_scan(args: ProjectScanArgs) -> Result<Vec<RalphProject>, String> {
+pub fn project_scan(args: ProjectScanArgs) -> RalphResult<Vec<RalphProject>> {
     let scan_path = if let Some(dir) = args.root_dir {
         PathBuf::from(dir)
     } else {
@@ -131,8 +131,8 @@ pub fn project_scan(args: ProjectScanArgs) -> Result<Vec<RalphProject>, String> 
     Ok(projects)
 }
 
-pub fn project_info_get(db: &SqliteDb) -> Result<ProjectInfo, String> {
-    let info = db.get_project_info();
+pub fn project_info_get(db: &SqliteDb) -> RalphResult<ProjectInfo> {
+    let info = db.get_project_info()?;
     Ok(ProjectInfo {
         title: info.title.clone(),
         description: info.description.clone(),

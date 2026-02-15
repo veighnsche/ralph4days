@@ -1,6 +1,6 @@
 use crate::events::BackendDiagnosticEvent;
 use crate::terminal::{PtyClosedEvent, PtyOutputEvent};
-use ralph_errors::RalphError;
+use ralph_errors::{RalphError, RalphResult};
 use serde::{Deserialize, Serialize};
 use std::future::Future;
 use std::pin::Pin;
@@ -26,7 +26,7 @@ pub trait RpcClient: Send + Sync {
         &self,
         command: String,
         args: serde_json::Value,
-    ) -> BoxFuture<'_, Result<serde_json::Value, String>>;
+    ) -> BoxFuture<'_, RalphResult<serde_json::Value>>;
 }
 
 /// Remote event envelope for the `ralphd` event stream.

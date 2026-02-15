@@ -1,5 +1,6 @@
 use crate::prompt_context::{build_prompt_context, PromptContextArgs};
 use prompt_builder::CodebaseSnapshot;
+use ralph_errors::RalphResult;
 use ralph_macros::ipc_type;
 use sqlite_db::SqliteDb;
 use std::collections::HashMap;
@@ -42,7 +43,7 @@ pub struct PromptBuilderPreviewDeps<'a> {
 pub fn prompt_builder_preview(
     deps: PromptBuilderPreviewDeps<'_>,
     args: PromptBuilderPreviewArgs,
-) -> Result<PromptPreview, String> {
+) -> RalphResult<PromptPreview> {
     let PromptBuilderPreviewDeps {
         db,
         project_path,

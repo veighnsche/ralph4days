@@ -1,6 +1,7 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::post, Json, Router};
 use ralph_contracts::events::{BackendDiagnosticEvent, BackendDiagnosticLevel};
 use ralph_contracts::transport::EventSink;
+use ralph_errors::{codes, err_string, RalphResult};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -138,14 +139,14 @@ async fn handle_signal(
     )
 }
 
-fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<(), String> {
+fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> RalphResult<()> {
     match request.verb.as_str() {
         "done" => {
             let summary = request
                 .payload
                 .get("summary")
                 .and_then(|v| v.as_str())
-                .ok_or("Missing summary")?;
+                .ok_or_else(|| err_string(codes::TASK_VALIDATION, "Missing summary"))?;
 
             db.insert_done_signal(
                 None,
@@ -161,12 +162,12 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .payload
                 .get("summary")
                 .and_then(|v| v.as_str())
-                .ok_or("Missing summary")?;
+                .ok_or_else(|| err_string(codes::TASK_VALIDATION, "Missing summary"))?;
             let remaining = request
                 .payload
                 .get("remaining")
                 .and_then(|v| v.as_str())
-                .ok_or("Missing remaining")?;
+                .ok_or_else(|| err_string(codes::TASK_VALIDATION, "Missing remaining"))?;
 
             db.insert_partial_signal(
                 None,
@@ -183,7 +184,7 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .payload
                 .get("reason")
                 .and_then(|v| v.as_str())
-                .ok_or("Missing reason")?;
+                .ok_or_else(|| err_string(codes::TASK_VALIDATION, "Missing reason"))?;
 
             db.insert_stuck_signal(
                 None,
@@ -199,7 +200,7 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .payload
                 .get("question")
                 .and_then(|v| v.as_str())
-                .ok_or("Missing question")?;
+                .ok_or_else(|| err_string(codes::TASK_VALIDATION, "Missing question"))?;
             let blocking = request
                 .payload
                 .get("blocking")
@@ -238,17 +239,17 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .payload
                 .get("what")
                 .and_then(|v| v.as_str())
-                .ok_or("Missing what")?;
+                .ok_or_else(|| err_string(codes::TASK_VALIDATION, "Missing what"))?;
             let severity = request
                 .payload
                 .get("severity")
                 .and_then(|v| v.as_str())
-                .ok_or("Missing severity")?;
+                .ok_or_else(|| err_string(codes::TASK_VALIDATION, "Missing severity"))?;
             let category = request
                 .payload
                 .get("category")
                 .and_then(|v| v.as_str())
-                .ok_or("Missing category")?;
+                .ok_or_else(|| err_string(codes::TASK_VALIDATION, "Missing category"))?;
 
             db.insert_flag_signal(
                 None,
@@ -266,12 +267,12 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .payload
                 .get("text")
                 .and_then(|v| v.as_str())
-                .ok_or("Missing text")?;
+                .ok_or_else(|| err_string(codes::TASK_VALIDATION, "Missing text"))?;
             let kind = request
                 .payload
                 .get("kind")
                 .and_then(|v| v.as_str())
-                .ok_or("Missing kind")?;
+                .ok_or_else(|| err_string(codes::TASK_VALIDATION, "Missing kind"))?;
             let scope = request
                 .payload
                 .get("scope")
@@ -300,17 +301,17 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .payload
                 .get("what")
                 .and_then(|v| v.as_str())
-                .ok_or("Missing what")?;
+                .ok_or_else(|| err_string(codes::TASK_VALIDATION, "Missing what"))?;
             let kind = request
                 .payload
                 .get("kind")
                 .and_then(|v| v.as_str())
-                .ok_or("Missing kind")?;
+                .ok_or_else(|| err_string(codes::TASK_VALIDATION, "Missing kind"))?;
             let why = request
                 .payload
                 .get("why")
                 .and_then(|v| v.as_str())
-                .ok_or("Missing why")?;
+                .ok_or_else(|| err_string(codes::TASK_VALIDATION, "Missing why"))?;
 
             db.insert_suggest_signal(
                 None,
@@ -328,12 +329,12 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 .payload
                 .get("on")
                 .and_then(|v| v.as_str())
-                .ok_or("Missing on")?;
+                .ok_or_else(|| err_string(codes::TASK_VALIDATION, "Missing on"))?;
             let kind = request
                 .payload
                 .get("kind")
                 .and_then(|v| v.as_str())
-                .ok_or("Missing kind")?;
+                .ok_or_else(|| err_string(codes::TASK_VALIDATION, "Missing kind"))?;
             let detail = request
                 .payload
                 .get("detail")
@@ -351,7 +352,12 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> Result<()
                 },
             )?;
         }
-        _ => return Err(format!("Unknown verb: {}", request.verb)),
+        _ => {
+            return Err(err_string(
+                codes::TASK_VALIDATION,
+                format!("Unknown verb: {}", request.verb),
+            ))
+        }
     }
 
     Ok(())

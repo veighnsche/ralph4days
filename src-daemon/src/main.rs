@@ -28,7 +28,7 @@ use ralph_backend::{
 };
 use ralph_contracts::protocol::ProtocolVersionInfo;
 use ralph_contracts::transport::{EventSink, RemoteWireFrame};
-use ralph_errors::{codes, err_string, ToStringErr};
+use ralph_errors::{codes, err_string, RalphError, RalphResult, RalphResultExt};
 use serde::de::DeserializeOwned;
 use sqlite_db::SqliteDb;
 use std::path::PathBuf;
@@ -52,7 +52,7 @@ fn init_tracing() {
         .init();
 }
 
-fn parse_bind_addr() -> Result<std::net::SocketAddr, String> {
+fn parse_bind_addr() -> RalphResult<std::net::SocketAddr> {
     let mut args = std::env::args().skip(1);
     let mut bind = "127.0.0.1:9944".to_owned();
 
@@ -87,7 +87,7 @@ fn parse_bind_addr() -> Result<std::net::SocketAddr, String> {
     })
 }
 
-fn ralph4days_data_dir() -> Result<PathBuf, String> {
+fn ralph4days_data_dir() -> RalphResult<PathBuf> {
     let base = std::env::var_os("XDG_DATA_HOME")
         .map(PathBuf::from)
         .or_else(|| {
@@ -136,7 +136,7 @@ async fn main() -> Result<(), std::io::Error> {
 
     let bind = parse_bind_addr().map_err(|e| {
         eprintln!("{e}");
-        std::io::Error::new(std::io::ErrorKind::InvalidInput, e)
+        std::io::Error::new(std::io::ErrorKind::InvalidInput, e.to_string())
     })?;
 
     let listener = TcpListener::bind(bind).await?;
@@ -163,7 +163,7 @@ async fn main() -> Result<(), std::io::Error> {
 async fn handle_connection(
     stream: tokio::net::TcpStream,
     state: Arc<RalphdState>,
-) -> Result<(), String> {
+) -> RalphResult<()> {
     let ws = tokio_tungstenite::accept_async(stream)
         .await
         .map_err(|e| err_string(codes::INTERNAL, format!("WS accept failed: {e}")))?;
@@ -202,7 +202,7 @@ async fn handle_connection(
         }
     });
 
-    let mut protocol_error: Option<String> = None;
+    let mut protocol_error: Option<RalphError> = None;
     while let Some(item) = read.next().await {
         let msg = item.map_err(|e| err_string(codes::INTERNAL, format!("WS read failed: {e}")))?;
 
@@ -226,28 +226,12 @@ async fn handle_connection(
                         tokio::spawn(async move {
                             let response = match handle_command(&state, &command, payload).await {
                                 Ok(result) => RemoteWireFrame::RpcOk { id, result },
-                                Err(error) => {
-                                    // Contract: all errors should be coded. If something violates that invariant,
-                                    // surface it loudly as an INTERNAL error (instead of silently passing raw strings).
-                                    let structured = ralph_errors::parse_ralph_error(&error)
-                                        .unwrap_or_else(|| {
-                                            ralph_errors::RalphError::new(
-                                                codes::INTERNAL,
-                                                format!(
-                                                    "ralphd invariant violated: uncoded rpc error: {error}"
-                                                ),
-                                            )
-                                        });
-                                    RemoteWireFrame::RpcErr {
-                                        id,
-                                        error: structured,
-                                    }
-                                }
+                                Err(error) => RemoteWireFrame::RpcErr { id, error },
                             };
                             let text = serde_json::to_string(&response).unwrap_or_else(|e| {
                                 serde_json::to_string(&RemoteWireFrame::RpcErr {
                                     id,
-                                    error: ralph_errors::RalphError::new(
+                                    error: ralph_errors::err_string(
                                         codes::INTERNAL,
                                         format!("Failed to encode rpc response: {e}"),
                                     ),
@@ -295,7 +279,7 @@ async fn handle_connection(
     }
 }
 
-fn require_null_payload(command: &str, payload: serde_json::Value) -> Result<(), String> {
+fn require_null_payload(command: &str, payload: serde_json::Value) -> RalphResult<()> {
     if payload.is_null() {
         Ok(())
     } else {
@@ -309,7 +293,7 @@ fn require_null_payload(command: &str, payload: serde_json::Value) -> Result<(),
 fn decode_args<TArgs: DeserializeOwned>(
     command: &str,
     payload: serde_json::Value,
-) -> Result<TArgs, String> {
+) -> RalphResult<TArgs> {
     let serde_json::Value::Object(mut map) = payload else {
         return Err(err_string(
             codes::INTERNAL,
@@ -339,10 +323,7 @@ fn decode_args<TArgs: DeserializeOwned>(
     })
 }
 
-fn encode_result<T: serde::Serialize>(
-    command: &str,
-    value: T,
-) -> Result<serde_json::Value, String> {
+fn encode_result<T: serde::Serialize>(command: &str, value: T) -> RalphResult<serde_json::Value> {
     serde_json::to_value(value).map_err(|e| {
         err_string(
             codes::INTERNAL,
@@ -355,7 +336,7 @@ async fn handle_command(
     state: &RalphdState,
     command: &str,
     payload: serde_json::Value,
-) -> Result<serde_json::Value, String> {
+) -> RalphResult<serde_json::Value> {
     match command {
         "protocol_version_get" => {
             require_null_payload(command, payload)?;
@@ -548,7 +529,10 @@ async fn handle_command(
         "prompt_builder_preview" => {
             let args: PromptBuilderPreviewArgs = decode_args(command, payload)?;
             let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
-            let api_server_port = *state.api_server_port.lock().err_str(codes::INTERNAL)?;
+            let api_server_port = *state
+                .api_server_port
+                .lock()
+                .ralph_err(codes::INTERNAL, "API server port mutex poisoned")?;
             let preview = ralph_backend::session::with_db(&state.db, |db| {
                 ralph_backend::prompt_builder_preview::prompt_builder_preview(
                     PromptBuilderPreviewDeps {
@@ -566,7 +550,10 @@ async fn handle_command(
         "terminal_start_session" => {
             let args: TerminalBridgeStartSessionArgs = decode_args(command, payload)?;
             let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
-            let api_server_port = *state.api_server_port.lock().err_str(codes::INTERNAL)?;
+            let api_server_port = *state
+                .api_server_port
+                .lock()
+                .ralph_err(codes::INTERNAL, "API server port mutex poisoned")?;
             let ctx = terminal_bridge::TerminalBridgeCtx {
                 pty_manager: &state.pty_manager,
                 sink: Arc::clone(&state.event_sink),
@@ -582,7 +569,10 @@ async fn handle_command(
         "terminal_start_task_session" => {
             let args: TerminalBridgeStartTaskSessionArgs = decode_args(command, payload)?;
             let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
-            let api_server_port = *state.api_server_port.lock().err_str(codes::INTERNAL)?;
+            let api_server_port = *state
+                .api_server_port
+                .lock()
+                .ralph_err(codes::INTERNAL, "API server port mutex poisoned")?;
             let ctx = terminal_bridge::TerminalBridgeCtx {
                 pty_manager: &state.pty_manager,
                 sink: Arc::clone(&state.event_sink),
@@ -610,7 +600,10 @@ async fn handle_command(
         "terminal_start_human_session" => {
             let args: TerminalBridgeStartHumanSessionArgs = decode_args(command, payload)?;
             let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
-            let api_server_port = *state.api_server_port.lock().err_str(codes::INTERNAL)?;
+            let api_server_port = *state
+                .api_server_port
+                .lock()
+                .ralph_err(codes::INTERNAL, "API server port mutex poisoned")?;
             let ctx = terminal_bridge::TerminalBridgeCtx {
                 pty_manager: &state.pty_manager,
                 sink: Arc::clone(&state.event_sink),

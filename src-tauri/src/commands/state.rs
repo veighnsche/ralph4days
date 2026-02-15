@@ -1,8 +1,7 @@
-use crate::diagnostics;
 use crate::terminal::PTYManager;
 use crate::xdg::XdgDirs;
 use prompt_builder::CodebaseSnapshot;
-use ralph_errors::{codes, err_string, ToStringErr};
+use ralph_errors::{codes, err_string, RalphResult, RalphResultExt};
 use sqlite_db::SqliteDb;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -21,17 +20,9 @@ pub struct AppState {
 
 impl Default for AppState {
     fn default() -> Self {
-        let xdg = match XdgDirs::resolve() {
-            Ok(xdg) => xdg,
-            Err(error) => {
-                let message = format!(
-                    "Failed to resolve XDG directories: {error}. Using fallback temp directories."
-                );
-                diagnostics::emit_warning("app-state", "xdg-resolve-fallback", &message);
-                tracing::warn!("{message}");
-                XdgDirs::fallback()
-            }
-        };
+        let xdg = XdgDirs::resolve().unwrap_or_else(|error| {
+            panic!("Failed to resolve XDG directories: {error}");
+        });
 
         Self {
             locked_project: Mutex::new(None),
@@ -61,34 +52,38 @@ impl<'a> ProjectSessionService<'a> {
         Self { app_state }
     }
 
-    pub(super) fn with_db<T, F>(&self, f: F) -> Result<T, String>
+    pub(super) fn with_db<T, F>(&self, f: F) -> RalphResult<T>
     where
-        F: FnOnce(&SqliteDb) -> Result<T, String>,
+        F: FnOnce(&SqliteDb) -> RalphResult<T>,
     {
-        let guard = self.app_state.db.lock().err_str(codes::INTERNAL)?;
+        let guard = self
+            .app_state
+            .db
+            .lock()
+            .ralph_err(codes::INTERNAL, "Database mutex poisoned")?;
         let db = guard.as_ref().ok_or_else(|| {
-            ralph_errors::err_string(codes::PROJECT_LOCK, "No project locked (database not open)")
+            err_string(codes::PROJECT_LOCK, "No project locked (database not open)")
         })?;
         f(db)
     }
 
-    pub(super) fn with_db_tx<T, F>(&self, f: F) -> Result<T, String>
+    pub(super) fn with_db_tx<T, F>(&self, f: F) -> RalphResult<T>
     where
-        F: FnOnce(&SqliteDb) -> Result<T, String>,
+        F: FnOnce(&SqliteDb) -> RalphResult<T>,
     {
         self.with_db(|db| TransactionService::new(db).run(f))
     }
 
-    pub(super) fn locked_project_path(&self) -> Result<PathBuf, String> {
+    pub(super) fn locked_project_path(&self) -> RalphResult<PathBuf> {
         let locked = self
             .app_state
             .locked_project
             .lock()
-            .err_str(codes::INTERNAL)?;
+            .ralph_err(codes::INTERNAL, "Locked project mutex poisoned")?;
         locked
             .as_ref()
             .cloned()
-            .ok_or_else(|| ralph_errors::err_string(codes::PROJECT_LOCK, "No project locked"))
+            .ok_or_else(|| err_string(codes::PROJECT_LOCK, "No project locked"))
     }
 }
 
@@ -101,9 +96,9 @@ impl<'a> TransactionService<'a> {
         Self { db }
     }
 
-    pub(super) fn run<T, F>(&self, f: F) -> Result<T, String>
+    pub(super) fn run<T, F>(&self, f: F) -> RalphResult<T>
     where
-        F: FnOnce(&SqliteDb) -> Result<T, String>,
+        F: FnOnce(&SqliteDb) -> RalphResult<T>,
     {
         self.db.with_transaction(f)
     }
@@ -124,29 +119,27 @@ impl<'a> CommandContext<'a> {
         Self::new(state.inner())
     }
 
-    pub(super) fn db<T, F>(&self, f: F) -> Result<T, String>
+    pub(super) fn db<T, F>(&self, f: F) -> RalphResult<T>
     where
-        F: FnOnce(&SqliteDb) -> Result<T, String>,
+        F: FnOnce(&SqliteDb) -> RalphResult<T>,
     {
         self.session.with_db(f)
     }
 
-    pub(super) fn db_tx<T, F>(&self, f: F) -> Result<T, String>
+    pub(super) fn db_tx<T, F>(&self, f: F) -> RalphResult<T>
     where
-        F: FnOnce(&SqliteDb) -> Result<T, String>,
+        F: FnOnce(&SqliteDb) -> RalphResult<T>,
     {
         self.session.with_db_tx(f)
     }
 
-    pub(super) fn locked_project_path(&self) -> Result<PathBuf, String> {
+    pub(super) fn locked_project_path(&self) -> RalphResult<PathBuf> {
         self.session.locked_project_path()
     }
 }
 
 impl AppState {
-    pub async fn remote_rpc_client(
-        &self,
-    ) -> Result<Option<crate::remote::RemoteRpcClient>, String> {
+    pub async fn remote_rpc_client(&self) -> RalphResult<Option<crate::remote::RemoteRpcClient>> {
         let guard = self.remote.lock().await;
 
         guard.as_ref().map_or(Ok(None), |conn| {
@@ -166,22 +159,22 @@ impl AppState {
 }
 
 #[allow(dead_code)]
-pub(super) fn with_db<T, F>(state: &State<'_, AppState>, f: F) -> Result<T, String>
+pub(super) fn with_db<T, F>(state: &State<'_, AppState>, f: F) -> RalphResult<T>
 where
-    F: FnOnce(&SqliteDb) -> Result<T, String>,
+    F: FnOnce(&SqliteDb) -> RalphResult<T>,
 {
     CommandContext::from_tauri_state(state).db(f)
 }
 
 #[allow(dead_code)]
-pub(super) fn with_db_tx<T, F>(state: &State<'_, AppState>, f: F) -> Result<T, String>
+pub(super) fn with_db_tx<T, F>(state: &State<'_, AppState>, f: F) -> RalphResult<T>
 where
-    F: FnOnce(&SqliteDb) -> Result<T, String>,
+    F: FnOnce(&SqliteDb) -> RalphResult<T>,
 {
     CommandContext::from_tauri_state(state).db_tx(f)
 }
 
 #[allow(dead_code)]
-pub(super) fn get_locked_project_path(state: &State<'_, AppState>) -> Result<PathBuf, String> {
+pub(super) fn get_locked_project_path(state: &State<'_, AppState>) -> RalphResult<PathBuf> {
     CommandContext::from_tauri_state(state).locked_project_path()
 }

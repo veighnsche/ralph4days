@@ -1,6 +1,6 @@
 use super::state::AppState;
 use ralph_contracts::protocol::ProtocolVersionInfo;
-use ralph_errors::{codes, err_string};
+use ralph_errors::{codes, err_string, RalphResult};
 use ralph_macros::ipc_type;
 use std::sync::Arc;
 use tauri::{AppHandle, State};
@@ -28,7 +28,7 @@ pub async fn remote_connect(
     app: AppHandle,
     state: State<'_, AppState>,
     args: RemoteConnectArgs,
-) -> Result<RemoteConnectResult, String> {
+) -> RalphResult<RemoteConnectResult> {
     let mut guard = state.remote.lock().await;
 
     if let Some(existing) = guard.as_ref() {
@@ -44,7 +44,9 @@ pub async fn remote_connect(
 
         // Stale/disconnected connection: close it before reconnecting.
         if let Some(stale) = guard.take() {
-            let _ = stale.shutdown().await;
+            if let Err(err) = stale.shutdown().await {
+                tracing::warn!(error = %err, "Failed to shutdown stale remote connection");
+            }
         }
     }
 
@@ -61,7 +63,7 @@ pub async fn remote_connect(
 }
 
 #[tauri::command]
-pub async fn remote_disconnect(state: State<'_, AppState>) -> Result<(), String> {
+pub async fn remote_disconnect(state: State<'_, AppState>) -> RalphResult<()> {
     let conn = { state.remote.lock().await.take() };
     if let Some(conn) = conn {
         conn.shutdown().await?;
@@ -70,7 +72,7 @@ pub async fn remote_disconnect(state: State<'_, AppState>) -> Result<(), String>
 }
 
 #[tauri::command]
-pub async fn remote_status_get(state: State<'_, AppState>) -> Result<RemoteStatus, String> {
+pub async fn remote_status_get(state: State<'_, AppState>) -> RalphResult<RemoteStatus> {
     let guard = state.remote.lock().await;
     let status = guard.as_ref().map_or(
         RemoteStatus {
