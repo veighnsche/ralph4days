@@ -8,6 +8,20 @@ import type {
 } from '@/types/generated'
 
 export type LaunchSource = TerminalBridgeLaunchSource
+type ResolvedAgent = 'claude' | 'codex' | 'shell'
+type ResolvedEffort = 'low' | 'medium' | 'high'
+
+function parseResolvedAgent(value: TerminalBridgeResolvedLaunchConfig['agent']): ResolvedAgent | undefined {
+  if (value === 'claude' || value === 'codex' || value === 'shell') return value
+  if (value == null) return undefined
+  throw new Error(`ralph invariant violated: invalid resolved agent '${value}'`)
+}
+
+function parseResolvedEffort(value: TerminalBridgeResolvedLaunchConfig['effort']): ResolvedEffort | undefined {
+  if (value === 'low' || value === 'medium' || value === 'high') return value
+  if (value == null) return undefined
+  throw new Error(`ralph invariant violated: invalid resolved effort '${value}'`)
+}
 
 const FALLBACK_SOURCES: Pick<
   TerminalBridgeResolvedLaunchConfig,
@@ -21,9 +35,9 @@ const FALLBACK_SOURCES: Pick<
 }
 
 export function useResolvedTaskLaunch(task: Task): {
-  resolvedAgent: string | undefined
+  resolvedAgent: ResolvedAgent | undefined
   resolvedModel: string | undefined
-  resolvedEffort: string | undefined
+  resolvedEffort: ResolvedEffort | undefined
   resolvedThinking: boolean | undefined
   resolvedModelSupportsEffort: boolean
   agentSource: LaunchSource
@@ -56,9 +70,9 @@ export function useResolvedTaskLaunch(task: Task): {
   )
 
   return {
-    resolvedAgent: data?.agent ?? undefined,
+    resolvedAgent: parseResolvedAgent(data?.agent),
     resolvedModel: data?.model ?? undefined,
-    resolvedEffort: data?.modelSupportsEffort ? (data.effort ?? undefined) : undefined,
+    resolvedEffort: data?.modelSupportsEffort ? parseResolvedEffort(data.effort) : undefined,
     resolvedThinking: data?.thinking ?? undefined,
     resolvedModelSupportsEffort: data?.modelSupportsEffort ?? false,
     agentSource: data?.agentSource ?? FALLBACK_SOURCES.agentSource,

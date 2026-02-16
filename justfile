@@ -160,7 +160,7 @@ audit-no-playwright:
 
 # Build release binary (optimized for Alder Lake)
 build:
-    bun tauri build
+    NO_STRIP=1 bun tauri build
 
 # Build debug binary (faster compilation)
 build-debug:
@@ -179,7 +179,7 @@ clean:
 
 # Build all Linux packages (deb, rpm, appimage)
 release-linux:
-    bun tauri build --bundles deb,rpm,appimage
+    NO_STRIP=1 bun tauri build --bundles deb,rpm,appimage
 
 # === Utilities ===
 

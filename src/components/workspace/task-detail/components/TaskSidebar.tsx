@@ -378,7 +378,8 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
     modelSource,
     effortSource,
     thinkingSource,
-    resolveError: launchResolveError
+    resolveError: launchResolveError,
+    isLoading: isLaunchResolving
   } = useResolvedTaskLaunch(task)
 
   const approveMutation = useInvokeMutation<{ id: number; status: string }, Task>('tasks_set_status', {
@@ -471,7 +472,7 @@ export function TaskSidebar({ task, inferredStatus }: { task: Task; inferredStat
             size="icon"
             className="rounded-none rounded-tr-md border-t-0 border-b-0 border-r-0 shadow-none"
             style={{ backgroundColor: 'var(--status-done)', borderColor: 'var(--status-done)', color: 'white' }}
-            disabled={status === 'done'}
+            disabled={status === 'done' || isLaunchResolving || launchResolveError != null}
             aria-label="Execute Task">
             <Play className="h-3.5 w-3.5" />
           </Button>
