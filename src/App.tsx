@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { AlertCircle, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { BottomBar, ProjectSelector } from '@/components/app-shell'
+import { BottomBar, ProjectSelector, RemoteConnectionPanel } from '@/components/app-shell'
 import { ErrorBoundary } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
@@ -13,9 +13,10 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { tauriListen } from '@/lib/tauri/events'
 import { BACKEND_DIAGNOSTIC_EVENT } from '@/lib/tauri/eventsContract'
 import { tauriInvoke } from '@/lib/tauri/invoke'
+import { canQueryProjectLock, requiresRemoteConnection } from '@/lib/tauri/mobileGate'
 import { tauriSetWindowTitle } from '@/lib/tauri/window'
 import { type Page, pageRegistry } from '@/pages/pageRegistry'
-import type { BackendDiagnosticEvent } from '@/types/generated'
+import type { BackendDiagnosticEvent, RemoteStatus } from '@/types/generated'
 import './index.css'
 
 const isTauri = typeof window !== 'undefined' && '__TAURI__' in window
@@ -35,75 +36,18 @@ function NoBackendError() {
   )
 }
 
-function App() {
-  const queryClient = useQueryClient()
-  const isMobile = useIsMobile()
+function LoadingScreen() {
+  return (
+    <div className="flex min-h-svh items-center justify-center">
+      <div className="text-muted-foreground">Loading...</div>
+    </div>
+  )
+}
 
-  const { data: lockedProject, isLoading: isLoadingProject } = useInvoke<string | null>('project_lock_get')
+function ConnectedProjectView({ lockedProject }: { lockedProject: string }) {
+  const isMobile = useIsMobile()
   const [currentPage, setCurrentPage] = useState<Page>('tasks')
   const [activePane, setActivePane] = useState<'main' | 'workspace'>('main')
-
-  useEffect(() => {
-    if (!isTauri) return
-
-    let unlisten: (() => void) | null = null
-
-    void (async () => {
-      unlisten = await tauriListen<BackendDiagnosticEvent>(BACKEND_DIAGNOSTIC_EVENT, event => {
-        const { level, source, code, message } = event.payload
-        const detail = `${source}: ${code} — ${message}`
-        if (level === 'warning') {
-          toast.warning(detail)
-        } else {
-          toast.error(detail)
-        }
-      })
-    })()
-
-    return () => {
-      unlisten?.()
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!isLoadingProject) {
-      tauriInvoke('window_splash_close').catch(() => {})
-    }
-  }, [isLoadingProject])
-
-  useEffect(() => {
-    if (lockedProject && isTauri) {
-      const projectName = lockedProject.split('/').pop() || 'Unknown'
-      tauriSetWindowTitle(`Ralph4days - ${projectName}`).catch(err => {
-        console.error('Failed to set window title:', err)
-      })
-    }
-  }, [lockedProject])
-
-  if (!isTauri) return <NoBackendError />
-
-  const handleProjectSelected = async (project: string) => {
-    queryClient.setQueryData(['project_lock_get'], project)
-    const projectName = project.split('/').pop() || 'Unknown'
-    try {
-      await tauriSetWindowTitle(`Ralph4days - ${projectName}`)
-    } catch (err) {
-      console.error('Failed to set window title:', err)
-    }
-  }
-
-  if (isLoadingProject) {
-    return (
-      <div className="flex min-h-svh items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    )
-  }
-
-  if (!lockedProject) {
-    return <ProjectSelector onProjectSelected={handleProjectSelected} />
-  }
-
   const PageComponent = pageRegistry[currentPage]
 
   // Mobile-first: collapse the split view into a single-pane UI (toggle Workspace).
@@ -166,6 +110,103 @@ function App() {
       <Toaster />
     </ErrorBoundary>
   )
+}
+
+function App() {
+  const queryClient = useQueryClient()
+
+  const { data: isBackendMobile, isLoading: isLoadingBackendMode } = useInvoke<boolean>('mobile_mode_get')
+  const mobileNeedsRemoteConnection = requiresRemoteConnection(isBackendMobile)
+
+  const {
+    data: remoteStatus,
+    isLoading: isLoadingRemoteStatus,
+    error: remoteStatusError
+  } = useInvoke<RemoteStatus>('remote_status_get', undefined, { enabled: mobileNeedsRemoteConnection })
+
+  const canLoadProjectLock = canQueryProjectLock(isBackendMobile, remoteStatus)
+
+  const { data: lockedProject, isLoading: isLoadingProject } = useInvoke<string | null>('project_lock_get', undefined, {
+    enabled: canLoadProjectLock
+  })
+
+  useEffect(() => {
+    if (!isTauri) return
+
+    let unlisten: (() => void) | null = null
+
+    void (async () => {
+      unlisten = await tauriListen<BackendDiagnosticEvent>(BACKEND_DIAGNOSTIC_EVENT, event => {
+        const { level, source, code, message } = event.payload
+        const detail = `${source}: ${code} — ${message}`
+        if (level === 'warning') {
+          toast.warning(detail)
+        } else {
+          toast.error(detail)
+        }
+      })
+    })()
+
+    return () => {
+      unlisten?.()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isLoadingProject) {
+      tauriInvoke('window_splash_close').catch(() => {})
+    }
+  }, [isLoadingProject])
+
+  useEffect(() => {
+    if (lockedProject && isTauri) {
+      const projectName = lockedProject.split('/').pop() || 'Unknown'
+      tauriSetWindowTitle(`Ralph4days - ${projectName}`).catch(err => {
+        console.error('Failed to set window title:', err)
+      })
+    }
+  }, [lockedProject])
+
+  if (!isTauri) return <NoBackendError />
+
+  const handleProjectSelected = async (project: string) => {
+    queryClient.setQueryData(['app', 'project_lock_get'], project)
+    const projectName = project.split('/').pop() || 'Unknown'
+    try {
+      await tauriSetWindowTitle(`Ralph4days - ${projectName}`)
+    } catch (err) {
+      console.error('Failed to set window title:', err)
+    }
+  }
+
+  const handleRemoteConnected = () => {
+    void queryClient.invalidateQueries({ queryKey: ['app', 'remote_status_get'] })
+    void queryClient.invalidateQueries({ queryKey: ['app', 'project_lock_get'] })
+  }
+
+  if (isLoadingBackendMode || (mobileNeedsRemoteConnection && isLoadingRemoteStatus)) {
+    return <LoadingScreen />
+  }
+
+  if (mobileNeedsRemoteConnection && !canLoadProjectLock) {
+    return (
+      <RemoteConnectionPanel
+        status={remoteStatus}
+        statusError={remoteStatusError}
+        onConnected={handleRemoteConnected}
+      />
+    )
+  }
+
+  if (isLoadingProject) {
+    return <LoadingScreen />
+  }
+
+  if (!lockedProject) {
+    return <ProjectSelector onProjectSelected={handleProjectSelected} />
+  }
+
+  return <ConnectedProjectView lockedProject={lockedProject} />
 }
 
 export default App
