@@ -1,4 +1,4 @@
-use ralph_errors::{codes, ralph_err, RalphResult};
+use core_errors::{codes, ralph_err, RalphResult};
 
 pub fn validate_acronym_format(acronym: &str) -> RalphResult<()> {
     if acronym.len() != 4 {

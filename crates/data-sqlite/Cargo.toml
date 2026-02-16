@@ -1,5 +1,5 @@
 [package]
-name = "sqlite-db"
+name = "data-sqlite"
 version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
@@ -14,8 +14,8 @@ rusqlite_migration = "1"
 serde = { workspace = true }
 serde_json = { workspace = true }
 chrono = { workspace = true }
-ralph-errors = { workspace = true }
-ralph-contracts = { workspace = true }
+core-errors = { workspace = true }
+core-contracts = { workspace = true }
 tracing = "0.1"
 
 [dev-dependencies]

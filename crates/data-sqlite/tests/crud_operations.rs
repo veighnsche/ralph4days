@@ -1,4 +1,4 @@
-use sqlite_db::{
+use data_sqlite::{
     AddSubsystemCommentInput, FixedClock, Priority, SqliteDb, SubsystemInput, TaskInput, TaskStatus,
 };
 
@@ -46,7 +46,7 @@ fn seed_test_disciplines(db: &SqliteDb) {
         ),
     ];
     for (name, display, acronym, icon, color) in disciplines {
-        db.create_discipline(sqlite_db::DisciplineInput {
+        db.create_discipline(data_sqlite::DisciplineInput {
             name: name.to_owned(),
             display_name: display.to_owned(),
             acronym: acronym.to_owned(),
@@ -929,7 +929,7 @@ fn test_multiple_subsystems_comments_isolated() {
 #[test]
 fn test_create_discipline() {
     let db = create_test_db();
-    db.create_discipline(sqlite_db::DisciplineInput {
+    db.create_discipline(data_sqlite::DisciplineInput {
         name: "custom".to_owned(),
         display_name: "Custom".to_owned(),
         acronym: "CUST".to_owned(),
@@ -957,7 +957,7 @@ fn test_create_discipline() {
 fn test_create_duplicate_discipline_rejected() {
     let db = create_test_db();
     // "backend" already seeded
-    let result = db.create_discipline(sqlite_db::DisciplineInput {
+    let result = db.create_discipline(data_sqlite::DisciplineInput {
         name: "backend".to_owned(),
         display_name: "Backend2".to_owned(),
         acronym: "BAC2".to_owned(),
@@ -983,7 +983,7 @@ fn test_create_duplicate_discipline_rejected() {
 #[test]
 fn test_update_discipline() {
     let db = create_test_db();
-    db.create_discipline(sqlite_db::DisciplineInput {
+    db.create_discipline(data_sqlite::DisciplineInput {
         name: "custom".to_owned(),
         display_name: "Custom".to_owned(),
         acronym: "CUST".to_owned(),
@@ -1003,7 +1003,7 @@ fn test_update_discipline() {
         image_prompt: None,
     })
     .unwrap();
-    db.update_discipline(sqlite_db::DisciplineInput {
+    db.update_discipline(data_sqlite::DisciplineInput {
         name: "custom".to_owned(),
         display_name: "Custom Updated".to_owned(),
         acronym: "CUST".to_owned(),
@@ -1034,7 +1034,7 @@ fn test_update_discipline() {
 #[test]
 fn test_delete_discipline() {
     let db = create_test_db();
-    db.create_discipline(sqlite_db::DisciplineInput {
+    db.create_discipline(data_sqlite::DisciplineInput {
         name: "custom".to_owned(),
         display_name: "Custom".to_owned(),
         acronym: "CUST".to_owned(),

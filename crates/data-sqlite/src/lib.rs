@@ -29,7 +29,7 @@ pub use types::{
     TaskSignalCommentCreateInput, TaskSignalSummary, TaskStatus, TaskTemplate,
 };
 
-use ralph_errors::{codes, RalphError, RalphResult, RalphResultExt};
+use core_errors::{codes, RalphError, RalphResult, RalphResultExt};
 use rusqlite::Connection;
 use rusqlite_migration::{Migrations, M};
 use std::path::Path;

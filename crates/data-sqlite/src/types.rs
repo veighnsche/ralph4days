@@ -1,4 +1,4 @@
-pub use ralph_contracts::domain::{
+pub use core_contracts::domain::{
     AgentSession, AgentSessionCreateInput, AgentSessionUpdateInput, GroupStats, McpServerConfig,
     Priority, ProjectProgress, SubsystemComment, SubsystemStatus, Task, TaskListItem,
     TaskProvenance, TaskSignal, TaskSignalComment, TaskSignalCommentCreateInput, TaskSignalSummary,

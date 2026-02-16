@@ -1,6 +1,6 @@
 use crate::types::*;
 use crate::SqliteDb;
-use ralph_errors::{codes, err_string, RalphResult, RalphResultExt};
+use core_errors::{codes, err_string, RalphResult, RalphResultExt};
 
 impl SqliteDb {
     pub fn get_project_info(&self) -> RalphResult<ProjectMetadata> {

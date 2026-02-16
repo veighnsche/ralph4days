@@ -1,5 +1,5 @@
 use crate::SqliteDb;
-use ralph_errors::{codes, err_string, RalphResult, RalphResultExt};
+use core_errors::{codes, err_string, RalphResult, RalphResultExt};
 use rusqlite::OptionalExtension;
 
 impl SqliteDb {

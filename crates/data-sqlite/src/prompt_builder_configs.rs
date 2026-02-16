@@ -1,8 +1,8 @@
 use crate::SqliteDb;
-pub use ralph_contracts::prompt_builder::{
+pub use core_contracts::prompt_builder::{
     PromptBuilderConfigData, PromptBuilderConfigInput, SectionSettingsData,
 };
-use ralph_errors::{codes, ralph_err, RalphResult, RalphResultExt};
+use core_errors::{codes, ralph_err, RalphResult, RalphResultExt};
 use std::collections::HashMap;
 
 impl SqliteDb {

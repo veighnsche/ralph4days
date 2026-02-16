@@ -1,6 +1,6 @@
 use crate::types::*;
 use crate::SqliteDb;
-use ralph_errors::{codes, ralph_err, RalphResult, RalphResultExt};
+use core_errors::{codes, ralph_err, RalphResult, RalphResultExt};
 
 impl SqliteDb {
     pub fn create_subsystem(&self, input: SubsystemInput) -> RalphResult<()> {

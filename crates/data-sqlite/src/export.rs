@@ -1,5 +1,5 @@
 use crate::SqliteDb;
-use ralph_errors::RalphResult;
+use core_errors::RalphResult;
 
 /// Escape a string for safe inclusion in double-quoted YAML values.
 /// Handles: backslashes, double quotes, newlines, tabs.

@@ -2,7 +2,7 @@ use crate::types::{
     TaskSignal, TaskSignalComment, TaskSignalCommentCreateInput, TaskSignalSummary,
 };
 use crate::SqliteDb;
-use ralph_errors::{codes, ralph_err, RalphError, RalphResult, RalphResultExt};
+use core_errors::{codes, ralph_err, RalphError, RalphResult, RalphResultExt};
 use std::collections::HashMap;
 
 pub struct DoneSignalInput {

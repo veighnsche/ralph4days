@@ -1,6 +1,6 @@
 use crate::types::*;
 use crate::SqliteDb;
-use ralph_errors::{codes, err_string, ralph_err, RalphError, RalphResult, RalphResultExt};
+use core_errors::{codes, err_string, ralph_err, RalphError, RalphResult, RalphResultExt};
 use rusqlite::OptionalExtension;
 use std::collections::{HashMap, HashSet};
 

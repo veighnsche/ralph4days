@@ -1,6 +1,6 @@
 use crate::types::*;
 use crate::SqliteDb;
-use ralph_errors::{codes, err_string, ralph_err, RalphResult, RalphResultExt};
+use core_errors::{codes, err_string, ralph_err, RalphResult, RalphResultExt};
 
 impl SqliteDb {
     pub fn create_discipline(&self, input: crate::types::DisciplineInput) -> RalphResult<()> {
