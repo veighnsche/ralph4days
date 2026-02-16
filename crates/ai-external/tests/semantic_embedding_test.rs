@@ -1,11 +1,11 @@
 //! End-to-end semantic embedding test.
 //!
 //! Requires Ollama running locally with nomic-embed-text.
-//! Run: cargo test -p ralph-external --test semantic_embedding_test -- --ignored --nocapture
+//! Run: cargo test -p ai-external --test semantic_embedding_test -- --ignored --nocapture
 
-use ralph_external::comment_embeddings::{embed_query, embed_text, CommentEmbeddingConfig};
-use ralph_external::OllamaConfig;
-use sqlite_db::{AddSubsystemCommentInput, SqliteDb, SubsystemInput};
+use ai_external::comment_embeddings::{embed_query, embed_text, CommentEmbeddingConfig};
+use ai_external::OllamaConfig;
+use data_sqlite::{AddSubsystemCommentInput, SqliteDb, SubsystemInput};
 
 fn default_ollama() -> OllamaConfig {
     OllamaConfig {
@@ -124,7 +124,7 @@ fn seed_feature_with_comments(db: &SqliteDb) {
 async fn embed_all_comments(db: &SqliteDb, config: &CommentEmbeddingConfig<'_>) {
     for feature in db.get_subsystems().unwrap() {
         for comment in &feature.comments {
-            let text = ralph_external::comment_embeddings::build_embedding_text(
+            let text = ai_external::comment_embeddings::build_embedding_text(
                 &comment.category,
                 &comment.body,
                 comment.reason.as_deref(),
@@ -243,7 +243,7 @@ async fn semantic_search_feeds_into_prompt_builder() {
         results.len()
     );
 
-    // Convert to prompt-builder types and render
+    // Convert to ai-prompt-builder types and render
     let scored: Vec<prompt_builder::context::ScoredFeatureComment> = results
         .iter()
         .map(|r| prompt_builder::context::ScoredFeatureComment {
@@ -266,7 +266,7 @@ async fn semantic_search_feeds_into_prompt_builder() {
         features: vec![feature],
         tasks: vec![],
         disciplines: vec![],
-        metadata: sqlite_db::ProjectMetadata {
+        metadata: data_sqlite::ProjectMetadata {
             title: "Test".to_owned(),
             description: None,
             created: None,
@@ -286,13 +286,13 @@ async fn semantic_search_feeds_into_prompt_builder() {
         instruction_overrides: std::collections::HashMap::new(),
         relevant_comments: None,
     };
-    ctx.tasks = vec![sqlite_db::Task {
+    ctx.tasks = vec![data_sqlite::Task {
         id: 1,
         subsystem: "auth".to_owned(),
         discipline: "backend".to_owned(),
         title: "Implement login endpoint".to_owned(),
         description: None,
-        status: sqlite_db::TaskStatus::Pending,
+        status: data_sqlite::TaskStatus::Pending,
         priority: None,
         tags: vec![],
         depends_on: vec![],

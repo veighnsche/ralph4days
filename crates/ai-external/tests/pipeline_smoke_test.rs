@@ -1,13 +1,13 @@
 //! Smoke test: proves the full embedding pipeline works end-to-end.
 //!
 //! Requires: ollama serve + qwen3-embedding:0.6b
-//! Run: cargo test -p ralph-external --test pipeline_smoke_test -- --ignored --nocapture
+//! Run: cargo test -p ai-external --test pipeline_smoke_test -- --ignored --nocapture
 
-use ralph_external::comment_embeddings::{
+use ai_external::comment_embeddings::{
     build_embedding_text, embed_query, embed_text, CommentEmbeddingConfig,
 };
-use ralph_external::OllamaConfig;
-use sqlite_db::{AddSubsystemCommentInput, SqliteDb, SubsystemInput};
+use ai_external::OllamaConfig;
+use data_sqlite::{AddSubsystemCommentInput, SqliteDb, SubsystemInput};
 
 fn ollama() -> OllamaConfig {
     OllamaConfig {
@@ -138,7 +138,7 @@ async fn smoke_embed_store_search_render() {
         auth_hits[0].body
     );
 
-    // 5. Feed into prompt-builder — does the rendered section contain the knowledge?
+    // 5. Feed into ai-prompt-builder — does the rendered section contain the knowledge?
     let scored: Vec<prompt_builder::context::ScoredFeatureComment> = auth_hits
         .iter()
         .map(|r| prompt_builder::context::ScoredFeatureComment {
@@ -153,13 +153,13 @@ async fn smoke_embed_store_search_render() {
     let section = prompt_builder::sections::feature_context::feature_context();
     let ctx = prompt_builder::context::PromptContext {
         features: vec![all_features.into_iter().find(|f| f.name == "auth").unwrap()],
-        tasks: vec![sqlite_db::Task {
+        tasks: vec![data_sqlite::Task {
             id: 1,
             subsystem: "auth".to_owned(),
             discipline: "backend".to_owned(),
             title: "Implement password hashing".to_owned(),
             description: None,
-            status: sqlite_db::TaskStatus::Pending,
+            status: data_sqlite::TaskStatus::Pending,
             priority: None,
             tags: vec![],
             depends_on: vec![],
@@ -187,7 +187,7 @@ async fn smoke_embed_store_search_render() {
             discipline_color: "#8b5cf6".to_owned(),
         }],
         disciplines: vec![],
-        metadata: sqlite_db::ProjectMetadata {
+        metadata: data_sqlite::ProjectMetadata {
             title: "Test".to_owned(),
             description: None,
             created: None,

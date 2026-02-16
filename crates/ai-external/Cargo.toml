@@ -1,5 +1,5 @@
 [package]
-name = "ralph-external"
+name = "ai-external"
 version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
@@ -16,9 +16,9 @@ serde_json = { workspace = true }
 reqwest = { version = "0.12", features = ["json"] }
 tokio = { version = "1", features = ["time", "macros"] }
 thiserror = "2"
-ralph-errors = { workspace = true }
-ralph-rag = { path = "../ralph-rag" }
-sqlite-db = { path = "../sqlite-db" }
+core-errors = { workspace = true }
+ai-rag = { path = "../ai-rag" }
+data-sqlite = { path = "../data-sqlite" }
 dirs = "5"
 tokio-tungstenite = { version = "0.26", features = ["native-tls"] }
 futures-util = "0.3"
@@ -27,4 +27,4 @@ uuid = { version = "1", features = ["v4"] }
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt"] }
 wiremock = "0.6"
-prompt-builder = { path = "../prompt-builder" }
+prompt-builder = { package = "ai-prompt-builder", path = "../ai-prompt-builder" }

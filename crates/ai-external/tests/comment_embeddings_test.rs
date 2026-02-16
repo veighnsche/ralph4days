@@ -1,7 +1,7 @@
-use ralph_external::comment_embeddings::{
+use ai_external::comment_embeddings::{
     build_embedding_text, embed_query, embed_text, should_embed, CommentEmbeddingConfig,
 };
-use ralph_external::OllamaConfig;
+use ai_external::OllamaConfig;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -38,15 +38,15 @@ async fn mock_ollama_embed(embedding: Vec<f32>) -> MockServer {
 
 #[tokio::test]
 async fn should_embed_new_comment() {
-    let db = sqlite_db::SqliteDb::open_in_memory(None).unwrap();
-    db.create_subsystem(sqlite_db::SubsystemInput {
+    let db = data_sqlite::SqliteDb::open_in_memory(None).unwrap();
+    db.create_subsystem(data_sqlite::SubsystemInput {
         name: "auth".to_owned(),
         display_name: "Auth".to_owned(),
         acronym: "AUTH".to_owned(),
         ..Default::default()
     })
     .unwrap();
-    db.add_subsystem_comment(sqlite_db::AddSubsystemCommentInput {
+    db.add_subsystem_comment(data_sqlite::AddSubsystemCommentInput {
         subsystem_name: "auth".to_owned(),
         category: "gotcha".to_owned(),
         discipline: None,
@@ -65,15 +65,15 @@ async fn should_embed_new_comment() {
 
 #[tokio::test]
 async fn should_embed_unchanged_comment() {
-    let db = sqlite_db::SqliteDb::open_in_memory(None).unwrap();
-    db.create_subsystem(sqlite_db::SubsystemInput {
+    let db = data_sqlite::SqliteDb::open_in_memory(None).unwrap();
+    db.create_subsystem(data_sqlite::SubsystemInput {
         name: "auth".to_owned(),
         display_name: "Auth".to_owned(),
         acronym: "AUTH".to_owned(),
         ..Default::default()
     })
     .unwrap();
-    db.add_subsystem_comment(sqlite_db::AddSubsystemCommentInput {
+    db.add_subsystem_comment(data_sqlite::AddSubsystemCommentInput {
         subsystem_name: "auth".to_owned(),
         category: "gotcha".to_owned(),
         discipline: None,
@@ -87,7 +87,7 @@ async fn should_embed_unchanged_comment() {
     let comment_id = db.get_subsystems().unwrap()[0].comments[0].id;
 
     let text = build_embedding_text("gotcha", "Use JWT", None);
-    let hash = ralph_rag::embedding::hash_text(&text);
+    let hash = ai_rag::embedding::hash_text(&text);
     db.upsert_comment_embedding(comment_id, &[0.1; 768], "test", &hash)
         .unwrap();
 
@@ -97,15 +97,15 @@ async fn should_embed_unchanged_comment() {
 
 #[tokio::test]
 async fn should_embed_changed_comment() {
-    let db = sqlite_db::SqliteDb::open_in_memory(None).unwrap();
-    db.create_subsystem(sqlite_db::SubsystemInput {
+    let db = data_sqlite::SqliteDb::open_in_memory(None).unwrap();
+    db.create_subsystem(data_sqlite::SubsystemInput {
         name: "auth".to_owned(),
         display_name: "Auth".to_owned(),
         acronym: "AUTH".to_owned(),
         ..Default::default()
     })
     .unwrap();
-    db.add_subsystem_comment(sqlite_db::AddSubsystemCommentInput {
+    db.add_subsystem_comment(data_sqlite::AddSubsystemCommentInput {
         subsystem_name: "auth".to_owned(),
         category: "gotcha".to_owned(),
         discipline: None,

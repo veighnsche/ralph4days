@@ -1,7 +1,7 @@
 use crate::config::OllamaConfig;
 use crate::ollama;
-use ralph_errors::RalphResult;
-use ralph_rag::embedding;
+use core_errors::RalphResult;
+use ai_rag::embedding;
 
 pub struct CommentEmbeddingConfig<'a> {
     pub ollama: &'a OllamaConfig,
@@ -22,7 +22,7 @@ pub fn build_embedding_text(category: &str, body: &str, reason: Option<&str>) ->
 }
 
 pub fn should_embed(
-    db: &sqlite_db::SqliteDb,
+    db: &data_sqlite::SqliteDb,
     comment_id: u32,
     category: &str,
     body: &str,
