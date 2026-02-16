@@ -1,6 +1,6 @@
 use futures_util::{SinkExt, StreamExt};
-use ralph_contracts::transport::RemoteWireFrame;
-use ralph_errors::{codes, err_string, RalphError, RalphResult};
+use core_contracts::transport::RemoteWireFrame;
+use core_errors::{codes, err_string, RalphError, RalphResult};
 use std::sync::Arc;
 use tokio::sync::{broadcast, mpsc};
 use tokio_tungstenite::tungstenite::Message;
@@ -84,7 +84,7 @@ pub async fn handle_connection(
                             let text = serde_json::to_string(&response).unwrap_or_else(|e| {
                                 serde_json::to_string(&RemoteWireFrame::RpcErr {
                                     id,
-                                    error: ralph_errors::err_string(
+                                    error: core_errors::err_string(
                                         codes::INTERNAL,
                                         format!("Failed to encode rpc response: {e}"),
                                     ),

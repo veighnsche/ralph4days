@@ -1,8 +1,8 @@
 use prompt_builder::CodebaseSnapshot;
-use ralph_backend::terminal::PTYManager;
-use ralph_backend::xdg::XdgDirs;
-use ralph_contracts::transport::EventSink;
-use sqlite_db::SqliteDb;
+use service_terminal::terminal::PTYManager;
+use service_runtime::xdg::XdgDirs;
+use core_contracts::transport::EventSink;
+use data_sqlite::SqliteDb;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use tokio::sync::broadcast;

@@ -141,7 +141,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## CRITICAL: Centralized Error Handling
 
-**All Rust error types flow through `crates/ralph-errors`.** Never define `RalphError`, error code constants, or error macros in any other crate. Every crate that returns `Result<T, String>` must depend on `ralph-errors` and use the `.ralph()` extension method (preferred) or `ralph_err!` / `ralph_map_err!` macros. Domain-specific error enums are allowed only when they don't use error codes and stay internal to their crate.
+**All Rust error types flow through `crates/core-errors`.** Never define `RalphError`, error code constants, or error macros in any other crate. Every crate that returns `Result<T, String>` must depend on `core-errors` and use the `.ralph()` extension method (preferred) or `ralph_err!` / `ralph_map_err!` macros. Domain-specific error enums are allowed only when they don't use error codes and stay internal to their crate.
 
 ## CRITICAL: Ralph is the Thinnest Wrapper
 
@@ -176,16 +176,16 @@ Intel NUC12WSKi5 (i5-1240P, 64GB RAM, RTX 3090, Ultramarine Linux 43 Wayland/KDE
 
 Use `just --list` for all commands. Key ones: `just dev`, `just test`, `just build`, `just lint`, `just fmt`. Run built app: `ralph` (picker) or `ralph --project /path` (locked). Pre-commit hook runs oxlint, biome, tsc, and vitest on staged frontend files, and clippy + cargo test on staged Rust files.
 
-**Single test**: `cargo test -p sqlite-db test_name` (Rust), `bun vitest run src/path/to/file.test.ts` (frontend). Use `just types` to regenerate TypeScript types from Rust (ts-rs) after changing shared structs.
+**Single test**: `cargo test -p data-sqlite test_name` (Rust), `bun vitest run src/path/to/file.test.ts` (frontend). Use `just types` to regenerate TypeScript types from Rust (ts-rs) after changing shared structs.
 
 **Testing workflow**: `just reset-mock` creates disposable mock data from `fixtures/` in `/tmp/ralph4days-mock` by default (renames `.undetect-ralph/` to `.ralph/`). Override location with `RALPH_MOCK_DIR`. Use `just dev-mock <project>` or `ralph --project /tmp/ralph4days-mock/<project>` for testing. Fixtures stay clean, mock is disposable.
 
 ## Architecture
 
-Frontend (React 19/Zustand) → IPC → Backend (Tauri/Rust: sqlite-db, loop_engine, claude_client, prompt_builder) → subprocess → Claude CLI (--output-format stream-json, --max-turns 50)
+Frontend (React 19/Zustand) → IPC → Backend (Tauri/Rust: data-sqlite, loop_engine, claude_client, prompt_builder) → subprocess → Claude CLI (--output-format stream-json, --max-turns 50)
 
 Key files:
-- Backend: `src-tauri/src/{commands/,terminal/,lib.rs}` + `crates/{sqlite-db,prompt-builder,ralph-errors,ralph-rag,ralph-external,ralph-macros,predefined-disciplines}/`
+- Backend: `src-tauri/src/{commands/,terminal/,lib.rs}` + `crates/{data-sqlite,ai-prompt-builder,core-errors,ai-rag,ai-external,core-macros,catalog-disciplines}/`
 - Frontend: `src/{components,stores,hooks,pages}/`
 - Specs: `.specs/`
 
@@ -219,7 +219,7 @@ ONE project per session, chosen at startup. CLI mode (`ralph --project /path`) v
 - **Concurrency**: SQLite transactions + foreign key constraints ensure data integrity
 - **Timeout**: Uses system `timeout` command (900s default) wrapping Claude CLI subprocess
 - **Rate Limits**: Parses JSON stream for `overloaded_error`/`rate_limit_error` event types
-- **Prompts**: Built by prompt-builder crate, queries SQLite for current project state
+- **Prompts**: Built by ai-prompt-builder crate, queries SQLite for current project state
 - **Stagnation**: SHA256 hash of database + progress/learnings files before/after each task session; abort after 3 consecutive sessions with no changes
 
 ## Code Comments Policy
@@ -383,5 +383,5 @@ Claude CLI required (`claude --version`). Projects need `.ralph/db/ralph.db` (SQ
 - ACID transactions with WAL mode for concurrency
 - Foreign key constraints (tasks reference features+disciplines)
 - Auto-migration from old `prd.yaml` YAML format
-- Rusqlite with versioned migrations (see `crates/sqlite-db/src/migrations/`)
+- Rusqlite with versioned migrations (see `crates/data-sqlite/src/migrations/`)
 - JSON columns for arrays (tags, depends_on, etc.)

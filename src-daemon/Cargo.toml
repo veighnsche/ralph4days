@@ -7,14 +7,19 @@ rust-version = "1.75"
 [dependencies]
 dirs = "5"
 futures-util = "0.3"
-prompt-builder = { path = "../crates/prompt-builder" }
-predefined-disciplines = { path = "../crates/predefined-disciplines" }
-ralph-backend = { workspace = true }
-ralph-contracts = { workspace = true }
-ralph-errors = { workspace = true }
+prompt-builder = { package = "ai-prompt-builder", path = "../crates/ai-prompt-builder" }
+catalog-disciplines = { path = "../crates/catalog-disciplines" }
+service-runtime = { workspace = true }
+service-project = { workspace = true }
+service-tasks = { workspace = true }
+service-subsystems = { workspace = true }
+service-prompts = { workspace = true }
+service-terminal = { workspace = true }
+core-contracts = { workspace = true }
+core-errors = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-sqlite-db = { path = "../crates/sqlite-db" }
+data-sqlite = { path = "../crates/data-sqlite" }
 tokio = { workspace = true }
 tokio-tungstenite = { version = "0.26", features = ["native-tls"] }
 tracing = "0.1"

@@ -1,4 +1,4 @@
-use ralph_errors::{codes, err_string, RalphResult};
+use core_errors::{codes, err_string, RalphResult};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 

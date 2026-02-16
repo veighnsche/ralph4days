@@ -1,9 +1,9 @@
 use super::{remote_rpc_client_from_transport, remote_rpc_client_required, RemoteTransport};
+use core_errors::{codes, err_string, RalphResult, RalphResultExt};
+use data_sqlite::SqliteDb;
 use prompt_builder::CodebaseSnapshot;
-use ralph_backend::terminal::PTYManager;
-use ralph_backend::xdg::XdgDirs;
-use ralph_errors::{codes, err_string, RalphResult, RalphResultExt};
-use sqlite_db::SqliteDb;
+use service_runtime::xdg::XdgDirs;
+use service_terminal::terminal::PTYManager;
 use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::State;

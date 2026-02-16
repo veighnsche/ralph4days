@@ -1,4 +1,4 @@
-use ralph_errors::{codes, err_string, RalphResult};
+use core_errors::{codes, err_string, RalphResult};
 use std::sync::Arc;
 use tokio::net::TcpListener;
 
@@ -73,10 +73,10 @@ async fn main() -> Result<(), std::io::Error> {
     }
 
     let state = Arc::new(state::AppState::default());
-    ralph_backend::diagnostics::register_sink(Arc::clone(&state.event_sink));
+    service_runtime::diagnostics::register_sink(Arc::clone(&state.event_sink));
 
     // Start API server for MCP signal communication.
-    let port = ralph_backend::api_server::start_api_server(Arc::clone(&state.event_sink))
+    let port = service_tasks::api_server::start_api_server(Arc::clone(&state.event_sink))
         .await
         .map_err(|error| std::io::Error::new(std::io::ErrorKind::Other, error.to_string()))?;
     *state.api_server_port.lock().unwrap() = Some(port);

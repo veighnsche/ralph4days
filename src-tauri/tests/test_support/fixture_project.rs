@@ -1,5 +1,5 @@
-use ralph_errors::{codes, RalphError, RalphResult, RalphResultExt};
-use sqlite_db::SqliteDb;
+use core_errors::{codes, RalphError, RalphResult, RalphResultExt};
+use data_sqlite::SqliteDb;
 use std::fs;
 use std::path::PathBuf;
 
@@ -35,7 +35,7 @@ pub(crate) fn initialize_project_for_fixture(
     path: PathBuf,
     project_title: String,
     use_undetect: bool,
-    clock: Option<Box<dyn sqlite_db::Clock>>,
+    clock: Option<Box<dyn data_sqlite::Clock>>,
 ) -> RalphResult<()> {
     if !path.exists() {
         return Err(RalphError::new(
@@ -85,20 +85,20 @@ pub(crate) fn initialize_project_for_fixture(
     let db_path = db_dir.join("ralph.db");
     let db = SqliteDb::open(&db_path, clock)?;
 
-    for d in predefined_disciplines::get_disciplines_for_stack(2) {
+    for d in catalog_disciplines::get_disciplines_for_stack(2) {
         let skills_json = serde_json::to_string(&d.skills)
             .ralph_err(codes::INTERNAL, "Failed to serialize skills")?;
 
-        let image_path =
-            if let Some(bytes) = predefined_disciplines::get_discipline_image(2, &d.name) {
-                let rel = format!("images/disciplines/{}.png", d.name);
-                let abs = ralph_dir.join(&rel);
-                fs::write(&abs, bytes)
-                    .ralph_err(codes::FILESYSTEM, "Failed to write discipline image")?;
-                Some(rel)
-            } else {
-                None
-            };
+        let image_path = if let Some(bytes) = catalog_disciplines::get_discipline_image(2, &d.name)
+        {
+            let rel = format!("images/disciplines/{}.png", d.name);
+            let abs = ralph_dir.join(&rel);
+            fs::write(&abs, bytes)
+                .ralph_err(codes::FILESYSTEM, "Failed to write discipline image")?;
+            Some(rel)
+        } else {
+            None
+        };
 
         let crops_json = if let Some(c) = d.crops.as_ref() {
             Some(serde_json::to_string(c).ralph_err(codes::INTERNAL, "Failed to serialize crops")?)
@@ -108,7 +108,7 @@ pub(crate) fn initialize_project_for_fixture(
         let (agent, model, effort, thinking) = stack_02_launch_defaults(&d.name);
 
         let discipline_name = d.name.clone();
-        db.create_discipline(sqlite_db::DisciplineInput {
+        db.create_discipline(data_sqlite::DisciplineInput {
             name: d.name,
             display_name: d.display_name,
             acronym: d.acronym,

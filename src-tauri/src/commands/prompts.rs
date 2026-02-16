@@ -1,10 +1,10 @@
 use super::executor::{dispatch_args, dispatch_no_args, PlatformArg, PlatformOut};
 use super::state::AppState;
-use ralph_contracts::prompt_builder::{
+use core_contracts::prompt_builder::{
     PromptBuilderConfigData, PromptBuilderConfigDeleteArgs, PromptBuilderConfigGetArgs,
     PromptBuilderConfigSaveArgs, PromptBuilderPreviewArgs, PromptPreview,
 };
-use ralph_errors::RalphResult;
+use core_errors::RalphResult;
 use tauri::State;
 
 #[tauri::command]
@@ -74,8 +74,8 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_backend::prompt_builder_preview::PromptBuilderPreviewDeps;
-            use ralph_errors::{codes, RalphResultExt};
+            use core_errors::{codes, RalphResultExt};
+            use service_prompts::prompt_builder_preview::PromptBuilderPreviewDeps;
 
             let ctx = CommandContext::from_tauri_state(state);
             let project_path = ctx.locked_project_path()?;
@@ -87,7 +87,7 @@ mod local {
                 .ralph_err(codes::INTERNAL, "API server port mutex poisoned")?;
 
             ctx.db(|db| {
-                ralph_backend::prompt_builder_preview::prompt_builder_preview(
+                service_prompts::prompt_builder_preview::prompt_builder_preview(
                     PromptBuilderPreviewDeps {
                         db,
                         project_path: &project_path,
@@ -114,7 +114,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_backend::prompt_builder_configs_service;
+            use service_prompts::prompt_builder_configs_service;
 
             CommandContext::from_tauri_state(state)
                 .db(prompt_builder_configs_service::prompt_builder_config_list)
@@ -134,7 +134,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_backend::prompt_builder_configs_service;
+            use service_prompts::prompt_builder_configs_service;
 
             CommandContext::from_tauri_state(state)
                 .db(|db| prompt_builder_configs_service::prompt_builder_config_get(db, args))
@@ -155,7 +155,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_backend::prompt_builder_configs_service;
+            use service_prompts::prompt_builder_configs_service;
 
             CommandContext::from_tauri_state(state)
                 .db(|db| prompt_builder_configs_service::prompt_builder_config_save(db, args))
@@ -176,7 +176,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_backend::prompt_builder_configs_service;
+            use service_prompts::prompt_builder_configs_service;
 
             CommandContext::from_tauri_state(state)
                 .db(|db| prompt_builder_configs_service::prompt_builder_config_delete(db, args))
@@ -192,7 +192,7 @@ mod local {
 
     #[cfg(mobile)]
     fn unreachable_local<TResult>(command: &str) -> RalphResult<TResult> {
-        use ralph_errors::{codes, ralph_err};
+        use core_errors::{codes, ralph_err};
         ralph_err!(
             codes::INTERNAL,
             "Local execution path reached on mobile for '{}'",

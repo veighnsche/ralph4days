@@ -1,6 +1,6 @@
 use super::helpers::{initialize_project_for_fixture, open_fixture_db};
+use data_sqlite::{SubsystemInput, TaskInput, TaskProvenance, TaskStatus};
 use rusqlite::{params, Connection};
-use sqlite_db::{SubsystemInput, TaskInput, TaskProvenance, TaskStatus};
 use std::fs;
 use std::path::PathBuf;
 
@@ -252,7 +252,7 @@ just dev-mock 05-desktop-templates
         title: "Manual infra cleanup checklist".to_owned(),
         description: Some("Ad-hoc maintenance task not tied to a template.".to_owned()),
         status: Some(TaskStatus::Pending),
-        priority: Some(sqlite_db::Priority::Low),
+        priority: Some(data_sqlite::Priority::Low),
         tags: vec!["maintenance".to_owned()],
         depends_on: vec![],
         acceptance_criteria: Some(vec!["Checklist is complete and logged".to_owned()]),

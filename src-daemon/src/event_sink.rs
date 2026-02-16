@@ -1,7 +1,7 @@
-use ralph_contracts::events::BackendDiagnosticEvent;
-use ralph_contracts::terminal::{PtyClosedEvent, PtyOutputEvent};
-use ralph_contracts::transport::{EventSink, RemoteEventFrame, RemoteWireFrame};
-use ralph_errors::{codes, err_string};
+use core_contracts::events::BackendDiagnosticEvent;
+use core_contracts::terminal::{PtyClosedEvent, PtyOutputEvent};
+use core_contracts::transport::{EventSink, RemoteEventFrame, RemoteWireFrame};
+use core_errors::{codes, err_string};
 use tokio::sync::broadcast;
 
 #[derive(Clone)]

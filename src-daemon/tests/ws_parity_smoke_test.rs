@@ -1,5 +1,5 @@
 use futures_util::{SinkExt, StreamExt};
-use ralph_contracts::transport::RemoteWireFrame;
+use core_contracts::transport::RemoteWireFrame;
 use std::path::Path;
 use std::process::Stdio;
 use tempfile::TempDir;
@@ -279,8 +279,8 @@ async fn v1_must_rpc_subset_roundtrips_over_ws() {
 
     // Seed one subsystem + task via direct DB write (setup only; not part of MUST RPC subset).
     let db_path = project_path.join(".ralph").join("db").join("ralph.db");
-    let db = sqlite_db::SqliteDb::open(&db_path, None).expect("open db");
-    db.create_subsystem(sqlite_db::SubsystemInput {
+    let db = data_sqlite::SqliteDb::open(&db_path, None).expect("open db");
+    db.create_subsystem(data_sqlite::SubsystemInput {
         name: "demo".to_owned(),
         display_name: "Demo".to_owned(),
         acronym: "DEMO".to_owned(),
@@ -288,7 +288,7 @@ async fn v1_must_rpc_subset_roundtrips_over_ws() {
     })
     .expect("create subsystem");
     let task_id = db
-        .create_task(sqlite_db::TaskInput {
+        .create_task(data_sqlite::TaskInput {
             subsystem: "demo".to_owned(),
             discipline: "implementation".to_owned(),
             title: "Seed task".to_owned(),

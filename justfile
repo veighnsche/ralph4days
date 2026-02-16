@@ -7,7 +7,7 @@ mock_dir := env_var_or_default('RALPH_MOCK_DIR', '/tmp/ralph4days-mock')
 
 # Generate a discipline portrait: just gen-image 02 00 [--test|--half] [--ratio W H|--ratio-portrait] [--mp N]
 gen-image STACK DISCIPLINE *FLAGS:
-    cargo run -p predefined-disciplines --bin generate-discipline-image -- {{STACK}} {{DISCIPLINE}} {{FLAGS}}
+    cargo run -p catalog-disciplines --bin generate-discipline-image -- {{STACK}} {{DISCIPLINE}} {{FLAGS}}
 
 # Default recipe: show available commands
 default:
@@ -91,7 +91,7 @@ check-mobile TARGET="aarch64-linux-android":
 
     cargo check --manifest-path src-tauri/Cargo.toml --target "{{TARGET}}" --lib
 
-    forbidden="$(cargo tree --manifest-path src-tauri/Cargo.toml --target "{{TARGET}}" -e normal | rg 'sqlite-db|prompt-builder|ralph-backend|portable-pty|axum' || true)"
+    forbidden="$(cargo tree --manifest-path src-tauri/Cargo.toml --target "{{TARGET}}" -e normal | rg 'data-sqlite|ai-prompt-builder|service(-|$)|portable-pty|axum' || true)"
     if [ -n "${forbidden}" ]; then
         echo "❌ Forbidden desktop backend crates detected in mobile dependency graph:"
         echo "${forbidden}"
@@ -136,7 +136,7 @@ verify-swap: verify-contract
 
 # Minimal test surface that catches IPC/type/contract drift without running the full test suite.
 contract-tests:
-    cargo test -p ralph-contracts
+    cargo test -p core-contracts
     cargo test --manifest-path src-tauri/Cargo.toml --test invoke_command_list_contract_test
 
 # Slower gate (adds full unit tests)
@@ -150,7 +150,7 @@ test: test-rust test-frontend
 # Run Rust tests
 test-rust:
     cargo test --manifest-path src-tauri/Cargo.toml
-    cargo test -p ralph-contracts
+    cargo test -p core-contracts
 
 # Run backend terminal-bridge test suite only
 test-terminal-bridge-backend:

@@ -14,9 +14,9 @@ fn init_tracing() {
     let filter = EnvFilter::try_from_default_env()
         .or_else(|_| {
             EnvFilter::try_new(if cfg!(debug_assertions) {
-                "ralph4days=debug,sqlite_db=debug,prompt_builder=debug"
+                "ralph4days=debug,data_sqlite=debug,prompt_builder=debug"
             } else {
-                "ralph4days=info,sqlite_db=info,prompt_builder=info"
+                "ralph4days=info,data_sqlite=info,prompt_builder=info"
             })
         })
         .unwrap();
@@ -27,6 +27,23 @@ fn init_tracing() {
         .init();
 }
 
+#[cfg(not(mobile))]
+fn parse_terminal_agent(
+    agent: Option<&str>,
+) -> Option<core_contracts::terminal_bridge::TerminalAgent> {
+    let raw = agent?;
+    let normalized = raw.trim().to_ascii_lowercase();
+    if normalized.is_empty() {
+        return None;
+    }
+    match normalized.as_str() {
+        "codex" => Some(core_contracts::terminal_bridge::TerminalAgent::Codex),
+        "claude" | "claude-code" => Some(core_contracts::terminal_bridge::TerminalAgent::Claude),
+        "shell" => Some(core_contracts::terminal_bridge::TerminalAgent::Shell),
+        _ => panic!("Unknown terminal agent '{raw}'"),
+    }
+}
+
 pub fn list_provider_models(agent: Option<&str>) -> Vec<String> {
     #[cfg(mobile)]
     {
@@ -35,7 +52,11 @@ pub fn list_provider_models(agent: Option<&str>) -> Vec<String> {
     }
 
     #[cfg(not(mobile))]
-    ralph_backend::terminal::providers::list_models_for_agent(agent)
+    {
+        let parsed = parse_terminal_agent(agent);
+        service_terminal::terminal::providers::list_models_for_agent(parsed)
+            .unwrap_or_else(|error| panic!("Failed to list provider models: {error}"))
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -53,7 +74,9 @@ pub fn list_provider_model_entries(agent: Option<&str>) -> Vec<ProviderModelEntr
 
     #[cfg(not(mobile))]
     {
-        ralph_backend::terminal::providers::list_model_entries_for_agent(agent)
+        let parsed = parse_terminal_agent(agent);
+        service_terminal::terminal::providers::list_model_entries_for_agent(parsed)
+            .unwrap_or_else(|error| panic!("Failed to list provider model entries: {error}"))
             .into_iter()
             .map(|entry| ProviderModelEntry {
                 name: entry.name,
@@ -105,16 +128,16 @@ pub fn run() {
             #[cfg(not(mobile))]
             {
                 let app_handle = app.handle().clone();
-                let sink: std::sync::Arc<dyn ralph_contracts::transport::EventSink> =
+                let sink: std::sync::Arc<dyn core_contracts::transport::EventSink> =
                     std::sync::Arc::new(event_sink::TauriEventSink::new(app_handle));
-                ralph_backend::diagnostics::register_sink(std::sync::Arc::clone(&sink));
+                service_runtime::diagnostics::register_sink(std::sync::Arc::clone(&sink));
 
                 // Start API server for MCP signal communication.
                 let state: tauri::State<AppState> = app.state();
                 let mut skip_splash = false;
 
                 tauri::async_runtime::block_on(async {
-                    let port = ralph_backend::api_server::start_api_server(sink)
+                    let port = service_tasks::api_server::start_api_server(sink)
                         .await
                         .unwrap_or_else(|error| panic!("Failed to start API server: {error}"));
                     *state.api_server_port.lock().unwrap() = Some(port);

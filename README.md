@@ -69,10 +69,10 @@ Ralph4days is in active development. The app already provides a strong interacti
 
 ### Data + Core Crates
 
-- `crates/sqlite-db`: normalized schema + typed DB API
-- `crates/prompt-builder`: recipe/section prompt assembly + MCP config generation
-- `crates/predefined-disciplines`: stack presets + discipline assets/metadata
-- `crates/ralph-external`: external integrations (including embeddings)
+- `crates/data-sqlite`: normalized schema + typed DB API
+- `crates/ai-prompt-builder`: recipe/section prompt assembly + MCP config generation
+- `crates/catalog-disciplines`: stack presets + discipline assets/metadata
+- `crates/ai-external`: external integrations (including embeddings)
 
 ## Prerequisites
 
@@ -122,7 +122,7 @@ just release-linux
 ```text
 src/                 React frontend
 src-tauri/           Tauri app + Rust backend commands
-crates/              Workspace crates (sqlite-db, prompt-builder, etc.)
+crates/              Workspace crates (data-sqlite, ai-prompt-builder, etc.)
 fixtures/            Read-only fixture projects
 .docs/               Internal docs and code-truth inventories
 mock data            Disposable fixture copies in /tmp/ralph4days-mock (or $RALPH_MOCK_DIR)

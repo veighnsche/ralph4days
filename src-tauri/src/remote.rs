@@ -1,7 +1,7 @@
+use core_contracts::protocol::{ProtocolVersionInfo, PROTOCOL_VERSION};
+use core_contracts::transport::{BoxFuture, EventSink, RemoteWireFrame, RpcClient};
+use core_errors::{codes, err_string, RalphError, RalphResult};
 use futures_util::{SinkExt, StreamExt};
-use ralph_contracts::protocol::{ProtocolVersionInfo, PROTOCOL_VERSION};
-use ralph_contracts::transport::{BoxFuture, EventSink, RemoteWireFrame, RpcClient};
-use ralph_errors::{codes, err_string, RalphError, RalphResult};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
@@ -348,8 +348,8 @@ impl Drop for RemoteWireFrameConnection {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use core_contracts::terminal::{PtyOutputEvent, TERMINAL_OUTPUT_EVENT};
     use futures_util::{SinkExt, StreamExt};
-    use ralph_contracts::terminal::{PtyOutputEvent, TERMINAL_OUTPUT_EVENT};
     use std::net::SocketAddr;
     use std::sync::Mutex as StdMutex;
     use tokio::net::TcpListener;
@@ -362,7 +362,7 @@ mod tests {
     impl EventSink for RecordingSink {
         fn emit_backend_diagnostic(
             &self,
-            _payload: ralph_contracts::events::BackendDiagnosticEvent,
+            _payload: core_contracts::events::BackendDiagnosticEvent,
         ) -> Result<(), String> {
             Ok(())
         }
@@ -374,7 +374,7 @@ mod tests {
 
         fn emit_terminal_closed(
             &self,
-            _payload: ralph_contracts::terminal::PtyClosedEvent,
+            _payload: core_contracts::terminal::PtyClosedEvent,
         ) -> Result<(), String> {
             Ok(())
         }
@@ -409,7 +409,7 @@ mod tests {
 
             if send_event {
                 let ev = RemoteWireFrame::Event {
-                    frame: ralph_contracts::transport::RemoteEventFrame::TerminalOutput(
+                    frame: core_contracts::transport::RemoteEventFrame::TerminalOutput(
                         PtyOutputEvent {
                             session_id: "s1".to_owned(),
                             seq: 1,

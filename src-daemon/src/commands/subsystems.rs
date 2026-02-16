@@ -1,14 +1,14 @@
-use ralph_backend::disciplines_service;
-use ralph_backend::subsystems_service;
-use ralph_contracts::disciplines::{
+use service_subsystems::disciplines_service;
+use service_subsystems::subsystems_service;
+use core_contracts::disciplines::{
     DisciplinesCreateArgs, DisciplinesCroppedImageGetArgs, DisciplinesDeleteArgs,
     DisciplinesImageDataGetArgs, DisciplinesUpdateArgs,
 };
-use ralph_contracts::subsystems::{
+use core_contracts::subsystems::{
     SubsystemsCommentAddArgs, SubsystemsCommentDeleteArgs, SubsystemsCommentUpdateArgs,
     SubsystemsCreateArgs, SubsystemsDeleteArgs, SubsystemsUpdateArgs,
 };
-use ralph_errors::RalphResult;
+use core_errors::RalphResult;
 
 use crate::rpc_codec::{decode_args, encode_result, require_null_payload};
 use crate::state::AppState;
@@ -39,7 +39,7 @@ pub fn subsystems_list(
 ) -> RalphResult<serde_json::Value> {
     require_null_payload("subsystems_list", payload)?;
     let subsystems =
-        ralph_backend::session::with_db(&state.db, subsystems_service::subsystems_list)?;
+        service_project::session::with_db(&state.db, subsystems_service::subsystems_list)?;
     encode_result("subsystems_list", subsystems)
 }
 
@@ -48,7 +48,7 @@ pub fn subsystems_create(
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
     let args: SubsystemsCreateArgs = decode_args("subsystems_create", payload)?;
-    let created = ralph_backend::session::with_db(&state.db, |db| {
+    let created = service_project::session::with_db(&state.db, |db| {
         subsystems_service::subsystems_create(db, args)
     })?;
     encode_result("subsystems_create", created)
@@ -59,7 +59,7 @@ pub fn subsystems_update(
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
     let args: SubsystemsUpdateArgs = decode_args("subsystems_update", payload)?;
-    let updated = ralph_backend::session::with_db(&state.db, |db| {
+    let updated = service_project::session::with_db(&state.db, |db| {
         subsystems_service::subsystems_update(db, args)
     })?;
     encode_result("subsystems_update", updated)
@@ -70,7 +70,7 @@ pub fn subsystems_delete(
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
     let args: SubsystemsDeleteArgs = decode_args("subsystems_delete", payload)?;
-    ralph_backend::session::with_db(&state.db, |db| {
+    service_project::session::with_db(&state.db, |db| {
         subsystems_service::subsystems_delete(db, args)
     })?;
     Ok(serde_json::Value::Null)
@@ -81,9 +81,9 @@ pub async fn subsystems_comment_add(
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
     let args: SubsystemsCommentAddArgs = decode_args("subsystems_comment_add", payload)?;
-    let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
+    let project_path = service_project::session::locked_project_path(&state.locked_project)?;
 
-    let (subsystem, embed_work) = ralph_backend::session::with_db(&state.db, |db| {
+    let (subsystem, embed_work) = service_project::session::with_db(&state.db, |db| {
         subsystems_service::subsystems_comment_add_prepare(db, args)
     })?;
     subsystems_service::subsystems_comment_apply_embedding(&project_path, embed_work).await?;
@@ -96,9 +96,9 @@ pub async fn subsystems_comment_update(
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
     let args: SubsystemsCommentUpdateArgs = decode_args("subsystems_comment_update", payload)?;
-    let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
+    let project_path = service_project::session::locked_project_path(&state.locked_project)?;
 
-    let (subsystem, embed_work) = ralph_backend::session::with_db(&state.db, |db| {
+    let (subsystem, embed_work) = service_project::session::with_db(&state.db, |db| {
         subsystems_service::subsystems_comment_update_prepare(db, args)
     })?;
 
@@ -114,7 +114,7 @@ pub fn subsystems_comment_delete(
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
     let args: SubsystemsCommentDeleteArgs = decode_args("subsystems_comment_delete", payload)?;
-    let updated = ralph_backend::session::with_db(&state.db, |db| {
+    let updated = service_project::session::with_db(&state.db, |db| {
         subsystems_service::subsystems_comment_delete(db, args)
     })?;
     encode_result("subsystems_comment_delete", updated)
@@ -126,7 +126,7 @@ pub fn disciplines_list(
 ) -> RalphResult<serde_json::Value> {
     require_null_payload("disciplines_list", payload)?;
     let disciplines =
-        ralph_backend::session::with_db(&state.db, disciplines_service::disciplines_list)?;
+        service_project::session::with_db(&state.db, disciplines_service::disciplines_list)?;
     encode_result("disciplines_list", disciplines)
 }
 
@@ -135,7 +135,7 @@ pub fn disciplines_create(
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
     let args: DisciplinesCreateArgs = decode_args("disciplines_create", payload)?;
-    let created = ralph_backend::session::with_db(&state.db, |db| {
+    let created = service_project::session::with_db(&state.db, |db| {
         disciplines_service::disciplines_create(db, args)
     })?;
     encode_result("disciplines_create", created)
@@ -146,7 +146,7 @@ pub fn disciplines_update(
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
     let args: DisciplinesUpdateArgs = decode_args("disciplines_update", payload)?;
-    let updated = ralph_backend::session::with_db(&state.db, |db| {
+    let updated = service_project::session::with_db(&state.db, |db| {
         disciplines_service::disciplines_update(db, args)
     })?;
     encode_result("disciplines_update", updated)
@@ -157,7 +157,7 @@ pub fn disciplines_delete(
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
     let args: DisciplinesDeleteArgs = decode_args("disciplines_delete", payload)?;
-    let deleted = ralph_backend::session::with_db(&state.db, |db| {
+    let deleted = service_project::session::with_db(&state.db, |db| {
         disciplines_service::disciplines_delete(db, args)
     })?;
     encode_result("disciplines_delete", deleted)
@@ -165,7 +165,7 @@ pub fn disciplines_delete(
 
 pub fn stacks_metadata_list(payload: serde_json::Value) -> RalphResult<serde_json::Value> {
     require_null_payload("stacks_metadata_list", payload)?;
-    let metadata: Vec<StackMetadataData> = predefined_disciplines::get_all_stack_metadata()
+    let metadata: Vec<StackMetadataData> = catalog_disciplines::get_all_stack_metadata()
         .iter()
         .map(|m| StackMetadataData {
             stack_id: m.stack_id,
@@ -191,8 +191,8 @@ pub fn disciplines_image_data_get(
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
     let args: DisciplinesImageDataGetArgs = decode_args("disciplines_image_data_get", payload)?;
-    let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
-    let result = ralph_backend::session::with_db(&state.db, |db| {
+    let project_path = service_project::session::locked_project_path(&state.locked_project)?;
+    let result = service_project::session::with_db(&state.db, |db| {
         disciplines_service::disciplines_image_data_get(&project_path, db, args)
     })?;
     encode_result("disciplines_image_data_get", result)
@@ -204,8 +204,8 @@ pub fn disciplines_cropped_image_get(
 ) -> RalphResult<serde_json::Value> {
     let args: DisciplinesCroppedImageGetArgs =
         decode_args("disciplines_cropped_image_get", payload)?;
-    let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
-    let result = ralph_backend::session::with_db(&state.db, |db| {
+    let project_path = service_project::session::locked_project_path(&state.locked_project)?;
+    let result = service_project::session::with_db(&state.db, |db| {
         disciplines_service::disciplines_cropped_image_get(&project_path, db, args)
     })?;
     encode_result("disciplines_cropped_image_get", result)

@@ -2,15 +2,15 @@ use super::executor::{
     dispatch_args, dispatch_args_async, dispatch_no_args, PlatformArg, PlatformOut,
 };
 use super::state::AppState;
-use ralph_contracts::disciplines::{
+use core_contracts::disciplines::{
     DisciplineConfig, DisciplinesCreateArgs, DisciplinesCroppedImageGetArgs, DisciplinesDeleteArgs,
     DisciplinesImageDataGetArgs, DisciplinesUpdateArgs,
 };
-use ralph_contracts::subsystems::{
+use core_contracts::subsystems::{
     SubsystemData, SubsystemsCommentAddArgs, SubsystemsCommentDeleteArgs,
     SubsystemsCommentUpdateArgs, SubsystemsCreateArgs, SubsystemsDeleteArgs, SubsystemsUpdateArgs,
 };
-use ralph_errors::RalphResult;
+use core_errors::RalphResult;
 use tauri::State;
 
 #[tauri::command]
@@ -132,7 +132,7 @@ pub async fn disciplines_delete(
     .await
 }
 
-#[cfg_attr(not(mobile), ralph_macros::ipc_type)]
+#[cfg_attr(not(mobile), core_macros::ipc_type)]
 pub struct VisualIdentityData {
     pub style: String,
     pub theme: String,
@@ -140,7 +140,7 @@ pub struct VisualIdentityData {
     pub references: String,
 }
 
-#[cfg_attr(not(mobile), ralph_macros::ipc_type)]
+#[cfg_attr(not(mobile), core_macros::ipc_type)]
 pub struct StackMetadataData {
     pub stack_id: u8,
     pub name: String,
@@ -159,7 +159,7 @@ pub async fn stacks_metadata_list(
     dispatch_no_args(state.inner(), "stacks_metadata_list", || {
         #[cfg(not(mobile))]
         {
-            Ok(predefined_disciplines::get_all_stack_metadata()
+            Ok(catalog_disciplines::get_all_stack_metadata()
                 .iter()
                 .map(|m| StackMetadataData {
                     stack_id: m.stack_id,
@@ -221,7 +221,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_backend::disciplines_service;
+            use service_subsystems::disciplines_service;
 
             CommandContext::from_tauri_state(state).db(disciplines_service::disciplines_list)
         }
@@ -239,7 +239,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_backend::subsystems_service;
+            use service_subsystems::subsystems_service;
 
             CommandContext::from_tauri_state(state).db(subsystems_service::subsystems_list)
         }
@@ -258,7 +258,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_backend::subsystems_service;
+            use service_subsystems::subsystems_service;
 
             CommandContext::from_tauri_state(state)
                 .db(|db| subsystems_service::subsystems_create(db, args))
@@ -279,7 +279,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_backend::subsystems_service;
+            use service_subsystems::subsystems_service;
 
             CommandContext::from_tauri_state(state)
                 .db(|db| subsystems_service::subsystems_update(db, args))
@@ -300,7 +300,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_backend::subsystems_service;
+            use service_subsystems::subsystems_service;
 
             let ctx = CommandContext::from_tauri_state(state);
             let project_path = ctx.locked_project_path()?;
@@ -328,7 +328,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_backend::subsystems_service;
+            use service_subsystems::subsystems_service;
 
             let ctx = CommandContext::from_tauri_state(state);
             let project_path = ctx.locked_project_path()?;
@@ -358,7 +358,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_backend::subsystems_service;
+            use service_subsystems::subsystems_service;
 
             CommandContext::from_tauri_state(state)
                 .db(|db| subsystems_service::subsystems_comment_delete(db, args))
@@ -379,7 +379,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_backend::disciplines_service;
+            use service_subsystems::disciplines_service;
 
             CommandContext::from_tauri_state(state)
                 .db(|db| disciplines_service::disciplines_create(db, args))
@@ -400,7 +400,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_backend::disciplines_service;
+            use service_subsystems::disciplines_service;
 
             CommandContext::from_tauri_state(state)
                 .db(|db| disciplines_service::disciplines_update(db, args))
@@ -421,7 +421,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_backend::subsystems_service;
+            use service_subsystems::subsystems_service;
 
             CommandContext::from_tauri_state(state)
                 .db(|db| subsystems_service::subsystems_delete(db, args))
@@ -442,7 +442,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_backend::disciplines_service;
+            use service_subsystems::disciplines_service;
 
             CommandContext::from_tauri_state(state)
                 .db(|db| disciplines_service::disciplines_delete(db, args))
@@ -463,7 +463,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_backend::disciplines_service;
+            use service_subsystems::disciplines_service;
 
             let ctx = CommandContext::from_tauri_state(state);
             let project_path = ctx.locked_project_path()?;
@@ -485,7 +485,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_backend::disciplines_service;
+            use service_subsystems::disciplines_service;
 
             let ctx = CommandContext::from_tauri_state(state);
             let project_path = ctx.locked_project_path()?;
@@ -502,7 +502,7 @@ mod local {
 
     #[cfg(mobile)]
     pub(super) fn unreachable_local<TResult>(command: &str) -> RalphResult<TResult> {
-        use ralph_errors::{codes, ralph_err};
+        use core_errors::{codes, ralph_err};
         ralph_err!(
             codes::INTERNAL,
             "Local execution path reached on mobile for '{}'",

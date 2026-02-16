@@ -1,10 +1,10 @@
-use ralph_backend::project_scan;
-use ralph_contracts::project::{
+use service_project::project_scan;
+use core_contracts::project::{
     ProjectInfo, ProjectInitializeArgs, ProjectScanArgs, ProjectValidatePathArgs, RalphProject,
     RecentProject,
 };
-use ralph_contracts::session::ProjectLockSetArgs;
-use ralph_errors::{codes, ralph_err, RalphResult};
+use core_contracts::session::ProjectLockSetArgs;
+use core_errors::{codes, ralph_err, RalphResult};
 use std::path::PathBuf;
 
 use crate::rpc_codec::{decode_args, encode_result, require_null_payload};
@@ -13,13 +13,13 @@ use crate::state::AppState;
 pub fn project_validate_path(payload: serde_json::Value) -> RalphResult<serde_json::Value> {
     let args: ProjectValidatePathArgs = decode_args("project_validate_path", payload)?;
     let path = PathBuf::from(args.path);
-    ralph_backend::project::validate_project_path(&path)?;
+    service_project::project::validate_project_path(&path)?;
     Ok(serde_json::Value::Null)
 }
 
 pub fn project_initialize(payload: serde_json::Value) -> RalphResult<serde_json::Value> {
     let args: ProjectInitializeArgs = decode_args("project_initialize", payload)?;
-    ralph_backend::project::project_initialize(args)?;
+    service_project::project::project_initialize(args)?;
     Ok(serde_json::Value::Null)
 }
 
@@ -29,7 +29,7 @@ pub fn project_lock_set(
 ) -> RalphResult<serde_json::Value> {
     let args: ProjectLockSetArgs = decode_args("project_lock_set", payload)?;
     let data_dir = state.xdg.ensure_data()?;
-    let _canonical = ralph_backend::session::project_lock_set_and_record_recent(
+    let _canonical = service_project::session::project_lock_set_and_record_recent(
         &state.locked_project,
         &state.db,
         data_dir,
@@ -43,7 +43,7 @@ pub fn project_lock_get(
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
     require_null_payload("project_lock_get", payload)?;
-    let locked = ralph_backend::session::project_lock_get(&state.locked_project)?;
+    let locked = service_project::session::project_lock_get(&state.locked_project)?;
     encode_result("project_lock_get", locked)
 }
 
@@ -69,14 +69,14 @@ pub fn project_info_get(
 ) -> RalphResult<serde_json::Value> {
     require_null_payload("project_info_get", payload)?;
     let info: ProjectInfo =
-        ralph_backend::session::with_db(&state.db, project_scan::project_info_get)?;
+        service_project::session::with_db(&state.db, project_scan::project_info_get)?;
     encode_result("project_info_get", info)
 }
 
 pub fn system_home_dir_get(payload: serde_json::Value) -> RalphResult<serde_json::Value> {
     require_null_payload("system_home_dir_get", payload)?;
     let path = dirs::home_dir().ok_or_else(|| {
-        ralph_errors::err_string(codes::FILESYSTEM, "Failed to get home directory")
+        core_errors::err_string(codes::FILESYSTEM, "Failed to get home directory")
     })?;
     encode_result("system_home_dir_get", path.to_string_lossy().to_string())
 }

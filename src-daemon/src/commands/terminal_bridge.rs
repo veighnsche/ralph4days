@@ -1,5 +1,5 @@
-use ralph_backend::terminal_bridge;
-use ralph_contracts::terminal_bridge::{
+use service_terminal::terminal_bridge;
+use core_contracts::terminal_bridge::{
     TerminalBridgeEmitSystemMessageArgs, TerminalBridgeListModelFormTreeResult,
     TerminalBridgeReplayOutputArgs, TerminalBridgeReplayOutputResult, TerminalBridgeResizeArgs,
     TerminalBridgeResolveTaskLaunchArgs, TerminalBridgeResolvedLaunchConfig,
@@ -8,7 +8,7 @@ use ralph_contracts::terminal_bridge::{
     TerminalBridgeStartSessionArgs, TerminalBridgeStartTaskSessionArgs,
     TerminalBridgeTerminateArgs,
 };
-use ralph_errors::{codes, RalphResult, RalphResultExt};
+use core_errors::{codes, RalphResult, RalphResultExt};
 use std::sync::Arc;
 
 use crate::rpc_codec::{decode_args, encode_result, require_null_payload};
@@ -27,7 +27,7 @@ pub fn terminal_start_session(
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
     let args: TerminalBridgeStartSessionArgs = decode_args("terminal_start_session", payload)?;
-    let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
+    let project_path = service_project::session::locked_project_path(&state.locked_project)?;
 
     let ctx = terminal_bridge::TerminalBridgeCtx {
         pty_manager: &state.pty_manager,
@@ -48,7 +48,7 @@ pub fn terminal_start_task_session(
 ) -> RalphResult<serde_json::Value> {
     let args: TerminalBridgeStartTaskSessionArgs =
         decode_args("terminal_start_task_session", payload)?;
-    let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
+    let project_path = service_project::session::locked_project_path(&state.locked_project)?;
 
     let ctx = terminal_bridge::TerminalBridgeCtx {
         pty_manager: &state.pty_manager,
@@ -70,8 +70,8 @@ pub fn terminal_resolve_task_launch_config(
     let args: TerminalBridgeResolveTaskLaunchArgs =
         decode_args("terminal_resolve_task_launch_config", payload)?;
     let resolved: TerminalBridgeResolvedLaunchConfig =
-        ralph_backend::session::with_db(&state.db, |db| {
-            ralph_backend::terminal::resolve_task_launch_config(db, args.task_id, args.defaults)
+        service_project::session::with_db(&state.db, |db| {
+            service_terminal::terminal::resolve_task_launch_config(db, args.task_id, args.defaults)
         })?;
     encode_result("terminal_resolve_task_launch_config", resolved)
 }
@@ -82,7 +82,7 @@ pub fn terminal_start_human_session(
 ) -> RalphResult<serde_json::Value> {
     let args: TerminalBridgeStartHumanSessionArgs =
         decode_args("terminal_start_human_session", payload)?;
-    let project_path = ralph_backend::session::locked_project_path(&state.locked_project)?;
+    let project_path = service_project::session::locked_project_path(&state.locked_project)?;
 
     let ctx = terminal_bridge::TerminalBridgeCtx {
         pty_manager: &state.pty_manager,
@@ -100,8 +100,7 @@ pub fn terminal_start_human_session(
 
 pub fn terminal_list_model_form_tree(payload: serde_json::Value) -> RalphResult<serde_json::Value> {
     require_null_payload("terminal_list_model_form_tree", payload)?;
-    let tree: TerminalBridgeListModelFormTreeResult =
-        terminal_bridge::terminal_list_model_form_tree();
+    let tree: TerminalBridgeListModelFormTreeResult = terminal_bridge::terminal_list_model_form_tree()?;
     encode_result("terminal_list_model_form_tree", tree)
 }
 

@@ -1,11 +1,11 @@
 use super::executor::{dispatch_args, dispatch_no_args, PlatformArg, PlatformOut};
 use super::state::AppState;
-use ralph_contracts::project::{
+use core_contracts::project::{
     ProjectInfo, ProjectInitializeArgs, ProjectScanArgs, ProjectValidatePathArgs, RalphProject,
     RecentProject,
 };
-use ralph_contracts::session::ProjectLockSetArgs;
-use ralph_errors::RalphResult;
+use core_contracts::session::ProjectLockSetArgs;
+use core_errors::RalphResult;
 #[cfg(not(mobile))]
 use tauri::Manager;
 use tauri::State;
@@ -37,7 +37,7 @@ pub async fn project_initialize(
 #[cfg(not(mobile))]
 pub fn project_lock_validated(state: &AppState, path: String) -> RalphResult<()> {
     let data_dir = state.xdg.ensure_data()?;
-    let _canonical_path = ralph_backend::session::project_lock_set_and_record_recent(
+    let _canonical_path = service_project::session::project_lock_set_and_record_recent(
         &state.locked_project,
         &state.db,
         data_dir,
@@ -149,8 +149,8 @@ pub fn window_splash_close(app: tauri::AppHandle) {
 #[cfg(mobile)]
 pub fn window_splash_close(app: tauri::AppHandle) -> RalphResult<()> {
     let _ = app;
-    ralph_errors::ralph_err!(
-        ralph_errors::codes::INTERNAL,
+    core_errors::ralph_err!(
+        core_errors::codes::INTERNAL,
         "window_splash_close is unsupported on mobile"
     )
 }
@@ -158,7 +158,7 @@ pub fn window_splash_close(app: tauri::AppHandle) -> RalphResult<()> {
 #[cfg(not(mobile))]
 #[tauri::command]
 pub fn window_open_new() -> RalphResult<()> {
-    use ralph_errors::{codes, RalphResultExt};
+    use core_errors::{codes, RalphResultExt};
 
     let exe = std::env::current_exe()
         .ralph_err(codes::INTERNAL, "Failed to get current executable path")?;
@@ -171,8 +171,8 @@ pub fn window_open_new() -> RalphResult<()> {
 #[cfg(mobile)]
 #[tauri::command]
 pub fn window_open_new() -> RalphResult<()> {
-    ralph_errors::ralph_err!(
-        ralph_errors::codes::INTERNAL,
+    core_errors::ralph_err!(
+        core_errors::codes::INTERNAL,
         "window_open_new is unsupported on mobile"
     )
 }
@@ -188,7 +188,7 @@ mod local {
         {
             let _ = state;
             let path = std::path::PathBuf::from(&args.path);
-            ralph_backend::project::validate_project_path(&path)
+            service_project::project::validate_project_path(&path)
         }
 
         #[cfg(mobile)]
@@ -206,7 +206,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             let _ = state;
-            ralph_backend::project::project_initialize(args)
+            service_project::project::project_initialize(args)
         }
 
         #[cfg(mobile)]
@@ -239,7 +239,7 @@ mod local {
     ) -> RalphResult<PlatformOut<Option<String>>> {
         #[cfg(not(mobile))]
         {
-            ralph_backend::session::project_lock_get(&state.locked_project)
+            service_project::session::project_lock_get(&state.locked_project)
         }
 
         #[cfg(mobile)]
@@ -254,7 +254,7 @@ mod local {
     ) -> RalphResult<PlatformOut<Vec<RecentProject>>> {
         #[cfg(not(mobile))]
         {
-            use ralph_backend::project_scan;
+            use service_project::project_scan;
 
             let data_dir = state.inner().xdg.ensure_data()?;
             project_scan::recents_load(data_dir)
@@ -270,7 +270,7 @@ mod local {
     pub(super) fn execution_start() -> RalphResult<()> {
         #[cfg(not(mobile))]
         {
-            ralph_errors::ralph_err!(ralph_errors::codes::LOOP_ENGINE, "Not implemented")
+            core_errors::ralph_err!(core_errors::codes::LOOP_ENGINE, "Not implemented")
         }
 
         #[cfg(mobile)]
@@ -282,7 +282,7 @@ mod local {
     pub(super) fn execution_pause() -> RalphResult<()> {
         #[cfg(not(mobile))]
         {
-            ralph_errors::ralph_err!(ralph_errors::codes::LOOP_ENGINE, "Not implemented")
+            core_errors::ralph_err!(core_errors::codes::LOOP_ENGINE, "Not implemented")
         }
 
         #[cfg(mobile)]
@@ -294,7 +294,7 @@ mod local {
     pub(super) fn execution_resume() -> RalphResult<()> {
         #[cfg(not(mobile))]
         {
-            ralph_errors::ralph_err!(ralph_errors::codes::LOOP_ENGINE, "Not implemented")
+            core_errors::ralph_err!(core_errors::codes::LOOP_ENGINE, "Not implemented")
         }
 
         #[cfg(mobile)]
@@ -306,7 +306,7 @@ mod local {
     pub(super) fn execution_stop() -> RalphResult<()> {
         #[cfg(not(mobile))]
         {
-            ralph_errors::ralph_err!(ralph_errors::codes::LOOP_ENGINE, "Not implemented")
+            core_errors::ralph_err!(core_errors::codes::LOOP_ENGINE, "Not implemented")
         }
 
         #[cfg(mobile)]
@@ -318,7 +318,7 @@ mod local {
     pub(super) fn execution_state_get() -> RalphResult<()> {
         #[cfg(not(mobile))]
         {
-            ralph_errors::ralph_err!(ralph_errors::codes::LOOP_ENGINE, "Not implemented")
+            core_errors::ralph_err!(core_errors::codes::LOOP_ENGINE, "Not implemented")
         }
 
         #[cfg(mobile)]
@@ -332,7 +332,7 @@ mod local {
     ) -> RalphResult<PlatformOut<Vec<RalphProject>>> {
         #[cfg(not(mobile))]
         {
-            ralph_backend::project_scan::project_scan(args)
+            service_project::project_scan::project_scan(args)
         }
 
         #[cfg(mobile)]
@@ -346,8 +346,8 @@ mod local {
         #[cfg(not(mobile))]
         {
             let path = dirs::home_dir().ok_or_else(|| {
-                ralph_errors::err_string(
-                    ralph_errors::codes::FILESYSTEM,
+                core_errors::err_string(
+                    core_errors::codes::FILESYSTEM,
                     "Failed to get home directory",
                 )
             })?;
@@ -366,7 +366,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_backend::project_scan;
+            use service_project::project_scan;
 
             CommandContext::from_tauri_state(state).db(project_scan::project_info_get)
         }
@@ -380,7 +380,7 @@ mod local {
 
     #[cfg(mobile)]
     fn unreachable_local<TResult>(command: &str) -> RalphResult<TResult> {
-        use ralph_errors::{codes, ralph_err};
+        use core_errors::{codes, ralph_err};
         ralph_err!(
             codes::INTERNAL,
             "Local execution path reached on mobile for '{}'",

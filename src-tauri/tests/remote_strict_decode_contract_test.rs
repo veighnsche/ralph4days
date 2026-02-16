@@ -1,7 +1,7 @@
-use ralph_contracts::agent_sessions::AgentSessionsByIdArgs;
-use ralph_contracts::domain::TaskSignalSummary;
-use ralph_contracts::project::{ProjectInfo, ProjectScanArgs, RalphProject, RecentProject};
-use ralph_contracts::remote::RemoteConnectResult;
+use core_contracts::agent_sessions::AgentSessionsByIdArgs;
+use core_contracts::domain::TaskSignalSummary;
+use core_contracts::project::{ProjectInfo, ProjectScanArgs, RalphProject, RecentProject};
+use core_contracts::remote::RemoteConnectResult;
 use serde::de::DeserializeOwned;
 
 #[test]

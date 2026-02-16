@@ -1,5 +1,5 @@
 use futures_util::{SinkExt, StreamExt};
-use ralph_contracts::transport::RemoteWireFrame;
+use core_contracts::transport::RemoteWireFrame;
 use std::process::Stdio;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::io::{AsyncBufReadExt, BufReader};
@@ -42,7 +42,7 @@ fn unique_tmp_dir(prefix: &str) -> std::path::PathBuf {
 async fn rpc(
     write: &mut (impl SinkExt<Message, Error = tokio_tungstenite::tungstenite::Error> + Unpin),
     read: &mut (impl StreamExt<Item = Result<Message, tokio_tungstenite::tungstenite::Error>> + Unpin),
-    events: &mut Vec<ralph_contracts::transport::RemoteEventFrame>,
+    events: &mut Vec<core_contracts::transport::RemoteEventFrame>,
     id: u64,
     command: &str,
     payload: serde_json::Value,
@@ -87,7 +87,7 @@ async fn emits_backend_diagnostic_and_terminal_events() {
         .await
         .expect("connect ws");
     let (mut write, mut read) = ws.split();
-    let mut events: Vec<ralph_contracts::transport::RemoteEventFrame> = Vec::new();
+    let mut events: Vec<core_contracts::transport::RemoteEventFrame> = Vec::new();
 
     // Trigger an unknown command; ralphd is expected to emit a backend-diagnostic event.
     let _ = rpc(
@@ -103,7 +103,7 @@ async fn emits_backend_diagnostic_and_terminal_events() {
     let mut saw_diag = events.iter().any(|ev| {
         matches!(
             ev,
-            ralph_contracts::transport::RemoteEventFrame::BackendDiagnostic(_)
+            core_contracts::transport::RemoteEventFrame::BackendDiagnostic(_)
         )
     });
     let mut saw_terminal_output = false;
@@ -121,7 +121,7 @@ async fn emits_backend_diagnostic_and_terminal_events() {
             if let RemoteWireFrame::Event { frame } = frame {
                 if matches!(
                     frame,
-                    ralph_contracts::transport::RemoteEventFrame::BackendDiagnostic(_)
+                    core_contracts::transport::RemoteEventFrame::BackendDiagnostic(_)
                 ) {
                     saw_diag = true;
                     break;
@@ -201,15 +201,15 @@ async fn emits_backend_diagnostic_and_terminal_events() {
         let frame: RemoteWireFrame = serde_json::from_str(&text).expect("decode RemoteWireFrame");
         match frame {
             RemoteWireFrame::Event { frame } => match frame {
-                ralph_contracts::transport::RemoteEventFrame::BackendDiagnostic(_) => {
+                core_contracts::transport::RemoteEventFrame::BackendDiagnostic(_) => {
                     saw_diag = true;
                 }
-                ralph_contracts::transport::RemoteEventFrame::TerminalOutput(ev) => {
+                core_contracts::transport::RemoteEventFrame::TerminalOutput(ev) => {
                     if ev.session_id == session_id {
                         saw_terminal_output = true;
                     }
                 }
-                ralph_contracts::transport::RemoteEventFrame::TerminalClosed(ev) => {
+                core_contracts::transport::RemoteEventFrame::TerminalClosed(ev) => {
                     if ev.session_id == session_id {
                         saw_terminal_closed = true;
                     }
@@ -250,7 +250,7 @@ async fn emits_backend_diagnostic_and_terminal_events() {
         };
         let frame: RemoteWireFrame = serde_json::from_str(&text).expect("decode RemoteWireFrame");
         if let RemoteWireFrame::Event { frame } = frame {
-            if let ralph_contracts::transport::RemoteEventFrame::TerminalClosed(ev) = frame {
+            if let core_contracts::transport::RemoteEventFrame::TerminalClosed(ev) = frame {
                 if ev.session_id == session_id {
                     saw_terminal_closed = true;
                     break;

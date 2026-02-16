@@ -2,16 +2,21 @@
 resolver = "2"
 members = [
     "src-tauri",
-    "crates/ralph-contracts",
-    "crates/ralph-backend",
+    "crates/core-contracts",
+    "crates/service-runtime",
+    "crates/service-project",
+    "crates/service-tasks",
+    "crates/service-subsystems",
+    "crates/service-prompts",
+    "crates/service-terminal",
     "src-daemon",
-    "crates/ralph-errors",
-    "crates/ralph-rag",
-    "crates/ralph-external",
-    "crates/sqlite-db",
-    "crates/prompt-builder",
-    "crates/ralph-macros",
-    "crates/predefined-disciplines",
+    "crates/core-errors",
+    "crates/ai-rag",
+    "crates/ai-external",
+    "crates/data-sqlite",
+    "crates/ai-prompt-builder",
+    "crates/core-macros",
+    "crates/catalog-disciplines",
 ]
 
 [workspace.package]
@@ -66,7 +71,12 @@ chrono = "0.4"
 thiserror = "2"
 tokio = { version = "1", features = ["full"] }
 ts-rs = { version = "12", features = ["serde-compat"] }
-ralph-macros = { path = "crates/ralph-macros" }
-ralph-errors = { path = "crates/ralph-errors" }
-ralph-contracts = { path = "crates/ralph-contracts" }
-ralph-backend = { path = "crates/ralph-backend" }
+core-macros = { path = "crates/core-macros" }
+core-errors = { path = "crates/core-errors" }
+core-contracts = { path = "crates/core-contracts" }
+service-runtime = { path = "crates/service-runtime" }
+service-project = { path = "crates/service-project" }
+service-tasks = { path = "crates/service-tasks" }
+service-subsystems = { path = "crates/service-subsystems" }
+service-prompts = { path = "crates/service-prompts" }
+service-terminal = { path = "crates/service-terminal" }

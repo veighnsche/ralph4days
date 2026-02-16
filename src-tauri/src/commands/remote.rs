@@ -1,8 +1,30 @@
 use super::state::AppState;
-use ralph_contracts::remote::{RemoteConnectArgs, RemoteConnectResult, RemoteStatus};
-use ralph_errors::{codes, err_string, RalphResult};
+use core_contracts::remote::{RemoteConnectArgs, RemoteConnectResult, RemoteStatus};
+use core_errors::{codes, err_string, RalphResult};
 use std::sync::Arc;
 use tauri::{AppHandle, State};
+
+fn remote_status_disconnected() -> RemoteStatus {
+    RemoteStatus {
+        connected: false,
+        ws_url: None,
+        protocol: None,
+    }
+}
+
+fn remote_status_connected(conn: &crate::remote::RemoteWireFrameConnection) -> RemoteStatus {
+    RemoteStatus {
+        connected: conn.is_connected(),
+        ws_url: Some(conn.ws_url().to_owned()),
+        protocol: Some(conn.remote_protocol()),
+    }
+}
+
+async fn shutdown_stale_connection(conn: crate::remote::RemoteWireFrameConnection) {
+    if let Err(err) = conn.shutdown().await {
+        tracing::warn!(error = %err, "Failed to shutdown stale remote connection");
+    }
+}
 
 #[tauri::command]
 pub async fn remote_connect(
@@ -25,9 +47,7 @@ pub async fn remote_connect(
 
         // Stale/disconnected connection: close it before reconnecting.
         if let Some(stale) = guard.take() {
-            if let Err(err) = stale.shutdown().await {
-                tracing::warn!(error = %err, "Failed to shutdown stale remote connection");
-            }
+            shutdown_stale_connection(stale).await;
         }
     }
 
@@ -55,18 +75,9 @@ pub async fn remote_disconnect(state: State<'_, AppState>) -> RalphResult<()> {
 #[tauri::command]
 pub async fn remote_status_get(state: State<'_, AppState>) -> RalphResult<RemoteStatus> {
     let guard = state.remote.lock().await;
-    let status = guard.as_ref().map_or(
-        RemoteStatus {
-            connected: false,
-            ws_url: None,
-            protocol: None,
-        },
-        |conn| RemoteStatus {
-            connected: conn.is_connected(),
-            ws_url: Some(conn.ws_url().to_owned()),
-            protocol: Some(conn.remote_protocol()),
-        },
-    );
+    let status = guard
+        .as_ref()
+        .map_or_else(remote_status_disconnected, remote_status_connected);
 
     Ok(status)
 }

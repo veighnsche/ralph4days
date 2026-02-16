@@ -1,5 +1,5 @@
-use ralph_contracts::protocol::ProtocolVersionInfo;
-use ralph_errors::RalphResult;
+use core_contracts::protocol::ProtocolVersionInfo;
+use core_errors::RalphResult;
 
 use crate::rpc_codec::{encode_result, require_null_payload};
 

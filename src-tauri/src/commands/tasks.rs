@@ -1,15 +1,15 @@
 use super::executor::{dispatch_args, dispatch_no_args, PlatformArg, PlatformOut};
 use super::state::AppState;
-use ralph_contracts::domain::{
+use core_contracts::domain::{
     Task, TaskListItem, TaskSignalComment, TaskSignalCommentCreateInput, TaskSignalSummary,
 };
-use ralph_contracts::tasks::{
+use core_contracts::tasks::{
     TasksAskAnswerArgs, TasksCommentReplyAddArgs, TasksCreateArgs, TasksDeleteArgs, TasksGetArgs,
     TasksSetStatusArgs, TasksSignalAddArgs, TasksSignalCommentDeleteArgs,
     TasksSignalCommentUpdateArgs, TasksSignalCommentsListArgs, TasksSignalDeleteArgs,
     TasksSignalSummariesGetArgs, TasksSignalUpdateArgs, TasksUpdateArgs,
 };
-use ralph_errors::RalphResult;
+use core_errors::RalphResult;
 use tauri::State;
 
 #[tauri::command]
@@ -203,7 +203,7 @@ mod local {
         {
             use super::super::state::CommandContext;
             CommandContext::from_tauri_state(state)
-                .db(|db| ralph_backend::tasks::tasks_create(db, args))
+                .db(|db| service_tasks::tasks::tasks_create(db, args))
         }
 
         #[cfg(mobile)]
@@ -222,7 +222,7 @@ mod local {
         {
             use super::super::state::CommandContext;
             CommandContext::from_tauri_state(state)
-                .db(|db| ralph_backend::tasks::tasks_update(db, args))
+                .db(|db| service_tasks::tasks::tasks_update(db, args))
         }
 
         #[cfg(mobile)]
@@ -241,7 +241,7 @@ mod local {
         {
             use super::super::state::CommandContext;
             CommandContext::from_tauri_state(state)
-                .db(|db| ralph_backend::tasks::tasks_set_status(db, args))
+                .db(|db| service_tasks::tasks::tasks_set_status(db, args))
         }
 
         #[cfg(mobile)]
@@ -260,7 +260,7 @@ mod local {
         {
             use super::super::state::CommandContext;
             CommandContext::from_tauri_state(state)
-                .db(|db| ralph_backend::tasks::tasks_delete(db, args))
+                .db(|db| service_tasks::tasks::tasks_delete(db, args))
         }
 
         #[cfg(mobile)]
@@ -279,7 +279,7 @@ mod local {
         {
             use super::super::state::CommandContext;
             CommandContext::from_tauri_state(state)
-                .db(|db| ralph_backend::tasks::tasks_signal_add(db, args))
+                .db(|db| service_tasks::tasks::tasks_signal_add(db, args))
         }
 
         #[cfg(mobile)]
@@ -298,7 +298,7 @@ mod local {
         {
             use super::super::state::CommandContext;
             CommandContext::from_tauri_state(state)
-                .db(|db| ralph_backend::tasks::tasks_signal_update(db, args))
+                .db(|db| service_tasks::tasks::tasks_signal_update(db, args))
         }
 
         #[cfg(mobile)]
@@ -317,7 +317,7 @@ mod local {
         {
             use super::super::state::CommandContext;
             CommandContext::from_tauri_state(state)
-                .db(|db| ralph_backend::tasks::tasks_signal_delete(db, args))
+                .db(|db| service_tasks::tasks::tasks_signal_delete(db, args))
         }
 
         #[cfg(mobile)]
@@ -332,7 +332,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            CommandContext::from_tauri_state(state).db(ralph_backend::tasks::tasks_list)
+            CommandContext::from_tauri_state(state).db(service_tasks::tasks::tasks_list)
         }
 
         #[cfg(mobile)]
@@ -350,7 +350,7 @@ mod local {
         {
             use super::super::state::CommandContext;
             CommandContext::from_tauri_state(state)
-                .db(|db| ralph_backend::tasks::tasks_get(db, args))
+                .db(|db| service_tasks::tasks::tasks_get(db, args))
         }
 
         #[cfg(mobile)]
@@ -367,7 +367,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            CommandContext::from_tauri_state(state).db(ralph_backend::tasks::tasks_list_items)
+            CommandContext::from_tauri_state(state).db(service_tasks::tasks::tasks_list_items)
         }
 
         #[cfg(mobile)]
@@ -385,7 +385,7 @@ mod local {
         {
             use super::super::state::CommandContext;
             CommandContext::from_tauri_state(state)
-                .db(|db| ralph_backend::tasks::tasks_signal_summaries_get(db, args))
+                .db(|db| service_tasks::tasks::tasks_signal_summaries_get(db, args))
         }
 
         #[cfg(mobile)]
@@ -404,7 +404,7 @@ mod local {
         {
             use super::super::state::CommandContext;
             CommandContext::from_tauri_state(state)
-                .db(|db| ralph_backend::tasks::tasks_ask_answer(db, args))
+                .db(|db| service_tasks::tasks::tasks_ask_answer(db, args))
         }
 
         #[cfg(mobile)]
@@ -423,7 +423,7 @@ mod local {
         {
             use super::super::state::CommandContext;
             CommandContext::from_tauri_state(state)
-                .db(|db| ralph_backend::tasks::tasks_comment_reply_add(db, args))
+                .db(|db| service_tasks::tasks::tasks_comment_reply_add(db, args))
         }
 
         #[cfg(mobile)]
@@ -442,7 +442,7 @@ mod local {
         {
             use super::super::state::CommandContext;
             CommandContext::from_tauri_state(state)
-                .db(|db| ralph_backend::tasks::tasks_signal_comment_add(db, args))
+                .db(|db| service_tasks::tasks::tasks_signal_comment_add(db, args))
         }
 
         #[cfg(mobile)]
@@ -461,7 +461,7 @@ mod local {
         {
             use super::super::state::CommandContext;
             CommandContext::from_tauri_state(state)
-                .db(|db| ralph_backend::tasks::tasks_signal_comment_update(db, args))
+                .db(|db| service_tasks::tasks::tasks_signal_comment_update(db, args))
         }
 
         #[cfg(mobile)]
@@ -480,7 +480,7 @@ mod local {
         {
             use super::super::state::CommandContext;
             CommandContext::from_tauri_state(state)
-                .db(|db| ralph_backend::tasks::tasks_signal_comment_delete(db, args))
+                .db(|db| service_tasks::tasks::tasks_signal_comment_delete(db, args))
         }
 
         #[cfg(mobile)]
@@ -499,7 +499,7 @@ mod local {
         {
             use super::super::state::CommandContext;
             CommandContext::from_tauri_state(state)
-                .db(|db| ralph_backend::tasks::tasks_signal_comments_list(db, args))
+                .db(|db| service_tasks::tasks::tasks_signal_comments_list(db, args))
         }
 
         #[cfg(mobile)]
@@ -512,7 +512,7 @@ mod local {
 
     #[cfg(mobile)]
     fn unreachable_local<TResult>(command: &str) -> RalphResult<TResult> {
-        use ralph_errors::{codes, ralph_err};
+        use core_errors::{codes, ralph_err};
         ralph_err!(
             codes::INTERNAL,
             "Local execution path reached on mobile for '{}'",

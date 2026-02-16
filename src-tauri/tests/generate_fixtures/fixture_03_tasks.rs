@@ -1,10 +1,10 @@
 use super::helpers::{initialize_project_for_fixture, open_fixture_db};
-use sqlite_db::SubsystemInput;
+use data_sqlite::SubsystemInput;
 use std::fs;
 use std::path::PathBuf;
 
 pub(crate) fn generate_fixture_03_desktop_tasks() {
-    use sqlite_db::TaskInput;
+    use data_sqlite::TaskInput;
 
     println!("\n=== Generating fixture: 03-desktop-tasks ===");
 
@@ -129,7 +129,7 @@ just dev-mock 03-desktop-tasks
         title: "Implement login API".to_owned(),
         description: Some("Create REST API endpoints for user authentication".to_owned()),
         status: None,
-        priority: Some(sqlite_db::Priority::High),
+        priority: Some(data_sqlite::Priority::High),
         tags: vec!["api".to_owned(), "security".to_owned()],
         depends_on: vec![],
         acceptance_criteria: Some(vec![
@@ -143,7 +143,7 @@ just dev-mock 03-desktop-tasks
         ],
         hints: Some("Use bcrypt for password hashing, not SHA256. Check existing middleware pattern in src/middleware/".to_owned()),
         estimated_turns: Some(3),
-        provenance: Some(sqlite_db::TaskProvenance::Agent),
+        provenance: Some(data_sqlite::TaskProvenance::Agent),
             agent: None,
             model: None,
             effort: None,
@@ -166,7 +166,7 @@ just dev-mock 03-desktop-tasks
         title: "Build login form".to_owned(),
         description: Some("Create UI for user login".to_owned()),
         status: None,
-        priority: Some(sqlite_db::Priority::Medium),
+        priority: Some(data_sqlite::Priority::Medium),
         tags: vec!["ui".to_owned()],
         depends_on: vec![1],
         acceptance_criteria: Some(vec!["Form validates input".to_owned()]),
@@ -174,7 +174,7 @@ just dev-mock 03-desktop-tasks
         output_artifacts: vec![],
         hints: None,
         estimated_turns: Some(2),
-        provenance: Some(sqlite_db::TaskProvenance::Human),
+        provenance: Some(data_sqlite::TaskProvenance::Human),
         agent: None,
         model: None,
         effort: None,
@@ -188,7 +188,7 @@ just dev-mock 03-desktop-tasks
         title: "Create profile page".to_owned(),
         description: Some("User profile display and editing".to_owned()),
         status: None,
-        priority: Some(sqlite_db::Priority::Low),
+        priority: Some(data_sqlite::Priority::Low),
         tags: vec!["ui".to_owned()],
         depends_on: vec![],
         acceptance_criteria: Some(vec!["Shows user info".to_owned()]),
@@ -196,7 +196,7 @@ just dev-mock 03-desktop-tasks
         output_artifacts: vec![],
         hints: None,
         estimated_turns: None,
-        provenance: Some(sqlite_db::TaskProvenance::System),
+        provenance: Some(data_sqlite::TaskProvenance::System),
         agent: None,
         model: None,
         effort: None,

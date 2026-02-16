@@ -1,6 +1,6 @@
-use ralph_contracts::events::BACKEND_DIAGNOSTIC_EVENT;
-use ralph_contracts::terminal::{TERMINAL_CLOSED_EVENT, TERMINAL_OUTPUT_EVENT};
-use ralph_contracts::transport::EventSink;
+use core_contracts::events::BACKEND_DIAGNOSTIC_EVENT;
+use core_contracts::terminal::{TERMINAL_CLOSED_EVENT, TERMINAL_OUTPUT_EVENT};
+use core_contracts::transport::EventSink;
 use tauri::{AppHandle, Emitter};
 
 pub struct TauriEventSink<R: tauri::Runtime> {
@@ -16,7 +16,7 @@ impl<R: tauri::Runtime> TauriEventSink<R> {
 impl<R: tauri::Runtime> EventSink for TauriEventSink<R> {
     fn emit_backend_diagnostic(
         &self,
-        payload: ralph_contracts::events::BackendDiagnosticEvent,
+        payload: core_contracts::events::BackendDiagnosticEvent,
     ) -> Result<(), String> {
         self.app
             .emit(BACKEND_DIAGNOSTIC_EVENT, payload)
@@ -25,7 +25,7 @@ impl<R: tauri::Runtime> EventSink for TauriEventSink<R> {
 
     fn emit_terminal_output(
         &self,
-        payload: ralph_contracts::terminal::PtyOutputEvent,
+        payload: core_contracts::terminal::PtyOutputEvent,
     ) -> Result<(), String> {
         self.app
             .emit(TERMINAL_OUTPUT_EVENT, payload)
@@ -34,7 +34,7 @@ impl<R: tauri::Runtime> EventSink for TauriEventSink<R> {
 
     fn emit_terminal_closed(
         &self,
-        payload: ralph_contracts::terminal::PtyClosedEvent,
+        payload: core_contracts::terminal::PtyClosedEvent,
     ) -> Result<(), String> {
         self.app
             .emit(TERMINAL_CLOSED_EVENT, payload)

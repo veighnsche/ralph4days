@@ -1,4 +1,4 @@
-use sqlite_db::{FixedClock, SqliteDb};
+use data_sqlite::{FixedClock, SqliteDb};
 use std::path::{Path, PathBuf};
 
 use crate::test_support::fixture_project;
@@ -7,7 +7,7 @@ pub(crate) fn initialize_project_for_fixture(
     path: PathBuf,
     project_title: String,
     use_undetect: bool,
-) -> ralph_errors::RalphResult<()> {
+) -> core_errors::RalphResult<()> {
     fixture_project::initialize_project_for_fixture(
         path,
         project_title,
@@ -16,7 +16,7 @@ pub(crate) fn initialize_project_for_fixture(
     )
 }
 
-pub(crate) fn fixed_clock() -> Box<dyn sqlite_db::Clock> {
+pub(crate) fn fixed_clock() -> Box<dyn data_sqlite::Clock> {
     Box::new(FixedClock(
         chrono::NaiveDate::from_ymd_opt(2026, 1, 1)
             .unwrap()

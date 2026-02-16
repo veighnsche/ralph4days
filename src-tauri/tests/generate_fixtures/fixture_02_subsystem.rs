@@ -1,5 +1,5 @@
 use super::helpers::{initialize_project_for_fixture, open_fixture_db};
-use sqlite_db::SubsystemInput;
+use data_sqlite::SubsystemInput;
 use std::fs;
 use std::path::PathBuf;
 

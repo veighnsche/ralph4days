@@ -1,6 +1,6 @@
 use futures_util::{SinkExt, StreamExt};
-use ralph_contracts::transport::RemoteWireFrame;
-use ralph_errors::codes;
+use core_contracts::transport::RemoteWireFrame;
+use core_errors::codes;
 use std::process::Stdio;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;

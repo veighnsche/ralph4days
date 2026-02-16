@@ -10,7 +10,7 @@ pub use imp::AppState;
 #[cfg(not(mobile))]
 pub(crate) use imp::{with_db, CommandContext};
 
-use ralph_errors::{codes, err_string, RalphResult};
+use core_errors::{codes, err_string, RalphResult};
 
 pub(crate) type RemoteTransport =
     tokio::sync::Mutex<Option<crate::remote::RemoteWireFrameConnection>>;

@@ -13,7 +13,7 @@ pub(crate) mod terminal_bridge;
 pub use project::project_lock_validated;
 pub use state::AppState;
 
-use ralph_contracts::protocol::ProtocolVersionInfo;
+use core_contracts::protocol::ProtocolVersionInfo;
 
 #[tauri::command]
 pub fn protocol_version_get() -> ProtocolVersionInfo {

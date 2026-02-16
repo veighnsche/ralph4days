@@ -1,6 +1,6 @@
 use super::remote_proxy::{remote_invoke_args, remote_invoke_no_args};
 use super::state::AppState;
-use ralph_errors::RalphResult;
+use core_errors::RalphResult;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::future::Future;

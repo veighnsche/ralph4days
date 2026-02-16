@@ -2,7 +2,7 @@ use super::executor::{dispatch_args, dispatch_no_args, PlatformArg, PlatformOut}
 use super::state::AppState;
 #[cfg(not(mobile))]
 use crate::event_sink::TauriEventSink;
-use ralph_contracts::terminal_bridge::{
+use core_contracts::terminal_bridge::{
     TerminalBridgeEmitSystemMessageArgs, TerminalBridgeListModelFormTreeResult,
     TerminalBridgeReplayOutputArgs, TerminalBridgeReplayOutputResult, TerminalBridgeResizeArgs,
     TerminalBridgeResolveTaskLaunchArgs, TerminalBridgeResolvedLaunchConfig,
@@ -11,7 +11,7 @@ use ralph_contracts::terminal_bridge::{
     TerminalBridgeStartSessionArgs, TerminalBridgeStartTaskSessionArgs,
     TerminalBridgeTerminateArgs,
 };
-use ralph_errors::RalphResult;
+use core_errors::RalphResult;
 use tauri::{AppHandle, State};
 
 #[tauri::command]
@@ -144,7 +144,7 @@ pub async fn terminal_list_model_form_tree(
     dispatch_no_args(state.inner(), "terminal_list_model_form_tree", || {
         #[cfg(not(mobile))]
         {
-            Ok(ralph_backend::terminal_bridge::terminal_list_model_form_tree())
+            service_terminal::terminal_bridge::terminal_list_model_form_tree()
         }
 
         #[cfg(mobile)]
@@ -166,8 +166,8 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_contracts::transport::EventSink;
-            use ralph_errors::{codes, RalphResultExt};
+            use core_contracts::transport::EventSink;
+            use core_errors::{codes, RalphResultExt};
             use std::sync::Arc;
 
             let project_path = CommandContext::from_tauri_state(state).locked_project_path()?;
@@ -178,7 +178,7 @@ mod local {
                 .lock()
                 .ralph_err(codes::INTERNAL, "API server port mutex poisoned")?;
 
-            let ctx = ralph_backend::terminal_bridge::TerminalBridgeCtx {
+            let ctx = service_terminal::terminal_bridge::TerminalBridgeCtx {
                 pty_manager: &state.inner().pty_manager,
                 sink,
                 locked_project_path: project_path.as_path(),
@@ -187,7 +187,7 @@ mod local {
                 mcp_dir: state.inner().mcp_dir.as_path(),
                 api_server_port,
             };
-            ralph_backend::terminal_bridge::terminal_start_session(&ctx, args)
+            service_terminal::terminal_bridge::terminal_start_session(&ctx, args)
         }
 
         #[cfg(mobile)]
@@ -207,8 +207,8 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_contracts::transport::EventSink;
-            use ralph_errors::{codes, RalphResultExt};
+            use core_contracts::transport::EventSink;
+            use core_errors::{codes, RalphResultExt};
             use std::sync::Arc;
 
             let project_path = CommandContext::from_tauri_state(state).locked_project_path()?;
@@ -219,7 +219,7 @@ mod local {
                 .lock()
                 .ralph_err(codes::INTERNAL, "API server port mutex poisoned")?;
 
-            let ctx = ralph_backend::terminal_bridge::TerminalBridgeCtx {
+            let ctx = service_terminal::terminal_bridge::TerminalBridgeCtx {
                 pty_manager: &state.inner().pty_manager,
                 sink,
                 locked_project_path: project_path.as_path(),
@@ -228,7 +228,7 @@ mod local {
                 mcp_dir: state.inner().mcp_dir.as_path(),
                 api_server_port,
             };
-            ralph_backend::terminal_bridge::terminal_start_task_session(&ctx, args)
+            service_terminal::terminal_bridge::terminal_start_task_session(&ctx, args)
         }
 
         #[cfg(mobile)]
@@ -249,7 +249,11 @@ mod local {
             use super::super::state::CommandContext;
 
             CommandContext::from_tauri_state(state).db(|db| {
-                ralph_backend::terminal::resolve_task_launch_config(db, args.task_id, args.defaults)
+                service_terminal::terminal::resolve_task_launch_config(
+                    db,
+                    args.task_id,
+                    args.defaults,
+                )
             })
         }
 
@@ -267,7 +271,7 @@ mod local {
     ) -> RalphResult<()> {
         #[cfg(not(mobile))]
         {
-            ralph_backend::terminal_bridge::terminal_send_input(&state.inner().pty_manager, args)
+            service_terminal::terminal_bridge::terminal_send_input(&state.inner().pty_manager, args)
         }
 
         #[cfg(mobile)]
@@ -284,7 +288,7 @@ mod local {
     ) -> RalphResult<()> {
         #[cfg(not(mobile))]
         {
-            ralph_backend::terminal_bridge::terminal_resize(&state.inner().pty_manager, args)
+            service_terminal::terminal_bridge::terminal_resize(&state.inner().pty_manager, args)
         }
 
         #[cfg(mobile)]
@@ -301,7 +305,7 @@ mod local {
     ) -> RalphResult<()> {
         #[cfg(not(mobile))]
         {
-            ralph_backend::terminal_bridge::terminal_terminate(&state.inner().pty_manager, args)
+            service_terminal::terminal_bridge::terminal_terminate(&state.inner().pty_manager, args)
         }
 
         #[cfg(mobile)]
@@ -318,7 +322,7 @@ mod local {
     ) -> RalphResult<()> {
         #[cfg(not(mobile))]
         {
-            ralph_backend::terminal_bridge::terminal_set_stream_mode(
+            service_terminal::terminal_bridge::terminal_set_stream_mode(
                 &state.inner().pty_manager,
                 args,
             )
@@ -338,7 +342,10 @@ mod local {
     ) -> RalphResult<PlatformOut<TerminalBridgeReplayOutputResult>> {
         #[cfg(not(mobile))]
         {
-            ralph_backend::terminal_bridge::terminal_replay_output(&state.inner().pty_manager, args)
+            service_terminal::terminal_bridge::terminal_replay_output(
+                &state.inner().pty_manager,
+                args,
+            )
         }
 
         #[cfg(mobile)]
@@ -356,7 +363,11 @@ mod local {
         #[cfg(not(mobile))]
         {
             let sink = TauriEventSink::new(app);
-            ralph_backend::terminal_bridge::emit_system_message(&sink, args.session_id, args.text)
+            service_terminal::terminal_bridge::emit_system_message(
+                &sink,
+                args.session_id,
+                args.text,
+            )
         }
 
         #[cfg(mobile)]
@@ -375,8 +386,8 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::CommandContext;
-            use ralph_contracts::transport::EventSink;
-            use ralph_errors::{codes, RalphResultExt};
+            use core_contracts::transport::EventSink;
+            use core_errors::{codes, RalphResultExt};
             use std::sync::Arc;
 
             let project_path = CommandContext::from_tauri_state(state).locked_project_path()?;
@@ -387,7 +398,7 @@ mod local {
                 .lock()
                 .ralph_err(codes::INTERNAL, "API server port mutex poisoned")?;
 
-            let ctx = ralph_backend::terminal_bridge::TerminalBridgeCtx {
+            let ctx = service_terminal::terminal_bridge::TerminalBridgeCtx {
                 pty_manager: &state.inner().pty_manager,
                 sink,
                 locked_project_path: project_path.as_path(),
@@ -396,7 +407,7 @@ mod local {
                 mcp_dir: state.inner().mcp_dir.as_path(),
                 api_server_port,
             };
-            ralph_backend::terminal_bridge::terminal_start_human_session(&ctx, args)
+            service_terminal::terminal_bridge::terminal_start_human_session(&ctx, args)
         }
 
         #[cfg(mobile)]
@@ -410,7 +421,7 @@ mod local {
 
     #[cfg(mobile)]
     pub(super) fn unreachable_local<TResult>(command: &str) -> RalphResult<TResult> {
-        use ralph_errors::{codes, ralph_err};
+        use core_errors::{codes, ralph_err};
         ralph_err!(
             codes::INTERNAL,
             "Local execution path reached on mobile for '{}'",

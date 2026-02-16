@@ -1,8 +1,8 @@
 use super::executor::{dispatch_args, dispatch_no_args, PlatformArg, PlatformOut};
 use super::state::AppState;
-use ralph_contracts::agent_sessions::AgentSessionsByIdArgs;
-use ralph_contracts::domain::{AgentSession, AgentSessionCreateInput, AgentSessionUpdateInput};
-use ralph_errors::RalphResult;
+use core_contracts::agent_sessions::AgentSessionsByIdArgs;
+use core_contracts::domain::{AgentSession, AgentSessionCreateInput, AgentSessionUpdateInput};
+use core_errors::RalphResult;
 use tauri::State;
 
 #[tauri::command]
@@ -69,7 +69,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::with_db;
-            use ralph_backend::agent_sessions_service;
+            use service_tasks::agent_sessions_service;
 
             with_db(state, |db| {
                 agent_sessions_service::agent_sessions_create_human(db, args)
@@ -91,7 +91,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::with_db;
-            use ralph_backend::agent_sessions_service;
+            use service_tasks::agent_sessions_service;
 
             with_db(state, |db| {
                 agent_sessions_service::agent_sessions_update_human(db, args)
@@ -113,7 +113,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::with_db;
-            use ralph_backend::agent_sessions_service;
+            use service_tasks::agent_sessions_service;
 
             with_db(state, |db| {
                 agent_sessions_service::agent_sessions_delete_human(db, &args.id)
@@ -135,7 +135,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::with_db;
-            use ralph_backend::agent_sessions_service;
+            use service_tasks::agent_sessions_service;
 
             with_db(state, |db| {
                 agent_sessions_service::agent_sessions_get(db, &args.id)
@@ -156,7 +156,7 @@ mod local {
         #[cfg(not(mobile))]
         {
             use super::super::state::with_db;
-            use ralph_backend::agent_sessions_service;
+            use service_tasks::agent_sessions_service;
 
             with_db(state, agent_sessions_service::agent_sessions_list_human)
         }
@@ -170,7 +170,7 @@ mod local {
 
     #[cfg(mobile)]
     fn unreachable_local<TResult>(command: &str) -> RalphResult<TResult> {
-        use ralph_errors::{codes, ralph_err};
+        use core_errors::{codes, ralph_err};
         ralph_err!(
             codes::INTERNAL,
             "Local execution path reached on mobile for '{}'",

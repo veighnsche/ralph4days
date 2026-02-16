@@ -1,5 +1,5 @@
 use super::{remote_rpc_client_from_transport, remote_rpc_client_required, RemoteTransport};
-use ralph_errors::RalphResult;
+use core_errors::RalphResult;
 
 pub struct AppState {
     pub remote: RemoteTransport,

@@ -1,5 +1,5 @@
 use super::helpers::{initialize_project_for_fixture, open_fixture_db};
-use sqlite_db::{
+use data_sqlite::{
     AddSubsystemCommentInput, AskSignalInput, BlockedSignalInput, DoneSignalInput, FlagSignalInput,
     LearnedSignalInput, PartialSignalInput, StuckSignalInput, SubsystemInput, SuggestSignalInput,
     TaskProvenance, TaskStatus,
@@ -8,7 +8,7 @@ use std::fs;
 use std::path::PathBuf;
 
 pub(crate) fn generate_fixture_04_desktop_dev() {
-    use sqlite_db::TaskInput;
+    use data_sqlite::TaskInput;
 
     println!("\n=== Generating fixture: 04-desktop-dev ===");
 
@@ -358,7 +358,7 @@ just dev-mock 04-desktop-dev
                     .to_owned(),
             ),
             status: None,
-            priority: Some(sqlite_db::Priority::Low),
+            priority: Some(data_sqlite::Priority::Low),
             tags: vec!["ui".to_owned(), "design".to_owned()],
             depends_on: vec![],
             acceptance_criteria: Some(vec![
@@ -388,7 +388,7 @@ just dev-mock 04-desktop-dev
                     .to_owned(),
             ),
             status: None,
-            priority: Some(sqlite_db::Priority::High),
+            priority: Some(data_sqlite::Priority::High),
             tags: vec!["ui".to_owned(), "forms".to_owned()],
             depends_on: vec![],
             acceptance_criteria: Some(vec![
@@ -419,7 +419,7 @@ just dev-mock 04-desktop-dev
                     .to_owned(),
             ),
             status: None,
-            priority: Some(sqlite_db::Priority::High),
+            priority: Some(data_sqlite::Priority::High),
             tags: vec!["storage".to_owned()],
             depends_on: vec![2],
             acceptance_criteria: Some(vec![
@@ -450,7 +450,7 @@ just dev-mock 04-desktop-dev
                     .to_owned(),
             ),
             status: None,
-            priority: Some(sqlite_db::Priority::Medium),
+            priority: Some(data_sqlite::Priority::Medium),
             tags: vec!["testing".to_owned()],
             depends_on: vec![3],
             acceptance_criteria: Some(vec![
@@ -479,7 +479,7 @@ just dev-mock 04-desktop-dev
                 "Modal dialog for editing existing bookmark title, URL, and notes".to_owned(),
             ),
             status: None,
-            priority: Some(sqlite_db::Priority::Medium),
+            priority: Some(data_sqlite::Priority::Medium),
             tags: vec!["ui".to_owned(), "forms".to_owned()],
             depends_on: vec![2],
             acceptance_criteria: Some(vec![
@@ -508,7 +508,7 @@ just dev-mock 04-desktop-dev
                     .to_owned(),
             ),
             status: None,
-            priority: Some(sqlite_db::Priority::Medium),
+            priority: Some(data_sqlite::Priority::Medium),
             tags: vec!["ui".to_owned()],
             depends_on: vec![3],
             acceptance_criteria: Some(vec![
@@ -537,7 +537,7 @@ just dev-mock 04-desktop-dev
                     .to_owned(),
             ),
             status: None,
-            priority: Some(sqlite_db::Priority::High),
+            priority: Some(data_sqlite::Priority::High),
             tags: vec!["security".to_owned(), "validation".to_owned()],
             depends_on: vec![],
             acceptance_criteria: Some(vec![
@@ -568,7 +568,7 @@ just dev-mock 04-desktop-dev
                     .to_owned(),
             ),
             status: None,
-            priority: Some(sqlite_db::Priority::High),
+            priority: Some(data_sqlite::Priority::High),
             tags: vec!["storage".to_owned(), "data-model".to_owned()],
             depends_on: vec![],
             acceptance_criteria: Some(vec![
@@ -594,7 +594,7 @@ just dev-mock 04-desktop-dev
         title: "Collection sidebar".to_owned(),
         description: Some("Sidebar component showing all collections with bookmark counts and quick navigation".to_owned()),
         status: None,
-        priority: Some(sqlite_db::Priority::High),
+        priority: Some(data_sqlite::Priority::High),
         tags: vec!["ui".to_owned(), "navigation".to_owned()],
         depends_on: vec![8],
         acceptance_criteria: Some(vec!["Sidebar lists all collections with bookmark counts".to_owned(), "Click collection filters bookmark list".to_owned(), "Collapse/expand sidebar on mobile".to_owned()]),
@@ -615,7 +615,7 @@ just dev-mock 04-desktop-dev
                 "Allow reordering bookmarks within a collection via drag-and-drop".to_owned(),
             ),
             status: None,
-            priority: Some(sqlite_db::Priority::Medium),
+            priority: Some(data_sqlite::Priority::Medium),
             tags: vec!["ui".to_owned(), "interaction".to_owned()],
             depends_on: vec![9],
             acceptance_criteria: Some(vec![
@@ -670,7 +670,7 @@ just dev-mock 04-desktop-dev
                 "Support hierarchical collection nesting with tree view navigation".to_owned(),
             ),
             status: None,
-            priority: Some(sqlite_db::Priority::Low),
+            priority: Some(data_sqlite::Priority::Low),
             tags: vec!["ui".to_owned(), "navigation".to_owned()],
             depends_on: vec![9, 8],
             acceptance_criteria: Some(vec![
@@ -696,7 +696,7 @@ just dev-mock 04-desktop-dev
         title: "Full-text search index".to_owned(),
         description: Some("Build an inverted index for full-text search across bookmark titles, URLs, and notes".to_owned()),
         status: None,
-        priority: Some(sqlite_db::Priority::Critical),
+        priority: Some(data_sqlite::Priority::Critical),
         tags: vec!["search".to_owned(), "performance".to_owned()],
         depends_on: vec![3],
         acceptance_criteria: Some(vec!["Index updates on bookmark create/update/delete".to_owned(), "Search returns results in under 50ms for 10k bookmarks".to_owned(), "Supports partial word matching".to_owned(), "Ranks results by relevance".to_owned()]),
@@ -718,7 +718,7 @@ just dev-mock 04-desktop-dev
                     .to_owned(),
             ),
             status: None,
-            priority: Some(sqlite_db::Priority::High),
+            priority: Some(data_sqlite::Priority::High),
             tags: vec!["ui".to_owned(), "search".to_owned()],
             depends_on: vec![13],
             acceptance_criteria: Some(vec![
@@ -779,7 +779,7 @@ just dev-mock 04-desktop-dev
                     .to_owned(),
             ),
             status: None,
-            priority: Some(sqlite_db::Priority::High),
+            priority: Some(data_sqlite::Priority::High),
             tags: vec!["parser".to_owned(), "import".to_owned()],
             depends_on: vec![],
             acceptance_criteria: Some(vec![
@@ -810,7 +810,7 @@ just dev-mock 04-desktop-dev
                     .to_owned(),
             ),
             status: None,
-            priority: Some(sqlite_db::Priority::Medium),
+            priority: Some(data_sqlite::Priority::Medium),
             tags: vec!["ui".to_owned(), "import".to_owned()],
             depends_on: vec![16],
             acceptance_criteria: Some(vec![
@@ -839,7 +839,7 @@ just dev-mock 04-desktop-dev
                 "Export all bookmarks and collections to a JSON file for backup".to_owned(),
             ),
             status: None,
-            priority: Some(sqlite_db::Priority::Low),
+            priority: Some(data_sqlite::Priority::Low),
             tags: vec!["export".to_owned()],
             depends_on: vec![3],
             acceptance_criteria: Some(vec![
@@ -868,7 +868,7 @@ just dev-mock 04-desktop-dev
                 "Document all available settings and their default values".to_owned(),
             ),
             status: None,
-            priority: Some(sqlite_db::Priority::Low),
+            priority: Some(data_sqlite::Priority::Low),
             tags: vec!["docs".to_owned()],
             depends_on: vec![],
             acceptance_criteria: Some(vec![]),
@@ -920,7 +920,7 @@ just dev-mock 04-desktop-dev
                 "**DEV ONLY:** This task demonstrates all 8 MCP exhaust pipe verbs in a single timeline. Each signal showcases the full schema for that verb type. Use this as a visual reference for signal rendering.".to_owned(),
             ),
             status: None,
-            priority: Some(sqlite_db::Priority::Low),
+            priority: Some(data_sqlite::Priority::Low),
             tags: vec!["dev".to_owned(), "reference".to_owned(), "mcp-signals".to_owned()],
             depends_on: vec![],
             acceptance_criteria: Some(vec![

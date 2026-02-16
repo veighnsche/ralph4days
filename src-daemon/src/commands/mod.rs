@@ -1,4 +1,4 @@
-use ralph_errors::{codes, err_string, RalphResult};
+use core_errors::{codes, err_string, RalphResult};
 
 use crate::state::AppState;
 
@@ -108,7 +108,7 @@ pub async fn handle_command(
         "agent_sessions_list_human" => agent_sessions::agent_sessions_list_human(state, payload),
 
         other => {
-            ralph_backend::diagnostics::emit_warning(
+            service_runtime::diagnostics::emit_warning(
                 "ralphd",
                 "unknown-command",
                 &format!("Unknown command: {other}"),

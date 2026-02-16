@@ -1,21 +1,34 @@
-use ralph_contracts::transport::RpcClient;
-use ralph_errors::{codes, err_string, RalphResult};
+use core_contracts::transport::RpcClient;
+use core_errors::{codes, err_string, RalphResult};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-pub(crate) async fn remote_invoke_no_args<TResult: DeserializeOwned>(
-    rpc: &dyn RpcClient,
+fn decode_remote_result<TResult: DeserializeOwned>(
     command: &str,
+    value: serde_json::Value,
 ) -> RalphResult<TResult> {
-    let value = rpc
-        .invoke(command.to_owned(), serde_json::Value::Null)
-        .await?;
     serde_json::from_value::<TResult>(value).map_err(|e| {
         err_string(
             codes::INTERNAL,
             format!("Remote RPC result decode failed for '{command}': {e}"),
         )
     })
+}
+
+async fn remote_invoke_payload<TResult: DeserializeOwned>(
+    rpc: &dyn RpcClient,
+    command: &str,
+    payload: serde_json::Value,
+) -> RalphResult<TResult> {
+    let value = rpc.invoke(command.to_owned(), payload).await?;
+    decode_remote_result(command, value)
+}
+
+pub(crate) async fn remote_invoke_no_args<TResult: DeserializeOwned>(
+    rpc: &dyn RpcClient,
+    command: &str,
+) -> RalphResult<TResult> {
+    remote_invoke_payload(rpc, command, serde_json::Value::Null).await
 }
 
 pub(crate) async fn remote_invoke_args<TArgs: Serialize, TResult: DeserializeOwned>(
@@ -24,22 +37,16 @@ pub(crate) async fn remote_invoke_args<TArgs: Serialize, TResult: DeserializeOwn
     args: TArgs,
 ) -> RalphResult<TResult> {
     let payload = serde_json::json!({ "args": args });
-    let value = rpc.invoke(command.to_owned(), payload).await?;
-    serde_json::from_value::<TResult>(value).map_err(|e| {
-        err_string(
-            codes::INTERNAL,
-            format!("Remote RPC result decode failed for '{command}': {e}"),
-        )
-    })
+    remote_invoke_payload(rpc, command, payload).await
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use core_contracts::protocol::{ProtocolVersionInfo, PROTOCOL_VERSION};
+    use core_contracts::transport::RemoteWireFrame;
+    use core_contracts::transport::{EventSink, RemoteEventFrame};
     use futures_util::{SinkExt, StreamExt};
-    use ralph_contracts::protocol::{ProtocolVersionInfo, PROTOCOL_VERSION};
-    use ralph_contracts::transport::RemoteWireFrame;
-    use ralph_contracts::transport::{EventSink, RemoteEventFrame};
     use std::net::SocketAddr;
     use std::sync::Arc;
     use tokio::net::TcpListener;
@@ -50,21 +57,21 @@ mod tests {
     impl EventSink for NoopSink {
         fn emit_backend_diagnostic(
             &self,
-            _payload: ralph_contracts::events::BackendDiagnosticEvent,
+            _payload: core_contracts::events::BackendDiagnosticEvent,
         ) -> Result<(), String> {
             Ok(())
         }
 
         fn emit_terminal_output(
             &self,
-            _payload: ralph_contracts::terminal::PtyOutputEvent,
+            _payload: core_contracts::terminal::PtyOutputEvent,
         ) -> Result<(), String> {
             Ok(())
         }
 
         fn emit_terminal_closed(
             &self,
-            _payload: ralph_contracts::terminal::PtyClosedEvent,
+            _payload: core_contracts::terminal::PtyClosedEvent,
         ) -> Result<(), String> {
             Ok(())
         }
@@ -129,12 +136,10 @@ mod tests {
 
             // Server push event should be ignored by the invoke helper and handled by the pump.
             let event = RemoteWireFrame::Event {
-                frame: RemoteEventFrame::TerminalClosed(
-                    ralph_contracts::terminal::PtyClosedEvent {
-                        session_id: "s".to_owned(),
-                        exit_code: 0,
-                    },
-                ),
+                frame: RemoteEventFrame::TerminalClosed(core_contracts::terminal::PtyClosedEvent {
+                    session_id: "s".to_owned(),
+                    exit_code: 0,
+                }),
             };
             ws.send(Message::Text(serde_json::to_string(&event).unwrap().into()))
                 .await

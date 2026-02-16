@@ -13,7 +13,7 @@ This repository is a Tauri desktop app with a React frontend and Rust backend wo
 
 - `src/`: React 19 + TypeScript UI (pages, hooks, components, terminal client).
 - `src-tauri/`: Tauri entrypoint and command/terminal backends.
-- `crates/`: shared Rust crates (`sqlite-db`, `prompt-builder`, `ralph-errors`, `ralph-rag`, `ralph-external`, etc.).
+- `crates/`: shared Rust crates (`data-sqlite`, `ai-prompt-builder`, `core-errors`, `ai-rag`, `ai-external`, etc.).
 - `fixtures/`: read-only sample projects; disposable mock data is copied outside the repo (default: `/tmp/ralph4days-mock`).
 - `.docs/`: canonical location for implementation notes and design records.
   New docs must use the next chronological numeric prefix in the filename (for example `068_SOME_TITLE.md`).
