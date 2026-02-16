@@ -1,4 +1,5 @@
 use portable_pty::CommandBuilder;
+use core_errors::RalphResult;
 use std::path::Path;
 
 use super::model_catalog;
@@ -21,7 +22,7 @@ impl AgentProvider for ClaudeCodeAdapter {
         AGENT_CLAUDE
     }
 
-    fn list_models(&self) -> Vec<String> {
+    fn list_models(&self) -> RalphResult<Vec<String>> {
         model_catalog::claudecode_models()
     }
 

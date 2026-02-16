@@ -8,10 +8,10 @@ use std::sync::{Arc, Mutex};
 use super::providers::resolve_agent_provider;
 use super::session::{PTYSession, SessionConfig};
 use super::{TerminalBridgeReplayOutputChunk, TerminalBridgeReplayOutputResult};
-use ralph_contracts::terminal::{PtyClosedEvent, PtyOutputEvent};
-use ralph_contracts::transport::EventSink;
+use core_contracts::terminal::{PtyClosedEvent, PtyOutputEvent};
+use core_contracts::transport::EventSink;
 
-use ralph_errors::{codes, err_string, RalphResult, RalphResultExt};
+use core_errors::{codes, err_string, RalphResult, RalphResultExt};
 
 const DEFAULT_REPLAY_BUFFER_BYTES: usize = 8 * 1024 * 1024;
 
@@ -173,7 +173,7 @@ impl PTYManager {
                 .ralph_err(codes::INTERNAL, "PTY sessions mutex poisoned")?;
             if sessions.contains_key(&session_id) {
                 tracing::error!("PTY session already exists");
-                return ralph_errors::ralph_err!(
+                return core_errors::ralph_err!(
                     codes::TERMINAL,
                     "PTY session already exists: {session_id}"
                 );
@@ -194,7 +194,7 @@ impl PTYManager {
 
         tracing::debug!("PTY opened successfully");
 
-        let provider = resolve_agent_provider(config.agent.as_deref());
+        let provider = resolve_agent_provider(config.agent)?;
         let cmd = provider.build_command(working_dir, mcp_config.as_deref(), &config);
 
         tracing::debug!(
@@ -490,7 +490,7 @@ impl PTYManager {
 mod tests {
     use super::*;
     use crate::terminal::SessionInitSettings;
-    use ralph_contracts::events::BackendDiagnosticEvent;
+    use core_contracts::events::BackendDiagnosticEvent;
     use std::sync::Arc;
     use tempfile::tempdir;
 
@@ -602,7 +602,7 @@ mod tests {
         let manager = PTYManager::new();
         let sink: Arc<dyn EventSink> = Arc::new(NoopSink);
         let config = SessionConfig {
-            agent: Some("shell".to_owned()),
+            agent: Some(core_contracts::terminal_bridge::TerminalAgent::Shell),
             model: None,
             effort: None,
             thinking: None,

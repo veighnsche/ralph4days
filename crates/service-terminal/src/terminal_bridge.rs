@@ -1,25 +1,24 @@
-use crate::mcp::{generate_mcp_config, generate_mcp_config_for_task};
-use crate::session::{with_db, with_db_tx};
 use crate::terminal::providers::{
     list_model_entries_for_agent, resolve_agent_provider, resolve_post_start_preamble,
     resolve_session_effort_for_agent, resolve_session_model_for_agent, shell_agent_enabled,
-    AGENT_CLAUDE, AGENT_CODEX, AGENT_SHELL,
+    AGENT_CODEX, AGENT_SHELL,
 };
 use crate::terminal::{
-    resolve_task_launch_config, PTYManager, PtyOutputEvent, SessionConfig, SessionInitSettings,
-    SessionStreamMode, TerminalBridgeLaunchDefaults, TerminalBridgeListModelFormTreeResult,
+    resolve_task_launch_config, PTYManager, PtyOutputEvent, SessionConfig, SessionInitSettings, SessionStreamMode,
+    TerminalAgent, TerminalBridgeLaunchDefaults, TerminalBridgeListModelFormTreeResult,
     TerminalBridgeListModelsResult, TerminalBridgeModelOption, TerminalBridgeReplayOutputArgs,
     TerminalBridgeReplayOutputResult, TerminalBridgeResizeArgs, TerminalBridgeResolvedLaunchConfig,
-    TerminalBridgeSendInputArgs, TerminalBridgeSetStreamModeArgs,
-    TerminalBridgeStartHumanSessionArgs, TerminalBridgeStartHumanSessionResult,
-    TerminalBridgeStartSessionArgs, TerminalBridgeStartTaskSessionArgs,
-    TerminalBridgeTerminateArgs,
+    TerminalBridgeSendInputArgs, TerminalBridgeSetStreamModeArgs, TerminalBridgeStartHumanSessionArgs,
+    TerminalBridgeStartHumanSessionResult, TerminalBridgeStartSessionArgs, TerminalBridgeStartTaskSessionArgs,
+    TerminalBridgeTerminateArgs, TerminalMcpMode,
 };
 use base64::{engine::general_purpose::STANDARD, Engine};
 use prompt_builder::CodebaseSnapshot;
-use ralph_contracts::transport::EventSink;
-use ralph_errors::{codes, err_string, ralph_err, RalphResult, RalphResultExt};
-use sqlite_db::SqliteDb;
+use service_project::session::{with_db, with_db_tx};
+use service_prompts::mcp::{generate_mcp_config, generate_mcp_config_for_task};
+use core_contracts::transport::EventSink;
+use core_errors::{codes, err_string, ralph_err, RalphResult, RalphResultExt};
+use data_sqlite::SqliteDb;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
@@ -55,14 +54,14 @@ pub fn emit_system_message(
 }
 
 fn resolve_session_post_start_preamble(
-    agent: Option<&str>,
+    agent: Option<TerminalAgent>,
     model: Option<String>,
     effort: Option<String>,
     thinking: Option<bool>,
     user_preamble: Option<String>,
-) -> Option<String> {
+) -> RalphResult<Option<String>> {
     let config = SessionConfig {
-        agent: agent.map(str::to_owned),
+        agent,
         model,
         effort,
         thinking,
@@ -74,21 +73,15 @@ fn resolve_session_post_start_preamble(
 }
 
 fn build_session_config(
-    agent: Option<String>,
+    agent: Option<TerminalAgent>,
     selected_model: Option<String>,
     effort: Option<String>,
     thinking: Option<bool>,
     permission_level: Option<String>,
     post_start_preamble: Option<String>,
 ) -> RalphResult<SessionConfig> {
-    let provider_id = resolve_agent_provider(agent.as_deref()).id();
+    let provider_id = resolve_agent_provider(agent)?.id();
     if provider_id == AGENT_SHELL {
-        if !shell_agent_enabled() {
-            return ralph_err!(
-                codes::TERMINAL,
-                "Shell terminal sessions are disabled in production builds"
-            );
-        }
         if selected_model
             .as_deref()
             .map(str::trim)
@@ -110,12 +103,12 @@ fn build_session_config(
             );
         }
         let resolved_preamble = resolve_session_post_start_preamble(
-            agent.as_deref(),
+            agent,
             None,
             None,
             thinking,
             post_start_preamble,
-        );
+        )?;
         return Ok(SessionConfig {
             agent,
             model: None,
@@ -127,16 +120,15 @@ fn build_session_config(
         });
     }
 
-    let runtime_model = resolve_session_model_for_agent(agent.as_deref(), selected_model.clone())?;
-    let runtime_effort =
-        resolve_session_effort_for_agent(agent.as_deref(), selected_model.as_deref(), effort)?;
+    let runtime_model = resolve_session_model_for_agent(agent, selected_model.clone())?;
+    let runtime_effort = resolve_session_effort_for_agent(agent, selected_model.as_deref(), effort)?;
     let resolved_preamble = resolve_session_post_start_preamble(
-        agent.as_deref(),
+        agent,
         runtime_model.clone(),
         runtime_effort.clone(),
         thinking,
         post_start_preamble,
-    );
+    )?;
     Ok(SessionConfig {
         agent,
         model: runtime_model,
@@ -149,7 +141,9 @@ fn build_session_config(
 }
 
 pub fn build_launch_command(config: &SessionConfig) -> String {
-    let agent = resolve_agent_provider(config.agent.as_deref()).id();
+    let agent = resolve_agent_provider(config.agent)
+        .expect("terminal provider should resolve for launch command")
+        .id();
     if agent == AGENT_SHELL {
         return "shell -i".to_owned();
     }
@@ -221,7 +215,7 @@ pub fn resolve_start_session_context(
     mcp_dir: &Path,
     api_server_port: Option<u16>,
     project_path: &Path,
-    mcp_mode: Option<&str>,
+    mcp_mode: Option<TerminalMcpMode>,
 ) -> RalphResult<(PathBuf, Option<PathBuf>)> {
     if !project_path.is_dir() {
         return ralph_err!(
@@ -260,6 +254,7 @@ pub fn resolve_start_task_session_context(
             project_path.display()
         );
     }
+    with_db(db, |_db| Ok(()))?;
     let mcp_config = generate_mcp_config_for_task(
         db,
         codebase_snapshot,
@@ -281,7 +276,7 @@ pub fn terminal_start_session(
         ctx.mcp_dir,
         ctx.api_server_port,
         ctx.locked_project_path,
-        args.mcp_mode.as_deref(),
+        args.mcp_mode,
     )?;
 
     let config = build_session_config(
@@ -394,27 +389,27 @@ pub fn terminal_replay_output(
     pty_manager.replay_output(&args.session_id, args.after_seq, args.limit as usize)
 }
 
-fn list_models_for_agent(agent: &str) -> TerminalBridgeListModelsResult {
-    let provider = resolve_agent_provider(Some(agent));
-    let models = list_model_entries_for_agent(Some(agent))
+fn list_models_for_agent(agent: TerminalAgent) -> RalphResult<TerminalBridgeListModelsResult> {
+    let provider = resolve_agent_provider(Some(agent))?;
+    let models = list_model_entries_for_agent(Some(agent))?
         .into_iter()
         .map(TerminalBridgeModelOption::from)
         .collect();
-    TerminalBridgeListModelsResult {
+    Ok(TerminalBridgeListModelsResult {
         agent: provider.id().to_owned(),
         models,
-    }
+    })
 }
 
-pub fn terminal_list_model_form_tree() -> TerminalBridgeListModelFormTreeResult {
+pub fn terminal_list_model_form_tree() -> RalphResult<TerminalBridgeListModelFormTreeResult> {
     let mut providers = vec![
-        list_models_for_agent(AGENT_CODEX),
-        list_models_for_agent(AGENT_CLAUDE),
+        list_models_for_agent(TerminalAgent::Codex)?,
+        list_models_for_agent(TerminalAgent::Claude)?,
     ];
     if shell_agent_enabled() {
-        providers.push(list_models_for_agent(AGENT_SHELL));
+        providers.push(list_models_for_agent(TerminalAgent::Shell)?);
     }
-    TerminalBridgeListModelFormTreeResult { providers }
+    Ok(TerminalBridgeListModelFormTreeResult { providers })
 }
 
 pub fn terminal_start_human_session(
@@ -427,7 +422,7 @@ pub fn terminal_start_human_session(
                 db,
                 task_id,
                 TerminalBridgeLaunchDefaults {
-                    agent: args.agent.clone(),
+                    agent: args.agent,
                     model: args.model.clone(),
                     effort: args.effort.clone(),
                     thinking: args.thinking,
@@ -436,7 +431,7 @@ pub fn terminal_start_human_session(
             )
         })?,
         None => TerminalBridgeResolvedLaunchConfig {
-            agent: args.agent.clone(),
+            agent: args.agent,
             model: args.model.clone(),
             effort: args.effort.clone(),
             thinking: args.thinking,
@@ -451,7 +446,7 @@ pub fn terminal_start_human_session(
     };
 
     let session_config = build_session_config(
-        resolved.agent.clone(),
+        resolved.agent,
         resolved.model.clone(),
         resolved.effort.clone(),
         resolved.thinking,
@@ -464,11 +459,11 @@ pub fn terminal_start_human_session(
     let agent_session_id = generate_agent_session_id();
 
     let agent_session_number = with_db_tx(ctx.db, |db| {
-        db.create_human_agent_session(sqlite_db::AgentSessionCreateInput {
+        db.create_human_agent_session(data_sqlite::AgentSessionCreateInput {
             id: agent_session_id.clone(),
             kind: args.kind.clone(),
             task_id: args.task_id,
-            agent: resolved.agent.clone(),
+            agent: resolved.agent.map(|agent| agent.as_str().to_owned()),
             model: resolved.model.clone(),
             launch_command: Some(launch_command),
             post_start_preamble: resolved_post_start_preamble,
@@ -492,7 +487,7 @@ pub fn terminal_start_human_session(
             TerminalBridgeStartTaskSessionArgs {
                 session_id: args.terminal_session_id.clone(),
                 task_id,
-                agent: resolved.agent.clone(),
+                agent: resolved.agent,
                 model: resolved.model.clone(),
                 effort: resolved.effort.clone(),
                 permission_level: resolved.permission_level.clone(),
@@ -505,8 +500,8 @@ pub fn terminal_start_human_session(
             ctx,
             TerminalBridgeStartSessionArgs {
                 session_id: args.terminal_session_id.clone(),
-                agent: resolved.agent.clone(),
-                mcp_mode: args.mcp_mode.clone(),
+                agent: resolved.agent,
+                mcp_mode: args.mcp_mode,
                 model: resolved.model.clone(),
                 effort: resolved.effort.clone(),
                 permission_level: resolved.permission_level.clone(),
@@ -517,8 +512,8 @@ pub fn terminal_start_human_session(
     };
 
     if let Err(err) = start_result {
-        if let Err(update_err) = crate::session::with_db(ctx.db, |db| {
-            db.update_human_agent_session(sqlite_db::AgentSessionUpdateInput {
+        if let Err(update_err) = with_db(ctx.db, |db| {
+            db.update_human_agent_session(data_sqlite::AgentSessionUpdateInput {
                 id: agent_session_id.clone(),
                 kind: None,
                 task_id: None,
@@ -560,8 +555,8 @@ mod tests {
     use super::*;
     use base64::engine::general_purpose::STANDARD;
     use base64::Engine;
-    use ralph_contracts::events::BackendDiagnosticEvent;
-    use ralph_contracts::terminal::{PtyClosedEvent, PtyOutputEvent};
+    use core_contracts::events::BackendDiagnosticEvent;
+    use core_contracts::terminal::{PtyClosedEvent, PtyOutputEvent};
     use std::sync::Arc;
     use tempfile::tempdir;
 
@@ -633,7 +628,7 @@ mod tests {
     #[test]
     fn build_launch_command_for_codex_uses_reasoning_effort_config_override() {
         let config = SessionConfig {
-            agent: Some(AGENT_CODEX.to_owned()),
+            agent: Some(TerminalAgent::Codex),
             model: Some("gpt-5.3-codex".to_owned()),
             effort: Some("high".to_owned()),
             thinking: None,
@@ -759,7 +754,7 @@ mod tests {
             mcp_dir.path(),
             None,
             project_dir.path(),
-            Some("interactive"),
+            Some(TerminalMcpMode::Interactive),
         )
         .unwrap_err();
         assert!(err.to_string().contains("database not open"));
@@ -787,10 +782,10 @@ mod tests {
 
     #[test]
     fn terminal_list_model_form_tree_includes_codex_and_claude() {
-        let tree = terminal_list_model_form_tree();
+        let tree = terminal_list_model_form_tree().expect("model form tree");
         let agents: Vec<String> = tree.providers.into_iter().map(|p| p.agent).collect();
         assert!(agents.contains(&AGENT_CODEX.to_owned()));
-        assert!(agents.contains(&AGENT_CLAUDE.to_owned()));
+        assert!(agents.contains(&"claude".to_owned()));
     }
 
     #[test]
@@ -815,7 +810,7 @@ mod tests {
             &ctx,
             TerminalBridgeStartSessionArgs {
                 session_id: "s".to_owned(),
-                agent: Some(AGENT_CODEX.to_owned()),
+                agent: Some(TerminalAgent::Codex),
                 mcp_mode: None,
                 model: None,
                 effort: None,

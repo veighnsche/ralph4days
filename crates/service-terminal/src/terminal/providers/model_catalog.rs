@@ -1,4 +1,4 @@
-use crate::diagnostics;
+use core_errors::{codes, err_string, RalphResult};
 use serde::Deserialize;
 use std::collections::HashSet;
 
@@ -67,60 +67,51 @@ fn dedupe_valid_models(models: Vec<ModelSpec>) -> Vec<ModelSpec> {
     deduped
 }
 
-fn parse_codex_models_yaml(yaml: &str) -> Vec<ModelSpec> {
-    let parsed = serde_yaml::from_str::<CodexModelCatalog>(yaml).unwrap_or_else(|err| {
-        diagnostics::emit_warning(
-            "terminal-providers",
-            "model-catalog-parse-codex",
-            &format!("Invalid codex model catalog YAML: {err}"),
-        );
-        tracing::warn!("Invalid codex model catalog YAML: {err}");
-        CodexModelCatalog { models: vec![] }
-    });
-    dedupe_valid_models(parsed.models)
+fn parse_codex_models_yaml(yaml: &str) -> RalphResult<Vec<ModelSpec>> {
+    let parsed = serde_yaml::from_str::<CodexModelCatalog>(yaml).map_err(|err| {
+        err_string(
+            codes::TERMINAL,
+            format!("Invalid codex model catalog YAML: {err}"),
+        )
+    })?;
+    Ok(dedupe_valid_models(parsed.models))
 }
 
-fn parse_claudecode_models_yaml(yaml: &str) -> Vec<ModelSpec> {
-    let parsed = serde_yaml::from_str::<ClaudeCodeModelCatalog>(yaml).unwrap_or_else(|err| {
-        diagnostics::emit_warning(
-            "terminal-providers",
-            "model-catalog-parse-claudecode",
-            &format!("Invalid claudecode model catalog YAML: {err}"),
-        );
-        tracing::warn!("Invalid claudecode model catalog YAML: {err}");
-        ClaudeCodeModelCatalog { models: vec![] }
-    });
-    dedupe_valid_models(parsed.models)
+fn parse_claudecode_models_yaml(yaml: &str) -> RalphResult<Vec<ModelSpec>> {
+    let parsed = serde_yaml::from_str::<ClaudeCodeModelCatalog>(yaml).map_err(|err| {
+        err_string(
+            codes::TERMINAL,
+            format!("Invalid claudecode model catalog YAML: {err}"),
+        )
+    })?;
+    Ok(dedupe_valid_models(parsed.models))
 }
 
-fn codex_specs() -> Vec<ModelSpec> {
+fn codex_specs() -> RalphResult<Vec<ModelSpec>> {
     parse_codex_models_yaml(include_str!("codex-models.yaml"))
 }
 
-fn claudecode_specs() -> Vec<ModelSpec> {
+fn claudecode_specs() -> RalphResult<Vec<ModelSpec>> {
     parse_claudecode_models_yaml(include_str!("claudecode-models.yaml"))
 }
 
-pub fn codex_model_entries() -> Vec<ModelEntry> {
-    codex_specs().into_iter().map(ModelEntry::from).collect()
+pub fn codex_model_entries() -> RalphResult<Vec<ModelEntry>> {
+    Ok(codex_specs()?.into_iter().map(ModelEntry::from).collect())
 }
 
-pub fn codex_models() -> Vec<String> {
-    codex_model_entries().into_iter().map(|m| m.name).collect()
+pub fn codex_models() -> RalphResult<Vec<String>> {
+    Ok(codex_model_entries()?.into_iter().map(|m| m.name).collect())
 }
 
-pub fn claudecode_model_entries() -> Vec<ModelEntry> {
-    claudecode_specs()
-        .into_iter()
-        .map(ModelEntry::from)
-        .collect()
+pub fn claudecode_model_entries() -> RalphResult<Vec<ModelEntry>> {
+    Ok(claudecode_specs()?.into_iter().map(ModelEntry::from).collect())
 }
 
-pub fn claudecode_models() -> Vec<String> {
-    claudecode_model_entries()
+pub fn claudecode_models() -> RalphResult<Vec<String>> {
+    Ok(claudecode_model_entries()?
         .into_iter()
         .map(|m| m.name)
-        .collect()
+        .collect())
 }
 
 #[cfg(test)]
@@ -131,7 +122,7 @@ mod tests {
     fn parses_basic_yaml_list() {
         let yaml = "models:\n  - name: gpt-5-codex\n    description: Codex default\n  - name: gpt-5\n    description: General model\n";
         assert_eq!(
-            parse_codex_models_yaml(yaml),
+            parse_codex_models_yaml(yaml).expect("parse codex"),
             vec![
                 super::ModelSpec {
                     name: "gpt-5-codex".to_owned(),
@@ -155,7 +146,7 @@ mod tests {
     fn ignores_duplicates_by_name() {
         let yaml = "models:\n  - name: claude-opus-4\n    description: A\n  - name: claude-opus-4\n    description: B\n";
         assert_eq!(
-            parse_claudecode_models_yaml(yaml),
+            parse_claudecode_models_yaml(yaml).expect("parse claude"),
             vec![super::ModelSpec {
                 name: "claude-opus-4".to_owned(),
                 display: None,
@@ -169,7 +160,7 @@ mod tests {
     #[test]
     fn resolves_claudecode_session_model_from_mapping() {
         let yaml = "models:\n  - name: opus-4.6\n    description: Hi\n    session_model: opus-4.6\n    effort_options: [low,medium,high]\n";
-        let specs = parse_claudecode_models_yaml(yaml);
+        let specs = parse_claudecode_models_yaml(yaml).expect("parse claude mapping");
         assert_eq!(specs[0].session_model.as_deref(), Some("opus-4.6"));
         assert_eq!(specs[0].effort_options, vec!["low", "medium", "high"]);
     }

@@ -1,11 +1,12 @@
 use portable_pty::MasterPty;
-use ralph_errors::{codes, err_string, RalphResult};
-use sqlite_db::SqliteDb;
+use core_errors::{codes, err_string, RalphResult};
+use data_sqlite::SqliteDb;
 use std::io::Write;
 use std::sync::{Arc, Mutex};
 
 use super::contract::{
-    TerminalBridgeLaunchDefaults, TerminalBridgeLaunchSource, TerminalBridgeResolvedLaunchConfig,
+    TerminalAgent, TerminalBridgeLaunchDefaults, TerminalBridgeLaunchSource,
+    TerminalBridgeResolvedLaunchConfig,
 };
 
 #[derive(Debug, Clone)]
@@ -35,7 +36,7 @@ impl Default for SessionInitSettings {
 
 #[derive(Debug, Clone)]
 pub struct SessionConfig {
-    pub agent: Option<String>,
+    pub agent: Option<TerminalAgent>,
     pub model: Option<String>,
     pub effort: Option<String>,
     pub thinking: Option<bool>,
@@ -51,11 +52,26 @@ fn normalize_opt_string(value: Option<String>) -> Option<String> {
     })
 }
 
-fn normalize_agent(value: Option<String>) -> Option<String> {
+fn normalize_agent_string(value: Option<String>) -> Option<String> {
     let normalized = normalize_opt_string(value)?.to_ascii_lowercase();
     match normalized.as_str() {
         "claude-code" => Some("claude".to_owned()),
         _ => Some(normalized),
+    }
+}
+
+fn parse_agent(value: Option<String>) -> RalphResult<Option<TerminalAgent>> {
+    let Some(agent) = value else {
+        return Ok(None);
+    };
+    match agent.as_str() {
+        "codex" => Ok(Some(TerminalAgent::Codex)),
+        "claude" => Ok(Some(TerminalAgent::Claude)),
+        "shell" => Ok(Some(TerminalAgent::Shell)),
+        _ => Err(err_string(
+            codes::TERMINAL,
+            format!("Unknown agent '{agent}'. Expected 'codex', 'claude', or 'shell'"),
+        )),
     }
 }
 
@@ -93,35 +109,28 @@ fn resolve_bool_with_sources(
     (None, TerminalBridgeLaunchSource::Unset)
 }
 
-fn validate_agent(agent: Option<&str>) -> RalphResult<()> {
+fn validate_agent(agent: Option<TerminalAgent>) -> RalphResult<()> {
     let Some(agent) = agent else {
         return Ok(());
     };
-
-    // Canonical agent ids are defined by the provider layer.
-    if agent == super::providers::AGENT_CODEX || agent == super::providers::AGENT_CLAUDE {
-        return Ok(());
+    if matches!(agent, TerminalAgent::Shell) && !super::providers::shell_agent_enabled() {
+        return Err(err_string(
+            codes::TERMINAL,
+            "Shell terminal sessions are disabled in production builds",
+        ));
     }
-
-    if agent == super::providers::AGENT_SHELL && super::providers::shell_agent_enabled() {
-        return Ok(());
-    }
-
-    Err(err_string(
-        codes::TERMINAL,
-        format!("Unknown agent '{agent}'. Expected 'codex' or 'claude'"),
-    ))
+    Ok(())
 }
 
-fn model_supports_effort(agent: Option<&str>, model: Option<&str>) -> bool {
+fn model_supports_effort(agent: Option<TerminalAgent>, model: Option<&str>) -> RalphResult<bool> {
     let Some(model) = model else {
-        return false;
+        return Ok(false);
     };
 
-    super::providers::list_model_entries_for_agent(agent)
+    Ok(super::providers::list_model_entries_for_agent(agent)?
         .iter()
         .find(|entry| entry.name == model || entry.session_model.as_deref() == Some(model))
-        .is_some_and(|entry| !entry.effort_options.is_empty())
+        .is_some_and(|entry| !entry.effort_options.is_empty()))
 }
 
 pub fn resolve_task_launch_config(
@@ -150,11 +159,12 @@ pub fn resolve_task_launch_config(
             )
         })?;
 
-    let (agent, agent_source) = resolve_string_with_sources(
-        normalize_agent(task.agent),
-        normalize_agent(discipline.agent),
-        normalize_agent(defaults.agent),
+    let (raw_agent, agent_source) = resolve_string_with_sources(
+        normalize_agent_string(task.agent),
+        normalize_agent_string(discipline.agent),
+        defaults.agent.map(|agent| agent.as_str().to_owned()),
     );
+    let agent = parse_agent(raw_agent)?;
 
     let (model, model_source) = resolve_string_with_sources(
         normalize_opt_string(task.model),
@@ -174,15 +184,15 @@ pub fn resolve_task_launch_config(
     let (permission_level, permission_level_source) =
         resolve_string_with_sources(None, None, normalize_opt_string(defaults.permission_level));
 
-    validate_agent(agent.as_deref())?;
-    super::providers::resolve_session_model_for_agent(agent.as_deref(), model.clone())?;
+    validate_agent(agent)?;
+    super::providers::resolve_session_model_for_agent(agent, model.clone())?;
     super::providers::resolve_session_effort_for_agent(
-        agent.as_deref(),
+        agent,
         model.as_deref(),
         effort.clone(),
     )?;
 
-    let supports_effort = model_supports_effort(agent.as_deref(), model.as_deref());
+    let supports_effort = model_supports_effort(agent, model.as_deref())?;
 
     Ok(TerminalBridgeResolvedLaunchConfig {
         agent,
@@ -252,7 +262,7 @@ pub(crate) struct PTYSession {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::project::{project_initialize, ProjectInitializeArgs};
+    use service_project::project::{project_initialize, ProjectInitializeArgs};
     use tempfile::tempdir;
 
     #[test]
@@ -381,7 +391,7 @@ mod tests {
         let skills_json = serde_json::to_string(&discipline.skills).expect("skills json");
         let mcp_json = serde_json::to_string(&discipline.mcp_servers).expect("mcp json");
 
-        db.update_discipline(sqlite_db::DisciplineInput {
+        db.update_discipline(data_sqlite::DisciplineInput {
             name: discipline.name.clone(),
             display_name: discipline.display_name.clone(),
             acronym: discipline.acronym.clone(),
@@ -402,7 +412,7 @@ mod tests {
         })
         .expect("update discipline");
 
-        db.create_subsystem(sqlite_db::SubsystemInput {
+        db.create_subsystem(data_sqlite::SubsystemInput {
             name: "demo".to_owned(),
             display_name: "Demo".to_owned(),
             acronym: "DEMO".to_owned(),
@@ -412,7 +422,7 @@ mod tests {
 
         // Create a task that overrides agent only; model/effort/thinking should come from discipline.
         let task_id = db
-            .create_task(sqlite_db::TaskInput {
+            .create_task(data_sqlite::TaskInput {
                 subsystem: "demo".to_owned(),
                 discipline: "implementation".to_owned(),
                 title: "Test".to_owned(),
@@ -438,7 +448,7 @@ mod tests {
             &db,
             task_id,
             TerminalBridgeLaunchDefaults {
-                agent: Some("codex".to_owned()),
+                agent: Some(TerminalAgent::Codex),
                 model: Some("gpt-5.3-codex".to_owned()),
                 effort: Some("medium".to_owned()),
                 thinking: Some(false),
@@ -447,7 +457,7 @@ mod tests {
         )
         .expect("resolve_task_launch_config");
 
-        assert_eq!(resolved.agent.as_deref(), Some("claude"));
+        assert_eq!(resolved.agent, Some(TerminalAgent::Claude));
         assert!(matches!(
             resolved.agent_source,
             TerminalBridgeLaunchSource::Task
@@ -504,7 +514,7 @@ mod tests {
             .expect("implementation discipline exists");
         let skills_json = serde_json::to_string(&discipline.skills).expect("skills json");
         let mcp_json = serde_json::to_string(&discipline.mcp_servers).expect("mcp json");
-        db.update_discipline(sqlite_db::DisciplineInput {
+        db.update_discipline(data_sqlite::DisciplineInput {
             name: discipline.name.clone(),
             display_name: discipline.display_name.clone(),
             acronym: discipline.acronym.clone(),
@@ -525,7 +535,7 @@ mod tests {
         })
         .expect("update discipline");
 
-        db.create_subsystem(sqlite_db::SubsystemInput {
+        db.create_subsystem(data_sqlite::SubsystemInput {
             name: "demo".to_owned(),
             display_name: "Demo".to_owned(),
             acronym: "DEMO".to_owned(),
@@ -535,7 +545,7 @@ mod tests {
 
         // Task forces codex agent but does not set model, so discipline model would win and be invalid.
         let task_id = db
-            .create_task(sqlite_db::TaskInput {
+            .create_task(data_sqlite::TaskInput {
                 subsystem: "demo".to_owned(),
                 discipline: "implementation".to_owned(),
                 title: "Reject".to_owned(),
@@ -561,7 +571,7 @@ mod tests {
             &db,
             task_id,
             TerminalBridgeLaunchDefaults {
-                agent: Some("codex".to_owned()),
+                agent: Some(TerminalAgent::Codex),
                 model: Some("gpt-5.3-codex".to_owned()),
                 effort: Some("medium".to_owned()),
                 thinking: Some(false),

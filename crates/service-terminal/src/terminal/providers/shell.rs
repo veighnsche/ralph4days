@@ -1,4 +1,5 @@
 use portable_pty::CommandBuilder;
+use core_errors::RalphResult;
 use std::path::Path;
 
 use super::{AgentProvider, SessionConfig, AGENT_SHELL};
@@ -19,8 +20,8 @@ impl AgentProvider for ShellAdapter {
         AGENT_SHELL
     }
 
-    fn list_models(&self) -> Vec<String> {
-        Vec::new()
+    fn list_models(&self) -> RalphResult<Vec<String>> {
+        Ok(Vec::new())
     }
 
     fn build_command(

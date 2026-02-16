@@ -1,4 +1,5 @@
 use portable_pty::CommandBuilder;
+use core_errors::RalphResult;
 use std::path::Path;
 
 use super::SessionConfig;
@@ -12,7 +13,7 @@ pub trait AgentProvider: Send + Sync {
     fn build_post_start_preamble(&self, _config: &SessionConfig) -> Option<String> {
         None
     }
-    fn list_models(&self) -> Vec<String>;
+    fn list_models(&self) -> RalphResult<Vec<String>>;
     fn build_command(
         &self,
         working_dir: &Path,

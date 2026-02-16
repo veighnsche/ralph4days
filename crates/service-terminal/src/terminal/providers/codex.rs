@@ -1,4 +1,5 @@
 use portable_pty::CommandBuilder;
+use core_errors::RalphResult;
 use std::path::Path;
 
 use super::model_catalog;
@@ -38,7 +39,7 @@ impl AgentProvider for CodexAdapter {
         None
     }
 
-    fn list_models(&self) -> Vec<String> {
+    fn list_models(&self) -> RalphResult<Vec<String>> {
         model_catalog::codex_models()
     }
 
@@ -80,7 +81,7 @@ mod tests {
     fn includes_reasoning_effort_config_override_when_effort_is_set() {
         let adapter = CodexAdapter;
         let config = SessionConfig {
-            agent: Some(AGENT_CODEX.to_owned()),
+            agent: Some(core_contracts::terminal_bridge::TerminalAgent::Codex),
             model: Some("gpt-5.3-codex".to_owned()),
             effort: Some("high".to_owned()),
             thinking: None,
@@ -106,7 +107,7 @@ mod tests {
     fn omits_reasoning_effort_config_override_when_effort_is_unset() {
         let adapter = CodexAdapter;
         let config = SessionConfig {
-            agent: Some(AGENT_CODEX.to_owned()),
+            agent: Some(core_contracts::terminal_bridge::TerminalAgent::Codex),
             model: Some("gpt-5.3-codex".to_owned()),
             effort: None,
             thinking: None,
