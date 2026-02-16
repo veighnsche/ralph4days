@@ -1,5 +1,5 @@
-use ralph_contracts::events::{BackendDiagnosticEvent, BackendDiagnosticLevel};
-use ralph_contracts::transport::EventSink;
+use core_contracts::events::{BackendDiagnosticEvent, BackendDiagnosticLevel};
+use core_contracts::transport::EventSink;
 use std::sync::{Arc, OnceLock};
 
 static EVENT_SINK: OnceLock<Arc<dyn EventSink>> = OnceLock::new();

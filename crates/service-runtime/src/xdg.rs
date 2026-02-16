@@ -1,4 +1,4 @@
-use ralph_errors::{codes, RalphResult, RalphResultExt};
+use core_errors::{codes, RalphResult, RalphResultExt};
 use std::path::{Path, PathBuf};
 
 const APP_NAME: &str = "ralph4days";
@@ -13,19 +13,19 @@ pub struct XdgDirs {
 impl XdgDirs {
     pub fn resolve() -> RalphResult<Self> {
         let data = dirs::data_dir()
-            .ok_or_else(|| ralph_errors::err_string(codes::FILESYSTEM, "No XDG data directory"))?
+            .ok_or_else(|| core_errors::err_string(codes::FILESYSTEM, "No XDG data directory"))?
             .join(APP_NAME);
 
         let config = dirs::config_dir()
-            .ok_or_else(|| ralph_errors::err_string(codes::FILESYSTEM, "No XDG config directory"))?
+            .ok_or_else(|| core_errors::err_string(codes::FILESYSTEM, "No XDG config directory"))?
             .join(APP_NAME);
 
         let cache = dirs::cache_dir()
-            .ok_or_else(|| ralph_errors::err_string(codes::FILESYSTEM, "No XDG cache directory"))?
+            .ok_or_else(|| core_errors::err_string(codes::FILESYSTEM, "No XDG cache directory"))?
             .join(APP_NAME);
 
         let state = dirs::state_dir()
-            .ok_or_else(|| ralph_errors::err_string(codes::FILESYSTEM, "No XDG state directory"))?
+            .ok_or_else(|| core_errors::err_string(codes::FILESYSTEM, "No XDG state directory"))?
             .join(APP_NAME);
 
         Ok(Self {

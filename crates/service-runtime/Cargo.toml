@@ -1,0 +1,18 @@
+[package]
+name = "service-runtime"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+core-contracts = { workspace = true }
+core-errors = { workspace = true }
+tracing = "0.1"
+dirs = "5"
+
+[dev-dependencies]
+tempfile = "3"
