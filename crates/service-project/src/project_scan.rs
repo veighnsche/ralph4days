@@ -1,6 +1,6 @@
-use crate::project_contract::{ProjectInfo, ProjectScanArgs, RalphProject, RecentProject};
-use ralph_errors::{codes, RalphResult, RalphResultExt};
-use sqlite_db::SqliteDb;
+use core_contracts::project::{ProjectInfo, ProjectScanArgs, RalphProject, RecentProject};
+use core_errors::{codes, RalphResult, RalphResultExt};
+use data_sqlite::SqliteDb;
 use std::path::{Path, PathBuf};
 
 const RECENT_PROJECTS_FILENAME: &str = "recent_projects.json";
@@ -74,7 +74,7 @@ pub fn project_scan(args: ProjectScanArgs) -> RalphResult<Vec<RalphProject>> {
         PathBuf::from(dir)
     } else {
         dirs::home_dir().ok_or_else(|| {
-            ralph_errors::err_string(codes::FILESYSTEM, "Failed to get home directory")
+            core_errors::err_string(codes::FILESYSTEM, "Failed to get home directory")
         })?
     };
 

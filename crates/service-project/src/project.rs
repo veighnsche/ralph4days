@@ -1,14 +1,14 @@
-pub use ralph_contracts::project::{ProjectInitializeArgs, ProjectValidatePathArgs};
-use ralph_errors::{codes, ralph_err, RalphResult};
+pub use core_contracts::project::{ProjectInitializeArgs, ProjectValidatePathArgs};
+use core_errors::{codes, ralph_err, RalphResult};
 use std::path::Path;
 use std::path::PathBuf;
 
 fn seed_disciplines_for_stack(
-    db: &sqlite_db::SqliteDb,
+    db: &data_sqlite::SqliteDb,
     stack: u8,
     ralph_dir: &Path,
 ) -> RalphResult<()> {
-    let defs = predefined_disciplines::get_disciplines_for_stack(stack);
+    let defs = catalog_disciplines::get_disciplines_for_stack(stack);
     if defs.is_empty() && stack != 0 {
         return ralph_err!(
             codes::DISCIPLINE_OPS,
@@ -18,7 +18,7 @@ fn seed_disciplines_for_stack(
 
     let images_dir = ralph_dir.join("images").join("disciplines");
     std::fs::create_dir_all(&images_dir).map_err(|e| {
-        ralph_errors::err_string(
+        core_errors::err_string(
             codes::FILESYSTEM,
             format!("Failed to create {}: {e}", images_dir.display()),
         )
@@ -26,7 +26,7 @@ fn seed_disciplines_for_stack(
 
     for d in &defs {
         let skills_json = serde_json::to_string(&d.skills).map_err(|e| {
-            ralph_errors::err_string(
+            core_errors::err_string(
                 codes::DISCIPLINE_OPS,
                 format!(
                     "Failed to serialize skills for discipline '{}': {e}",
@@ -35,12 +35,12 @@ fn seed_disciplines_for_stack(
             )
         })?;
 
-        let image_path = match predefined_disciplines::get_discipline_image(stack, &d.name) {
+        let image_path = match catalog_disciplines::get_discipline_image(stack, &d.name) {
             Some(bytes) => {
                 let rel = format!("images/disciplines/{}.png", d.name);
                 let abs = ralph_dir.join(&rel);
                 std::fs::write(&abs, bytes).map_err(|e| {
-                    ralph_errors::err_string(
+                    core_errors::err_string(
                         codes::FILESYSTEM,
                         format!("Failed to write discipline image '{}': {e}", abs.display()),
                     )
@@ -55,7 +55,7 @@ fn seed_disciplines_for_stack(
             .as_ref()
             .map(|crops| {
                 serde_json::to_string(crops).map_err(|e| {
-                    ralph_errors::err_string(
+                    core_errors::err_string(
                         codes::DISCIPLINE_OPS,
                         format!("Failed to serialize crops for discipline '{}': {e}", d.name),
                     )
@@ -68,7 +68,7 @@ fn seed_disciplines_for_stack(
             .as_ref()
             .map(|prompt| {
                 serde_json::to_string(prompt).map_err(|e| {
-                    ralph_errors::err_string(
+                    core_errors::err_string(
                         codes::DISCIPLINE_OPS,
                         format!(
                             "Failed to serialize image_prompt for discipline '{}': {e}",
@@ -79,7 +79,7 @@ fn seed_disciplines_for_stack(
             })
             .transpose()?;
 
-        db.create_discipline(sqlite_db::DisciplineInput {
+        db.create_discipline(data_sqlite::DisciplineInput {
             name: d.name.clone(),
             display_name: d.display_name.clone(),
             acronym: d.acronym.clone(),
@@ -129,7 +129,7 @@ pub fn project_initialize(args: ProjectInitializeArgs) -> RalphResult<()> {
     }
 
     std::fs::create_dir(&ralph_dir).map_err(|e| {
-        ralph_errors::err_string(
+        core_errors::err_string(
             codes::PROJECT_INIT,
             format!("Failed to create .ralph/ directory: {e}"),
         )
@@ -137,14 +137,14 @@ pub fn project_initialize(args: ProjectInitializeArgs) -> RalphResult<()> {
 
     let db_dir = ralph_dir.join("db");
     std::fs::create_dir(&db_dir).map_err(|e| {
-        ralph_errors::err_string(
+        core_errors::err_string(
             codes::PROJECT_INIT,
             format!("Failed to create .ralph/db/ directory: {e}"),
         )
     })?;
 
     let db_path = db_dir.join("ralph.db");
-    let db = sqlite_db::SqliteDb::open(&db_path, None)?;
+    let db = data_sqlite::SqliteDb::open(&db_path, None)?;
     seed_disciplines_for_stack(&db, stack, &ralph_dir)?;
 
     db.initialize_metadata(
@@ -179,7 +179,7 @@ Describe the architecture, tech stack, and key components.
     );
 
     std::fs::write(&claude_path, claude_template).map_err(|e| {
-        ralph_errors::err_string(
+        core_errors::err_string(
             codes::FILESYSTEM,
             format!("Failed to create CLAUDE.RALPH.md: {e}"),
         )
