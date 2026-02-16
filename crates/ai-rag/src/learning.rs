@@ -18,7 +18,7 @@
 //! - **F35**: Staleness paradox — protective learnings are pruned conservatively
 //! - **F36**: Custom deserialization — no silent fallback on malformed data
 
-use ralph_macros::ipc_type;
+use core_macros::ipc_type;
 use serde::Deserialize;
 use std::collections::HashSet;
 

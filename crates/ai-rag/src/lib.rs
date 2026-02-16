@@ -66,8 +66,8 @@
 //! ## Quick Start
 //!
 //! ```rust
-//! use ralph_rag::model::*;
-//! use ralph_rag::JournalEntry;
+//! use ai_rag::model::*;
+//! use ai_rag::JournalEntry;
 //!
 //! // Build an iteration record
 //! let record = IterationRecord {

@@ -53,8 +53,8 @@ impl JournalEntry {
     /// # Examples
     ///
     /// ```
-    /// use ralph_rag::model::*;
-    /// use ralph_rag::journal::*;
+    /// use ai_rag::model::*;
+    /// use ai_rag::journal::*;
     ///
     /// let record = IterationRecord {
     ///     iteration_number: 1,
@@ -88,8 +88,8 @@ impl JournalEntry {
     /// # Examples
     ///
     /// ```
-    /// use ralph_rag::model::*;
-    /// use ralph_rag::journal::*;
+    /// use ai_rag::model::*;
+    /// use ai_rag::journal::*;
     ///
     /// let record = IterationRecord {
     ///     iteration_number: 1,

@@ -1,5 +1,5 @@
 [package]
-name = "ralph-rag"
+name = "ai-rag"
 version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
@@ -22,4 +22,4 @@ sha2 = "0.10"
 hex = "0.4"
 uuid = { version = "1", features = ["v5"] }
 ts-rs = { workspace = true }
-ralph-macros = { workspace = true }
+core-macros = { workspace = true }

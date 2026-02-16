@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 /// # Examples
 ///
 /// ```
-/// use ralph_rag::config::RagConfig;
+/// use ai_rag::config::RagConfig;
 ///
 /// let config = RagConfig::default();
 /// assert_eq!(config.embedding_model, "nomic-embed-text");

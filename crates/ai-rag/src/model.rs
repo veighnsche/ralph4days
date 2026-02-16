@@ -109,7 +109,7 @@ impl IterationRecord {
     /// # Examples
     ///
     /// ```
-    /// use ralph_rag::model::*;
+    /// use ai_rag::model::*;
     ///
     /// let record = IterationRecord {
     ///     iteration_number: 7,
@@ -178,7 +178,7 @@ impl IterationRecord {
     /// # Examples
     ///
     /// ```
-    /// use ralph_rag::model::*;
+    /// use ai_rag::model::*;
     ///
     /// let record = IterationRecord {
     ///     iteration_number: 7,

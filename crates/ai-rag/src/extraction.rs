@@ -149,8 +149,8 @@ impl ExtractionResult {
     /// # Examples
     ///
     /// ```
-    /// use ralph_rag::extraction::ExtractionResult;
-    /// use ralph_rag::model::*;
+    /// use ai_rag::extraction::ExtractionResult;
+    /// use ai_rag::model::*;
     ///
     /// let result = ExtractionResult {
     ///     summary: "Implemented OAuth2 flow".into(),
@@ -282,7 +282,7 @@ pub const AUTO_ACCUMULATE_EXCLUDE_DIRS: &[&str] = &[
 /// # Examples
 ///
 /// ```
-/// use ralph_rag::extraction::should_exclude_from_auto_accumulation;
+/// use ai_rag::extraction::should_exclude_from_auto_accumulation;
 ///
 /// // Infrastructure files are excluded
 /// assert!(should_exclude_from_auto_accumulation("package.json"));
