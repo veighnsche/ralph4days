@@ -12,7 +12,7 @@ description: |
 
 conventions: |
   - SQLite with WAL mode for concurrent reads
-  - Versioned migrations in crates/sqlite-db/src/migrations/
+  - Versioned migrations in crates/data-sqlite/src/migrations/
   - Foreign key constraints enforced
   - JSON columns for dynamic arrays (tags, depends_on)
   - ACID transactions for multi-table operations

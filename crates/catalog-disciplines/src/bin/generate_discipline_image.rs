@@ -1,7 +1,7 @@
-use predefined_disciplines::{
+use catalog_disciplines::{
     get_disciplines_for_stack, get_global_image_prompts, get_stack_metadata, DISCIPLINE_WORKFLOW,
 };
-use ralph_external::DisciplinePrompts;
+use ai_external::DisciplinePrompts;
 
 fn radix_fmt(mut n: u64, base: u64) -> String {
     const DIGITS: &[u8] = b"0123456789abcdefghijklmnopqrstuvwxyz";
@@ -132,17 +132,17 @@ async fn main() {
     };
 
     let (width, height) =
-        ralph_external::compute_dimensions(args.ratio_w, args.ratio_h, megapixels);
+        ai_external::compute_dimensions(args.ratio_w, args.ratio_h, megapixels);
 
     eprintln!(
         "Settings: {} steps, {}x{} ({:.1}MP, ratio {}:{})",
         steps, width, height, megapixels, args.ratio_w, args.ratio_h
     );
 
-    let mut workflow: std::collections::HashMap<String, ralph_external::WorkflowNode> =
+    let mut workflow: std::collections::HashMap<String, ai_external::WorkflowNode> =
         serde_json::from_str(DISCIPLINE_WORKFLOW).expect("embedded workflow is valid JSON");
-    ralph_external::set_steps(&mut workflow, steps);
-    ralph_external::set_dimensions(&mut workflow, width, height);
+    ai_external::set_steps(&mut workflow, steps);
+    ai_external::set_dimensions(&mut workflow, width, height);
     let global = get_global_image_prompts().unwrap_or_else(|error| {
         eprintln!("Failed to load global image prompts: {error}");
         std::process::exit(1);
@@ -196,11 +196,11 @@ async fn main() {
         args.discipline, discipline.display_name, args.stack
     );
 
-    let config = ralph_external::ExternalServicesConfig::load()
+    let config = ai_external::ExternalServicesConfig::load()
         .unwrap_or_else(|e| {
             eprintln!("Failed to load config: {e}");
             eprintln!("Using defaults (ComfyUI at localhost:8188)");
-            ralph_external::ExternalServicesConfig::default()
+            ai_external::ExternalServicesConfig::default()
         })
         .comfy;
 
@@ -210,7 +210,7 @@ async fn main() {
         eprintln!("NOTE: Running in sandbox - skipping ComfyUI preflight check");
         eprintln!("      If generation fails, sandbox network isolation may be the cause");
     } else {
-        let status = ralph_external::check_comfy_available(&config).await;
+        let status = ai_external::check_comfy_available(&config).await;
         if !status.available {
             eprintln!(
                 "ComfyUI not available: {}",
@@ -221,7 +221,7 @@ async fn main() {
         }
     }
 
-    let result = ralph_external::generate_discipline_portrait_with_progress(
+    let result = ai_external::generate_discipline_portrait_with_progress(
         &config,
         prompts,
         &mut workflow,
@@ -251,7 +251,7 @@ async fn main() {
                 _ => "unknown",
             };
             let stack_dir = format!(
-                "crates/predefined-disciplines/src/defaults/disciplines/{:02}_{stack_slug}/images",
+                "crates/catalog-disciplines/src/defaults/disciplines/{:02}_{stack_slug}/images",
                 args.stack,
             );
             std::fs::create_dir_all(&stack_dir).expect("Failed to create images directory");

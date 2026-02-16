@@ -10,7 +10,7 @@ Uses yolov8x-pose.pt for best accuracy on stylized art (auto-downloads on first 
 Dependencies: ultralytics, numpy, Pillow
 
 Usage:
-    python crates/predefined-disciplines/detect_faces.py [--dry-run]
+    python crates/catalog-disciplines/detect_faces.py [--dry-run]
 """
 
 import re

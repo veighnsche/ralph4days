@@ -14,7 +14,7 @@ conventions: |
   - Tauri 2.x command handlers in src-tauri/src/commands/
   - Business logic in workspace crates (crates/*), not in command handlers
   - SQLite via rusqlite with WAL mode and migration files
-  - All errors flow through ralph-errors crate
+  - All errors flow through core-errors crate
   - Use .to_owned() for string literals, not .to_string()
   - Struct params for functions with >7 arguments
 

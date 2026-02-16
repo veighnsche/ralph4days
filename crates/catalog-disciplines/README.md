@@ -1,4 +1,4 @@
-# predefined-disciplines
+# catalog-disciplines
 
 Static content library for Ralph discipline definitions. Ships predefined stacks, disciplines, and image generation prompts as compile-time embedded YAML.
 
@@ -31,7 +31,7 @@ src/
 ## API
 
 ```rust
-use predefined_disciplines::*;
+use catalog_disciplines::*;
 
 // Stack metadata
 let stacks = get_all_stack_metadata();
@@ -89,6 +89,6 @@ Image prompts are assembled from three layers, each defined in YAML:
 
 This crate owns **content and image generation**. It does NOT touch the database.
 
-- `predefined-disciplines` → provides discipline definitions + generates images
-- `sqlite-db` → receives `DisciplineInput` structs and writes them (pure CRUD)
-- `ralph-external` → ComfyUI protocol (prompt injection, polling, fetching)
+- `catalog-disciplines` → provides discipline definitions + generates images
+- `data-sqlite` → receives `DisciplineInput` structs and writes them (pure CRUD)
+- `ai-external` → ComfyUI protocol (prompt injection, polling, fetching)

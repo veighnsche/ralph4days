@@ -1,5 +1,5 @@
 [package]
-name = "predefined-disciplines"
+name = "catalog-disciplines"
 version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
@@ -13,7 +13,7 @@ path = "src/bin/generate_discipline_image.rs"
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = "0.9"
-ralph-external = { path = "../ralph-external" }
+ai-external = { path = "../ai-external" }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 
 [lints]

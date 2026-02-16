@@ -32,7 +32,7 @@ end for
 ```bash
 just gen-image <STACK> <DISCIPLINE> --dev    # Iteration (9-20 steps depending on stack)
 just gen-image <STACK> <DISCIPLINE> --prod   # Final quality (18-40 steps)
-python crates/predefined-disciplines/compose_stack.py <STACK>   # Composite after all 8 accepted
+python crates/catalog-disciplines/compose_stack.py <STACK>   # Composite after all 8 accepted
 ```
 
 Stack numbers: 01 (Generic), 02 (Desktop), 03 (SaaS), 04 (Mobile). Discipline numbers: 00-07.

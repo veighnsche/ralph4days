@@ -8,7 +8,7 @@ K-means clustering, and updates the `color:` field in the corresponding YAML.
 Dependencies: Pillow, numpy (no sklearn needed)
 
 Usage:
-    python crates/predefined-disciplines/extract_colors.py [--dry-run]
+    python crates/catalog-disciplines/extract_colors.py [--dry-run]
 """
 
 import re
