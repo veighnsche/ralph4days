@@ -13,6 +13,26 @@ use ralph_errors::RalphResult;
 use crate::rpc_codec::{decode_args, encode_result, require_null_payload};
 use crate::state::AppState;
 
+#[derive(Debug, Clone, serde::Serialize)]
+struct VisualIdentityData {
+    style: String,
+    theme: String,
+    tone: String,
+    references: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct StackMetadataData {
+    stack_id: u8,
+    name: String,
+    description: String,
+    philosophy: String,
+    visual_identity: VisualIdentityData,
+    when_to_use: Vec<String>,
+    discipline_count: u8,
+    characteristics: Vec<String>,
+}
+
 pub fn subsystems_list(
     state: &AppState,
     payload: serde_json::Value,
@@ -141,6 +161,29 @@ pub fn disciplines_delete(
         disciplines_service::disciplines_delete(db, args)
     })?;
     encode_result("disciplines_delete", deleted)
+}
+
+pub fn stacks_metadata_list(payload: serde_json::Value) -> RalphResult<serde_json::Value> {
+    require_null_payload("stacks_metadata_list", payload)?;
+    let metadata: Vec<StackMetadataData> = predefined_disciplines::get_all_stack_metadata()
+        .iter()
+        .map(|m| StackMetadataData {
+            stack_id: m.stack_id,
+            name: m.name.clone(),
+            description: m.description.clone(),
+            philosophy: m.philosophy.clone(),
+            visual_identity: VisualIdentityData {
+                style: m.visual_identity.style.clone(),
+                theme: m.visual_identity.theme.clone(),
+                tone: m.visual_identity.tone.clone(),
+                references: m.visual_identity.references.clone(),
+            },
+            when_to_use: m.when_to_use.clone(),
+            discipline_count: m.discipline_count,
+            characteristics: m.characteristics.clone(),
+        })
+        .collect();
+    encode_result("stacks_metadata_list", metadata)
 }
 
 pub fn disciplines_image_data_get(

@@ -18,7 +18,7 @@ Notes:
 - [ ] `src-tauri` builds for mobile targets without pulling `rusqlite`/`portable-pty`/`axum`/desktop windowing assumptions.
 - [x] On mobile: calling any stateful command before `remote_connect` returns an explicit error telling the caller to connect first.
 - [x] Protocol mismatch remains a hard failure on connect (already enforced in `RemoteWireFrameConnection::connect`).
-- [ ] `just verify` passes and `just types-check` confirms TS bindings are stable/up to date.
+- [x] `just verify` passes and `just types-check` confirms TS bindings are stable/up to date.
 
 ## Checklist
 
@@ -64,35 +64,42 @@ Runtime init:
 - [x] Implement a mobile `run()` path that only initializes tracing, state, and invoke handlers (no explicit desktop windows).
 
 State split:
-- [ ] Split `src-tauri/src/commands/state.rs` into `state_desktop.rs` and `state_mobile.rs`, with `state.rs` re-exporting `AppState` via `cfg`.
-- [ ] Mobile `AppState` contains only remote connection state and what’s required to re-emit events via the sink.
+- [x] Split `src-tauri/src/commands/state.rs` into `state_desktop.rs` and `state_mobile.rs`, with `state.rs` re-exporting `AppState` via `cfg`.
+- [x] Mobile `AppState` contains only remote connection state and what’s required to re-emit events via the sink.
 
 Command behavior:
 - [x] Add a helper on mobile: `remote_rpc_client_required()` that fails with a clear "connect first" error if not connected.
-- [ ] For every command in `src-tauri/src/commands/*.rs`, apply this rule:
-- [ ] On mobile: always proxy to remote (`ralphd`) via `remote_invoke_*`.
+- [x] For every command in `src-tauri/src/commands/*.rs`, apply this rule:
+- [x] On mobile: always proxy to remote (`ralphd`) via `remote_invoke_*`.
 - [x] On desktop: keep current behavior (proxy when connected; otherwise local implementation).
 - [x] For desktop-only window commands (`window_splash_close`, `window_open_new`), keep names registered but return an explicit unsupported error on mobile.
 
 ### 7) Contract / Type Generation Gates
-- [ ] Run and keep passing: `just types-check` (or `just types` then verify `git diff` only changes expected generated TS, if any).
+- [x] Run and keep passing: `just types-check` (or `just types` then verify `git diff` only changes expected generated TS, if any).
 - [ ] Ensure no duplicate ts-rs output filenames (ownership invariant).
 
 ### 8) Test Plan
-- [ ] `cargo test -p ralph-contracts`
+- [x] `cargo test -p ralph-contracts`
 - [x] `cargo test --manifest-path src-tauri/Cargo.toml`
-- [ ] `cargo test --manifest-path src-daemon/Cargo.toml`
-- [ ] Run existing WS protocol/parity smoke tests under `src-daemon/tests/ws_*` and update them only for moved type paths.
+- [x] `cargo test --manifest-path src-daemon/Cargo.toml`
+- [x] Run existing WS protocol/parity smoke tests under `src-daemon/tests/ws_*` and update them only for moved type paths.
 - [ ] Add a mobile compile gate:
 - [ ] `cargo check --manifest-path src-tauri/Cargo.toml --target <android/ios target>` (exact targets depend on toolchain availability).
 - [ ] Add a `just check-mobile` recipe only if it can be made deterministic on this machine/toolchain.
 
 ### 10) Current Implementation Notes (2026-02-16)
 - [x] `src-tauri/src/commands/state.rs` now enforces remote connection on mobile and fails loudly when disconnected/not connected.
+- [x] `src-tauri/src/commands/state.rs` now re-exports platform slices: `state_desktop.rs` and `state_mobile.rs`.
+- [x] `src-tauri/src/commands/state_mobile.rs` now has remote-only app state (remote connection state only).
+- [x] `src-tauri/src/commands/mod.rs` now routes mobile to `*_mobile.rs` command modules that only proxy remote invokes.
 - [x] `src-tauri/src/lib.rs` now has mobile/desktop bootstrap split (mobile skips local API server + desktop window/CLI flow).
 - [x] `src-tauri/src/commands/project.rs` desktop-only window commands now return explicit mobile unsupported errors.
 - [x] `src-tauri/Cargo.toml` now uses rustls-based WS transport and desktop-only `tauri-plugin-cli`.
-- [ ] Remaining: full mobile dependency diet and compile-time `AppState` split (`state_desktop.rs` / `state_mobile.rs`).
+- [x] `src-daemon` now handles `stacks_metadata_list` and `terminal_emit_system_message` so mobile remote-only commands keep parity.
+- [x] `just types-check` currently passes.
+- [x] `just verify` currently passes.
+- [ ] Mobile compile gate is still blocked locally because Android/iOS rust targets are not installed on this machine.
+- [ ] Remaining: full mobile dependency diet (target-specific Cargo deps) to remove desktop crates from mobile builds.
 - [ ] Remaining: contract DTO migration from `sqlite-db`/`ralph-backend` into `ralph-contracts`.
 
 ### 9) Rollout / Coordination (Minimize Collisions)

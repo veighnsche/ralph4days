@@ -1,6 +1,6 @@
 use ralph_backend::terminal::{
-    TerminalBridgeListModelFormTreeResult, TerminalBridgeReplayOutputArgs,
-    TerminalBridgeReplayOutputResult, TerminalBridgeResizeArgs,
+    TerminalBridgeEmitSystemMessageArgs, TerminalBridgeListModelFormTreeResult,
+    TerminalBridgeReplayOutputArgs, TerminalBridgeReplayOutputResult, TerminalBridgeResizeArgs,
     TerminalBridgeResolveTaskLaunchArgs, TerminalBridgeResolvedLaunchConfig,
     TerminalBridgeSendInputArgs, TerminalBridgeSetStreamModeArgs,
     TerminalBridgeStartHumanSessionArgs, TerminalBridgeStartHumanSessionResult,
@@ -140,6 +140,16 @@ pub fn terminal_replay_output(
     let result: TerminalBridgeReplayOutputResult =
         terminal_bridge::terminal_replay_output(&state.pty_manager, args)?;
     encode_result("terminal_replay_output", result)
+}
+
+pub fn terminal_emit_system_message(
+    state: &AppState,
+    payload: serde_json::Value,
+) -> RalphResult<serde_json::Value> {
+    let args: TerminalBridgeEmitSystemMessageArgs =
+        decode_args("terminal_emit_system_message", payload)?;
+    terminal_bridge::emit_system_message(state.event_sink.as_ref(), args.session_id, args.text)?;
+    Ok(serde_json::Value::Null)
 }
 
 pub fn terminal_terminate(

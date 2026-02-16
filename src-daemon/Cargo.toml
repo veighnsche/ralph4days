@@ -8,6 +8,7 @@ rust-version = "1.75"
 dirs = "5"
 futures-util = "0.3"
 prompt-builder = { path = "../crates/prompt-builder" }
+predefined-disciplines = { path = "../crates/predefined-disciplines" }
 ralph-backend = { workspace = true }
 ralph-contracts = { workspace = true }
 ralph-errors = { workspace = true }

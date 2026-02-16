@@ -45,6 +45,7 @@ pub async fn handle_command(
         "disciplines_create" => subsystems::disciplines_create(state, payload),
         "disciplines_update" => subsystems::disciplines_update(state, payload),
         "disciplines_delete" => subsystems::disciplines_delete(state, payload),
+        "stacks_metadata_list" => subsystems::stacks_metadata_list(payload),
         "disciplines_image_data_get" => subsystems::disciplines_image_data_get(state, payload),
         "disciplines_cropped_image_get" => {
             subsystems::disciplines_cropped_image_get(state, payload)
@@ -71,6 +72,9 @@ pub async fn handle_command(
         "terminal_resize" => terminal_bridge::terminal_resize(state, payload),
         "terminal_set_stream_mode" => terminal_bridge::terminal_set_stream_mode(state, payload),
         "terminal_replay_output" => terminal_bridge::terminal_replay_output(state, payload),
+        "terminal_emit_system_message" => {
+            terminal_bridge::terminal_emit_system_message(state, payload)
+        }
         "terminal_terminate" => terminal_bridge::terminal_terminate(state, payload),
 
         "tasks_create" => tasks::tasks_create(state, payload),
