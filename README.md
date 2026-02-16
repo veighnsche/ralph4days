@@ -79,7 +79,10 @@ Ralph4days is in active development. The app already provides a strong interacti
 - Rust 1.75+
 - Bun
 - Claude CLI available on PATH (`claude`)
-- Linux desktop dependencies required by Tauri/WebKitGTK
+- `just` task runner (`cargo install just`)
+- Platform dependencies:
+  - macOS: Xcode + Command Line Tools (`xcode-select --install`)
+  - Linux: desktop dependencies required by Tauri/WebKitGTK
 
 ## Development
 
@@ -115,6 +118,12 @@ just build
 
 # linux bundles (.deb/.rpm/.appimage)
 just release-linux
+
+# macOS bundles (.app/.dmg)
+just release-macos
+
+# local-only Apple Silicon optimized macOS bundles
+just release-macos-native
 ```
 
 ## Project Layout

@@ -17,7 +17,13 @@ default:
 
 # Start development server (frontend + backend hot reload)
 dev:
-    WEBKIT_DISABLE_DMABUF_RENDERER=1 bun tauri dev
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ "$(uname -s)" = "Linux" ]; then
+        WEBKIT_DISABLE_DMABUF_RENDERER=1 bun tauri dev
+    else
+        bun tauri dev
+    fi
 
 # Start frontend dev server only
 dev-frontend:
@@ -72,7 +78,11 @@ dev-mock FIXTURE:
         fi
     fi
 
-    WEBKIT_DISABLE_DMABUF_RENDERER=1 bun tauri dev -- -- --project "$PROJECT_DIR"
+    if [ "$(uname -s)" = "Linux" ]; then
+        WEBKIT_DISABLE_DMABUF_RENDERER=1 bun tauri dev -- -- --project "$PROJECT_DIR"
+    else
+        bun tauri dev -- -- --project "$PROJECT_DIR"
+    fi
 
 # Run cargo check (fast compilation check)
 check:
@@ -185,7 +195,7 @@ audit-no-playwright:
 
 # === Building ===
 
-# Build release binary (optimized for Alder Lake)
+# Build release desktop binary for the current host platform
 build:
     NO_STRIP=1 bun tauri build
 
@@ -208,6 +218,14 @@ clean:
 release-linux:
     NO_STRIP=1 bun tauri build --bundles deb,rpm,appimage
 
+# Build macOS bundles (.app + .dmg)
+release-macos:
+    NO_STRIP=1 bun tauri build --bundles app,dmg
+
+# Build macOS bundles tuned for the current Apple Silicon CPU (local distribution only)
+release-macos-native:
+    RUSTFLAGS='-C target-cpu=native' NO_STRIP=1 bun tauri build --bundles app,dmg
+
 # === Utilities ===
 
 # Temporary: best-effort model discovery for Codex CLI
@@ -220,20 +238,56 @@ get-claude-models:
 
 # Check if mold linker is installed
 check-mold:
-    @which mold > /dev/null && echo "✓ mold linker installed" || echo "✗ mold not found - install with: sudo dnf install mold"
+    #!/usr/bin/env bash
+    if [ "$(uname -s)" = "Linux" ]; then
+        which mold >/dev/null && echo "✓ mold linker installed" || echo "✗ mold not found - install with your distro package manager"
+    else
+        echo "ℹ mold linker check is Linux-specific; skipped on $(uname -s)"
+    fi
 
 # Show system info relevant to development
 sysinfo:
-    @echo "=== CPU ==="
-    @lscpu | grep "Model name"
-    @echo "\n=== Memory ==="
-    @free -h | head -2
-    @echo "\n=== GPU ==="
-    @nvidia-smi --query-gpu=name,memory.total --format=csv,noheader 2>/dev/null || echo "No NVIDIA GPU"
-    @echo "\n=== Rust ==="
-    @rustc --version
-    @echo "\n=== Node ==="
-    @node --version
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    echo "=== OS ==="
+    uname -a
+
+    if [ "$(uname -s)" = "Darwin" ]; then
+        echo
+        echo "=== CPU ==="
+        sysctl -n machdep.cpu.brand_string 2>/dev/null || true
+        echo "arch: $(uname -m)"
+
+        echo
+        echo "=== Memory ==="
+        sysctl -n hw.memsize | awk '{printf "ram_bytes: %s\n", $1}'
+        vm_stat | head -n 5
+
+        echo
+        echo "=== GPU ==="
+        system_profiler SPDisplaysDataType 2>/dev/null | grep -E 'Chipset Model|Vendor|Metal' || true
+    else
+        echo
+        echo "=== CPU ==="
+        lscpu | grep "Model name"
+
+        echo
+        echo "=== Memory ==="
+        free -h | head -2
+
+        echo
+        echo "=== GPU ==="
+        nvidia-smi --query-gpu=name,memory.total --format=csv,noheader 2>/dev/null || echo "No NVIDIA GPU"
+    fi
+
+    echo
+    echo "=== Rust ==="
+    rustc --version
+
+    echo
+    echo "=== Node ==="
+    node --version
 
 # Open project in VS Code
 code:
@@ -260,7 +314,10 @@ types:
     shopt -s nullglob
     root_outputs=(target/ts-bindings/*.ts)
     if [ "${#root_outputs[@]}" -eq 0 ]; then
-        mapfile -d '' ts_files < <(find crates src-tauri src-daemon -type f -path '*/target/ts-bindings/*.ts' -print0)
+        ts_files=()
+        while IFS= read -r -d '' file; do
+            ts_files+=("$file")
+        done < <(find crates src-tauri src-daemon -type f -path '*/target/ts-bindings/*.ts' -print0)
         if [ "${#ts_files[@]}" -eq 0 ]; then
             echo '❌ ts-rs produced no bindings under target/ts-bindings/*.ts or */target/ts-bindings/*.ts'
             exit 1

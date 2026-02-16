@@ -5,6 +5,20 @@ PROJECT_PATH="${RALPH_E2E_PROJECT:-}"
 MOCK_DIR="${RALPH_MOCK_DIR:-/tmp/ralph4days-mock}"
 DRIVER_BINARY="${TAURI_DRIVER_BINARY:-}"
 NATIVE_WEB_DRIVER_NAME='WebKitWebDriver'
+OS_NAME="$(uname -s)"
+
+if [ "${OS_NAME}" = "Darwin" ]; then
+  echo "❌ Desktop WebDriver tests are currently unsupported on macOS for Tauri."
+  echo "Use unit/runtime integration tests on macOS and run desktop WebDriver tests on Linux/Windows."
+  echo "Docs: https://v2.tauri.app/develop/tests/webdriver/"
+  exit 1
+fi
+
+if [ "${OS_NAME}" != "Linux" ]; then
+  echo "❌ Unsupported OS for this desktop preflight script: ${OS_NAME}"
+  echo "Docs: https://v2.tauri.app/develop/tests/webdriver/"
+  exit 1
+fi
 
 if [ -z "${PROJECT_PATH}" ]; then
   PROJECT_PATH="${MOCK_DIR}/04-desktop-dev"
@@ -43,7 +57,7 @@ else
   fi
 fi
 
-if ! command -v ${NATIVE_WEB_DRIVER_NAME} >/dev/null 2>&1; then
+if ! command -v "${NATIVE_WEB_DRIVER_NAME}" >/dev/null 2>&1; then
   echo "❌ ${NATIVE_WEB_DRIVER_NAME} not found in PATH."
   echo "Install the native WebKit WebDriver package for your distro:"
   if command -v dnf >/dev/null 2>&1; then
