@@ -89,6 +89,7 @@ check-mobile TARGET="aarch64-linux-android":
         exit 1
     fi
 
+    bunx tsc --noEmit
     cargo check --manifest-path src-tauri/Cargo.toml --target "{{TARGET}}" --lib
 
     forbidden="$(cargo tree --manifest-path src-tauri/Cargo.toml --target "{{TARGET}}" -e normal | rg 'data-sqlite|ai-prompt-builder|service(-|$)|portable-pty|axum' || true)"
@@ -123,8 +124,12 @@ fmt-check:
 # Run all checks (lint + format)
 check-all: lint fmt-check
 
-# Quick correctness gate (lint + format + generated types + contract drift tests)
-verify: check-all types-check contract-tests
+# Frontend compile/type gate
+frontend-typecheck:
+    bunx tsc --noEmit
+
+# Quick correctness gate (lint + format + frontend typecheck + generated types + contract drift tests)
+verify: check-all frontend-typecheck types-check contract-tests
 
 # Contract-only gate that is CI-friendly (no GUI runtime).
 verify-contract: types-check contract-tests
@@ -154,8 +159,8 @@ test-rust:
 
 # Run backend terminal-bridge test suite only
 test-terminal-bridge-backend:
-    cargo test --manifest-path src-tauri/Cargo.toml terminal_bridge
-    cargo test --manifest-path src-tauri/Cargo.toml terminal::manager::tests
+    cargo test -p service-terminal terminal_bridge
+    cargo test -p service-terminal terminal::manager::tests
 
 # Run frontend unit tests
 test-frontend:

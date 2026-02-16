@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { TerminalAgent, TerminalMcpMode } from '@/types/generated'
 import { recordTerminalBridgeOutput, recordTerminalReady } from './diagnostics'
 import {
   terminalBridgeListenSessionClosed,
@@ -15,8 +16,8 @@ import {
 
 export interface TerminalSessionConfig {
   sessionId: string
-  agent?: string
-  mcpMode?: string
+  agent?: TerminalAgent
+  mcpMode?: TerminalMcpMode
   taskId?: number
   model?: string | null
   effort?: 'low' | 'medium' | 'high' | null
@@ -26,7 +27,7 @@ export interface TerminalSessionConfig {
   isActive?: boolean
   humanSession?: {
     kind: string
-    agent?: string
+    agent?: TerminalAgent
     postStartPreamble?: string
     initPrompt?: string
   }
