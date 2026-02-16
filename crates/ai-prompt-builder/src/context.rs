@@ -1,5 +1,5 @@
 use crate::snapshot::CodebaseSnapshot;
-use sqlite_db::{Discipline, ProjectMetadata, Subsystem as Feature, Task};
+use data_sqlite::{Discipline, ProjectMetadata, Subsystem as Feature, Task};
 use std::collections::HashMap;
 
 /// A feature comment scored by RAG relevance to the current task.

@@ -1,4 +1,4 @@
-use ralph_macros::ipc_type;
+use core_macros::ipc_type;
 
 #[ipc_type(serialize_only)]
 pub struct SectionInfo {

@@ -56,7 +56,7 @@ fn generate_signal_server(ctx: &PromptContext) -> (Vec<McpScript>, String) {
         .ok()
         .and_then(|p| p.parent().map(std::path::Path::to_path_buf))
         .and_then(|p| {
-            let candidate = p.join("../crates/prompt-builder/src/mcp/task_signals_server.ts");
+            let candidate = p.join("../crates/ai-prompt-builder/src/mcp/task_signals_server.ts");
             if candidate.exists() {
                 Some(candidate)
             } else {
@@ -64,7 +64,7 @@ fn generate_signal_server(ctx: &PromptContext) -> (Vec<McpScript>, String) {
             }
         })
         .unwrap_or_else(|| {
-            std::path::PathBuf::from("crates/prompt-builder/src/mcp/task_signals_server.ts")
+            std::path::PathBuf::from("crates/ai-prompt-builder/src/mcp/task_signals_server.ts")
         });
 
     let escaped_path = json_escape(&server_path.to_string_lossy());
@@ -357,19 +357,19 @@ mod tests {
 
     #[test]
     fn config_includes_discipline_mcp_servers() {
-        use sqlite_db::{Discipline, McpServerConfig};
+        use data_sqlite::{Discipline, McpServerConfig};
         use std::collections::HashMap;
 
         let mut ctx = test_context();
         ctx.target_task_id = Some(1);
-        ctx.tasks = vec![sqlite_db::Task {
+        ctx.tasks = vec![data_sqlite::Task {
             id: 1,
             subsystem: "auth".to_owned(),
             discipline: "frontend".to_owned(),
             title: "Build login".to_owned(),
             description: None,
-            status: sqlite_db::TaskStatus::Pending,
-            priority: Some(sqlite_db::Priority::Medium),
+            status: data_sqlite::TaskStatus::Pending,
+            priority: Some(data_sqlite::Priority::Medium),
             tags: vec![],
             depends_on: vec![],
             created: None,

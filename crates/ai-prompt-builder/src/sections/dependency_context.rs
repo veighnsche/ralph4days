@@ -1,6 +1,6 @@
 use crate::context::PromptContext;
 use crate::recipe::Section;
-use sqlite_db::TaskStatus;
+use data_sqlite::TaskStatus;
 
 fn build(ctx: &PromptContext) -> Option<String> {
     let task = ctx.target_task()?;

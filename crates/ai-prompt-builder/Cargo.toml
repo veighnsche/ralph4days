@@ -1,5 +1,5 @@
 [package]
-name = "prompt-builder"
+name = "ai-prompt-builder"
 version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
@@ -9,14 +9,14 @@ rust-version.workspace = true
 workspace = true
 
 [dependencies]
-sqlite-db = { path = "../sqlite-db" }
+data-sqlite = { path = "../data-sqlite" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sha2 = "0.10"
 hex = "0.4"
 tracing = "0.1"
 ts-rs = { workspace = true }
-ralph-macros = { workspace = true }
+core-macros = { workspace = true }
 uuid = { version = "1", features = ["v4"] }
 
 [dev-dependencies]

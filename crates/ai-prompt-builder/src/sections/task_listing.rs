@@ -16,7 +16,7 @@ fn build(ctx: &PromptContext) -> Option<String> {
         let priority = task
             .priority
             .as_ref()
-            .map_or("-", sqlite_db::Priority::as_str);
+            .map_or("-", data_sqlite::Priority::as_str);
         out.push_str(&format!(
             "\n| {} | {} | {} | {} | {} |",
             task.id,
