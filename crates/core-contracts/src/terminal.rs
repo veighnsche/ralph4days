@@ -1,4 +1,4 @@
-use ralph_macros::ipc_type;
+use core_macros::ipc_type;
 
 pub const TERMINAL_OUTPUT_EVENT: &str = "terminal:output";
 pub const TERMINAL_CLOSED_EVENT: &str = "terminal:closed";

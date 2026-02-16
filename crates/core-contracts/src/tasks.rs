@@ -1,5 +1,5 @@
 use crate::domain::{Priority, TaskProvenance};
-use ralph_macros::ipc_type;
+use core_macros::ipc_type;
 
 #[ipc_type]
 pub struct TasksCreateArgs {

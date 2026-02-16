@@ -1,10 +1,44 @@
-use ralph_macros::ipc_type;
+use core_macros::ipc_type;
+
+#[ipc_type(rename_all = "lowercase")]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum TerminalAgent {
+    Codex,
+    Claude,
+    Shell,
+}
+
+impl TerminalAgent {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Codex => "codex",
+            Self::Claude => "claude",
+            Self::Shell => "shell",
+        }
+    }
+}
+
+#[ipc_type(rename_all = "snake_case")]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum TerminalMcpMode {
+    Interactive,
+    TaskCreation,
+}
+
+impl TerminalMcpMode {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Interactive => "interactive",
+            Self::TaskCreation => "task_creation",
+        }
+    }
+}
 
 #[ipc_type]
 pub struct TerminalBridgeStartSessionArgs {
     pub session_id: String,
-    pub agent: Option<String>,
-    pub mcp_mode: Option<String>,
+    pub agent: Option<TerminalAgent>,
+    pub mcp_mode: Option<TerminalMcpMode>,
     pub model: Option<String>,
     pub effort: Option<String>,
     pub permission_level: Option<String>,
@@ -16,7 +50,7 @@ pub struct TerminalBridgeStartSessionArgs {
 pub struct TerminalBridgeStartTaskSessionArgs {
     pub session_id: String,
     pub task_id: u32,
-    pub agent: Option<String>,
+    pub agent: Option<TerminalAgent>,
     pub model: Option<String>,
     pub effort: Option<String>,
     pub permission_level: Option<String>,
@@ -115,13 +149,13 @@ pub struct TerminalBridgeStartHumanSessionArgs {
     pub terminal_session_id: String,
     pub kind: String,
     pub task_id: Option<u32>,
-    pub agent: Option<String>,
+    pub agent: Option<TerminalAgent>,
     pub model: Option<String>,
     pub effort: Option<String>,
     pub permission_level: Option<String>,
     pub post_start_preamble: Option<String>,
     pub init_prompt: Option<String>,
-    pub mcp_mode: Option<String>,
+    pub mcp_mode: Option<TerminalMcpMode>,
     pub thinking: Option<bool>,
 }
 
@@ -141,7 +175,7 @@ pub enum TerminalBridgeLaunchSource {
 
 #[ipc_type]
 pub struct TerminalBridgeLaunchDefaults {
-    pub agent: Option<String>,
+    pub agent: Option<TerminalAgent>,
     pub model: Option<String>,
     pub effort: Option<String>,
     pub thinking: Option<bool>,
@@ -156,7 +190,7 @@ pub struct TerminalBridgeResolveTaskLaunchArgs {
 
 #[ipc_type]
 pub struct TerminalBridgeResolvedLaunchConfig {
-    pub agent: Option<String>,
+    pub agent: Option<TerminalAgent>,
     pub model: Option<String>,
     pub effort: Option<String>,
     pub thinking: Option<bool>,

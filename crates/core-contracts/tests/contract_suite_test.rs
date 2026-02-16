@@ -1,8 +1,8 @@
-use ralph_contracts::json_safe::MAX_JSON_SAFE_INTEGER_U64;
-use ralph_contracts::protocol::ProtocolVersionInfo;
-use ralph_contracts::terminal::{PtyClosedEvent, PtyOutputEvent};
-use ralph_contracts::transport::{RemoteEventFrame, RemoteWireFrame};
-use ralph_errors::{codes, RalphError};
+use core_contracts::json_safe::MAX_JSON_SAFE_INTEGER_U64;
+use core_contracts::protocol::ProtocolVersionInfo;
+use core_contracts::terminal::{PtyClosedEvent, PtyOutputEvent};
+use core_contracts::transport::{RemoteEventFrame, RemoteWireFrame};
+use core_errors::{codes, RalphError};
 
 #[test]
 fn contract_suite_protocol_version_info_serializes_expected_shape() {

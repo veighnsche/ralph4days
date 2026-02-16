@@ -1,4 +1,4 @@
-use ralph_macros::ipc_type;
+use core_macros::ipc_type;
 
 pub const BACKEND_DIAGNOSTIC_EVENT: &str = "backend-diagnostic";
 
