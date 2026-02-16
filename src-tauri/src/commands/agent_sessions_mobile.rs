@@ -1,13 +1,12 @@
 use super::remote_proxy::{remote_invoke_args, remote_invoke_no_args};
 use super::state::AppState;
-use ralph_backend::agent_sessions_contract::AgentSessionsByIdArgs;
 use ralph_errors::RalphResult;
 use tauri::State;
 
 #[tauri::command]
 pub async fn agent_sessions_create_human(
     state: State<'_, AppState>,
-    args: sqlite_db::AgentSessionCreateInput,
+    args: serde_json::Value,
 ) -> RalphResult<()> {
     let rpc = state.inner().remote_rpc_client_required().await?;
     remote_invoke_args(&rpc, "agent_sessions_create_human", args).await
@@ -16,7 +15,7 @@ pub async fn agent_sessions_create_human(
 #[tauri::command]
 pub async fn agent_sessions_update_human(
     state: State<'_, AppState>,
-    args: sqlite_db::AgentSessionUpdateInput,
+    args: serde_json::Value,
 ) -> RalphResult<()> {
     let rpc = state.inner().remote_rpc_client_required().await?;
     remote_invoke_args(&rpc, "agent_sessions_update_human", args).await
@@ -25,7 +24,7 @@ pub async fn agent_sessions_update_human(
 #[tauri::command]
 pub async fn agent_sessions_delete_human(
     state: State<'_, AppState>,
-    args: AgentSessionsByIdArgs,
+    args: serde_json::Value,
 ) -> RalphResult<()> {
     let rpc = state.inner().remote_rpc_client_required().await?;
     remote_invoke_args(&rpc, "agent_sessions_delete_human", args).await
@@ -34,8 +33,8 @@ pub async fn agent_sessions_delete_human(
 #[tauri::command]
 pub async fn agent_sessions_get(
     state: State<'_, AppState>,
-    args: AgentSessionsByIdArgs,
-) -> RalphResult<Option<sqlite_db::AgentSession>> {
+    args: serde_json::Value,
+) -> RalphResult<serde_json::Value> {
     let rpc = state.inner().remote_rpc_client_required().await?;
     remote_invoke_args(&rpc, "agent_sessions_get", args).await
 }
@@ -43,7 +42,7 @@ pub async fn agent_sessions_get(
 #[tauri::command]
 pub async fn agent_sessions_list_human(
     state: State<'_, AppState>,
-) -> RalphResult<Vec<sqlite_db::AgentSession>> {
+) -> RalphResult<serde_json::Value> {
     let rpc = state.inner().remote_rpc_client_required().await?;
     remote_invoke_no_args(&rpc, "agent_sessions_list_human").await
 }

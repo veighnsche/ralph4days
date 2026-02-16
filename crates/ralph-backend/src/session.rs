@@ -1,16 +1,11 @@
 use crate::project::validate_project_path;
 use crate::{diagnostics, project_scan};
+pub use ralph_contracts::session::ProjectLockSetArgs;
 use ralph_errors::{codes, err_string, ralph_err, RalphResult, RalphResultExt};
-use ralph_macros::ipc_type;
 use sqlite_db::SqliteDb;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Mutex;
-
-#[ipc_type]
-pub struct ProjectLockSetArgs {
-    pub path: String,
-}
 
 pub fn with_db<T, F>(db: &Mutex<Option<SqliteDb>>, f: F) -> RalphResult<T>
 where

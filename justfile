@@ -78,6 +78,28 @@ dev-mock FIXTURE:
 check:
     cargo check --manifest-path src-tauri/Cargo.toml
 
+# Mobile compile/dependency gate (defaults to Android ARM64 target)
+check-mobile TARGET="aarch64-linux-android":
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    if ! rustup target list --installed | grep -qx "{{TARGET}}"; then
+        echo "❌ Rust target not installed: {{TARGET}}"
+        echo "Run: rustup target add {{TARGET}}"
+        exit 1
+    fi
+
+    cargo check --manifest-path src-tauri/Cargo.toml --target "{{TARGET}}" --lib
+
+    forbidden="$(cargo tree --manifest-path src-tauri/Cargo.toml --target "{{TARGET}}" -e normal | rg 'sqlite-db|prompt-builder|ralph-backend|portable-pty|axum' || true)"
+    if [ -n "${forbidden}" ]; then
+        echo "❌ Forbidden desktop backend crates detected in mobile dependency graph:"
+        echo "${forbidden}"
+        exit 1
+    fi
+
+    echo "✓ Mobile dependency gate passed for {{TARGET}}"
+
 # Run lints (Rust + TypeScript)
 lint:
     cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings

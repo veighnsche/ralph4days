@@ -1,7 +1,16 @@
+pub mod agent_sessions;
+pub mod disciplines;
+pub mod domain;
 pub mod events;
 pub mod frontend;
 pub mod json_safe;
+pub mod project;
+pub mod prompt_builder;
 pub mod protocol;
 pub mod remote;
+pub mod session;
+pub mod subsystems;
+pub mod tasks;
 pub mod terminal;
+pub mod terminal_bridge;
 pub mod transport;

@@ -1,5 +1,6 @@
-use ralph_backend::agent_sessions_contract::AgentSessionsByIdArgs;
-use ralph_backend::project_contract::{ProjectInfo, ProjectScanArgs, RalphProject, RecentProject};
+use ralph_contracts::agent_sessions::AgentSessionsByIdArgs;
+use ralph_contracts::domain::TaskSignalSummary;
+use ralph_contracts::project::{ProjectInfo, ProjectScanArgs, RalphProject, RecentProject};
 use ralph_contracts::remote::RemoteConnectResult;
 use serde::de::DeserializeOwned;
 
@@ -42,8 +43,8 @@ fn strict_decode_rejects_unknown_fields_in_request_and_result_dtos() {
         "unknown": 1
     }));
 
-    // sqlite-db result DTO
-    assert_rejects_unknown_fields::<sqlite_db::TaskSignalSummary>(serde_json::json!({
+    // domain result DTO
+    assert_rejects_unknown_fields::<TaskSignalSummary>(serde_json::json!({
         "pendingAsks": 1,
         "flagCount": 0,
         "maxFlagSeverity": null,

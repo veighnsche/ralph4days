@@ -15,9 +15,8 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 chrono = { workspace = true }
 ralph-errors = { workspace = true }
+ralph-contracts = { workspace = true }
 tracing = "0.1"
-ts-rs = { workspace = true }
-ralph-macros = { workspace = true }
 
 [dev-dependencies]
 tempfile = "3"

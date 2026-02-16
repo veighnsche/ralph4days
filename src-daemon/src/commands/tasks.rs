@@ -1,3 +1,10 @@
+use ralph_contracts::domain::TaskSignalCommentCreateInput;
+use ralph_contracts::tasks::{
+    TasksAskAnswerArgs, TasksCommentReplyAddArgs, TasksCreateArgs, TasksDeleteArgs, TasksGetArgs,
+    TasksSetStatusArgs, TasksSignalAddArgs, TasksSignalCommentDeleteArgs,
+    TasksSignalCommentUpdateArgs, TasksSignalCommentsListArgs, TasksSignalDeleteArgs,
+    TasksSignalSummariesGetArgs, TasksSignalUpdateArgs, TasksUpdateArgs,
+};
 use ralph_errors::RalphResult;
 
 use crate::rpc_codec::{decode_args, encode_result, require_null_payload};
@@ -7,7 +14,7 @@ pub fn tasks_create(
     state: &AppState,
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
-    let args: ralph_backend::tasks::TasksCreateArgs = decode_args("tasks_create", payload)?;
+    let args: TasksCreateArgs = decode_args("tasks_create", payload)?;
     let created = ralph_backend::session::with_db(&state.db, |db| {
         ralph_backend::tasks::tasks_create(db, args)
     })?;
@@ -18,7 +25,7 @@ pub fn tasks_update(
     state: &AppState,
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
-    let args: ralph_backend::tasks::TasksUpdateArgs = decode_args("tasks_update", payload)?;
+    let args: TasksUpdateArgs = decode_args("tasks_update", payload)?;
     let updated = ralph_backend::session::with_db(&state.db, |db| {
         ralph_backend::tasks::tasks_update(db, args)
     })?;
@@ -29,7 +36,7 @@ pub fn tasks_set_status(
     state: &AppState,
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
-    let args: ralph_backend::tasks::TasksSetStatusArgs = decode_args("tasks_set_status", payload)?;
+    let args: TasksSetStatusArgs = decode_args("tasks_set_status", payload)?;
     let updated = ralph_backend::session::with_db(&state.db, |db| {
         ralph_backend::tasks::tasks_set_status(db, args)
     })?;
@@ -40,7 +47,7 @@ pub fn tasks_delete(
     state: &AppState,
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
-    let args: ralph_backend::tasks::TasksDeleteArgs = decode_args("tasks_delete", payload)?;
+    let args: TasksDeleteArgs = decode_args("tasks_delete", payload)?;
     ralph_backend::session::with_db(&state.db, |db| ralph_backend::tasks::tasks_delete(db, args))?;
     Ok(serde_json::Value::Null)
 }
@@ -49,7 +56,7 @@ pub fn tasks_signal_add(
     state: &AppState,
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
-    let args: ralph_backend::tasks::TasksSignalAddArgs = decode_args("tasks_signal_add", payload)?;
+    let args: TasksSignalAddArgs = decode_args("tasks_signal_add", payload)?;
     let updated = ralph_backend::session::with_db(&state.db, |db| {
         ralph_backend::tasks::tasks_signal_add(db, args)
     })?;
@@ -60,8 +67,7 @@ pub fn tasks_signal_update(
     state: &AppState,
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
-    let args: ralph_backend::tasks::TasksSignalUpdateArgs =
-        decode_args("tasks_signal_update", payload)?;
+    let args: TasksSignalUpdateArgs = decode_args("tasks_signal_update", payload)?;
     let updated = ralph_backend::session::with_db(&state.db, |db| {
         ralph_backend::tasks::tasks_signal_update(db, args)
     })?;
@@ -72,8 +78,7 @@ pub fn tasks_signal_delete(
     state: &AppState,
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
-    let args: ralph_backend::tasks::TasksSignalDeleteArgs =
-        decode_args("tasks_signal_delete", payload)?;
+    let args: TasksSignalDeleteArgs = decode_args("tasks_signal_delete", payload)?;
     let updated = ralph_backend::session::with_db(&state.db, |db| {
         ralph_backend::tasks::tasks_signal_delete(db, args)
     })?;
@@ -87,7 +92,7 @@ pub fn tasks_list(state: &AppState, payload: serde_json::Value) -> RalphResult<s
 }
 
 pub fn tasks_get(state: &AppState, payload: serde_json::Value) -> RalphResult<serde_json::Value> {
-    let args: ralph_backend::tasks::TasksGetArgs = decode_args("tasks_get", payload)?;
+    let args: TasksGetArgs = decode_args("tasks_get", payload)?;
     let task =
         ralph_backend::session::with_db(&state.db, |db| ralph_backend::tasks::tasks_get(db, args))?;
     encode_result("tasks_get", task)
@@ -106,8 +111,7 @@ pub fn tasks_signal_summaries_get(
     state: &AppState,
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
-    let args: ralph_backend::tasks::TasksSignalSummariesGetArgs =
-        decode_args("tasks_signal_summaries_get", payload)?;
+    let args: TasksSignalSummariesGetArgs = decode_args("tasks_signal_summaries_get", payload)?;
     let summaries = ralph_backend::session::with_db(&state.db, |db| {
         ralph_backend::tasks::tasks_signal_summaries_get(db, args)
     })?;
@@ -118,7 +122,7 @@ pub fn tasks_ask_answer(
     state: &AppState,
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
-    let args: ralph_backend::tasks::TasksAskAnswerArgs = decode_args("tasks_ask_answer", payload)?;
+    let args: TasksAskAnswerArgs = decode_args("tasks_ask_answer", payload)?;
     ralph_backend::session::with_db(&state.db, |db| {
         ralph_backend::tasks::tasks_ask_answer(db, args)
     })?;
@@ -129,8 +133,7 @@ pub fn tasks_comment_reply_add(
     state: &AppState,
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
-    let args: ralph_backend::tasks::TasksCommentReplyAddArgs =
-        decode_args("tasks_comment_reply_add", payload)?;
+    let args: TasksCommentReplyAddArgs = decode_args("tasks_comment_reply_add", payload)?;
     let updated = ralph_backend::session::with_db(&state.db, |db| {
         ralph_backend::tasks::tasks_comment_reply_add(db, args)
     })?;
@@ -141,8 +144,7 @@ pub fn tasks_signal_comment_add(
     state: &AppState,
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
-    let args: sqlite_db::TaskSignalCommentCreateInput =
-        decode_args("tasks_signal_comment_add", payload)?;
+    let args: TaskSignalCommentCreateInput = decode_args("tasks_signal_comment_add", payload)?;
     let id = ralph_backend::session::with_db(&state.db, |db| {
         ralph_backend::tasks::tasks_signal_comment_add(db, args)
     })?;
@@ -153,8 +155,7 @@ pub fn tasks_signal_comment_update(
     state: &AppState,
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
-    let args: ralph_backend::tasks::TasksSignalCommentUpdateArgs =
-        decode_args("tasks_signal_comment_update", payload)?;
+    let args: TasksSignalCommentUpdateArgs = decode_args("tasks_signal_comment_update", payload)?;
     ralph_backend::session::with_db(&state.db, |db| {
         ralph_backend::tasks::tasks_signal_comment_update(db, args)
     })?;
@@ -165,8 +166,7 @@ pub fn tasks_signal_comment_delete(
     state: &AppState,
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
-    let args: ralph_backend::tasks::TasksSignalCommentDeleteArgs =
-        decode_args("tasks_signal_comment_delete", payload)?;
+    let args: TasksSignalCommentDeleteArgs = decode_args("tasks_signal_comment_delete", payload)?;
     ralph_backend::session::with_db(&state.db, |db| {
         ralph_backend::tasks::tasks_signal_comment_delete(db, args)
     })?;
@@ -177,8 +177,7 @@ pub fn tasks_signal_comments_list(
     state: &AppState,
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
-    let args: ralph_backend::tasks::TasksSignalCommentsListArgs =
-        decode_args("tasks_signal_comments_list", payload)?;
+    let args: TasksSignalCommentsListArgs = decode_args("tasks_signal_comments_list", payload)?;
     let comments = ralph_backend::session::with_db(&state.db, |db| {
         ralph_backend::tasks::tasks_signal_comments_list(db, args)
     })?;

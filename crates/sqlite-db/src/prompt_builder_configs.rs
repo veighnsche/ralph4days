@@ -1,31 +1,9 @@
 use crate::SqliteDb;
+pub use ralph_contracts::prompt_builder::{
+    PromptBuilderConfigData, PromptBuilderConfigInput, SectionSettingsData,
+};
 use ralph_errors::{codes, ralph_err, RalphResult, RalphResultExt};
-use ralph_macros::ipc_type;
 use std::collections::HashMap;
-
-#[ipc_type]
-pub struct SectionSettingsData {
-    pub enabled: bool,
-    pub instruction_override: Option<String>,
-}
-
-#[ipc_type]
-pub struct PromptBuilderConfigInput {
-    pub name: String,
-    pub base_prompt: String,
-    pub section_order: Vec<String>,
-    pub sections: HashMap<String, SectionSettingsData>,
-}
-
-#[ipc_type]
-pub struct PromptBuilderConfigData {
-    pub name: String,
-    pub base_prompt: String,
-    pub section_order: Vec<String>,
-    pub sections: HashMap<String, SectionSettingsData>,
-    pub created: Option<String>,
-    pub updated: Option<String>,
-}
 
 impl SqliteDb {
     pub fn save_prompt_builder_config(&self, input: PromptBuilderConfigInput) -> RalphResult<()> {

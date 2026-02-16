@@ -1,15 +1,15 @@
 use super::remote_proxy::{remote_invoke_args, remote_invoke_no_args};
 use super::state::{AppState, CommandContext};
-use ralph_backend::disciplines_contract::{
+use ralph_backend::disciplines_service;
+use ralph_backend::subsystems_service;
+use ralph_contracts::disciplines::{
     DisciplineConfig, DisciplinesCreateArgs, DisciplinesCroppedImageGetArgs, DisciplinesDeleteArgs,
     DisciplinesImageDataGetArgs, DisciplinesUpdateArgs,
 };
-use ralph_backend::disciplines_service;
-use ralph_backend::subsystems_contract::{
+use ralph_contracts::subsystems::{
     SubsystemData, SubsystemsCommentAddArgs, SubsystemsCommentDeleteArgs,
     SubsystemsCommentUpdateArgs, SubsystemsCreateArgs, SubsystemsDeleteArgs, SubsystemsUpdateArgs,
 };
-use ralph_backend::subsystems_service;
 use ralph_errors::RalphResult;
 use ralph_macros::ipc_type;
 use tauri::State;

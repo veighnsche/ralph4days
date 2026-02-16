@@ -3,6 +3,7 @@ mod event_sink;
 mod remote;
 
 use commands::AppState;
+#[cfg(not(mobile))]
 use tauri::Manager;
 #[cfg(not(mobile))]
 use tauri_plugin_cli::CliExt;
@@ -27,13 +28,39 @@ fn init_tracing() {
 }
 
 pub fn list_provider_models(agent: Option<&str>) -> Vec<String> {
+    #[cfg(mobile)]
+    {
+        let _ = agent;
+        panic!("Provider model discovery is unsupported on mobile");
+    }
+
+    #[cfg(not(mobile))]
     ralph_backend::terminal::providers::list_models_for_agent(agent)
 }
 
-pub fn list_provider_model_entries(
-    agent: Option<&str>,
-) -> Vec<ralph_backend::terminal::providers::ModelEntry> {
-    ralph_backend::terminal::providers::list_model_entries_for_agent(agent)
+#[derive(Debug, Clone)]
+pub struct ProviderModelEntry {
+    pub name: String,
+    pub description: String,
+}
+
+pub fn list_provider_model_entries(agent: Option<&str>) -> Vec<ProviderModelEntry> {
+    #[cfg(mobile)]
+    {
+        let _ = agent;
+        panic!("Provider model discovery is unsupported on mobile");
+    }
+
+    #[cfg(not(mobile))]
+    {
+        ralph_backend::terminal::providers::list_model_entries_for_agent(agent)
+            .into_iter()
+            .map(|entry| ProviderModelEntry {
+                name: entry.name,
+                description: entry.description,
+            })
+            .collect()
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -66,13 +93,9 @@ pub fn run() {
 
     builder
         .setup(|app| {
-            let app_handle = app.handle().clone();
-            let sink: std::sync::Arc<dyn ralph_contracts::transport::EventSink> =
-                std::sync::Arc::new(event_sink::TauriEventSink::new(app_handle));
-            ralph_backend::diagnostics::register_sink(std::sync::Arc::clone(&sink));
-
             #[cfg(mobile)]
             {
+                let _ = app;
                 tracing::info!(
                     "Mobile mode enabled: local backend bootstrap is disabled; remote_connect is required"
                 );
@@ -81,6 +104,11 @@ pub fn run() {
 
             #[cfg(not(mobile))]
             {
+                let app_handle = app.handle().clone();
+                let sink: std::sync::Arc<dyn ralph_contracts::transport::EventSink> =
+                    std::sync::Arc::new(event_sink::TauriEventSink::new(app_handle));
+                ralph_backend::diagnostics::register_sink(std::sync::Arc::clone(&sink));
+
                 // Start API server for MCP signal communication.
                 let state: tauri::State<AppState> = app.state();
                 let mut skip_splash = false;

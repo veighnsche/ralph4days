@@ -1,5 +1,6 @@
-use ralph_backend::agent_sessions_contract::AgentSessionsByIdArgs;
 use ralph_backend::agent_sessions_service;
+use ralph_contracts::agent_sessions::AgentSessionsByIdArgs;
+use ralph_contracts::domain::{AgentSessionCreateInput, AgentSessionUpdateInput};
 use ralph_errors::RalphResult;
 
 use crate::rpc_codec::{decode_args, encode_result, require_null_payload};
@@ -9,8 +10,7 @@ pub fn agent_sessions_create_human(
     state: &AppState,
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
-    let args: sqlite_db::AgentSessionCreateInput =
-        decode_args("agent_sessions_create_human", payload)?;
+    let args: AgentSessionCreateInput = decode_args("agent_sessions_create_human", payload)?;
     ralph_backend::session::with_db(&state.db, |db| {
         agent_sessions_service::agent_sessions_create_human(db, args)
     })?;
@@ -21,8 +21,7 @@ pub fn agent_sessions_update_human(
     state: &AppState,
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
-    let args: sqlite_db::AgentSessionUpdateInput =
-        decode_args("agent_sessions_update_human", payload)?;
+    let args: AgentSessionUpdateInput = decode_args("agent_sessions_update_human", payload)?;
     ralph_backend::session::with_db(&state.db, |db| {
         agent_sessions_service::agent_sessions_update_human(db, args)
     })?;

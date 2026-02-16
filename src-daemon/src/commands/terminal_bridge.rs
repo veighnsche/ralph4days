@@ -1,4 +1,5 @@
-use ralph_backend::terminal::{
+use ralph_backend::terminal_bridge;
+use ralph_contracts::terminal_bridge::{
     TerminalBridgeEmitSystemMessageArgs, TerminalBridgeListModelFormTreeResult,
     TerminalBridgeReplayOutputArgs, TerminalBridgeReplayOutputResult, TerminalBridgeResizeArgs,
     TerminalBridgeResolveTaskLaunchArgs, TerminalBridgeResolvedLaunchConfig,
@@ -7,7 +8,6 @@ use ralph_backend::terminal::{
     TerminalBridgeStartSessionArgs, TerminalBridgeStartTaskSessionArgs,
     TerminalBridgeTerminateArgs,
 };
-use ralph_backend::terminal_bridge;
 use ralph_errors::{codes, RalphResult, RalphResultExt};
 use std::sync::Arc;
 

@@ -1,13 +1,13 @@
-use ralph_backend::disciplines_contract::{
+use ralph_backend::disciplines_service;
+use ralph_backend::subsystems_service;
+use ralph_contracts::disciplines::{
     DisciplinesCreateArgs, DisciplinesCroppedImageGetArgs, DisciplinesDeleteArgs,
     DisciplinesImageDataGetArgs, DisciplinesUpdateArgs,
 };
-use ralph_backend::disciplines_service;
-use ralph_backend::subsystems_contract::{
+use ralph_contracts::subsystems::{
     SubsystemsCommentAddArgs, SubsystemsCommentDeleteArgs, SubsystemsCommentUpdateArgs,
     SubsystemsCreateArgs, SubsystemsDeleteArgs, SubsystemsUpdateArgs,
 };
-use ralph_backend::subsystems_service;
 use ralph_errors::RalphResult;
 
 use crate::rpc_codec::{decode_args, encode_result, require_null_payload};

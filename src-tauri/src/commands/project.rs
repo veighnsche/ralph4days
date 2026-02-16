@@ -1,9 +1,11 @@
 use super::remote_proxy::{remote_invoke_args, remote_invoke_no_args};
 use super::state::{AppState, CommandContext};
-use ralph_backend::project::{ProjectInitializeArgs, ProjectValidatePathArgs};
-use ralph_backend::project_contract::{ProjectInfo, ProjectScanArgs, RalphProject, RecentProject};
 use ralph_backend::project_scan;
-use ralph_backend::session::ProjectLockSetArgs;
+use ralph_contracts::project::{
+    ProjectInfo, ProjectInitializeArgs, ProjectScanArgs, ProjectValidatePathArgs, RalphProject,
+    RecentProject,
+};
+use ralph_contracts::session::ProjectLockSetArgs;
 use ralph_errors::{codes, ralph_err, RalphResult, RalphResultExt};
 use std::path::PathBuf;
 use tauri::{Manager, State};

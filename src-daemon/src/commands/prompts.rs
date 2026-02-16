@@ -1,8 +1,9 @@
-use ralph_backend::prompt_builder_configs_contract::{
-    PromptBuilderConfigDeleteArgs, PromptBuilderConfigGetArgs, PromptBuilderConfigSaveArgs,
-};
 use ralph_backend::prompt_builder_configs_service;
-use ralph_backend::prompt_builder_preview::{PromptBuilderPreviewArgs, PromptBuilderPreviewDeps};
+use ralph_backend::prompt_builder_preview::PromptBuilderPreviewDeps;
+use ralph_contracts::prompt_builder::{
+    PromptBuilderConfigDeleteArgs, PromptBuilderConfigGetArgs, PromptBuilderConfigSaveArgs,
+    PromptBuilderPreviewArgs,
+};
 use ralph_errors::{codes, RalphResult, RalphResultExt};
 
 use crate::rpc_codec::{decode_args, encode_result, require_null_payload};

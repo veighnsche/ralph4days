@@ -15,37 +15,37 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-sqlite-db = { path = "../crates/sqlite-db" }
-prompt-builder = { path = "../crates/prompt-builder" }
-ralph-external = { path = "../crates/ralph-external" }
-predefined-disciplines = { path = "../crates/predefined-disciplines" }
 ralph-errors = { workspace = true }
 ralph-contracts = { workspace = true }
-ralph-backend = { workspace = true }
 tauri = { version = "2", default-features = false, features = ["wry", "dynamic-acl"] }
 tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-serde_yaml = "0.9"
 tokio = { version = "1", features = ["full"] }
 tokio-tungstenite = { version = "0.26", features = ["rustls-tls-webpki-roots"] }
 futures-util = "0.3"
 sha2 = "0.10"
 hex = "0.4"
 thiserror = "2"
-dirs = "5"
 chrono = "0.4"
-portable-pty = "0.9"
 base64 = "0.22"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "fmt"] }
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+sqlite-db = { path = "../crates/sqlite-db" }
+prompt-builder = { path = "../crates/prompt-builder" }
+ralph-external = { path = "../crates/ralph-external" }
+predefined-disciplines = { path = "../crates/predefined-disciplines" }
+ralph-backend = { workspace = true }
+tauri-plugin-cli = "2"
+serde_yaml = "0.9"
+dirs = "5"
+portable-pty = "0.9"
 ts-rs = { workspace = true }
 ralph-macros = { workspace = true }
 image = { version = "0.25.6", default-features = false, features = ["png", "jpeg"] }
-
-[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-cli = "2"
 
 [lints]
 workspace = true

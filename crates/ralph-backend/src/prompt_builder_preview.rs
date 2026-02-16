@@ -1,36 +1,13 @@
 use crate::prompt_context::{build_prompt_context, PromptContextArgs};
 use prompt_builder::CodebaseSnapshot;
+pub use ralph_contracts::prompt_builder::{
+    PromptBuilderPreviewArgs, PromptPreview, PromptPreviewSection, SectionConfig,
+};
 use ralph_errors::RalphResult;
-use ralph_macros::ipc_type;
 use sqlite_db::SqliteDb;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Mutex;
-
-#[ipc_type]
-pub struct PromptPreviewSection {
-    pub name: String,
-    pub content: String,
-}
-
-#[ipc_type]
-pub struct PromptPreview {
-    pub sections: Vec<PromptPreviewSection>,
-    pub full_prompt: String,
-}
-
-#[ipc_type]
-pub struct SectionConfig {
-    pub name: String,
-    pub enabled: bool,
-    pub instruction_override: Option<String>,
-}
-
-#[ipc_type]
-pub struct PromptBuilderPreviewArgs {
-    pub sections: Vec<SectionConfig>,
-    pub user_input: Option<String>,
-}
 
 pub struct PromptBuilderPreviewDeps<'a> {
     pub db: &'a SqliteDb,

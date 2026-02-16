@@ -15,7 +15,7 @@ Notes:
 
 ## Success Criteria
 - [x] `src-tauri` builds for desktop unchanged in behavior (hybrid local/remote remains on desktop).
-- [ ] `src-tauri` builds for mobile targets without pulling `rusqlite`/`portable-pty`/`axum`/desktop windowing assumptions.
+- [x] `src-tauri` builds for mobile targets without pulling local backend crates (`rusqlite`/`sqlite-db`/`prompt-builder`/`portable-pty`/`axum`).
 - [x] On mobile: calling any stateful command before `remote_connect` returns an explicit error telling the caller to connect first.
 - [x] Protocol mismatch remains a hard failure on connect (already enforced in `RemoteWireFrameConnection::connect`).
 - [x] `just verify` passes and `just types-check` confirms TS bindings are stable/up to date.
@@ -28,34 +28,34 @@ Notes:
 - [x] Confirm which `src-tauri` modules are desktop-only: `api_server`, DB/session state, PTY, XDG/home-dir access, window lifecycle.
 
 ### 2) Extract Canonical DTOs into `ralph-contracts`
-- [ ] Add a `crates/ralph-contracts/src/domain/` module tree for domain DTOs (tasks, subsystems, sessions, signals, etc).
-- [ ] Move (or recreate with identical serialization) any IPC-relevant types currently defined in `crates/sqlite-db/src/types.rs`.
-- [ ] Move command DTOs currently defined in `crates/ralph-backend/src/*_contract.rs` (or adjacent modules) into `ralph-contracts`.
-- [ ] Ensure strict serde posture is preserved (`deny_unknown_fields` where appropriate; no defensive defaults for internal contracts).
-- [ ] Ensure `ts-rs` export ownership is singular (types exported from `ralph-contracts`; avoid duplicate filenames).
-- [ ] Update `src-tauri/tests/remote_strict_decode_contract_test.rs` to reference contract DTOs from `ralph-contracts`.
+- [x] Add a `crates/ralph-contracts/src/domain/` module tree for domain DTOs (tasks, subsystems, sessions, signals, etc).
+- [x] Move (or recreate with identical serialization) any IPC-relevant types currently defined in `crates/sqlite-db/src/types.rs`.
+- [x] Move command DTOs currently defined in `crates/ralph-backend/src/*_contract.rs` (or adjacent modules) into `ralph-contracts`.
+- [x] Ensure strict serde posture is preserved (`deny_unknown_fields` where appropriate; no defensive defaults for internal contracts).
+- [x] Ensure `ts-rs` export ownership is singular (types exported from `ralph-contracts`; avoid duplicate filenames).
+- [x] Update `src-tauri/tests/remote_strict_decode_contract_test.rs` to reference contract DTOs from `ralph-contracts`.
 
 ### 3) Refactor `sqlite-db` to Consume Contract DTOs
-- [ ] Add dependency `ralph-contracts` to `crates/sqlite-db/Cargo.toml`.
-- [ ] Replace internal `crate::types::*` usage with `ralph_contracts::domain::*` (or contract paths decided above).
-- [ ] Keep DB implementation returning contract DTOs.
-- [ ] If temporary re-exports are used for migration, keep them thin and clearly non-canonical.
-- [ ] Remove/avoid TS export ownership for moved types from `sqlite-db` to prevent TS binding duplication.
+- [x] Add dependency `ralph-contracts` to `crates/sqlite-db/Cargo.toml`.
+- [x] Replace internal `crate::types::*` usage with `ralph_contracts::domain::*` (or contract paths decided above).
+- [x] Keep DB implementation returning contract DTOs.
+- [x] If temporary re-exports are used for migration, keep them thin and clearly non-canonical.
+- [x] Remove/avoid TS export ownership for moved types from `sqlite-db` to prevent TS binding duplication.
 
 ### 4) Refactor `ralph-backend` to Consume Contract DTOs
-- [ ] Change `ralph-backend` APIs to take/return `ralph-contracts` DTOs (not `sqlite-db` DTOs).
-- [ ] Keep `ralph-backend` as the local implementation layer (it may still depend on `sqlite-db` internally on desktop/server).
-- [ ] Ensure no DRY violations: the canonical type definitions live in `ralph-contracts` only.
+- [x] Change `ralph-backend` APIs to take/return `ralph-contracts` DTOs (not `sqlite-db` DTOs).
+- [x] Keep `ralph-backend` as the local implementation layer (it may still depend on `sqlite-db` internally on desktop/server).
+- [x] Ensure no DRY violations: the canonical type definitions live in `ralph-contracts` only.
 
 ### 5) Refactor `ralphd` (src-daemon) to Use Contract DTOs
-- [ ] Update RPC decode/encode targets in `src-daemon/src/main.rs` to use `ralph-contracts` DTO paths.
-- [ ] Keep RPC command names and payload shapes stable (`{ "args": ... }` for invoke payloads).
-- [ ] Keep strict payload validation (unknown keys/fields should remain errors).
+- [x] Update RPC decode/encode targets in `src-daemon` command handlers to use `ralph-contracts` DTO paths.
+- [x] Keep RPC command names and payload shapes stable (`{ "args": ... }` for invoke payloads).
+- [x] Keep strict payload validation (unknown keys/fields should remain errors).
 
 ### 6) Make `src-tauri` Mobile Thin + Remote-Only
 
 Cargo / feature gating:
-- [ ] Split `src-tauri/Cargo.toml` dependencies into desktop-only vs mobile-compatible using `cfg(...)` target deps.
+- [x] Split `src-tauri/Cargo.toml` dependencies into desktop-only vs mobile-compatible using `cfg(...)` target deps.
 - [ ] Ensure mobile does not depend on `sqlite-db`, `prompt-builder`, `portable-pty`, `axum`, `tower*`, or desktop-only filesystem/XDG helpers.
 - [x] Switch remote WS client to a TLS stack that works on mobile (prefer rustls; ensure `wss://` works).
 
@@ -76,31 +76,37 @@ Command behavior:
 
 ### 7) Contract / Type Generation Gates
 - [x] Run and keep passing: `just types-check` (or `just types` then verify `git diff` only changes expected generated TS, if any).
-- [ ] Ensure no duplicate ts-rs output filenames (ownership invariant).
+- [x] Ensure no duplicate ts-rs output filenames (ownership invariant).
 
 ### 8) Test Plan
 - [x] `cargo test -p ralph-contracts`
 - [x] `cargo test --manifest-path src-tauri/Cargo.toml`
 - [x] `cargo test --manifest-path src-daemon/Cargo.toml`
 - [x] Run existing WS protocol/parity smoke tests under `src-daemon/tests/ws_*` and update them only for moved type paths.
-- [ ] Add a mobile compile gate:
-- [ ] `cargo check --manifest-path src-tauri/Cargo.toml --target <android/ios target>` (exact targets depend on toolchain availability).
-- [ ] Add a `just check-mobile` recipe only if it can be made deterministic on this machine/toolchain.
+- [x] Add a mobile compile gate:
+- [x] `cargo check --manifest-path src-tauri/Cargo.toml --target <android/ios target>` (exact targets depend on toolchain availability).
+- [x] Add a `just check-mobile` recipe only if it can be made deterministic on this machine/toolchain.
 
 ### 10) Current Implementation Notes (2026-02-16)
 - [x] `src-tauri/src/commands/state.rs` now enforces remote connection on mobile and fails loudly when disconnected/not connected.
 - [x] `src-tauri/src/commands/state.rs` now re-exports platform slices: `state_desktop.rs` and `state_mobile.rs`.
 - [x] `src-tauri/src/commands/state_mobile.rs` now has remote-only app state (remote connection state only).
 - [x] `src-tauri/src/commands/mod.rs` now routes mobile to `*_mobile.rs` command modules that only proxy remote invokes.
+- [x] Mobile command modules now use `serde_json::Value` passthrough signatures to avoid type-coupling to desktop DTO crates.
 - [x] `src-tauri/src/lib.rs` now has mobile/desktop bootstrap split (mobile skips local API server + desktop window/CLI flow).
 - [x] `src-tauri/src/commands/project.rs` desktop-only window commands now return explicit mobile unsupported errors.
 - [x] `src-tauri/Cargo.toml` now uses rustls-based WS transport and desktop-only `tauri-plugin-cli`.
 - [x] `src-daemon` now handles `stacks_metadata_list` and `terminal_emit_system_message` so mobile remote-only commands keep parity.
+- [x] Canonical command/domain DTO ownership is now centralized in `crates/ralph-contracts` (`domain`, `project`, `session`, `tasks`, `prompt_builder`, `subsystems`, `disciplines`, `terminal_bridge`, `agent_sessions`).
+- [x] `sqlite-db` now consumes/re-exports contract DTOs and no longer owns moved ts-rs DTO exports.
+- [x] `ralph-backend` contract modules now thinly re-export `ralph-contracts` DTOs, and backend APIs use contract DTO paths.
+- [x] `src-daemon` and `src-tauri` command decode/encode signatures now target `ralph-contracts` DTO paths.
+- [x] `src-tauri/tests/remote_strict_decode_contract_test.rs` now validates strict decode via `ralph-contracts` DTO imports.
 - [x] `just types-check` currently passes.
 - [x] `just verify` currently passes.
-- [ ] Mobile compile gate is still blocked locally because Android/iOS rust targets are not installed on this machine.
-- [ ] Remaining: full mobile dependency diet (target-specific Cargo deps) to remove desktop crates from mobile builds.
-- [ ] Remaining: contract DTO migration from `sqlite-db`/`ralph-backend` into `ralph-contracts`.
+- [x] Mobile compile gate now passes for `aarch64-linux-android` after installing the rust target.
+- [x] `just check-mobile` now enforces compile + dependency exclusions for Android target.
+- [ ] Remaining: remove `tower*` from the mobile dependency graph (currently transitive via `tauri` -> `reqwest`, not via local backend crates).
 
 ### 9) Rollout / Coordination (Minimize Collisions)
 - [ ] Land changes in a dedicated PR that is intentionally not overlapping the other agent’s adapter-parity edits (coordinate file-touch boundaries).

@@ -1,8 +1,5 @@
 use super::remote_proxy::{remote_invoke_args, remote_invoke_no_args};
 use super::state::AppState;
-use ralph_backend::project::{ProjectInitializeArgs, ProjectValidatePathArgs};
-use ralph_backend::project_contract::{ProjectInfo, ProjectScanArgs, RalphProject, RecentProject};
-use ralph_backend::session::ProjectLockSetArgs;
 use ralph_errors::{codes, ralph_err, RalphResult};
 use tauri::State;
 
@@ -10,7 +7,7 @@ use tauri::State;
 #[tracing::instrument(skip(state))]
 pub async fn project_validate_path(
     state: State<'_, AppState>,
-    args: ProjectValidatePathArgs,
+    args: serde_json::Value,
 ) -> RalphResult<()> {
     let rpc = state.inner().remote_rpc_client_required().await?;
     remote_invoke_args(&rpc, "project_validate_path", args).await
@@ -20,7 +17,7 @@ pub async fn project_validate_path(
 #[tracing::instrument(skip(state))]
 pub async fn project_initialize(
     state: State<'_, AppState>,
-    args: ProjectInitializeArgs,
+    args: serde_json::Value,
 ) -> RalphResult<()> {
     let rpc = state.inner().remote_rpc_client_required().await?;
     remote_invoke_args(&rpc, "project_initialize", args).await
@@ -29,20 +26,20 @@ pub async fn project_initialize(
 #[tauri::command]
 pub async fn project_lock_set(
     state: State<'_, AppState>,
-    args: ProjectLockSetArgs,
+    args: serde_json::Value,
 ) -> RalphResult<()> {
     let rpc = state.inner().remote_rpc_client_required().await?;
     remote_invoke_args(&rpc, "project_lock_set", args).await
 }
 
 #[tauri::command]
-pub async fn project_lock_get(state: State<'_, AppState>) -> RalphResult<Option<String>> {
+pub async fn project_lock_get(state: State<'_, AppState>) -> RalphResult<serde_json::Value> {
     let rpc = state.inner().remote_rpc_client_required().await?;
     remote_invoke_no_args(&rpc, "project_lock_get").await
 }
 
 #[tauri::command]
-pub async fn project_recent_list(state: State<'_, AppState>) -> RalphResult<Vec<RecentProject>> {
+pub async fn project_recent_list(state: State<'_, AppState>) -> RalphResult<serde_json::Value> {
     let rpc = state.inner().remote_rpc_client_required().await?;
     remote_invoke_no_args(&rpc, "project_recent_list").await
 }
@@ -80,20 +77,20 @@ pub async fn execution_state_get(state: State<'_, AppState>) -> RalphResult<()> 
 #[tauri::command]
 pub async fn project_scan(
     state: State<'_, AppState>,
-    args: ProjectScanArgs,
-) -> RalphResult<Vec<RalphProject>> {
+    args: serde_json::Value,
+) -> RalphResult<serde_json::Value> {
     let rpc = state.inner().remote_rpc_client_required().await?;
     remote_invoke_args(&rpc, "project_scan", args).await
 }
 
 #[tauri::command]
-pub async fn system_home_dir_get(state: State<'_, AppState>) -> RalphResult<String> {
+pub async fn system_home_dir_get(state: State<'_, AppState>) -> RalphResult<serde_json::Value> {
     let rpc = state.inner().remote_rpc_client_required().await?;
     remote_invoke_no_args(&rpc, "system_home_dir_get").await
 }
 
 #[tauri::command]
-pub async fn project_info_get(state: State<'_, AppState>) -> RalphResult<ProjectInfo> {
+pub async fn project_info_get(state: State<'_, AppState>) -> RalphResult<serde_json::Value> {
     let rpc = state.inner().remote_rpc_client_required().await?;
     remote_invoke_no_args(&rpc, "project_info_get").await
 }

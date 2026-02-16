@@ -19,12 +19,10 @@ prompt-builder = { path = "../prompt-builder" }
 ralph-contracts = { workspace = true }
 ralph-external = { path = "../ralph-external" }
 ralph-errors = { workspace = true }
-ralph-macros = { workspace = true }
 sqlite-db = { path = "../sqlite-db" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = "0.9"
-ts-rs = { workspace = true }
 tracing = "0.1"
 dirs = "5"
 tokio = { workspace = true }

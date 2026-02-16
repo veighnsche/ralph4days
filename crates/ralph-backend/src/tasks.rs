@@ -1,8 +1,17 @@
+use ralph_contracts::domain::{
+    Task, TaskListItem, TaskSignalComment, TaskSignalCommentCreateInput, TaskSignalSummary,
+    TaskStatus,
+};
+pub use ralph_contracts::tasks::{
+    TasksAskAnswerArgs, TasksCommentReplyAddArgs, TasksCreateArgs, TasksDeleteArgs, TasksGetArgs,
+    TasksSetStatusArgs, TasksSignalAddArgs, TasksSignalCommentDeleteArgs,
+    TasksSignalCommentUpdateArgs, TasksSignalCommentsListArgs, TasksSignalDeleteArgs,
+    TasksSignalSummariesGetArgs, TasksSignalUpdateArgs, TasksUpdateArgs,
+};
 use ralph_errors::{codes, err_string, RalphResult};
-use ralph_macros::ipc_type;
 use sqlite_db::SqliteDb;
 
-fn get_task_or_error(db: &SqliteDb, id: u32) -> RalphResult<sqlite_db::Task> {
+fn get_task_or_error(db: &SqliteDb, id: u32) -> RalphResult<Task> {
     db.get_task_by_id(id)?.ok_or_else(|| {
         err_string(
             codes::TASK_OPS,
@@ -51,122 +60,6 @@ fn normalize_subsystem_name(name: &str) -> String {
     out
 }
 
-#[ipc_type]
-pub struct TasksCreateArgs {
-    pub subsystem: String,
-    pub discipline: String,
-    pub title: String,
-    pub description: Option<String>,
-    pub priority: Option<sqlite_db::Priority>,
-    pub tags: Vec<String>,
-    pub depends_on: Vec<u32>,
-    pub acceptance_criteria: Vec<String>,
-    pub context_files: Vec<String>,
-    pub output_artifacts: Vec<String>,
-    pub hints: Option<String>,
-    pub estimated_turns: Option<u32>,
-    pub provenance: Option<sqlite_db::TaskProvenance>,
-    pub agent: Option<String>,
-    pub model: Option<String>,
-    pub effort: Option<String>,
-    pub thinking: Option<bool>,
-}
-
-#[ipc_type]
-pub struct TasksUpdateArgs {
-    pub id: u32,
-    pub subsystem: String,
-    pub discipline: String,
-    pub title: String,
-    pub description: Option<String>,
-    pub priority: Option<sqlite_db::Priority>,
-    pub tags: Vec<String>,
-    pub depends_on: Vec<u32>,
-    pub acceptance_criteria: Vec<String>,
-    pub context_files: Vec<String>,
-    pub output_artifacts: Vec<String>,
-    pub hints: Option<String>,
-    pub estimated_turns: Option<u32>,
-    pub provenance: Option<sqlite_db::TaskProvenance>,
-    pub agent: Option<String>,
-    pub model: Option<String>,
-    pub effort: Option<String>,
-    pub thinking: Option<bool>,
-}
-
-#[ipc_type]
-pub struct TasksSetStatusArgs {
-    pub id: u32,
-    pub status: String,
-}
-
-#[ipc_type]
-pub struct TasksDeleteArgs {
-    pub id: u32,
-}
-
-#[ipc_type]
-pub struct TasksGetArgs {
-    pub id: u32,
-}
-
-#[ipc_type]
-pub struct TasksSignalAddArgs {
-    pub task_id: u32,
-    pub discipline: Option<String>,
-    pub agent_task_id: Option<u32>,
-    pub priority: Option<String>,
-    pub body: String,
-}
-
-#[ipc_type]
-pub struct TasksSignalUpdateArgs {
-    pub task_id: u32,
-    pub signal_id: u32,
-    pub body: String,
-}
-
-#[ipc_type]
-pub struct TasksSignalDeleteArgs {
-    pub task_id: u32,
-    pub signal_id: u32,
-}
-
-#[ipc_type]
-pub struct TasksSignalSummariesGetArgs {
-    pub task_ids: Vec<u32>,
-}
-
-#[ipc_type]
-pub struct TasksAskAnswerArgs {
-    pub signal_id: u32,
-    pub answer: String,
-}
-
-#[ipc_type]
-pub struct TasksCommentReplyAddArgs {
-    pub task_id: u32,
-    pub parent_comment_id: u32,
-    pub priority: Option<String>,
-    pub body: String,
-}
-
-#[ipc_type]
-pub struct TasksSignalCommentUpdateArgs {
-    pub comment_id: u32,
-    pub body: String,
-}
-
-#[ipc_type]
-pub struct TasksSignalCommentDeleteArgs {
-    pub comment_id: u32,
-}
-
-#[ipc_type]
-pub struct TasksSignalCommentsListArgs {
-    pub signal_id: u32,
-}
-
 pub fn tasks_create(db: &SqliteDb, args: TasksCreateArgs) -> RalphResult<String> {
     validate_subsystem_name(&args.subsystem)?;
     let normalized_subsystem = normalize_subsystem_name(&args.subsystem);
@@ -196,7 +89,7 @@ pub fn tasks_create(db: &SqliteDb, args: TasksCreateArgs) -> RalphResult<String>
     Ok(task_id.to_string())
 }
 
-pub fn tasks_update(db: &SqliteDb, args: TasksUpdateArgs) -> RalphResult<sqlite_db::Task> {
+pub fn tasks_update(db: &SqliteDb, args: TasksUpdateArgs) -> RalphResult<Task> {
     validate_subsystem_name(&args.subsystem)?;
     let normalized_subsystem = normalize_subsystem_name(&args.subsystem);
 
@@ -226,8 +119,8 @@ pub fn tasks_update(db: &SqliteDb, args: TasksUpdateArgs) -> RalphResult<sqlite_
     get_task_or_error(db, task_id)
 }
 
-pub fn tasks_set_status(db: &SqliteDb, args: TasksSetStatusArgs) -> RalphResult<sqlite_db::Task> {
-    let status = sqlite_db::TaskStatus::parse(&args.status).ok_or_else(|| {
+pub fn tasks_set_status(db: &SqliteDb, args: TasksSetStatusArgs) -> RalphResult<Task> {
+    let status = TaskStatus::parse(&args.status).ok_or_else(|| {
         err_string(
             codes::TASK_VALIDATION,
             format!("Invalid status: {}", args.status),
@@ -242,7 +135,7 @@ pub fn tasks_delete(db: &SqliteDb, args: TasksDeleteArgs) -> RalphResult<()> {
     db.delete_task(args.id)
 }
 
-pub fn tasks_signal_add(db: &SqliteDb, args: TasksSignalAddArgs) -> RalphResult<sqlite_db::Task> {
+pub fn tasks_signal_add(db: &SqliteDb, args: TasksSignalAddArgs) -> RalphResult<Task> {
     db.add_signal(
         args.task_id,
         args.discipline,
@@ -253,38 +146,32 @@ pub fn tasks_signal_add(db: &SqliteDb, args: TasksSignalAddArgs) -> RalphResult<
     get_task_or_error(db, args.task_id)
 }
 
-pub fn tasks_signal_update(
-    db: &SqliteDb,
-    args: TasksSignalUpdateArgs,
-) -> RalphResult<sqlite_db::Task> {
+pub fn tasks_signal_update(db: &SqliteDb, args: TasksSignalUpdateArgs) -> RalphResult<Task> {
     db.update_signal(args.task_id, args.signal_id, args.body)?;
     get_task_or_error(db, args.task_id)
 }
 
-pub fn tasks_signal_delete(
-    db: &SqliteDb,
-    args: TasksSignalDeleteArgs,
-) -> RalphResult<sqlite_db::Task> {
+pub fn tasks_signal_delete(db: &SqliteDb, args: TasksSignalDeleteArgs) -> RalphResult<Task> {
     db.delete_signal(args.task_id, args.signal_id)?;
     get_task_or_error(db, args.task_id)
 }
 
-pub fn tasks_list(db: &SqliteDb) -> RalphResult<Vec<sqlite_db::Task>> {
+pub fn tasks_list(db: &SqliteDb) -> RalphResult<Vec<Task>> {
     db.get_tasks()
 }
 
-pub fn tasks_get(db: &SqliteDb, args: TasksGetArgs) -> RalphResult<sqlite_db::Task> {
+pub fn tasks_get(db: &SqliteDb, args: TasksGetArgs) -> RalphResult<Task> {
     get_task_or_error(db, args.id)
 }
 
-pub fn tasks_list_items(db: &SqliteDb) -> RalphResult<Vec<sqlite_db::TaskListItem>> {
+pub fn tasks_list_items(db: &SqliteDb) -> RalphResult<Vec<TaskListItem>> {
     db.get_task_list_items()
 }
 
 pub fn tasks_signal_summaries_get(
     db: &SqliteDb,
     args: TasksSignalSummariesGetArgs,
-) -> RalphResult<std::collections::HashMap<u32, sqlite_db::TaskSignalSummary>> {
+) -> RalphResult<std::collections::HashMap<u32, TaskSignalSummary>> {
     db.get_signal_summaries(&args.task_ids)
 }
 
@@ -292,10 +179,7 @@ pub fn tasks_ask_answer(db: &SqliteDb, args: TasksAskAnswerArgs) -> RalphResult<
     db.answer_ask(args.signal_id, args.answer)
 }
 
-pub fn tasks_comment_reply_add(
-    db: &SqliteDb,
-    args: TasksCommentReplyAddArgs,
-) -> RalphResult<sqlite_db::Task> {
+pub fn tasks_comment_reply_add(db: &SqliteDb, args: TasksCommentReplyAddArgs) -> RalphResult<Task> {
     db.add_signal_with_parent(
         args.task_id,
         None,
@@ -308,7 +192,7 @@ pub fn tasks_comment_reply_add(
 
 pub fn tasks_signal_comment_add(
     db: &SqliteDb,
-    args: sqlite_db::TaskSignalCommentCreateInput,
+    args: TaskSignalCommentCreateInput,
 ) -> RalphResult<u32> {
     db.add_task_signal_comment(args)
 }
@@ -330,7 +214,7 @@ pub fn tasks_signal_comment_delete(
 pub fn tasks_signal_comments_list(
     db: &SqliteDb,
     args: TasksSignalCommentsListArgs,
-) -> RalphResult<Vec<sqlite_db::TaskSignalComment>> {
+) -> RalphResult<Vec<TaskSignalComment>> {
     db.get_task_signal_comments(args.signal_id)
 }
 

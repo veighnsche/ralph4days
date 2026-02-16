@@ -1,8 +1,9 @@
 use crate::prompt_builder_configs_contract::{
     PromptBuilderConfigDeleteArgs, PromptBuilderConfigGetArgs, PromptBuilderConfigSaveArgs,
 };
+use ralph_contracts::prompt_builder::PromptBuilderConfigData;
 use ralph_errors::RalphResult;
-use sqlite_db::{PromptBuilderConfigData, SqliteDb};
+use sqlite_db::SqliteDb;
 
 pub fn prompt_builder_config_list(db: &SqliteDb) -> RalphResult<Vec<String>> {
     SqliteDb::list_prompt_builder_configs(db)

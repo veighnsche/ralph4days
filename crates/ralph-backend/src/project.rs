@@ -1,19 +1,7 @@
+pub use ralph_contracts::project::{ProjectInitializeArgs, ProjectValidatePathArgs};
 use ralph_errors::{codes, ralph_err, RalphResult};
-use ralph_macros::ipc_type;
 use std::path::Path;
 use std::path::PathBuf;
-
-#[ipc_type]
-pub struct ProjectValidatePathArgs {
-    pub path: String,
-}
-
-#[ipc_type]
-pub struct ProjectInitializeArgs {
-    pub path: String,
-    pub project_title: String,
-    pub stack: u8,
-}
 
 fn seed_disciplines_for_stack(
     db: &sqlite_db::SqliteDb,

@@ -1,14 +1,12 @@
 use super::remote_proxy::{remote_invoke_args, remote_invoke_no_args};
 use super::state::{AppState, CommandContext};
-use ralph_backend::prompt_builder_configs_contract::{
-    PromptBuilderConfigDeleteArgs, PromptBuilderConfigGetArgs, PromptBuilderConfigSaveArgs,
-};
 use ralph_backend::prompt_builder_configs_service;
-use ralph_backend::prompt_builder_preview::{
-    PromptBuilderPreviewArgs, PromptBuilderPreviewDeps, PromptPreview,
+use ralph_backend::prompt_builder_preview::PromptBuilderPreviewDeps;
+use ralph_contracts::prompt_builder::{
+    PromptBuilderConfigData, PromptBuilderConfigDeleteArgs, PromptBuilderConfigGetArgs,
+    PromptBuilderConfigSaveArgs, PromptBuilderPreviewArgs, PromptPreview,
 };
 use ralph_errors::{codes, RalphResult, RalphResultExt};
-use sqlite_db::PromptBuilderConfigData;
 use tauri::State;
 
 #[tauri::command]
