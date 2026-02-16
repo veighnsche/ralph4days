@@ -29,6 +29,18 @@ dev:
 dev-frontend:
     bun dev
 
+# Open the iOS Xcode project for manual run/signing/debug
+dev-ios-open:
+    bun tauri ios dev --open
+
+# Run iOS app on a simulator/device by display name (example: just dev-ios "iPhone 17 Pro")
+dev-ios DEVICE:
+    bun tauri ios dev "{{DEVICE}}"
+
+# Build iOS simulator debug bundle (fast validation gate for mobile runtime linkage)
+build-ios-sim:
+    bun tauri ios build --debug --target aarch64-sim --ci
+
 # Start Storybook dev server
 storybook:
     bun storybook
@@ -188,6 +200,19 @@ test-e2e FIXTURE="04-desktop-dev":
 test-e2e-terminal FIXTURE="04-desktop-dev":
 	bun run audit:no-playwright
 	PROJECT_DIR="{{mock_dir}}/{{FIXTURE}}" && [ -d "$PROJECT_DIR" ] || (echo "❌ Mock project not found: $PROJECT_DIR"; echo "Run: just reset-mock"; exit 1) && [ -d "$PROJECT_DIR/.ralph" ] || (echo "❌ Not an initialized Ralph project: $PROJECT_DIR/.ralph"; echo "Run: just reset-mock"; exit 1) && RALPH_E2E_PROJECT="$PROJECT_DIR" just e2e-preflight && RALPH_E2E_PROJECT="$PROJECT_DIR" bun x wdio run wdio.conf.js --spec e2e-tauri/terminal.spec.js
+
+# Run remote-ssh mobile-panel e2e harness and capture screenshots (desktop webdriver runtime)
+test-e2e-remote-ssh FIXTURE="04-desktop-dev":
+	bun run audit:no-playwright
+	PROJECT_DIR="{{mock_dir}}/{{FIXTURE}}" && [ -d "$PROJECT_DIR" ] || (echo "❌ Mock project not found: $PROJECT_DIR"; echo "Run: just reset-mock"; exit 1) && [ -d "$PROJECT_DIR/.ralph" ] || (echo "❌ Not an initialized Ralph project: $PROJECT_DIR/.ralph"; echo "Run: just reset-mock"; exit 1) && RALPH_E2E_PROJECT="$PROJECT_DIR" just e2e-preflight && RALPH_E2E_PROJECT="$PROJECT_DIR" RALPH_E2E_FORCE_REMOTE_PANEL=1 bun x wdio run wdio.conf.js --spec e2e-tauri/remote-ssh-mobile.spec.js
+
+# Run iOS remote-ssh UI e2e harness against the real Tauri IPC runtime (Appium + screenshots)
+test-ios-e2e-remote-ssh DEVICE="iPhone 17 Pro":
+	RALPH_IOS_E2E_DEVICE="{{DEVICE}}" bash scripts/run-ios-e2e-remote-ssh.sh
+
+# Run iOS remote-ssh UI e2e harness using XCTest runner (fallback path)
+test-ios-e2e-remote-ssh-xctest DEVICE="iPhone 17 Pro":
+	RALPH_IOS_E2E_DEVICE="{{DEVICE}}" RALPH_IOS_E2E_RUNNER=xctest bash scripts/run-ios-e2e-remote-ssh.sh
 
 # Verify active e2e runtime surface has no forbidden browser-e2e framework references
 audit-no-playwright:

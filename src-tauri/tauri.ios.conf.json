@@ -1,0 +1,12 @@
+{
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Ralph4days",
+        "fullscreen": true,
+        "resizable": true
+      }
+    ]
+  }
+}

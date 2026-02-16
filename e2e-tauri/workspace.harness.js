@@ -1,3 +1,6 @@
+import { mkdirSync } from 'fs'
+import path from 'path'
+
 export async function switchToMainWindow() {
   const handles = await browser.getWindowHandles()
   for (const handle of handles) {
@@ -67,6 +70,85 @@ export async function ensureWorkspaceReady() {
       cause: error
     })
   }
+}
+
+export async function ensureRemoteSshPanelReady() {
+  await browser.waitUntil(
+    async () => {
+      const matched = await switchToMainWindow()
+      if (!matched) return false
+      return (await $('[data-testid="ssh-connections-panel"]').isExisting()) === true
+    },
+    {
+      timeout: 30000,
+      interval: 250,
+      timeoutMsg: 'Remote SSH panel did not initialize within timeout.'
+    }
+  )
+}
+
+export async function clickElementByTestId(testId) {
+  const element = await $(`[data-testid="${testId}"]`)
+  await element.waitForDisplayed({ timeout: 30000 })
+  await element.click()
+}
+
+export async function fillInputByTestId(testId, value) {
+  const element = await $(`[data-testid="${testId}"]`)
+  await element.waitForDisplayed({ timeout: 30000 })
+  await element.clearValue()
+  await element.setValue(value)
+}
+
+export async function clearInputByTestId(testId) {
+  const element = await $(`[data-testid="${testId}"]`)
+  await element.waitForDisplayed({ timeout: 30000 })
+  await element.clearValue()
+}
+
+export async function waitForTestId(testId, timeout = 30000) {
+  const selector = `[data-testid="${testId}"]`
+  await browser.waitUntil(async () => (await $(selector).isExisting()) === true, {
+    timeout,
+    interval: 200,
+    timeoutMsg: `Expected element with data-testid='${testId}'`
+  })
+}
+
+export async function waitForProfileCount(expectedCount, timeout = 30000) {
+  await browser.waitUntil(
+    async () => {
+      const count = await browser.execute(
+        () => document.querySelectorAll('[data-testid^="ssh-profile-card-"]').length
+      )
+      return count === expectedCount
+    },
+    {
+      timeout,
+      interval: 250,
+      timeoutMsg: `Expected ${expectedCount} SSH profile cards`
+    }
+  )
+}
+
+export async function listProfileIds() {
+  return browser.execute(() =>
+    Array.from(document.querySelectorAll('[data-testid^="ssh-profile-card-"]'))
+      .map(element => element.getAttribute('data-testid') ?? '')
+      .map(value => value.replace('ssh-profile-card-', ''))
+      .filter(Boolean)
+  )
+}
+
+export async function saveE2EScreenshot(name) {
+  const screenshotDir = process.env.RALPH_E2E_SCREENSHOT_DIR
+    ? path.resolve(process.env.RALPH_E2E_SCREENSHOT_DIR)
+    : path.resolve(process.cwd(), 'artifacts', 'e2e')
+  mkdirSync(screenshotDir, { recursive: true })
+
+  const outputPath = path.resolve(screenshotDir, `${name}.png`)
+  await browser.saveScreenshot(outputPath)
+  return outputPath
 }
 
 export async function clickElementWithDomClick(selector) {

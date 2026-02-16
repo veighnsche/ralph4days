@@ -39,6 +39,17 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "701FDFCECF2A2A1414AD938E"
+               BuildableName = "ralph4days_iOSUITests.xctest"
+               BlueprintName = "ralph4days_iOSUITests"
+               ReferencedContainer = "container:ralph4days.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

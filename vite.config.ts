@@ -3,6 +3,8 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
+const tauriDevHost = process.env.TAURI_DEV_HOST;
+
 export default defineConfig({
   plugins: [
     react({
@@ -21,6 +23,14 @@ export default defineConfig({
   server: {
     port: 1420,
     strictPort: true,
+    host: tauriDevHost || undefined,
+    hmr: tauriDevHost
+      ? {
+          protocol: "ws",
+          host: tauriDevHost,
+          port: 1421,
+        }
+      : undefined,
     watch: {
       ignored: ["**/src-tauri/**"],
     },

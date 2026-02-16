@@ -200,6 +200,19 @@
 --priority-high-foreground: oklch(0.98 0.02 50);
 --priority-critical: oklch(0.60 0.22 15);
 --priority-critical-foreground: oklch(0.98 0.02 15);
+--touch-min: 2.75rem;
+--mobile-gap: 0.75rem;
+--mobile-gap-tight: 0.5rem;
+--mobile-gap-loose: 1rem;
+--mobile-control-radius: 0.75rem;
+--mobile-surface-radius: 0.875rem;
+--mobile-control-padding-inline: 0.875rem;
+--mobile-control-padding-block: 0.5rem;
+--mobile-card-padding-inline: 1rem;
+--mobile-card-padding-block: 1rem;
+--mobile-sheet-padding: 1rem;
+--mobile-sheet-edge: 0.5rem;
+--mobile-sheet-radius: 1rem;
 }
 
 /* Dark Mode Color System (Triadic Harmony)

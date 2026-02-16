@@ -13,6 +13,7 @@ const driverBinaryName = process.platform === 'win32' ? 'tauri-driver.exe' : 'ta
 const tauriDriverHost = '127.0.0.1'
 const tauriDriverPort = 4444
 const tauriDriverReadyTimeoutMs = 10000
+const forceRemotePanelForE2E = process.env.RALPH_E2E_FORCE_REMOTE_PANEL === '1'
 
 let tauriDriver
 let shouldExit = false
@@ -211,6 +212,10 @@ export const config = {
   onPrepare: () => {
     const buildResult = spawnSync('bun', ['tauri', 'build', '--debug', '--no-bundle'], {
       cwd: projectRoot,
+      env: {
+        ...process.env,
+        VITE_E2E_FORCE_REMOTE_PANEL: forceRemotePanelForE2E ? '1' : '0',
+      },
       stdio: 'inherit',
       shell: true,
     })

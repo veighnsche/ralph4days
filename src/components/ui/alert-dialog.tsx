@@ -44,7 +44,7 @@ function AlertDialogContent({
         data-slot="alert-dialog-content"
         data-size={size}
         className={cn(
-          'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 group/alert-dialog-content fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-lg',
+          'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 group/alert-dialog-content fixed inset-x-0 bottom-0 z-50 grid w-full max-h-[calc(100svh-var(--mobile-sheet-edge))] gap-[var(--mobile-gap-loose)] rounded-t-[var(--mobile-sheet-radius)] border p-[var(--mobile-sheet-padding)] pb-[calc(env(safe-area-inset-bottom)+var(--mobile-sheet-padding))] shadow-lg duration-200 data-[state=closed]:slide-out-to-bottom-4 data-[state=open]:slide-in-from-bottom-4 sm:inset-x-auto sm:top-[50%] sm:bottom-auto sm:left-[50%] sm:max-h-[calc(100svh-2rem)] sm:w-full sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:p-6 sm:pb-6 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 data-[size=sm]:sm:max-w-xs data-[size=default]:sm:max-w-lg',
           className
         )}
         {...props}
@@ -71,7 +71,7 @@ function AlertDialogFooter({ className, ...props }: React.ComponentProps<'div'>)
     <div
       data-slot="alert-dialog-footer"
       className={cn(
-        'flex flex-col-reverse gap-2 group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:flex-row sm:justify-end',
+        'flex flex-col-reverse gap-2 [&>[data-slot=button]]:w-full sm:flex-row sm:justify-end sm:[&>[data-slot=button]]:w-auto',
         className
       )}
       {...props}

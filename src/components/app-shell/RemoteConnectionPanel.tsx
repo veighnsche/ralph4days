@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { CheckCircle2, Clock3, Plus, ShieldAlert, Trash2, Wifi } from 'lucide-react'
+import { Clock3, Plus, ShieldAlert, Trash2, Wifi } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { InlineError } from '@/components/shared'
 import {
@@ -398,6 +398,8 @@ export function RemoteConnectionPanel({
 
   const activeProfile = (profiles ?? []).find(profile => profile.id === sshStatus?.activeProfileId) ?? null
   const hasProfiles = (profiles ?? []).length > 0
+  const quickConnectProfile =
+    orderedProfiles.find(profile => profile.id === sshStatus?.activeProfileId) ?? orderedProfiles[0] ?? null
 
   const openNewProfile = () => {
     setDraft(defaultDraft())
@@ -567,44 +569,67 @@ export function RemoteConnectionPanel({
 
   return (
     <div className="min-h-svh bg-background">
-      <div className="mx-auto w-full max-w-xl px-3 pb-6 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
-        <Card className="border-border/80">
-          <CardHeader className="pb-4">
-            <CardTitle>SSH Connections</CardTitle>
+      <div className="mx-auto w-full max-w-md px-[var(--mobile-card-padding-inline)] pb-[calc(env(safe-area-inset-bottom)+var(--mobile-gap-loose))] pt-[calc(env(safe-area-inset-top)+var(--mobile-gap))]">
+        <Card className="border-border/70 bg-card/95 shadow-md backdrop-blur-sm" data-testid="ssh-connections-panel">
+          <CardHeader className="gap-2 pb-1">
+            <CardTitle className="text-xl tracking-tight">SSH Connections</CardTitle>
             <CardDescription>
               Mobile connects to ralphd through embedded SSH. Save multiple connections and connect without typing WS
               endpoints.
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-[var(--mobile-gap-loose)]">
             <InlineError error={panelError ?? profilesError ?? null} onDismiss={() => setPanelError(null)} />
 
             <div
+              data-testid="ssh-tunnel-status"
               className={cn(
-                'rounded-md border px-3 py-3',
-                sshStatus?.active ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-border bg-muted/20'
+                'rounded-[var(--mobile-surface-radius)] border px-3.5 py-3.5 transition-[border-color,background-color,box-shadow] duration-200',
+                sshStatus?.active
+                  ? 'border-emerald-500/40 bg-emerald-500/10 shadow-[0_0_0_1px_rgba(16,185,129,0.22)]'
+                  : 'border-border bg-muted/20'
               )}>
-              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Tunnel status</p>
-              <p className="mt-1 text-sm font-semibold">
+              <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                <span
+                  className={cn(
+                    'size-2 rounded-full',
+                    sshStatus?.active
+                      ? 'bg-emerald-400 shadow-[0_0_0_4px_rgba(16,185,129,0.18)] animate-pulse'
+                      : 'bg-muted-foreground/60'
+                  )}
+                />
+                Tunnel status
+              </p>
+              <p className="mt-1 text-base leading-tight font-semibold">
                 {sshStatus?.active
                   ? `${sshStatus.username ?? activeProfile?.username ?? 'unknown'}@${sshStatus.host ?? activeProfile?.host ?? 'unknown'}`
                   : 'Disconnected'}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="mt-1 text-xs text-muted-foreground">
                 {sshStatus?.active
                   ? `SSH ${sshStatus.sshPort ?? activeProfile?.sshPort ?? DEFAULT_SSH_PORT} -> ralphd:${sshStatus.remotePort ?? activeProfile?.remotePort ?? DEFAULT_REMOTE_PORT}`
                   : 'Select a profile below to start a secure tunnel.'}
               </p>
               {sshStatus?.active ? (
-                <p className="mt-1 text-[11px] text-muted-foreground">Session {sshStatus.sshSessionId ?? 'unknown'}</p>
+                <p className="mt-2 text-[11px] text-muted-foreground">Session {sshStatus.sshSessionId ?? 'unknown'}</p>
               ) : null}
             </div>
 
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
-              <Field>
-                <FieldLabel>Search</FieldLabel>
+            <div className="space-y-[var(--mobile-gap)]">
+              <Button
+                onClick={openNewProfile}
+                variant="outline"
+                className="w-full"
+                disabled={isSavingProfile}
+                data-testid="ssh-new-profile-button">
+                <Plus className="h-4 w-4" /> New Profile
+              </Button>
+
+              <Field className="gap-1.5">
+                <FieldLabel className="text-[11px] uppercase tracking-wide text-muted-foreground">Search</FieldLabel>
                 <Input
+                  data-testid="ssh-search-input"
                   value={search}
                   onChange={event => setSearch(event.target.value)}
                   placeholder="Search profiles"
@@ -613,10 +638,6 @@ export function RemoteConnectionPanel({
                   spellCheck={false}
                 />
               </Field>
-
-              <Button onClick={openNewProfile} variant="outline" className="sm:self-end" disabled={isSavingProfile}>
-                <Plus className="mr-1 h-4 w-4" /> New Profile
-              </Button>
             </div>
 
             {status?.connected ? (
@@ -631,9 +652,9 @@ export function RemoteConnectionPanel({
 
             <Separator />
 
-            <div className="space-y-2">
+            <div className="space-y-[var(--mobile-gap-tight)]">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">Saved Profiles</p>
+                <p className="text-sm font-semibold">Saved Profiles</p>
                 <p className="text-xs text-muted-foreground">
                   {orderedProfiles.length}
                   {search.trim().length > 0 ? ' matching' : ' total'}
@@ -643,7 +664,7 @@ export function RemoteConnectionPanel({
               {isLoadingProfiles ? (
                 <div className="text-sm text-muted-foreground">Loading profiles...</div>
               ) : orderedProfiles.length === 0 ? (
-                <div className="rounded-md border border-dashed px-3 py-4 text-sm text-muted-foreground">
+                <div className="rounded-lg border border-dashed px-3 py-4 text-sm text-muted-foreground">
                   {hasProfiles ? `No profiles match "${search.trim()}".` : 'No SSH profiles saved yet.'}
                 </div>
               ) : (
@@ -654,24 +675,30 @@ export function RemoteConnectionPanel({
                   return (
                     <div
                       key={profile.id}
+                      data-testid={`ssh-profile-card-${profile.id}`}
                       className={cn(
-                        'rounded-md border px-3 py-3',
-                        isActive ? 'border-primary bg-primary/5' : 'border-border/80'
+                        'group/profile rounded-[var(--mobile-surface-radius)] border px-3.5 py-3.5 transition-[transform,border-color,background-color,box-shadow] duration-200 ease-out active:scale-[0.995]',
+                        isActive
+                          ? 'border-primary/70 bg-primary/5 ring-1 ring-primary/30 shadow-sm'
+                          : 'border-border/80 sm:hover:border-primary/30'
                       )}>
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold">{profile.name}</p>
+                          <p className="truncate text-base leading-tight font-semibold">{profile.name}</p>
                           <p className="truncate text-xs text-muted-foreground">
                             {profile.username}@{profile.host}:{profile.sshPort}
                           </p>
                           <p className="text-xs text-muted-foreground">ralphd:{profile.remotePort}</p>
                         </div>
-                        <div className="flex shrink-0 flex-col items-end gap-1">
+                        <div className="flex shrink-0 flex-col items-end gap-1.5">
                           <Badge variant="outline">{profile.authMode}</Badge>
                           {profile.autoReconnectEnabled ? <Badge variant="secondary">Auto Reconnect</Badge> : null}
                           {isActive ? (
-                            <Badge>
-                              <CheckCircle2 className="mr-1 h-3 w-3" />
+                            <Badge className="gap-1.5">
+                              <span className="relative flex size-2">
+                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-60" />
+                                <span className="relative inline-flex size-2 rounded-full bg-current" />
+                              </span>
                               Active
                             </Badge>
                           ) : null}
@@ -687,27 +714,27 @@ export function RemoteConnectionPanel({
 
                       <div className="mt-3 space-y-2">
                         <Button
-                          size="sm"
                           onClick={() => setConnectPrompt({ profile, password: '', keyPassphrase: '' })}
                           disabled={isConnecting || isDisconnecting}
+                          data-testid={`ssh-profile-connect-${profile.id}`}
                           className="w-full">
-                          <Wifi className="mr-1 h-4 w-4" />
+                          <Wifi className="h-4 w-4" />
                           Connect
                         </Button>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-[var(--mobile-gap-tight)]">
                           <Button
-                            size="sm"
                             variant="outline"
                             onClick={() => openEditProfile(profile)}
-                            disabled={isSavingProfile}>
+                            disabled={isSavingProfile}
+                            data-testid={`ssh-profile-edit-${profile.id}`}>
                             Edit
                           </Button>
                           <Button
-                            size="sm"
                             variant="outline"
                             onClick={() => setProfileIdToDelete(profile.id)}
-                            disabled={isDeletingProfile}>
-                            <Trash2 className="mr-1 h-4 w-4" />
+                            disabled={isDeletingProfile}
+                            data-testid={`ssh-profile-delete-${profile.id}`}>
+                            <Trash2 className="h-4 w-4" />
                             Delete
                           </Button>
                         </div>
@@ -718,7 +745,23 @@ export function RemoteConnectionPanel({
               )}
             </div>
 
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2">
+            {!status?.connected && quickConnectProfile ? (
+              <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+var(--mobile-gap-tight))] z-10 rounded-[var(--mobile-surface-radius)] border border-primary/40 bg-background/85 p-[var(--mobile-gap-tight)] shadow-lg backdrop-blur-md">
+                <p className="px-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Quick connect
+                </p>
+                <Button
+                  onClick={() => setConnectPrompt({ profile: quickConnectProfile, password: '', keyPassphrase: '' })}
+                  disabled={isConnecting || isDisconnecting}
+                  data-testid="ssh-quick-connect-button"
+                  className="mt-1 w-full justify-between">
+                  <span className="truncate">Connect {quickConnectProfile.name}</span>
+                  <Wifi className="h-4 w-4 shrink-0" />
+                </Button>
+              </div>
+            ) : null}
+
+            <div className="rounded-[var(--mobile-surface-radius)] border border-amber-500/40 bg-amber-500/10 px-3 py-3">
               <p className="flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-300">
                 <ShieldAlert className="h-3.5 w-3.5" />
                 Host key verification required
@@ -732,7 +775,9 @@ export function RemoteConnectionPanel({
       </div>
 
       <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>
-        <DialogContent className="max-h-[90svh] overflow-y-auto">
+        <DialogContent
+          className="max-h-[calc(100svh-0.75rem)] overflow-y-auto sm:max-h-[90svh]"
+          data-testid="ssh-profile-editor">
           <DialogHeader>
             <DialogTitle>{draft.id ? 'Edit SSH Profile' : 'New SSH Profile'}</DialogTitle>
             <DialogDescription>
@@ -744,6 +789,7 @@ export function RemoteConnectionPanel({
             <Field>
               <FieldLabel>Profile Name</FieldLabel>
               <Input
+                data-testid="ssh-profile-name-input"
                 value={draft.name}
                 onChange={event => setDraft(prev => ({ ...prev, name: event.target.value }))}
                 placeholder="Work Mac"
@@ -756,6 +802,7 @@ export function RemoteConnectionPanel({
             <Field>
               <FieldLabel>SSH Host</FieldLabel>
               <Input
+                data-testid="ssh-host-input"
                 value={draft.host}
                 onChange={event => setDraft(prev => ({ ...prev, host: event.target.value }))}
                 placeholder="dev.example.com"
@@ -768,6 +815,7 @@ export function RemoteConnectionPanel({
             <Field>
               <FieldLabel>SSH Username</FieldLabel>
               <Input
+                data-testid="ssh-username-input"
                 value={draft.username}
                 onChange={event => setDraft(prev => ({ ...prev, username: event.target.value }))}
                 placeholder="vince"
@@ -777,10 +825,11 @@ export function RemoteConnectionPanel({
               />
             </Field>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Field>
                 <FieldLabel>SSH Port</FieldLabel>
                 <Input
+                  data-testid="ssh-port-input"
                   value={draft.sshPort}
                   onChange={event => setDraft(prev => ({ ...prev, sshPort: event.target.value }))}
                   inputMode="numeric"
@@ -791,6 +840,7 @@ export function RemoteConnectionPanel({
               <Field>
                 <FieldLabel>Ralphd Port</FieldLabel>
                 <Input
+                  data-testid="ralphd-port-input"
                   value={draft.remotePort}
                   onChange={event => setDraft(prev => ({ ...prev, remotePort: event.target.value }))}
                   inputMode="numeric"
@@ -833,7 +883,7 @@ export function RemoteConnectionPanel({
               <FieldDescription>Choose how this profile authenticates over SSH.</FieldDescription>
             </Field>
 
-            <details className="rounded-md border px-3 py-2">
+            <details className="rounded-lg border px-3 py-2">
               <summary className="cursor-pointer text-sm font-medium">Advanced Paths (Optional)</summary>
               <div className="mt-3 space-y-3">
                 <Field>
@@ -889,7 +939,7 @@ export function RemoteConnectionPanel({
                         onChange={event => setImportKeyPassphrase(event.target.value)}
                       />
                     </Field>
-                    <Field className="flex items-center justify-between rounded-md border px-3 py-2">
+                    <Field className="flex items-center justify-between rounded-lg border px-3 py-2">
                       <div>
                         <FieldLabel>Save Import Passphrase</FieldLabel>
                         <FieldDescription>Store passphrase in keychain for reconnects.</FieldDescription>
@@ -908,7 +958,7 @@ export function RemoteConnectionPanel({
                   />
                 </Field>
 
-                <Field className="flex items-center justify-between rounded-md border px-3 py-2">
+                <Field className="flex items-center justify-between rounded-lg border px-3 py-2">
                   <div>
                     <FieldLabel>Save Key Passphrase</FieldLabel>
                     <FieldDescription>Persist passphrase in keychain for this profile.</FieldDescription>
@@ -930,7 +980,7 @@ export function RemoteConnectionPanel({
                   />
                 </Field>
 
-                <Field className="flex items-center justify-between rounded-md border px-3 py-2">
+                <Field className="flex items-center justify-between rounded-lg border px-3 py-2">
                   <div>
                     <FieldLabel>Save Password</FieldLabel>
                     <FieldDescription>Persist password in keychain for this profile.</FieldDescription>
@@ -943,7 +993,7 @@ export function RemoteConnectionPanel({
               </>
             )}
 
-            <Field className="flex items-center justify-between rounded-md border px-3 py-2">
+            <Field className="flex items-center justify-between rounded-lg border px-3 py-2">
               <div>
                 <FieldLabel>Auto Reconnect</FieldLabel>
                 <FieldDescription>Attempt one reconnect at app launch.</FieldDescription>
@@ -956,10 +1006,19 @@ export function RemoteConnectionPanel({
           </FieldGroup>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditorOpen(false)} disabled={isSavingProfile}>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditorOpen(false)}
+              disabled={isSavingProfile}
+              data-testid="ssh-profile-cancel-button"
+              className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={saveProfile} disabled={isSavingProfile}>
+            <Button
+              onClick={saveProfile}
+              disabled={isSavingProfile}
+              data-testid="ssh-profile-save-button"
+              className="w-full sm:w-auto">
               {isSavingProfile ? 'Saving...' : 'Save Profile'}
             </Button>
           </DialogFooter>
@@ -967,7 +1026,7 @@ export function RemoteConnectionPanel({
       </Dialog>
 
       <Dialog open={connectPrompt !== null} onOpenChange={open => (open ? null : setConnectPrompt(null))}>
-        <DialogContent>
+        <DialogContent data-testid="ssh-connect-dialog">
           <DialogHeader>
             <DialogTitle>Connect Profile</DialogTitle>
             <DialogDescription>
@@ -977,7 +1036,7 @@ export function RemoteConnectionPanel({
 
           {connectPrompt ? (
             <FieldGroup>
-              <div className="rounded-md border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+              <div className="rounded-lg border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
                 <p className="font-medium text-foreground">
                   {connectPrompt.profile.username}@{connectPrompt.profile.host}:{connectPrompt.profile.sshPort}
                 </p>
@@ -1011,10 +1070,19 @@ export function RemoteConnectionPanel({
           ) : null}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConnectPrompt(null)} disabled={isConnecting}>
+            <Button
+              variant="outline"
+              onClick={() => setConnectPrompt(null)}
+              disabled={isConnecting}
+              data-testid="ssh-connect-cancel-button"
+              className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={() => (connectPrompt ? connectProfile(connectPrompt) : null)} disabled={isConnecting}>
+            <Button
+              onClick={() => (connectPrompt ? connectProfile(connectPrompt) : null)}
+              disabled={isConnecting}
+              data-testid="ssh-connect-now-button"
+              className="w-full sm:w-auto">
               {isConnecting ? 'Connecting...' : 'Connect Now'}
             </Button>
           </DialogFooter>
@@ -1022,7 +1090,7 @@ export function RemoteConnectionPanel({
       </Dialog>
 
       <AlertDialog open={profileIdToDelete !== null} onOpenChange={open => (open ? null : setProfileIdToDelete(null))}>
-        <AlertDialogContent>
+        <AlertDialogContent data-testid="ssh-delete-dialog">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete SSH profile?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -1030,10 +1098,13 @@ export function RemoteConnectionPanel({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeletingProfile}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeletingProfile} data-testid="ssh-delete-cancel-button">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => (profileIdToDelete ? deleteProfile(profileIdToDelete) : null)}
-              disabled={isDeletingProfile}>
+              disabled={isDeletingProfile}
+              data-testid="ssh-delete-confirm-button">
               {isDeletingProfile ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -1041,7 +1112,7 @@ export function RemoteConnectionPanel({
       </AlertDialog>
 
       <AlertDialog open={hostKeyChallenge !== null} onOpenChange={open => (open ? null : dismissHostKeyChallenge())}>
-        <AlertDialogContent>
+        <AlertDialogContent data-testid="ssh-hostkey-dialog">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <ShieldAlert className="h-5 w-5" /> Trust SSH Host Key?
@@ -1069,10 +1140,16 @@ export function RemoteConnectionPanel({
           ) : null}
 
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={rejectHostKey} disabled={isApprovingHostKey}>
+            <AlertDialogCancel
+              onClick={rejectHostKey}
+              disabled={isApprovingHostKey}
+              data-testid="ssh-hostkey-reject-button">
               Reject
             </AlertDialogCancel>
-            <AlertDialogAction onClick={approveHostKeyAndRetry} disabled={isApprovingHostKey}>
+            <AlertDialogAction
+              onClick={approveHostKeyAndRetry}
+              disabled={isApprovingHostKey}
+              data-testid="ssh-hostkey-approve-button">
               {isApprovingHostKey ? 'Approving...' : 'Trust And Continue'}
             </AlertDialogAction>
           </AlertDialogFooter>

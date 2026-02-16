@@ -6,7 +6,10 @@ function Card({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="card"
-      className={cn('bg-card text-card-foreground flex flex-col gap-4 rounded-lg border py-4 shadow-sm', className)}
+      className={cn(
+        'bg-card text-card-foreground flex flex-col gap-[var(--mobile-gap)] rounded-[var(--mobile-surface-radius)] border py-[var(--mobile-card-padding-block)] shadow-sm sm:gap-4 sm:rounded-lg sm:py-4',
+        className
+      )}
       {...props}
     />
   )
@@ -17,7 +20,7 @@ function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="card-header"
       className={cn(
-        '@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-4 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-4',
+        '@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-[var(--mobile-gap-tight)] px-[var(--mobile-card-padding-inline)] has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-4 sm:gap-2 sm:px-4',
         className
       )}
       {...props}
@@ -44,11 +47,23 @@ function CardAction({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 function CardContent({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="card-content" className={cn('px-4', className)} {...props} />
+  return (
+    <div
+      data-slot="card-content"
+      className={cn('px-[var(--mobile-card-padding-inline)] sm:px-4', className)}
+      {...props}
+    />
+  )
 }
 
 function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="card-footer" className={cn('flex items-center px-4 [.border-t]:pt-4', className)} {...props} />
+  return (
+    <div
+      data-slot="card-footer"
+      className={cn('flex items-center px-[var(--mobile-card-padding-inline)] [.border-t]:pt-4 sm:px-4', className)}
+      {...props}
+    />
+  )
 }
 
 export { Card, CardHeader, CardFooter, CardTitle, CardAction, CardDescription, CardContent }

@@ -59,6 +59,8 @@ targets:
       environmentVariables:
         RUST_BACKTRACE: full
         RUST_LOG: info
+      testTargets:
+        - ralph4days_iOSUITests
     settings:
       base:
         ENABLE_BITCODE: false
@@ -80,9 +82,35 @@ targets:
       - sdk: UIKit.framework
       - sdk: WebKit.framework
     preBuildScripts:
-      - script: bun tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths "${FRAMEWORK_SEARCH_PATHS:?}" --header-search-paths "${HEADER_SEARCH_PATHS:?}" --gcc-preprocessor-definitions "${GCC_PREPROCESSOR_DEFINITIONS:-}" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}
+      - script: |
+          if [ "${RALPH_IOS_E2E_PREBUILT_RUST:-0}" = "1" ]; then
+            for arch in ${ARCHS:?}; do
+              lib_path="${SRCROOT:?}/Externals/${arch}/${CONFIGURATION:?}/libapp.a"
+              if [ ! -f "${lib_path}" ]; then
+                echo "error: missing prebuilt Rust library: ${lib_path}" >&2
+                echo "error: run 'VITE_E2E_FORCE_REMOTE_PANEL=1 bun tauri ios build --debug --target aarch64-sim --ci' first" >&2
+                exit 1
+              fi
+            done
+            echo "Using prebuilt Rust static library for iOS e2e test build"
+            exit 0
+          fi
+
+          bun tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths "${FRAMEWORK_SEARCH_PATHS:?}" --header-search-paths "${HEADER_SEARCH_PATHS:?}" --gcc-preprocessor-definitions "${GCC_PREPROCESSOR_DEFINITIONS:-}" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}
         name: Build Rust Code
         basedOnDependencyAnalysis: false
         outputFiles:
           - $(SRCROOT)/Externals/x86_64/${CONFIGURATION}/libapp.a
           - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libapp.a
+  ralph4days_iOSUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: ralph4days_iOSUITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.vince.ralph.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: ralph4days_iOS
+    dependencies:
+      - target: ralph4days_iOS

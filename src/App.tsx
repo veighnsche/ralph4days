@@ -20,6 +20,14 @@ import type { BackendDiagnosticEvent, RemoteSshStatus, RemoteStatus } from '@/ty
 import './index.css'
 
 const isTauri = typeof window !== 'undefined' && '__TAURI__' in window
+const forceRemotePanelEnv = import.meta.env.VITE_E2E_FORCE_REMOTE_PANEL
+
+function isForceRemotePanelEnabled(): boolean {
+  if (forceRemotePanelEnv === undefined || forceRemotePanelEnv === '') return false
+  if (forceRemotePanelEnv === '1') return true
+  if (forceRemotePanelEnv === '0') return false
+  throw new Error(`Invalid VITE_E2E_FORCE_REMOTE_PANEL value '${String(forceRemotePanelEnv)}' (expected '0' or '1')`)
+}
 
 function NoBackendError() {
   return (
@@ -114,9 +122,10 @@ function ConnectedProjectView({ lockedProject }: { lockedProject: string }) {
 
 function App() {
   const queryClient = useQueryClient()
+  const forceRemotePanel = isForceRemotePanelEnabled()
 
   const { data: isBackendMobile, isLoading: isLoadingBackendMode } = useInvoke<boolean>('mobile_mode_get')
-  const mobileNeedsRemoteConnection = requiresRemoteConnection(isBackendMobile)
+  const mobileNeedsRemoteConnection = forceRemotePanel || requiresRemoteConnection(isBackendMobile)
 
   const {
     data: remoteStatus,
