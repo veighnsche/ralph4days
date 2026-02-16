@@ -461,9 +461,10 @@ export type TasksUpdateArgs = {
   effort?: string
   thinking?: boolean
 }
+export type TerminalAgent = 'codex' | 'claude' | 'shell'
 export type TerminalBridgeEmitSystemMessageArgs = { sessionId: string; text: string }
 export type TerminalBridgeLaunchDefaults = {
-  agent?: string
+  agent?: TerminalAgent
   model?: string
   effort?: string
   thinking?: boolean
@@ -490,7 +491,7 @@ export type TerminalBridgeReplayOutputResult = {
 export type TerminalBridgeResizeArgs = { sessionId: string; cols: number; rows: number }
 export type TerminalBridgeResolveTaskLaunchArgs = { taskId: number; defaults: TerminalBridgeLaunchDefaults }
 export type TerminalBridgeResolvedLaunchConfig = {
-  agent?: string
+  agent?: TerminalAgent
   model?: string
   effort?: string
   thinking?: boolean
@@ -508,20 +509,20 @@ export type TerminalBridgeStartHumanSessionArgs = {
   terminalSessionId: string
   kind: string
   taskId?: number
-  agent?: string
+  agent?: TerminalAgent
   model?: string
   effort?: string
   permissionLevel?: string
   postStartPreamble?: string
   initPrompt?: string
-  mcpMode?: string
+  mcpMode?: TerminalMcpMode
   thinking?: boolean
 }
 export type TerminalBridgeStartHumanSessionResult = { agentSessionId: string; agentSessionNumber: number }
 export type TerminalBridgeStartSessionArgs = {
   sessionId: string
-  agent?: string
-  mcpMode?: string
+  agent?: TerminalAgent
+  mcpMode?: TerminalMcpMode
   model?: string
   effort?: string
   permissionLevel?: string
@@ -531,7 +532,7 @@ export type TerminalBridgeStartSessionArgs = {
 export type TerminalBridgeStartTaskSessionArgs = {
   sessionId: string
   taskId: number
-  agent?: string
+  agent?: TerminalAgent
   model?: string
   effort?: string
   permissionLevel?: string
@@ -539,4 +540,5 @@ export type TerminalBridgeStartTaskSessionArgs = {
   postStartPreamble?: string
 }
 export type TerminalBridgeTerminateArgs = { sessionId: string }
+export type TerminalMcpMode = 'interactive' | 'task_creation'
 export type VisualIdentityData = { style: string; theme: string; tone: string; references: string }
