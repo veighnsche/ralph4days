@@ -1,9 +1,9 @@
 use crate::project::validate_project_path;
 use crate::project_scan;
 pub use core_contracts::session::ProjectLockSetArgs;
-use service_runtime::diagnostics;
 use core_errors::{codes, err_string, ralph_err, RalphResult, RalphResultExt};
 use data_sqlite::SqliteDb;
+use service_runtime::diagnostics;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Mutex;

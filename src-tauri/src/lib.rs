@@ -1,6 +1,9 @@
 mod commands;
 mod event_sink;
 mod remote;
+mod ssh_profiles;
+mod ssh_secrets;
+mod ssh_tunnel;
 
 use commands::AppState;
 #[cfg(not(mobile))]
@@ -269,6 +272,17 @@ pub fn run() {
             commands::remote::remote_connect,
             commands::remote::remote_disconnect,
             commands::remote::remote_status_get,
+            commands::remote::remote_ssh_connect,
+            commands::remote::remote_ssh_disconnect,
+            commands::remote::remote_ssh_status_get,
+            commands::remote::remote_ssh_profile_list,
+            commands::remote::remote_ssh_profile_upsert,
+            commands::remote::remote_ssh_profile_delete,
+            commands::remote::remote_ssh_profile_connect,
+            commands::remote::remote_ssh_profile_set_last_used,
+            commands::remote::remote_ssh_identity_import,
+            commands::remote::remote_ssh_hostkey_challenge_approve,
+            commands::remote::remote_ssh_hostkey_challenge_reject,
             commands::terminal_bridge::terminal_start_session,
             commands::terminal_bridge::terminal_start_task_session,
             commands::terminal_bridge::terminal_resolve_task_launch_config,

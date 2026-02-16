@@ -1,10 +1,10 @@
-use service_prompts::prompt_builder_configs_service;
-use service_prompts::prompt_builder_preview::PromptBuilderPreviewDeps;
 use core_contracts::prompt_builder::{
     PromptBuilderConfigDeleteArgs, PromptBuilderConfigGetArgs, PromptBuilderConfigSaveArgs,
     PromptBuilderPreviewArgs,
 };
 use core_errors::{codes, RalphResult, RalphResultExt};
+use service_prompts::prompt_builder_configs_service;
+use service_prompts::prompt_builder_preview::PromptBuilderPreviewDeps;
 
 use crate::rpc_codec::{decode_args, encode_result, require_null_payload};
 use crate::state::AppState;

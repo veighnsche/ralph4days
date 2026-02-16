@@ -1,6 +1,6 @@
-use futures_util::{SinkExt, StreamExt};
 use core_contracts::events::{BackendDiagnosticEvent, BackendDiagnosticLevel};
 use core_contracts::transport::{RemoteEventFrame, RemoteWireFrame};
+use futures_util::{SinkExt, StreamExt};
 use std::process::Stdio;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;

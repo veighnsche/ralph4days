@@ -1,6 +1,6 @@
-use portable_pty::MasterPty;
 use core_errors::{codes, err_string, RalphResult};
 use data_sqlite::SqliteDb;
+use portable_pty::MasterPty;
 use std::io::Write;
 use std::sync::{Arc, Mutex};
 
@@ -186,11 +186,7 @@ pub fn resolve_task_launch_config(
 
     validate_agent(agent)?;
     super::providers::resolve_session_model_for_agent(agent, model.clone())?;
-    super::providers::resolve_session_effort_for_agent(
-        agent,
-        model.as_deref(),
-        effort.clone(),
-    )?;
+    super::providers::resolve_session_effort_for_agent(agent, model.as_deref(), effort.clone())?;
 
     let supports_effort = model_supports_effort(agent, model.as_deref())?;
 

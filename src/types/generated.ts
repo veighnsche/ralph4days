@@ -202,6 +202,100 @@ export type RemoteEventFrame =
   | { event: 'backend-diagnostic'; payload: BackendDiagnosticEvent }
   | { event: 'terminal:output'; payload: PtyOutputEvent }
   | { event: 'terminal:closed'; payload: PtyClosedEvent }
+export type RemoteSshAuthMode = 'key' | 'password'
+export type RemoteSshConnectArgs = {
+  host: string
+  username: string
+  sshPort: number
+  remotePort: number
+  authMode: RemoteSshAuthMode
+  identityFile?: string
+  password?: string
+  keyPassphrase?: string
+  knownHostsFile?: string
+}
+export type RemoteSshConnectResult = {
+  wsUrl: string
+  protocol: ProtocolVersionInfo
+  sshSessionId: number
+  host: string
+  username: string
+  sshPort: number
+  remotePort: number
+  authMode: RemoteSshAuthMode
+  transportKind: RemoteSshTransportKind
+  activeProfileId?: string
+  identityFile?: string
+  knownHostsFile?: string
+}
+export type RemoteSshHostKeyChallenge = {
+  challengeId: string
+  host: string
+  sshPort: number
+  algorithm: string
+  fingerprintSha256: string
+  knownHostsTargetPath: string
+  expiresAt: string
+}
+export type RemoteSshHostKeyChallengeApproveArgs = { challengeId: string }
+export type RemoteSshHostKeyChallengeRejectArgs = { challengeId: string }
+export type RemoteSshIdentityImportArgs = {
+  profileId: string
+  fileName: string
+  bytesBase64: string
+  passphrase?: string
+  savePassphrase: boolean
+}
+export type RemoteSshIdentityImportResult = { identityRef: string }
+export type RemoteSshProfile = {
+  id: string
+  name: string
+  host: string
+  username: string
+  sshPort: number
+  remotePort: number
+  authMode: RemoteSshAuthMode
+  identityFile?: string
+  identityRef?: string
+  knownHostsFile?: string
+  autoReconnectEnabled: boolean
+  lastUsedAt?: string
+}
+export type RemoteSshProfileConnectArgs = { profileId: string; password?: string; keyPassphrase?: string }
+export type RemoteSshProfileDeleteArgs = { profileId: string }
+export type RemoteSshProfileSetLastUsedArgs = { profileId: string }
+export type RemoteSshProfileUpsertArgs = {
+  id?: string
+  name: string
+  host: string
+  username: string
+  sshPort: number
+  remotePort: number
+  authMode: RemoteSshAuthMode
+  identityFile?: string
+  identityRef?: string
+  knownHostsFile?: string
+  autoReconnectEnabled: boolean
+  password?: string
+  keyPassphrase?: string
+  savePassword: boolean
+  saveKeyPassphrase: boolean
+}
+export type RemoteSshStatus = {
+  active: boolean
+  wsUrl?: string
+  sshSessionId?: number
+  activeProfileId?: string
+  host?: string
+  username?: string
+  sshPort?: number
+  remotePort?: number
+  authMode?: RemoteSshAuthMode
+  transportKind?: RemoteSshTransportKind
+  identityFile?: string
+  knownHostsFile?: string
+}
+export type RemoteSshTransportKind = 'stream' | 'tcp_loopback'
 export type RemoteStatus = { connected: boolean; wsUrl?: string; protocol?: ProtocolVersionInfo }
 export type RemoteWireFrame =
   | { type: 'rpc-request'; id: number; command: string; payload: unknown }

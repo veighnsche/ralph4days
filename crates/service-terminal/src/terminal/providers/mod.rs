@@ -28,7 +28,9 @@ fn default_agent(agent: Option<TerminalAgent>) -> TerminalAgent {
     agent.unwrap_or(TerminalAgent::Codex)
 }
 
-pub fn resolve_agent_provider(agent: Option<TerminalAgent>) -> RalphResult<&'static dyn AgentProvider> {
+pub fn resolve_agent_provider(
+    agent: Option<TerminalAgent>,
+) -> RalphResult<&'static dyn AgentProvider> {
     let resolved = default_agent(agent);
     match resolved {
         TerminalAgent::Codex => Ok(&CODEX_ADAPTER),
@@ -172,7 +174,8 @@ mod tests {
 
     #[test]
     fn resolves_claude_provider() {
-        let provider = resolve_agent_provider(Some(TerminalAgent::Claude)).expect("claude provider");
+        let provider =
+            resolve_agent_provider(Some(TerminalAgent::Claude)).expect("claude provider");
         assert_eq!(provider.id(), AGENT_CLAUDE);
     }
 
@@ -190,7 +193,8 @@ mod tests {
 
     #[test]
     fn shell_agent_has_empty_model_catalog() {
-        let models = list_model_entries_for_agent(Some(TerminalAgent::Shell)).expect("shell models");
+        let models =
+            list_model_entries_for_agent(Some(TerminalAgent::Shell)).expect("shell models");
         assert!(models.is_empty());
     }
 

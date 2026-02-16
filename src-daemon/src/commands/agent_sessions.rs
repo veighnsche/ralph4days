@@ -1,7 +1,7 @@
-use service_tasks::agent_sessions_service;
 use core_contracts::agent_sessions::AgentSessionsByIdArgs;
 use core_contracts::domain::{AgentSessionCreateInput, AgentSessionUpdateInput};
 use core_errors::RalphResult;
+use service_tasks::agent_sessions_service;
 
 use crate::rpc_codec::{decode_args, encode_result, require_null_payload};
 use crate::state::AppState;

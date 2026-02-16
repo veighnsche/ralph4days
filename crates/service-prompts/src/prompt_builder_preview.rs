@@ -1,10 +1,10 @@
 use crate::prompt_context::{build_prompt_context, PromptContextArgs};
-use prompt_builder::CodebaseSnapshot;
 pub use core_contracts::prompt_builder::{
     PromptBuilderPreviewArgs, PromptPreview, PromptPreviewSection, SectionConfig,
 };
 use core_errors::RalphResult;
 use data_sqlite::SqliteDb;
+use prompt_builder::CodebaseSnapshot;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Mutex;

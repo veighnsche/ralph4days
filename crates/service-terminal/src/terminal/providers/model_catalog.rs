@@ -104,7 +104,10 @@ pub fn codex_models() -> RalphResult<Vec<String>> {
 }
 
 pub fn claudecode_model_entries() -> RalphResult<Vec<ModelEntry>> {
-    Ok(claudecode_specs()?.into_iter().map(ModelEntry::from).collect())
+    Ok(claudecode_specs()?
+        .into_iter()
+        .map(ModelEntry::from)
+        .collect())
 }
 
 pub fn claudecode_models() -> RalphResult<Vec<String>> {

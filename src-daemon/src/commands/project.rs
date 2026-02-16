@@ -1,10 +1,10 @@
-use service_project::project_scan;
 use core_contracts::project::{
     ProjectInfo, ProjectInitializeArgs, ProjectScanArgs, ProjectValidatePathArgs, RalphProject,
     RecentProject,
 };
 use core_contracts::session::ProjectLockSetArgs;
 use core_errors::{codes, ralph_err, RalphResult};
+use service_project::project_scan;
 use std::path::PathBuf;
 
 use crate::rpc_codec::{decode_args, encode_result, require_null_payload};

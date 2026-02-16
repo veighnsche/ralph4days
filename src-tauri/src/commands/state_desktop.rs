@@ -1,4 +1,7 @@
-use super::{remote_rpc_client_from_transport, remote_rpc_client_required, RemoteTransport};
+use super::{
+    remote_rpc_client_from_transport, remote_rpc_client_required, RemoteTransport,
+    SshHostKeyChallengeManager, SshTunnelManager,
+};
 use core_errors::{codes, err_string, RalphResult, RalphResultExt};
 use data_sqlite::SqliteDb;
 use prompt_builder::CodebaseSnapshot;
@@ -14,6 +17,8 @@ pub struct AppState {
     pub codebase_snapshot: Mutex<Option<CodebaseSnapshot>>,
     pub pty_manager: PTYManager,
     pub remote: RemoteTransport,
+    pub ssh_tunnel: SshTunnelManager,
+    pub ssh_host_key_challenges: SshHostKeyChallengeManager,
     pub(crate) mcp_dir: PathBuf,
     pub xdg: XdgDirs,
     pub api_server_port: Mutex<Option<u16>>,
@@ -31,6 +36,8 @@ impl Default for AppState {
             codebase_snapshot: Mutex::new(None),
             pty_manager: PTYManager::new(),
             remote: tokio::sync::Mutex::new(None),
+            ssh_tunnel: tokio::sync::Mutex::new(None),
+            ssh_host_key_challenges: tokio::sync::Mutex::new(std::collections::HashMap::new()),
             mcp_dir: std::env::temp_dir().join(format!("ralph-mcp-{}", std::process::id())),
             xdg,
             api_server_port: Mutex::new(None),

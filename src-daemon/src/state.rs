@@ -1,8 +1,8 @@
-use prompt_builder::CodebaseSnapshot;
-use service_terminal::terminal::PTYManager;
-use service_runtime::xdg::XdgDirs;
 use core_contracts::transport::EventSink;
 use data_sqlite::SqliteDb;
+use prompt_builder::CodebaseSnapshot;
+use service_runtime::xdg::XdgDirs;
+use service_terminal::terminal::PTYManager;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use tokio::sync::broadcast;

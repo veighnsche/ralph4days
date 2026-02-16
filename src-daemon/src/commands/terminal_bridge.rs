@@ -1,4 +1,3 @@
-use service_terminal::terminal_bridge;
 use core_contracts::terminal_bridge::{
     TerminalBridgeEmitSystemMessageArgs, TerminalBridgeListModelFormTreeResult,
     TerminalBridgeReplayOutputArgs, TerminalBridgeReplayOutputResult, TerminalBridgeResizeArgs,
@@ -9,6 +8,7 @@ use core_contracts::terminal_bridge::{
     TerminalBridgeTerminateArgs,
 };
 use core_errors::{codes, RalphResult, RalphResultExt};
+use service_terminal::terminal_bridge;
 use std::sync::Arc;
 
 use crate::rpc_codec::{decode_args, encode_result, require_null_payload};
@@ -100,7 +100,8 @@ pub fn terminal_start_human_session(
 
 pub fn terminal_list_model_form_tree(payload: serde_json::Value) -> RalphResult<serde_json::Value> {
     require_null_payload("terminal_list_model_form_tree", payload)?;
-    let tree: TerminalBridgeListModelFormTreeResult = terminal_bridge::terminal_list_model_form_tree()?;
+    let tree: TerminalBridgeListModelFormTreeResult =
+        terminal_bridge::terminal_list_model_form_tree()?;
     encode_result("terminal_list_model_form_tree", tree)
 }
 

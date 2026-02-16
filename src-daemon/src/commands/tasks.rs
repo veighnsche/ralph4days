@@ -48,7 +48,9 @@ pub fn tasks_delete(
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
     let args: TasksDeleteArgs = decode_args("tasks_delete", payload)?;
-    service_project::session::with_db(&state.db, |db| service_tasks::tasks::tasks_delete(db, args))?;
+    service_project::session::with_db(&state.db, |db| {
+        service_tasks::tasks::tasks_delete(db, args)
+    })?;
     Ok(serde_json::Value::Null)
 }
 
@@ -93,8 +95,9 @@ pub fn tasks_list(state: &AppState, payload: serde_json::Value) -> RalphResult<s
 
 pub fn tasks_get(state: &AppState, payload: serde_json::Value) -> RalphResult<serde_json::Value> {
     let args: TasksGetArgs = decode_args("tasks_get", payload)?;
-    let task =
-        service_project::session::with_db(&state.db, |db| service_tasks::tasks::tasks_get(db, args))?;
+    let task = service_project::session::with_db(&state.db, |db| {
+        service_tasks::tasks::tasks_get(db, args)
+    })?;
     encode_result("tasks_get", task)
 }
 
@@ -103,7 +106,8 @@ pub fn tasks_list_items(
     payload: serde_json::Value,
 ) -> RalphResult<serde_json::Value> {
     require_null_payload("tasks_list_items", payload)?;
-    let items = service_project::session::with_db(&state.db, service_tasks::tasks::tasks_list_items)?;
+    let items =
+        service_project::session::with_db(&state.db, service_tasks::tasks::tasks_list_items)?;
     encode_result("tasks_list_items", items)
 }
 

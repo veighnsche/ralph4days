@@ -1,7 +1,7 @@
+use ai_external::DisciplinePrompts;
 use catalog_disciplines::{
     get_disciplines_for_stack, get_global_image_prompts, get_stack_metadata, DISCIPLINE_WORKFLOW,
 };
-use ai_external::DisciplinePrompts;
 
 fn radix_fmt(mut n: u64, base: u64) -> String {
     const DIGITS: &[u8] = b"0123456789abcdefghijklmnopqrstuvwxyz";
@@ -131,8 +131,7 @@ async fn main() {
             .map_or((28, 2.0), |g| (g.prod.steps, g.prod.megapixels)),
     };
 
-    let (width, height) =
-        ai_external::compute_dimensions(args.ratio_w, args.ratio_h, megapixels);
+    let (width, height) = ai_external::compute_dimensions(args.ratio_w, args.ratio_h, megapixels);
 
     eprintln!(
         "Settings: {} steps, {}x{} ({:.1}MP, ratio {}:{})",

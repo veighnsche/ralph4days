@@ -1,9 +1,9 @@
 use crate::prompt_context::{build_prompt_context, PromptContextArgs};
-use prompt_builder::CodebaseSnapshot;
-use service_project::session::with_db;
 use core_contracts::terminal_bridge::TerminalMcpMode;
 use core_errors::{codes, err_string, RalphResult, RalphResultExt};
 use data_sqlite::SqliteDb;
+use prompt_builder::CodebaseSnapshot;
+use service_project::session::with_db;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;

@@ -12,27 +12,22 @@ pub struct XdgDirs {
 
 impl XdgDirs {
     pub fn resolve() -> RalphResult<Self> {
-        let data = dirs::data_dir()
-            .ok_or_else(|| core_errors::err_string(codes::FILESYSTEM, "No XDG data directory"))?
-            .join(APP_NAME);
+        let data_base = dirs::data_dir()
+            .ok_or_else(|| core_errors::err_string(codes::FILESYSTEM, "No XDG data directory"))?;
 
-        let config = dirs::config_dir()
-            .ok_or_else(|| core_errors::err_string(codes::FILESYSTEM, "No XDG config directory"))?
-            .join(APP_NAME);
+        let config_base = dirs::config_dir()
+            .ok_or_else(|| core_errors::err_string(codes::FILESYSTEM, "No XDG config directory"))?;
 
-        let cache = dirs::cache_dir()
-            .ok_or_else(|| core_errors::err_string(codes::FILESYSTEM, "No XDG cache directory"))?
-            .join(APP_NAME);
+        let cache_base = dirs::cache_dir()
+            .ok_or_else(|| core_errors::err_string(codes::FILESYSTEM, "No XDG cache directory"))?;
 
-        let state = dirs::state_dir()
-            .ok_or_else(|| core_errors::err_string(codes::FILESYSTEM, "No XDG state directory"))?
-            .join(APP_NAME);
+        let state_base = resolve_state_base(&data_base, dirs::state_dir(), dirs::data_local_dir());
 
         Ok(Self {
-            data,
-            config,
-            cache,
-            state,
+            data: data_base.join(APP_NAME),
+            config: config_base.join(APP_NAME),
+            cache: cache_base.join(APP_NAME),
+            state: state_base.join(APP_NAME),
         })
     }
 
@@ -87,6 +82,28 @@ impl XdgDirs {
     }
 }
 
+fn resolve_state_base(
+    data_base: &Path,
+    state_base: Option<PathBuf>,
+    data_local_base: Option<PathBuf>,
+) -> PathBuf {
+    if let Some(path) = state_base {
+        return path;
+    }
+
+    if let Some(path) = data_local_base {
+        tracing::warn!(
+            "No XDG state directory reported by host; falling back to data-local directory"
+        );
+        return path;
+    }
+
+    tracing::warn!(
+        "No XDG state/data-local directory reported by host; falling back to data directory"
+    );
+    data_base.to_path_buf()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -108,5 +125,30 @@ mod tests {
         let dirs = XdgDirs::from_base(base.path());
         dirs.ensure_data().unwrap();
         assert!(dirs.data().exists());
+    }
+
+    #[test]
+    fn resolve_state_base_prefers_state_dir() {
+        let base = TempDir::new().unwrap();
+        let explicit_state = base.path().join("state-explicit");
+        let data_local = base.path().join("data-local");
+        let resolved =
+            resolve_state_base(base.path(), Some(explicit_state.clone()), Some(data_local));
+        assert_eq!(resolved, explicit_state);
+    }
+
+    #[test]
+    fn resolve_state_base_falls_back_to_data_local_dir() {
+        let base = TempDir::new().unwrap();
+        let data_local = base.path().join("data-local");
+        let resolved = resolve_state_base(base.path(), None, Some(data_local.clone()));
+        assert_eq!(resolved, data_local);
+    }
+
+    #[test]
+    fn resolve_state_base_falls_back_to_data_dir() {
+        let base = TempDir::new().unwrap();
+        let resolved = resolve_state_base(base.path(), None, None);
+        assert_eq!(resolved, base.path());
     }
 }

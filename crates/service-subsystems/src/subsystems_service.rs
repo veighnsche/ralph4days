@@ -177,10 +177,9 @@ pub async fn subsystems_comment_apply_embedding(
     let ext_config = ai_external::ExternalServicesConfig::load()
         .map_err(|e| err_string(codes::FEATURE_OPS, e))?;
     let embed_config = build_embedding_config(&ext_config);
-    let result =
-        ai_external::comment_embeddings::embed_text(&embed_config, &work.embedding_text)
-            .await
-            .map_err(|e| err_string(codes::FEATURE_OPS, e))?;
+    let result = ai_external::comment_embeddings::embed_text(&embed_config, &work.embedding_text)
+        .await
+        .map_err(|e| err_string(codes::FEATURE_OPS, e))?;
 
     let path = comment_embeddings_db_path(project_path);
     let db = SqliteDb::open(&path, None)?;

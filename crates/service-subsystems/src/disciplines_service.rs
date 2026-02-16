@@ -4,13 +4,16 @@ use crate::disciplines_contract::{
     DisciplinesImageDataGetArgs, DisciplinesUpdateArgs, McpServerConfigData,
 };
 use base64::{engine::general_purpose::STANDARD, Engine};
-use service_runtime::diagnostics;
 use core_errors::{codes, err_string, RalphResult, RalphResultExt};
 use data_sqlite::SqliteDb;
+use service_runtime::diagnostics;
 use std::io::Cursor;
 use std::path::Path;
 
-fn to_discipline_config(db: &SqliteDb, d: &data_sqlite::Discipline) -> RalphResult<DisciplineConfig> {
+fn to_discipline_config(
+    db: &SqliteDb,
+    d: &data_sqlite::Discipline,
+) -> RalphResult<DisciplineConfig> {
     Ok(DisciplineConfig {
         id: d.id,
         name: d.name.clone(),

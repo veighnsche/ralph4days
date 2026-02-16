@@ -1,5 +1,5 @@
-use portable_pty::CommandBuilder;
 use core_errors::RalphResult;
+use portable_pty::CommandBuilder;
 use std::path::Path;
 
 use super::SessionConfig;

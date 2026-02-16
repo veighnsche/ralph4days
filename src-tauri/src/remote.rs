@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::sync::{mpsc, oneshot, Mutex};
 use tokio_tungstenite::tungstenite::Message;
 
@@ -130,7 +131,35 @@ impl RemoteWireFrameConnection {
                     "Failed to connect remote WebSocket '{ws_url}': {e}"
                 ))
             })?;
+        Self::connect_with_ws_stream(ws_url, ws_stream, sink).await
+    }
 
+    pub async fn connect_via_stream<S>(
+        ws_url: String,
+        stream: S,
+        sink: Arc<dyn EventSink>,
+    ) -> RalphResult<Self>
+    where
+        S: AsyncRead + AsyncWrite + Unpin + Send + 'static,
+    {
+        let (ws_stream, _) = tokio_tungstenite::client_async(ws_url.as_str(), stream)
+            .await
+            .map_err(|error| {
+                remote_err(format!(
+                    "Failed to connect remote WebSocket '{ws_url}' over SSH stream: {error}"
+                ))
+            })?;
+        Self::connect_with_ws_stream(ws_url, ws_stream, sink).await
+    }
+
+    async fn connect_with_ws_stream<S>(
+        ws_url: String,
+        ws_stream: tokio_tungstenite::WebSocketStream<S>,
+        sink: Arc<dyn EventSink>,
+    ) -> RalphResult<Self>
+    where
+        S: AsyncRead + AsyncWrite + Unpin + Send + 'static,
+    {
         let (mut write, mut read) = ws_stream.split();
         let (write_tx, mut write_rx) = mpsc::unbounded_channel::<Message>();
         let (shutdown_tx, mut shutdown_rx) = oneshot::channel::<()>();

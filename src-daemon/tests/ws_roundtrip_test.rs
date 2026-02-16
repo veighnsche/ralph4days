@@ -1,5 +1,5 @@
-use futures_util::{SinkExt, StreamExt};
 use core_contracts::transport::RemoteWireFrame;
+use futures_util::{SinkExt, StreamExt};
 use std::process::Stdio;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;

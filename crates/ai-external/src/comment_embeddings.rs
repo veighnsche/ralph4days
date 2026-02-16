@@ -1,7 +1,7 @@
 use crate::config::OllamaConfig;
 use crate::ollama;
-use core_errors::RalphResult;
 use ai_rag::embedding;
+use core_errors::RalphResult;
 
 pub struct CommentEmbeddingConfig<'a> {
     pub ollama: &'a OllamaConfig,

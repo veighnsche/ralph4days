@@ -1,5 +1,3 @@
-use service_subsystems::disciplines_service;
-use service_subsystems::subsystems_service;
 use core_contracts::disciplines::{
     DisciplinesCreateArgs, DisciplinesCroppedImageGetArgs, DisciplinesDeleteArgs,
     DisciplinesImageDataGetArgs, DisciplinesUpdateArgs,
@@ -9,6 +7,8 @@ use core_contracts::subsystems::{
     SubsystemsCreateArgs, SubsystemsDeleteArgs, SubsystemsUpdateArgs,
 };
 use core_errors::RalphResult;
+use service_subsystems::disciplines_service;
+use service_subsystems::subsystems_service;
 
 use crate::rpc_codec::{decode_args, encode_result, require_null_payload};
 use crate::state::AppState;

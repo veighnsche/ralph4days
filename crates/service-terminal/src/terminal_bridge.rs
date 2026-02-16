@@ -4,21 +4,22 @@ use crate::terminal::providers::{
     AGENT_CODEX, AGENT_SHELL,
 };
 use crate::terminal::{
-    resolve_task_launch_config, PTYManager, PtyOutputEvent, SessionConfig, SessionInitSettings, SessionStreamMode,
-    TerminalAgent, TerminalBridgeLaunchDefaults, TerminalBridgeListModelFormTreeResult,
-    TerminalBridgeListModelsResult, TerminalBridgeModelOption, TerminalBridgeReplayOutputArgs,
-    TerminalBridgeReplayOutputResult, TerminalBridgeResizeArgs, TerminalBridgeResolvedLaunchConfig,
-    TerminalBridgeSendInputArgs, TerminalBridgeSetStreamModeArgs, TerminalBridgeStartHumanSessionArgs,
-    TerminalBridgeStartHumanSessionResult, TerminalBridgeStartSessionArgs, TerminalBridgeStartTaskSessionArgs,
-    TerminalBridgeTerminateArgs, TerminalMcpMode,
+    resolve_task_launch_config, PTYManager, PtyOutputEvent, SessionConfig, SessionInitSettings,
+    SessionStreamMode, TerminalAgent, TerminalBridgeLaunchDefaults,
+    TerminalBridgeListModelFormTreeResult, TerminalBridgeListModelsResult,
+    TerminalBridgeModelOption, TerminalBridgeReplayOutputArgs, TerminalBridgeReplayOutputResult,
+    TerminalBridgeResizeArgs, TerminalBridgeResolvedLaunchConfig, TerminalBridgeSendInputArgs,
+    TerminalBridgeSetStreamModeArgs, TerminalBridgeStartHumanSessionArgs,
+    TerminalBridgeStartHumanSessionResult, TerminalBridgeStartSessionArgs,
+    TerminalBridgeStartTaskSessionArgs, TerminalBridgeTerminateArgs, TerminalMcpMode,
 };
 use base64::{engine::general_purpose::STANDARD, Engine};
-use prompt_builder::CodebaseSnapshot;
-use service_project::session::{with_db, with_db_tx};
-use service_prompts::mcp::{generate_mcp_config, generate_mcp_config_for_task};
 use core_contracts::transport::EventSink;
 use core_errors::{codes, err_string, ralph_err, RalphResult, RalphResultExt};
 use data_sqlite::SqliteDb;
+use prompt_builder::CodebaseSnapshot;
+use service_project::session::{with_db, with_db_tx};
+use service_prompts::mcp::{generate_mcp_config, generate_mcp_config_for_task};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
@@ -102,13 +103,8 @@ fn build_session_config(
                 "Shell terminal sessions do not support effort selection"
             );
         }
-        let resolved_preamble = resolve_session_post_start_preamble(
-            agent,
-            None,
-            None,
-            thinking,
-            post_start_preamble,
-        )?;
+        let resolved_preamble =
+            resolve_session_post_start_preamble(agent, None, None, thinking, post_start_preamble)?;
         return Ok(SessionConfig {
             agent,
             model: None,
@@ -121,7 +117,8 @@ fn build_session_config(
     }
 
     let runtime_model = resolve_session_model_for_agent(agent, selected_model.clone())?;
-    let runtime_effort = resolve_session_effort_for_agent(agent, selected_model.as_deref(), effort)?;
+    let runtime_effort =
+        resolve_session_effort_for_agent(agent, selected_model.as_deref(), effort)?;
     let resolved_preamble = resolve_session_post_start_preamble(
         agent,
         runtime_model.clone(),
