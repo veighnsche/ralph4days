@@ -27,6 +27,7 @@ pub struct SubsystemData {
     pub name: String,
     pub display_name: String,
     pub acronym: String,
+    pub class_number: Option<u8>,
     pub description: Option<String>,
     pub created: Option<String>,
     pub status: String,
@@ -38,6 +39,7 @@ pub struct SubsystemsCreateArgs {
     pub name: String,
     pub display_name: String,
     pub acronym: String,
+    pub class_number: Option<u8>,
     pub description: Option<String>,
 }
 
@@ -46,6 +48,7 @@ pub struct SubsystemsUpdateArgs {
     pub name: String,
     pub display_name: String,
     pub acronym: String,
+    pub class_number: Option<u8>,
     pub description: Option<String>,
 }
 

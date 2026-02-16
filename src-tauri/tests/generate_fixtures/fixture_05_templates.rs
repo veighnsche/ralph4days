@@ -57,6 +57,7 @@ just dev-mock 05-desktop-templates
         name: "project-hygiene".to_owned(),
         display_name: "Project Hygiene".to_owned(),
         acronym: "HYGN".to_owned(),
+        class_number: None,
         description: Some("Recurring routine work for consistency and quality.".to_owned()),
     })
     .unwrap();
@@ -64,6 +65,7 @@ just dev-mock 05-desktop-templates
         name: "release-ops".to_owned(),
         display_name: "Release Ops".to_owned(),
         acronym: "RLOP".to_owned(),
+        class_number: None,
         description: Some("Routine release readiness and validation.".to_owned()),
     })
     .unwrap();
@@ -71,6 +73,7 @@ just dev-mock 05-desktop-templates
         name: "knowledge-base".to_owned(),
         display_name: "Knowledge Base".to_owned(),
         acronym: "KNOW".to_owned(),
+        class_number: None,
         description: Some("Routine docs and learnings upkeep.".to_owned()),
     })
     .unwrap();

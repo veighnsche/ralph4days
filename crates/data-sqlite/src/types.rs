@@ -13,6 +13,8 @@ pub struct Subsystem {
     pub display_name: String,
     #[serde(default)]
     pub acronym: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub class_number: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -27,6 +29,7 @@ pub struct SubsystemInput {
     pub name: String,
     pub display_name: String,
     pub acronym: String,
+    pub class_number: Option<u8>,
     pub description: Option<String>,
 }
 

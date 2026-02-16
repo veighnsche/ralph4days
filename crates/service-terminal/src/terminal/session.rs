@@ -412,6 +412,7 @@ mod tests {
             name: "demo".to_owned(),
             display_name: "Demo".to_owned(),
             acronym: "DEMO".to_owned(),
+            class_number: None,
             description: None,
         })
         .expect("create_subsystem");
@@ -535,6 +536,7 @@ mod tests {
             name: "demo".to_owned(),
             display_name: "Demo".to_owned(),
             acronym: "DEMO".to_owned(),
+            class_number: None,
             description: None,
         })
         .expect("create_subsystem");

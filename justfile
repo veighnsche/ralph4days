@@ -31,14 +31,32 @@ dev-frontend:
 
 # Open the iOS Xcode project for manual run/signing/debug
 dev-ios-open:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ "$(uname -s)" != "Darwin" ]; then
+        echo "❌ dev-ios-open requires macOS (Darwin). Current OS: $(uname -s)"
+        exit 1
+    fi
     bun tauri ios dev --open
 
 # Run iOS app on a simulator/device by display name (example: just dev-ios "iPhone 17 Pro")
 dev-ios DEVICE:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ "$(uname -s)" != "Darwin" ]; then
+        echo "❌ dev-ios requires macOS (Darwin). Current OS: $(uname -s)"
+        exit 1
+    fi
     bun tauri ios dev "{{DEVICE}}"
 
 # Build iOS simulator debug bundle (fast validation gate for mobile runtime linkage)
 build-ios-sim:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ "$(uname -s)" != "Darwin" ]; then
+        echo "❌ build-ios-sim requires macOS (Darwin). Current OS: $(uname -s)"
+        exit 1
+    fi
     bun tauri ios build --debug --target aarch64-sim --ci
 
 # Start Storybook dev server
@@ -208,10 +226,32 @@ test-e2e-remote-ssh FIXTURE="04-desktop-dev":
 
 # Run iOS remote-ssh UI e2e harness against the real Tauri IPC runtime (Appium + screenshots)
 test-ios-e2e-remote-ssh DEVICE="iPhone 17 Pro":
+	#!/usr/bin/env bash
+	set -euo pipefail
+	if [ "$(uname -s)" != "Darwin" ]; then
+		echo "❌ test-ios-e2e-remote-ssh requires macOS (Darwin). Current OS: $(uname -s)"
+		exit 1
+	fi
 	RALPH_IOS_E2E_DEVICE="{{DEVICE}}" bash scripts/run-ios-e2e-remote-ssh.sh
+
+# Run iOS remote-ssh UI harness with a macOS SSH target pre-provisioned (fixture + ralphd)
+test-ios-e2e-remote-ssh-macos-target DEVICE="iPhone 17 Pro":
+	#!/usr/bin/env bash
+	set -euo pipefail
+	if [ "$(uname -s)" != "Darwin" ]; then
+		echo "❌ test-ios-e2e-remote-ssh-macos-target requires macOS (Darwin). Current OS: $(uname -s)"
+		exit 1
+	fi
+	RALPH_IOS_E2E_DEVICE="{{DEVICE}}" bash scripts/run-ios-e2e-remote-ssh-macos-target.sh
 
 # Run iOS remote-ssh UI e2e harness using XCTest runner (fallback path)
 test-ios-e2e-remote-ssh-xctest DEVICE="iPhone 17 Pro":
+	#!/usr/bin/env bash
+	set -euo pipefail
+	if [ "$(uname -s)" != "Darwin" ]; then
+		echo "❌ test-ios-e2e-remote-ssh-xctest requires macOS (Darwin). Current OS: $(uname -s)"
+		exit 1
+	fi
 	RALPH_IOS_E2E_DEVICE="{{DEVICE}}" RALPH_IOS_E2E_RUNNER=xctest bash scripts/run-ios-e2e-remote-ssh.sh
 
 # Verify active e2e runtime surface has no forbidden browser-e2e framework references
@@ -241,14 +281,32 @@ clean:
 
 # Build all Linux packages (deb, rpm, appimage)
 release-linux:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ "$(uname -s)" != "Linux" ]; then
+        echo "❌ release-linux requires Linux. Current OS: $(uname -s)"
+        exit 1
+    fi
     NO_STRIP=1 bun tauri build --bundles deb,rpm,appimage
 
 # Build macOS bundles (.app + .dmg)
 release-macos:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ "$(uname -s)" != "Darwin" ]; then
+        echo "❌ release-macos requires macOS (Darwin). Current OS: $(uname -s)"
+        exit 1
+    fi
     NO_STRIP=1 bun tauri build --bundles app,dmg
 
 # Build macOS bundles tuned for the current Apple Silicon CPU (local distribution only)
 release-macos-native:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ "$(uname -s)" != "Darwin" ]; then
+        echo "❌ release-macos-native requires macOS (Darwin). Current OS: $(uname -s)"
+        exit 1
+    fi
     RUSTFLAGS='-C target-cpu=native' NO_STRIP=1 bun tauri build --bundles app,dmg
 
 # === Utilities ===

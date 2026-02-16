@@ -41,6 +41,7 @@ async fn smoke_embed_store_search_render() {
         name: "auth".to_owned(),
         display_name: "Auth".to_owned(),
         acronym: "AUTH".to_owned(),
+        class_number: None,
         description: Some("User authentication".to_owned()),
     })
     .unwrap();
@@ -48,6 +49,7 @@ async fn smoke_embed_store_search_render() {
         name: "billing".to_owned(),
         display_name: "Billing".to_owned(),
         acronym: "BILL".to_owned(),
+        class_number: None,
         description: Some("Payment processing".to_owned()),
     })
     .unwrap();

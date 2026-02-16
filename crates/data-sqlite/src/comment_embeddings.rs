@@ -246,6 +246,7 @@ mod tests {
             name: "auth".to_owned(),
             display_name: "Auth".to_owned(),
             acronym: "AUTH".to_owned(),
+            class_number: None,
             description: None,
         })
         .unwrap();
@@ -292,6 +293,7 @@ mod tests {
             name: "auth".to_owned(),
             display_name: "Auth".to_owned(),
             acronym: "AUTH".to_owned(),
+            class_number: None,
             description: None,
         })
         .unwrap();
@@ -330,6 +332,7 @@ mod tests {
             name: "auth".to_owned(),
             display_name: "Auth".to_owned(),
             acronym: "AUTH".to_owned(),
+            class_number: None,
             description: None,
         })
         .unwrap();

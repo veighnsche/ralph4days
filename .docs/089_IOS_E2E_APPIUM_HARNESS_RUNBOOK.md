@@ -7,8 +7,10 @@
 
 ## Entrypoints
 - `just test-ios-e2e-remote-ssh "iPhone 17 Pro"`: default Appium runner.
+- `just test-ios-e2e-remote-ssh-macos-target "iPhone 17 Pro"`: provisions a macOS SSH target (fixture + `ralphd`) then runs a target-profile setup spec.
 - `just test-ios-e2e-remote-ssh-xctest "iPhone 17 Pro"`: fallback XCTest runner.
 - `bun run test:ios-e2e-remote-ssh`: npm-style alias for default runner.
+- `bun run test:ios-e2e-remote-ssh:macos-target`: npm-style alias for macOS target provisioning + spec run.
 
 ## Dependency Preflight
 - Script: `scripts/preflight-ios-e2e.sh`
@@ -26,6 +28,14 @@
 5. Run `wdio` with `wdio.ios.appium.conf.js` and spec `e2e-ios/remote-ssh.ios.spec.js`.
 6. Write screenshots to `RALPH_IOS_E2E_SCREENSHOT_DIR` (default `/tmp/ralph-ios-e2e`).
 
+## Runtime Flow (macOS Target Provisioned Runner)
+1. Reset local fixture mocks (`scripts/reset-mock.sh`).
+2. Build release `ralphd` binary (`cargo build -p ralphd --release`).
+3. Install `ralphd` + fixture project on the macOS target (`/tmp/ralph-ios-e2e-target` by default).
+4. Start `ralphd` on target loopback (`127.0.0.1:${RALPH_IOS_E2E_TARGET_RALPHD_PORT:-9944}`).
+5. Run iOS Appium harness with spec `e2e-ios/remote-ssh.macos-target.ios.spec.js`.
+6. Assert first screen is SSH config and save a profile with configured macOS target host/user/ports.
+
 ## Environment Knobs
 - `RALPH_IOS_E2E_RUNNER`: `appium` (default) or `xctest`.
 - `RALPH_IOS_E2E_DEVICE`: simulator display name.
@@ -33,6 +43,12 @@
 - `RALPH_IOS_E2E_APP_PATH`: optional explicit `.app` path override.
 - `RALPH_IOS_E2E_SCREENSHOT_DIR`: screenshot output directory.
 - `RALPH_IOS_E2E_APPIUM_HOST`, `RALPH_IOS_E2E_APPIUM_PORT`: Appium endpoint.
+- `RALPH_IOS_E2E_TARGET_HOST`: macOS SSH target host (default `127.0.0.1`).
+- `RALPH_IOS_E2E_TARGET_USERNAME`: SSH username for target (default current user).
+- `RALPH_IOS_E2E_TARGET_SSH_PORT`: SSH port (default `22`).
+- `RALPH_IOS_E2E_TARGET_RALPHD_PORT`: `ralphd` bind port on target loopback (default `9944`).
+- `RALPH_IOS_E2E_TARGET_FIXTURE`: fixture directory name copied to target (default `04-desktop-dev`).
+- `RALPH_IOS_E2E_TARGET_BASE_DIR`: install root on target (default `/tmp/ralph-ios-e2e-target`).
 
 ## Failure Posture
 - No silent fallback to web-only runtime.

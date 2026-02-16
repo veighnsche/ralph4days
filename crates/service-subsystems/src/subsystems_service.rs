@@ -48,6 +48,7 @@ fn to_subsystem_data(subsystem: &data_sqlite::Subsystem) -> SubsystemData {
         name: subsystem.name.clone(),
         display_name: subsystem.display_name.clone(),
         acronym: subsystem.acronym.clone(),
+        class_number: subsystem.class_number,
         description: subsystem.description.clone(),
         created: subsystem.created.clone(),
         status: subsystem.status.as_str().to_owned(),
@@ -74,6 +75,7 @@ pub fn subsystems_create(db: &SqliteDb, args: SubsystemsCreateArgs) -> RalphResu
         name: args.name,
         display_name: args.display_name,
         acronym: args.acronym,
+        class_number: args.class_number,
         description: args.description,
     })?;
     get_subsystem_data_or_error(db, &name)
@@ -85,6 +87,7 @@ pub fn subsystems_update(db: &SqliteDb, args: SubsystemsUpdateArgs) -> RalphResu
         name: args.name,
         display_name: args.display_name,
         acronym: args.acronym,
+        class_number: args.class_number,
         description: args.description,
     })?;
     get_subsystem_data_or_error(db, &name)

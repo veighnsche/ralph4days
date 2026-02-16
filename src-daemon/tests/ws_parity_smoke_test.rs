@@ -284,6 +284,7 @@ async fn v1_must_rpc_subset_roundtrips_over_ws() {
         name: "demo".to_owned(),
         display_name: "Demo".to_owned(),
         acronym: "DEMO".to_owned(),
+        class_number: None,
         description: Some("Demo subsystem".to_owned()),
     })
     .expect("create subsystem");

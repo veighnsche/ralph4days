@@ -546,6 +546,7 @@ fn test_create_subsystem() {
         name: "auth".into(),
         display_name: "Auth".into(),
         acronym: "AUTH".into(),
+        class_number: None,
         description: Some("Auth subsystem".into()),
     })
     .unwrap();
@@ -583,6 +584,7 @@ fn test_update_subsystem() {
         name: "auth".into(),
         display_name: "Authentication".into(),
         acronym: "AUTH".into(),
+        class_number: None,
         description: Some("Updated".into()),
     })
     .unwrap();
@@ -1484,6 +1486,7 @@ fn test_export_yaml_escapes_special_chars() {
         name: "test".into(),
         display_name: "Test \"Subsystem\"".into(),
         acronym: "TSTF".into(),
+        class_number: None,
         description: Some("A description with \"quotes\" and\nnewlines".into()),
     })
     .unwrap();

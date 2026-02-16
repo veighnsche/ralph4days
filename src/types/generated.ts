@@ -354,6 +354,7 @@ export type SubsystemData = {
   name: string
   displayName: string
   acronym: string
+  classNumber?: number
   description?: string
   created?: string
   status: string
@@ -378,9 +379,21 @@ export type SubsystemsCommentUpdateArgs = {
   summary?: string
   reason?: string
 }
-export type SubsystemsCreateArgs = { name: string; displayName: string; acronym: string; description?: string }
+export type SubsystemsCreateArgs = {
+  name: string
+  displayName: string
+  acronym: string
+  classNumber?: number
+  description?: string
+}
 export type SubsystemsDeleteArgs = { name: string }
-export type SubsystemsUpdateArgs = { name: string; displayName: string; acronym: string; description?: string }
+export type SubsystemsUpdateArgs = {
+  name: string
+  displayName: string
+  acronym: string
+  classNumber?: number
+  description?: string
+}
 export type Task = {
   id: number
   subsystem: string

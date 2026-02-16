@@ -2,6 +2,18 @@ use crate::types::*;
 use crate::SqliteDb;
 use core_errors::{codes, ralph_err, RalphResult, RalphResultExt};
 
+fn validate_subsystem_class_number(class_number: Option<u8>) -> RalphResult<()> {
+    if let Some(class_number) = class_number {
+        if !(1..=3).contains(&class_number) {
+            return ralph_err!(
+                codes::FEATURE_OPS,
+                "Subsystem class number must be 1, 2, or 3"
+            );
+        }
+    }
+    Ok(())
+}
+
 impl SqliteDb {
     pub fn create_subsystem(&self, input: SubsystemInput) -> RalphResult<()> {
         if input.name.trim().is_empty() {
@@ -12,6 +24,7 @@ impl SqliteDb {
         }
 
         crate::acronym::validate_acronym_format(&input.acronym)?;
+        validate_subsystem_class_number(input.class_number)?;
 
         if self.check_exists("subsystems", "name", &input.name)? {
             return ralph_err!(
@@ -33,12 +46,13 @@ impl SqliteDb {
 
         self.conn
             .execute(
-                "INSERT INTO subsystems (name, display_name, acronym, description, created, status) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, 'active')",
+                "INSERT INTO subsystems (name, display_name, acronym, class_number, description, created, status) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active')",
                 rusqlite::params![
                     input.name,
                     input.display_name,
                     input.acronym,
+                    input.class_number,
                     input.description,
                     now,
                 ],
@@ -54,6 +68,7 @@ impl SqliteDb {
         }
 
         crate::acronym::validate_acronym_format(&input.acronym)?;
+        validate_subsystem_class_number(input.class_number)?;
 
         if !self.check_exists("subsystems", "name", &input.name)? {
             return ralph_err!(
@@ -79,10 +94,11 @@ impl SqliteDb {
 
         self.conn
             .execute(
-                "UPDATE subsystems SET display_name = ?1, acronym = ?2, description = ?3 WHERE name = ?4",
+                "UPDATE subsystems SET display_name = ?1, acronym = ?2, class_number = ?3, description = ?4 WHERE name = ?5",
                 rusqlite::params![
                     input.display_name,
                     input.acronym,
+                    input.class_number,
                     input.description,
                     input.name,
                 ],
@@ -137,7 +153,7 @@ impl SqliteDb {
         let mut stmt = self
             .conn
             .prepare(
-                "SELECT id, name, display_name, acronym, description, created, status \
+                "SELECT id, name, display_name, acronym, class_number, description, created, status \
              FROM subsystems ORDER BY name",
             )
             .ralph_err(codes::DB_READ, "Failed to prepare subsystems list query")?;
@@ -146,11 +162,11 @@ impl SqliteDb {
 
         let rows = stmt
             .query_map([], |row| {
-                let status_str: String = row.get(6)?;
+                let status_str: String = row.get(7)?;
                 let name: String = row.get(1)?;
                 let status = SubsystemStatus::parse(&status_str).ok_or_else(|| {
                     rusqlite::Error::FromSqlConversionFailure(
-                        6,
+                        7,
                         rusqlite::types::Type::Text,
                         Box::new(std::io::Error::new(
                             std::io::ErrorKind::InvalidData,
@@ -163,8 +179,9 @@ impl SqliteDb {
                     name,
                     display_name: row.get(2)?,
                     acronym: row.get(3)?,
-                    description: row.get(4)?,
-                    created: row.get(5)?,
+                    class_number: row.get(4)?,
+                    description: row.get(5)?,
+                    created: row.get(6)?,
                     status,
                     comments: vec![],
                 })

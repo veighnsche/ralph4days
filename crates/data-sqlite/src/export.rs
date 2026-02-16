@@ -43,6 +43,9 @@ impl SqliteDb {
                 if !f.acronym.is_empty() {
                     output.push_str(&format!("  acronym: \"{}\"\n", yaml_escape(&f.acronym)));
                 }
+                if let Some(class_number) = f.class_number {
+                    output.push_str(&format!("  class_number: {class_number}\n"));
+                }
                 if let Some(desc) = &f.description {
                     output.push_str(&format!("  description: \"{}\"\n", yaml_escape(desc)));
                 }

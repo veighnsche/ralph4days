@@ -11,6 +11,7 @@ RUNNER="${RALPH_IOS_E2E_RUNNER:-appium}"
 APPIUM_HOST="${RALPH_IOS_E2E_APPIUM_HOST:-127.0.0.1}"
 APPIUM_PORT="${RALPH_IOS_E2E_APPIUM_PORT:-4723}"
 APPIUM_LOG="${RALPH_IOS_E2E_APPIUM_LOG:-/tmp/ralph-ios-e2e-appium.log}"
+SPEC_PATH="${TAURI_E2E_SPEC:-e2e-ios/remote-ssh.ios.spec.js}"
 ARCHIVE_DIR="src-tauri/gen/apple/build/ralph4days_iOS.xcarchive"
 
 if [ "${RUNNER}" != "appium" ] && [ "${RUNNER}" != "xctest" ]; then
@@ -163,6 +164,6 @@ RALPH_IOS_E2E_BUNDLE_ID="${APP_BUNDLE_ID}" \
 RALPH_IOS_E2E_APP_PATH="${APP_PATH}" \
 RALPH_IOS_E2E_APPIUM_HOST="${APPIUM_HOST}" \
 RALPH_IOS_E2E_APPIUM_PORT="${APPIUM_PORT}" \
-bun x wdio run wdio.ios.appium.conf.js --spec e2e-ios/remote-ssh.ios.spec.js
+bun x wdio run wdio.ios.appium.conf.js --spec "${SPEC_PATH}"
 
 echo "==> Appium screenshots written to: ${SCREENSHOT_DIR}"

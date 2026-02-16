@@ -32,6 +32,7 @@ fn seed_feature_with_comments(db: &SqliteDb) {
         name: "auth".to_owned(),
         display_name: "Authentication".to_owned(),
         acronym: "AUTH".to_owned(),
+        class_number: None,
         description: Some("User authentication and session management".to_owned()),
     })
     .unwrap();
@@ -87,6 +88,7 @@ fn seed_feature_with_comments(db: &SqliteDb) {
         name: "billing".to_owned(),
         display_name: "Billing".to_owned(),
         acronym: "BILL".to_owned(),
+        class_number: None,
         description: Some("Payment processing and subscription management".to_owned()),
     })
     .unwrap();

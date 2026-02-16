@@ -16,6 +16,7 @@
     "test:e2e-terminal": "bash scripts/preflight-tauri-e2e.sh && bunx wdio run wdio.conf.js --spec e2e-tauri/terminal.spec.js",
     "preflight:ios-e2e": "bash scripts/preflight-ios-e2e.sh",
     "test:ios-e2e-remote-ssh": "bash scripts/run-ios-e2e-remote-ssh.sh",
+    "test:ios-e2e-remote-ssh:macos-target": "bash scripts/run-ios-e2e-remote-ssh-macos-target.sh",
     "test:ios-e2e-remote-ssh:xctest": "RALPH_IOS_E2E_RUNNER=xctest bash scripts/run-ios-e2e-remote-ssh.sh",
     "preflight:e2e": "bash scripts/preflight-tauri-e2e.sh",
     "audit:no-playwright": "bash scripts/audit-no-playwright.sh",

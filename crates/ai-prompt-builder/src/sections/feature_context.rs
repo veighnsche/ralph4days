@@ -83,6 +83,7 @@ mod tests {
             name: name.to_owned(),
             display_name: display.to_owned(),
             acronym: "TEST".to_owned(),
+            class_number: None,
             description: description.map(ToOwned::to_owned),
             created: None,
             status: FeatureStatus::Active,

@@ -66,6 +66,7 @@ just dev-mock 04-desktop-dev
         name: "bookmark-crud".to_owned(),
         display_name: "Bookmark CRUD".to_owned(),
         acronym: "BKMK".to_owned(),
+        class_number: None,
         description: Some("Core bookmark create, read, update, delete operations".to_owned()),
     })
     .unwrap();
@@ -73,6 +74,7 @@ just dev-mock 04-desktop-dev
         name: "collections".to_owned(),
         display_name: "Collections".to_owned(),
         acronym: "COLL".to_owned(),
+        class_number: None,
         description: Some("Organize bookmarks into named collections".to_owned()),
     })
     .unwrap();
@@ -80,6 +82,7 @@ just dev-mock 04-desktop-dev
         name: "search".to_owned(),
         display_name: "Search".to_owned(),
         acronym: "SRCH".to_owned(),
+        class_number: None,
         description: Some("Full-text search and filtering across bookmarks".to_owned()),
     })
     .unwrap();
@@ -87,6 +90,7 @@ just dev-mock 04-desktop-dev
         name: "import-export".to_owned(),
         display_name: "Import Export".to_owned(),
         acronym: "IMEX".to_owned(),
+        class_number: None,
         description: Some("Import from HTML, export to JSON".to_owned()),
     })
     .unwrap();
@@ -94,6 +98,7 @@ just dev-mock 04-desktop-dev
         name: "settings".to_owned(),
         display_name: "Settings".to_owned(),
         acronym: "STNG".to_owned(),
+        class_number: None,
         description: Some("User preferences and theme configuration".to_owned()),
     })
     .unwrap();
