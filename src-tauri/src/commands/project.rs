@@ -156,6 +156,7 @@ pub async fn project_info_get(state: State<'_, AppState>) -> RalphResult<Project
     CommandContext::from_tauri_state(&state).db(project_scan::project_info_get)
 }
 
+#[cfg(not(mobile))]
 #[tauri::command]
 pub fn window_splash_close(app: tauri::AppHandle) {
     if let Some(splash) = app.get_webview_window("splash") {
@@ -167,6 +168,17 @@ pub fn window_splash_close(app: tauri::AppHandle) {
 }
 
 #[tauri::command]
+#[cfg(mobile)]
+pub fn window_splash_close(app: tauri::AppHandle) -> RalphResult<()> {
+    let _ = app;
+    ralph_err!(
+        codes::INTERNAL,
+        "window_splash_close is unsupported on mobile"
+    )
+}
+
+#[cfg(not(mobile))]
+#[tauri::command]
 pub fn window_open_new() -> RalphResult<()> {
     let exe = std::env::current_exe()
         .ralph_err(codes::INTERNAL, "Failed to get current executable path")?;
@@ -174,4 +186,10 @@ pub fn window_open_new() -> RalphResult<()> {
         .spawn()
         .ralph_err(codes::INTERNAL, "Failed to spawn new window")?;
     Ok(())
+}
+
+#[cfg(mobile)]
+#[tauri::command]
+pub fn window_open_new() -> RalphResult<()> {
+    ralph_err!(codes::INTERNAL, "window_open_new is unsupported on mobile")
 }

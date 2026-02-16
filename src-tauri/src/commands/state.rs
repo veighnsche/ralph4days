@@ -148,19 +148,44 @@ impl AppState {
     pub async fn remote_rpc_client(&self) -> RalphResult<Option<crate::remote::RemoteRpcClient>> {
         let guard = self.remote.lock().await;
 
-        guard.as_ref().map_or(Ok(None), |conn| {
-            if conn.is_connected() {
-                Ok(Some(conn.rpc_client()))
-            } else {
-                Err(err_string(
+        #[cfg(mobile)]
+        {
+            let conn = guard.as_ref().ok_or_else(|| {
+                err_string(
                     codes::INTERNAL,
-                    format!(
-                        "Remote transport disconnected (wsUrl='{}'). Reconnect.",
-                        conn.ws_url()
-                    ),
-                ))
+                    "Remote transport is required on mobile. Call remote_connect first.",
+                )
+            })?;
+
+            if conn.is_connected() {
+                return Ok(Some(conn.rpc_client()));
             }
-        })
+
+            return Err(err_string(
+                codes::INTERNAL,
+                format!(
+                    "Remote transport disconnected (wsUrl='{}'). Reconnect.",
+                    conn.ws_url()
+                ),
+            ));
+        }
+
+        #[cfg(not(mobile))]
+        {
+            guard.as_ref().map_or(Ok(None), |conn| {
+                if conn.is_connected() {
+                    Ok(Some(conn.rpc_client()))
+                } else {
+                    Err(err_string(
+                        codes::INTERNAL,
+                        format!(
+                            "Remote transport disconnected (wsUrl='{}'). Reconnect.",
+                            conn.ws_url()
+                        ),
+                    ))
+                }
+            })
+        }
     }
 }
 

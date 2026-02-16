@@ -4,6 +4,7 @@ mod remote;
 
 use commands::AppState;
 use tauri::Manager;
+#[cfg(not(mobile))]
 use tauri_plugin_cli::CliExt;
 
 fn init_tracing() {
@@ -52,88 +53,108 @@ pub fn run() {
 
     tracing::info!("Starting Ralph4days");
 
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_cli::init())
-        .manage(AppState::default())
+        .manage(AppState::default());
+
+    #[cfg(not(mobile))]
+    let builder = builder.plugin(tauri_plugin_cli::init());
+
+    #[cfg(mobile)]
+    let builder = builder;
+
+    builder
         .setup(|app| {
-            // Start API server for MCP signal communication
             let app_handle = app.handle().clone();
             let sink: std::sync::Arc<dyn ralph_contracts::transport::EventSink> =
                 std::sync::Arc::new(event_sink::TauriEventSink::new(app_handle));
             ralph_backend::diagnostics::register_sink(std::sync::Arc::clone(&sink));
-            let state: tauri::State<AppState> = app.state();
-            let mut skip_splash = false;
 
-            tauri::async_runtime::block_on(async {
-                let port = ralph_backend::api_server::start_api_server(sink)
-                    .await
-                    .unwrap_or_else(|error| panic!("Failed to start API server: {error}"));
-                *state.api_server_port.lock().unwrap() = Some(port);
-                tracing::info!("API server started on port {}", port);
-            });
-
-            // WHY: tao#1046 / tauri#11856 — on Wayland, a window created with
-            // visible(false) then shown via .show() has a stale CSD input region,
-            // making decoration buttons unclickable. Both windows are created here
-            // in order: main first (born visible), then splash on top.
-            if let Ok(matches) = app.cli().matches() {
-                if let Some(no_splash) = matches.args.get("no-splash") {
-                    if matches!(no_splash.value, serde_json::Value::Bool(true))
-                        || matches!(&no_splash.value, serde_json::Value::String(value) if value == "true" || value.is_empty())
-                    {
-                        skip_splash = true;
-                        tracing::info!("Skipping splash window via --no-splash");
-                    }
-                }
+            #[cfg(mobile)]
+            {
+                tracing::info!(
+                    "Mobile mode enabled: local backend bootstrap is disabled; remote_connect is required"
+                );
+                return Ok(());
             }
 
-            let _main = tauri::WebviewWindowBuilder::new(
-                app,
-                "main",
-                tauri::WebviewUrl::App("index.html".into()),
-            )
-            .title("Ralph4days")
-            .inner_size(1400.0, 900.0)
-            .min_inner_size(900.0, 600.0)
-            .center()
-            .resizable(true)
-            .maximizable(true)
-            .decorations(true)
+            #[cfg(not(mobile))]
+            {
+                // Start API server for MCP signal communication.
+                let state: tauri::State<AppState> = app.state();
+                let mut skip_splash = false;
+
+                tauri::async_runtime::block_on(async {
+                    let port = ralph_backend::api_server::start_api_server(sink)
+                        .await
+                        .unwrap_or_else(|error| panic!("Failed to start API server: {error}"));
+                    *state.api_server_port.lock().unwrap() = Some(port);
+                    tracing::info!("API server started on port {}", port);
+                });
+
+                // WHY: tao#1046 / tauri#11856 — on Wayland, a window created with
+                // visible(false) then shown via .show() has a stale CSD input region,
+                // making decoration buttons unclickable. Both windows are created here
+                // in order: main first (born visible), then splash on top.
+                if let Ok(matches) = app.cli().matches() {
+                    if let Some(no_splash) = matches.args.get("no-splash") {
+                        if matches!(no_splash.value, serde_json::Value::Bool(true))
+                            || matches!(&no_splash.value, serde_json::Value::String(value) if value == "true" || value.is_empty())
+                        {
+                            skip_splash = true;
+                            tracing::info!("Skipping splash window via --no-splash");
+                        }
+                    }
+                }
+
+                let _main = tauri::WebviewWindowBuilder::new(
+                    app,
+                    "main",
+                    tauri::WebviewUrl::App("index.html".into()),
+                )
+                .title("Ralph4days")
+                .inner_size(1400.0, 900.0)
+                .min_inner_size(900.0, 600.0)
+                .center()
+                .resizable(true)
+                .maximizable(true)
+                .decorations(true)
                 .visible(true)
                 .focused(false)
                 .build()?;
 
-            if !skip_splash {
-                let _splash = tauri::WebviewWindowBuilder::new(
-                    app,
-                    "splash",
-                    tauri::WebviewUrl::App("splash.html".into()),
-                )
-                .inner_size(400.0, 250.0)
-                .center()
-                .decorations(false)
-                .skip_taskbar(true)
-                .resizable(false)
-                .always_on_top(true)
-                .focused(true)
-                .build()?;
-            }
+                if !skip_splash {
+                    let _splash = tauri::WebviewWindowBuilder::new(
+                        app,
+                        "splash",
+                        tauri::WebviewUrl::App("splash.html".into()),
+                    )
+                    .inner_size(400.0, 250.0)
+                    .center()
+                    .decorations(false)
+                    .skip_taskbar(true)
+                    .resizable(false)
+                    .always_on_top(true)
+                    .focused(true)
+                    .build()?;
+                }
 
-            if let Ok(matches) = app.cli().matches() {
-                if let Some(project_path) = matches.args.get("project") {
-                    if let serde_json::Value::String(path_str) = &project_path.value {
-                        let state: &AppState = app.state::<AppState>().inner();
-                        if let Err(e) = commands::project_lock_validated(state, path_str.clone()) {
-                            eprintln!("Error: {e}");
-                            std::process::exit(1);
+                if let Ok(matches) = app.cli().matches() {
+                    if let Some(project_path) = matches.args.get("project") {
+                        if let serde_json::Value::String(path_str) = &project_path.value {
+                            let state: &AppState = app.state::<AppState>().inner();
+                            if let Err(e) = commands::project_lock_validated(state, path_str.clone())
+                            {
+                                eprintln!("Error: {e}");
+                                std::process::exit(1);
+                            }
                         }
                     }
                 }
-            }
 
-            Ok(())
+                Ok(())
+            }
         })
         .invoke_handler(tauri::generate_handler![
             commands::project::execution_start,
