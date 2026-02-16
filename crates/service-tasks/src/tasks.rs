@@ -1,15 +1,15 @@
-use ralph_contracts::domain::{
+use core_contracts::domain::{
     Task, TaskListItem, TaskSignalComment, TaskSignalCommentCreateInput, TaskSignalSummary,
     TaskStatus,
 };
-pub use ralph_contracts::tasks::{
+pub use core_contracts::tasks::{
     TasksAskAnswerArgs, TasksCommentReplyAddArgs, TasksCreateArgs, TasksDeleteArgs, TasksGetArgs,
     TasksSetStatusArgs, TasksSignalAddArgs, TasksSignalCommentDeleteArgs,
     TasksSignalCommentUpdateArgs, TasksSignalCommentsListArgs, TasksSignalDeleteArgs,
     TasksSignalSummariesGetArgs, TasksSignalUpdateArgs, TasksUpdateArgs,
 };
-use ralph_errors::{codes, err_string, RalphResult};
-use sqlite_db::SqliteDb;
+use core_errors::{codes, err_string, RalphResult};
+use data_sqlite::SqliteDb;
 
 fn get_task_or_error(db: &SqliteDb, id: u32) -> RalphResult<Task> {
     db.get_task_by_id(id)?.ok_or_else(|| {
@@ -64,7 +64,7 @@ pub fn tasks_create(db: &SqliteDb, args: TasksCreateArgs) -> RalphResult<String>
     validate_subsystem_name(&args.subsystem)?;
     let normalized_subsystem = normalize_subsystem_name(&args.subsystem);
 
-    let task_input = sqlite_db::TaskInput {
+    let task_input = data_sqlite::TaskInput {
         subsystem: normalized_subsystem,
         discipline: args.discipline,
         title: args.title,
@@ -94,7 +94,7 @@ pub fn tasks_update(db: &SqliteDb, args: TasksUpdateArgs) -> RalphResult<Task> {
     let normalized_subsystem = normalize_subsystem_name(&args.subsystem);
 
     let task_id = args.id;
-    let task_input = sqlite_db::TaskInput {
+    let task_input = data_sqlite::TaskInput {
         subsystem: normalized_subsystem,
         discipline: args.discipline,
         title: args.title,

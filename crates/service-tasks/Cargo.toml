@@ -1,0 +1,22 @@
+[package]
+name = "service-tasks"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+axum = "0.8"
+core-contracts = { workspace = true }
+core-errors = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+data-sqlite = { path = "../data-sqlite" }
+tokio = { workspace = true }
+tracing = "0.1"
+
+[dev-dependencies]
+tempfile = "3"

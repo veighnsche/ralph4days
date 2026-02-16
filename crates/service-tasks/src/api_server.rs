@@ -1,7 +1,7 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::post, Json, Router};
-use ralph_contracts::events::{BackendDiagnosticEvent, BackendDiagnosticLevel};
-use ralph_contracts::transport::EventSink;
-use ralph_errors::{codes, err_string, RalphResult};
+use core_contracts::events::{BackendDiagnosticEvent, BackendDiagnosticLevel};
+use core_contracts::transport::EventSink;
+use core_errors::{codes, err_string, RalphResult};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -98,7 +98,7 @@ async fn handle_signal(
         );
     };
 
-    let db = match sqlite_db::SqliteDb::open(std::path::Path::new(&db_path), None) {
+    let db = match data_sqlite::SqliteDb::open(std::path::Path::new(&db_path), None) {
         Ok(db) => db,
         Err(e) => {
             return (
@@ -144,7 +144,7 @@ async fn handle_signal(
     )
 }
 
-fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> RalphResult<()> {
+fn insert_signal(db: &data_sqlite::SqliteDb, request: &SignalRequest) -> RalphResult<()> {
     match request.verb.as_str() {
         "done" => {
             let summary = request
@@ -155,7 +155,7 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> RalphResu
 
             db.insert_done_signal(
                 None,
-                sqlite_db::DoneSignalInput {
+                data_sqlite::DoneSignalInput {
                     task_id: request.task_id,
                     session_id: request.session_id.clone(),
                     summary: summary.to_owned(),
@@ -176,7 +176,7 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> RalphResu
 
             db.insert_partial_signal(
                 None,
-                sqlite_db::PartialSignalInput {
+                data_sqlite::PartialSignalInput {
                     task_id: request.task_id,
                     session_id: request.session_id.clone(),
                     summary: summary.to_owned(),
@@ -193,7 +193,7 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> RalphResu
 
             db.insert_stuck_signal(
                 None,
-                sqlite_db::StuckSignalInput {
+                data_sqlite::StuckSignalInput {
                     task_id: request.task_id,
                     session_id: request.session_id.clone(),
                     reason: reason.to_owned(),
@@ -229,7 +229,7 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> RalphResu
 
             db.insert_ask_signal(
                 None,
-                sqlite_db::AskSignalInput {
+                data_sqlite::AskSignalInput {
                     task_id: request.task_id,
                     session_id: request.session_id.clone(),
                     question: question.to_owned(),
@@ -258,7 +258,7 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> RalphResu
 
             db.insert_flag_signal(
                 None,
-                sqlite_db::FlagSignalInput {
+                data_sqlite::FlagSignalInput {
                     task_id: request.task_id,
                     session_id: request.session_id.clone(),
                     what: what.to_owned(),
@@ -291,7 +291,7 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> RalphResu
 
             db.insert_learned_signal(
                 None,
-                sqlite_db::LearnedSignalInput {
+                data_sqlite::LearnedSignalInput {
                     task_id: request.task_id,
                     session_id: request.session_id.clone(),
                     text: text.to_owned(),
@@ -320,7 +320,7 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> RalphResu
 
             db.insert_suggest_signal(
                 None,
-                sqlite_db::SuggestSignalInput {
+                data_sqlite::SuggestSignalInput {
                     task_id: request.task_id,
                     session_id: request.session_id.clone(),
                     what: what.to_owned(),
@@ -348,7 +348,7 @@ fn insert_signal(db: &sqlite_db::SqliteDb, request: &SignalRequest) -> RalphResu
 
             db.insert_blocked_signal(
                 None,
-                sqlite_db::BlockedSignalInput {
+                data_sqlite::BlockedSignalInput {
                     task_id: request.task_id,
                     session_id: request.session_id.clone(),
                     on: on.to_owned(),

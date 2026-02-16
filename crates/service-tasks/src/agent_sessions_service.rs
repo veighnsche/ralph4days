@@ -1,6 +1,6 @@
-use ralph_contracts::domain::{AgentSession, AgentSessionCreateInput, AgentSessionUpdateInput};
-use ralph_errors::RalphResult;
-use sqlite_db::SqliteDb;
+use core_contracts::domain::{AgentSession, AgentSessionCreateInput, AgentSessionUpdateInput};
+use core_errors::RalphResult;
+use data_sqlite::SqliteDb;
 
 pub fn agent_sessions_create_human(
     db: &SqliteDb,
