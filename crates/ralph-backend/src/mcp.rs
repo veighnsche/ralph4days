@@ -1,7 +1,7 @@
 use crate::prompt_context::{build_prompt_context, PromptContextArgs};
 use crate::session::with_db;
 use prompt_builder::CodebaseSnapshot;
-use ralph_errors::{codes, RalphResult, RalphResultExt};
+use ralph_errors::{codes, err_string, RalphResult, RalphResultExt};
 use sqlite_db::SqliteDb;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -58,13 +58,20 @@ pub fn generate_mcp_config_for_task(
     task_id: u32,
     project_path: &Path,
 ) -> RalphResult<PathBuf> {
+    let api_server_port = api_server_port.ok_or_else(|| {
+        err_string(
+            codes::INTERNAL,
+            "Missing api_server_port (required for task MCP SignalServer mode)",
+        )
+    })?;
+
     with_db(db, |db| {
         let ctx = build_prompt_context(PromptContextArgs {
             db,
             project_path,
             mcp_dir,
             codebase_snapshot,
-            api_server_port,
+            api_server_port: Some(api_server_port),
             user_input: None,
             instruction_overrides: HashMap::new(),
             target_task_id: Some(task_id),

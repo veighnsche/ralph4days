@@ -5,6 +5,7 @@ edition = "2021"
 rust-version = "1.75"
 
 [dependencies]
+dirs = "5"
 futures-util = "0.3"
 prompt-builder = { path = "../crates/prompt-builder" }
 ralph-backend = { workspace = true }

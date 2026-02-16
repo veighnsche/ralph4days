@@ -1,8 +1,6 @@
-mod api_server;
 mod commands;
 mod event_sink;
 mod remote;
-mod xdg;
 
 use commands::AppState;
 use tauri::Manager;
@@ -69,15 +67,11 @@ pub fn run() {
             let mut skip_splash = false;
 
             tauri::async_runtime::block_on(async {
-                match api_server::start_api_server(sink).await {
-                    Ok(port) => {
-                        *state.api_server_port.lock().unwrap() = Some(port);
-                        tracing::info!("API server started on port {}", port);
-                    }
-                    Err(e) => {
-                        tracing::error!("Failed to start API server: {}", e);
-                    }
-                }
+                let port = ralph_backend::api_server::start_api_server(sink)
+                    .await
+                    .unwrap_or_else(|error| panic!("Failed to start API server: {error}"));
+                *state.api_server_port.lock().unwrap() = Some(port);
+                tracing::info!("API server started on port {}", port);
             });
 
             // WHY: tao#1046 / tauri#11856 — on Wayland, a window created with

@@ -1,6 +1,6 @@
-use crate::xdg::XdgDirs;
 use prompt_builder::CodebaseSnapshot;
 use ralph_backend::terminal::PTYManager;
+use ralph_backend::xdg::XdgDirs;
 use ralph_errors::{codes, err_string, RalphResult, RalphResultExt};
 use sqlite_db::SqliteDb;
 use std::path::PathBuf;
@@ -39,7 +39,13 @@ impl Default for AppState {
 
 impl Drop for AppState {
     fn drop(&mut self) {
-        let _ = std::fs::remove_dir_all(&self.mcp_dir);
+        match std::fs::remove_dir_all(&self.mcp_dir) {
+            Ok(()) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(error) => {
+                tracing::warn!(error = %error, path = %self.mcp_dir.display(), "Failed to remove mcp dir");
+            }
+        }
     }
 }
 

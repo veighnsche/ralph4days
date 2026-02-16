@@ -1,5 +1,6 @@
 pub mod agent_sessions_contract;
 pub mod agent_sessions_service;
+pub mod api_server;
 pub mod diagnostics;
 pub mod disciplines_contract;
 pub mod disciplines_service;
@@ -17,3 +18,4 @@ pub mod subsystems_service;
 pub mod tasks;
 pub mod terminal;
 pub mod terminal_bridge;
+pub mod xdg;

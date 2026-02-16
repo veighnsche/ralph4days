@@ -36,27 +36,13 @@ pub async fn project_initialize(
 }
 
 pub fn project_lock_validated(state: &AppState, path: String) -> RalphResult<()> {
-    let canonical_path = ralph_backend::session::project_lock_set(
+    let data_dir = state.xdg.ensure_data()?;
+    let _canonical_path = ralph_backend::session::project_lock_set_and_record_recent(
         &state.locked_project,
         &state.db,
+        data_dir,
         ProjectLockSetArgs { path },
     )?;
-
-    let project_name = canonical_path
-        .file_name()
-        .map_or_else(|| "Unknown".to_owned(), |n| n.to_string_lossy().to_string());
-    let data_dir = state.xdg.ensure_data()?;
-    if let Err(error) = project_scan::recents_add(
-        data_dir,
-        canonical_path.to_string_lossy().to_string(),
-        project_name,
-    ) {
-        ralph_backend::diagnostics::emit_warning(
-            "recent-projects",
-            "write-failed",
-            &format!("Failed to persist recent projects: {error}"),
-        );
-    }
 
     Ok(())
 }

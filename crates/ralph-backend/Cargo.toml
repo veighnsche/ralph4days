@@ -9,6 +9,7 @@ rust-version.workspace = true
 workspace = true
 
 [dependencies]
+axum = "0.8"
 base64 = "0.22"
 chrono = { workspace = true }
 image = { version = "0.25.6", default-features = false, features = ["png", "jpeg"] }
@@ -26,6 +27,7 @@ serde_yaml = "0.9"
 ts-rs = { workspace = true }
 tracing = "0.1"
 dirs = "5"
+tokio = { workspace = true }
 
 [dev-dependencies]
 tempfile = "3"

@@ -21,13 +21,13 @@ pub struct SignalEvent {
 }
 
 #[derive(Clone)]
-struct AppState {
+struct ApiServerState {
     sink: Arc<dyn EventSink>,
     db_path: Arc<RwLock<Option<String>>>,
 }
 
-pub async fn start_api_server(sink: Arc<dyn EventSink>) -> Result<u16, String> {
-    let state = AppState {
+pub async fn start_api_server(sink: Arc<dyn EventSink>) -> RalphResult<u16> {
+    let state = ApiServerState {
         sink,
         db_path: Arc::new(RwLock::new(None)),
     };
@@ -40,11 +40,16 @@ pub async fn start_api_server(sink: Arc<dyn EventSink>) -> Result<u16, String> {
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
-        .map_err(|e| format!("Failed to bind to port: {e}"))?;
+        .map_err(|e| err_string(codes::INTERNAL, format!("Failed to bind api-server: {e}")))?;
 
     let port = listener
         .local_addr()
-        .map_err(|e| format!("Failed to get local address: {e}"))?
+        .map_err(|e| {
+            err_string(
+                codes::INTERNAL,
+                format!("Failed to get api-server addr: {e}"),
+            )
+        })?
         .port();
 
     tokio::spawn(async move {
@@ -68,7 +73,7 @@ pub async fn start_api_server(sink: Arc<dyn EventSink>) -> Result<u16, String> {
 }
 
 async fn set_db_path(
-    State(state): State<AppState>,
+    State(state): State<ApiServerState>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     if let Some(path) = payload.get("db_path").and_then(|v| v.as_str()) {
@@ -80,7 +85,7 @@ async fn set_db_path(
 }
 
 async fn handle_signal(
-    State(state): State<AppState>,
+    State(state): State<ApiServerState>,
     Json(request): Json<SignalRequest>,
 ) -> impl IntoResponse {
     let db_path = state.db_path.read().await.clone();

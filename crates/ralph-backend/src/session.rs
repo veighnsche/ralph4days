@@ -1,7 +1,9 @@
 use crate::project::validate_project_path;
+use crate::{diagnostics, project_scan};
 use ralph_errors::{codes, err_string, ralph_err, RalphResult, RalphResultExt};
 use ralph_macros::ipc_type;
 use sqlite_db::SqliteDb;
+use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Mutex;
 
@@ -79,6 +81,33 @@ pub fn project_lock_set(
     *db_guard = Some(opened);
 
     *locked = Some(canonical_path.clone());
+    Ok(canonical_path)
+}
+
+pub fn project_lock_set_and_record_recent(
+    locked_project: &Mutex<Option<PathBuf>>,
+    db: &Mutex<Option<SqliteDb>>,
+    data_dir: &Path,
+    args: ProjectLockSetArgs,
+) -> RalphResult<PathBuf> {
+    let canonical_path = project_lock_set(locked_project, db, args)?;
+
+    let project_name = canonical_path
+        .file_name()
+        .map_or_else(|| "Unknown".to_owned(), |n| n.to_string_lossy().to_string());
+
+    if let Err(error) = project_scan::recents_add(
+        data_dir,
+        canonical_path.to_string_lossy().to_string(),
+        project_name,
+    ) {
+        diagnostics::emit_warning(
+            "recent-projects",
+            "write-failed",
+            &format!("Failed to persist recent projects: {error}"),
+        );
+    }
+
     Ok(canonical_path)
 }
 

@@ -3,7 +3,6 @@ use std::path::{Path, PathBuf};
 
 const APP_NAME: &str = "ralph4days";
 
-#[allow(dead_code)]
 pub struct XdgDirs {
     data: PathBuf,
     config: PathBuf,
@@ -11,7 +10,6 @@ pub struct XdgDirs {
     state: PathBuf,
 }
 
-#[allow(dead_code)]
 impl XdgDirs {
     pub fn resolve() -> RalphResult<Self> {
         let data = dirs::data_dir()
@@ -92,10 +90,12 @@ impl XdgDirs {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tempfile::TempDir;
 
     #[test]
-    fn resolve_produces_paths_ending_with_app_name() {
-        let dirs = XdgDirs::resolve().unwrap();
+    fn from_base_produces_paths_ending_with_app_name() {
+        let base = TempDir::new().unwrap();
+        let dirs = XdgDirs::from_base(base.path());
         assert!(dirs.data().ends_with(APP_NAME));
         assert!(dirs.config().ends_with(APP_NAME));
         assert!(dirs.cache().ends_with(APP_NAME));
@@ -104,7 +104,8 @@ mod tests {
 
     #[test]
     fn ensure_data_creates_directory() {
-        let dirs = XdgDirs::resolve().unwrap();
+        let base = TempDir::new().unwrap();
+        let dirs = XdgDirs::from_base(base.path());
         dirs.ensure_data().unwrap();
         assert!(dirs.data().exists());
     }

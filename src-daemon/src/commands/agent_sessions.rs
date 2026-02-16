@@ -1,0 +1,64 @@
+use ralph_backend::agent_sessions_contract::AgentSessionsByIdArgs;
+use ralph_backend::agent_sessions_service;
+use ralph_errors::RalphResult;
+
+use crate::rpc_codec::{decode_args, encode_result, require_null_payload};
+use crate::state::AppState;
+
+pub fn agent_sessions_create_human(
+    state: &AppState,
+    payload: serde_json::Value,
+) -> RalphResult<serde_json::Value> {
+    let args: sqlite_db::AgentSessionCreateInput =
+        decode_args("agent_sessions_create_human", payload)?;
+    ralph_backend::session::with_db(&state.db, |db| {
+        agent_sessions_service::agent_sessions_create_human(db, args)
+    })?;
+    Ok(serde_json::Value::Null)
+}
+
+pub fn agent_sessions_update_human(
+    state: &AppState,
+    payload: serde_json::Value,
+) -> RalphResult<serde_json::Value> {
+    let args: sqlite_db::AgentSessionUpdateInput =
+        decode_args("agent_sessions_update_human", payload)?;
+    ralph_backend::session::with_db(&state.db, |db| {
+        agent_sessions_service::agent_sessions_update_human(db, args)
+    })?;
+    Ok(serde_json::Value::Null)
+}
+
+pub fn agent_sessions_delete_human(
+    state: &AppState,
+    payload: serde_json::Value,
+) -> RalphResult<serde_json::Value> {
+    let args: AgentSessionsByIdArgs = decode_args("agent_sessions_delete_human", payload)?;
+    ralph_backend::session::with_db(&state.db, |db| {
+        agent_sessions_service::agent_sessions_delete_human(db, &args.id)
+    })?;
+    Ok(serde_json::Value::Null)
+}
+
+pub fn agent_sessions_get(
+    state: &AppState,
+    payload: serde_json::Value,
+) -> RalphResult<serde_json::Value> {
+    let args: AgentSessionsByIdArgs = decode_args("agent_sessions_get", payload)?;
+    let session = ralph_backend::session::with_db(&state.db, |db| {
+        agent_sessions_service::agent_sessions_get(db, &args.id)
+    })?;
+    encode_result("agent_sessions_get", session)
+}
+
+pub fn agent_sessions_list_human(
+    state: &AppState,
+    payload: serde_json::Value,
+) -> RalphResult<serde_json::Value> {
+    require_null_payload("agent_sessions_list_human", payload)?;
+    let sessions = ralph_backend::session::with_db(
+        &state.db,
+        agent_sessions_service::agent_sessions_list_human,
+    )?;
+    encode_result("agent_sessions_list_human", sessions)
+}
