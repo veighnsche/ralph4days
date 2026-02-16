@@ -1,6 +1,6 @@
 use prompt_builder::{CodebaseSnapshot, PromptContext};
-use ralph_errors::{codes, RalphResult, RalphResultExt};
-use sqlite_db::SqliteDb;
+use core_errors::{codes, RalphResult, RalphResultExt};
+use data_sqlite::SqliteDb;
 use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
 use std::path::Path;

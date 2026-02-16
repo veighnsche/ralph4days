@@ -1,10 +1,10 @@
 use crate::prompt_context::{build_prompt_context, PromptContextArgs};
 use prompt_builder::CodebaseSnapshot;
-pub use ralph_contracts::prompt_builder::{
+pub use core_contracts::prompt_builder::{
     PromptBuilderPreviewArgs, PromptPreview, PromptPreviewSection, SectionConfig,
 };
-use ralph_errors::RalphResult;
-use sqlite_db::SqliteDb;
+use core_errors::RalphResult;
+use data_sqlite::SqliteDb;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Mutex;
@@ -88,7 +88,7 @@ pub fn prompt_builder_preview(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::project::{project_initialize, ProjectInitializeArgs};
+    use service_project::project::{project_initialize, ProjectInitializeArgs};
     use tempfile::tempdir;
 
     #[test]

@@ -1,8 +1,9 @@
 use crate::prompt_context::{build_prompt_context, PromptContextArgs};
-use crate::session::with_db;
 use prompt_builder::CodebaseSnapshot;
-use ralph_errors::{codes, err_string, RalphResult, RalphResultExt};
-use sqlite_db::SqliteDb;
+use service_project::session::with_db;
+use core_contracts::terminal_bridge::TerminalMcpMode;
+use core_errors::{codes, err_string, RalphResult, RalphResultExt};
+use data_sqlite::SqliteDb;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
@@ -12,21 +13,22 @@ pub fn generate_mcp_config(
     codebase_snapshot: &Mutex<Option<CodebaseSnapshot>>,
     mcp_dir: &Path,
     api_server_port: Option<u16>,
-    mode: &str,
+    mode: TerminalMcpMode,
     project_path: &Path,
 ) -> RalphResult<PathBuf> {
     let prompt_type = match mode {
-        "task_creation" => prompt_builder::PromptType::Braindump,
-        _ => prompt_builder::PromptType::Discuss,
+        TerminalMcpMode::TaskCreation => prompt_builder::PromptType::Braindump,
+        TerminalMcpMode::Interactive => prompt_builder::PromptType::Discuss,
     };
+    let mode_name = mode.as_str();
 
     let mut overrides = HashMap::new();
     let override_path = project_path
         .join(".ralph")
         .join("prompts")
-        .join(format!("{mode}_instructions.md"));
+        .join(format!("{mode_name}_instructions.md"));
     if let Ok(text) = std::fs::read_to_string(&override_path) {
-        let section_name = format!("{mode}_instructions");
+        let section_name = format!("{mode_name}_instructions");
         overrides.insert(section_name, text);
     }
 
@@ -46,7 +48,12 @@ pub fn generate_mcp_config(
         let (scripts, config_json) =
             prompt_builder::mcp::generate(&ctx, recipe.mcp_mode, &recipe.mcp_tools);
 
-        write_mcp_artifacts(mcp_dir, &scripts, &config_json, format!("mcp-{mode}.json"))
+        write_mcp_artifacts(
+            mcp_dir,
+            &scripts,
+            &config_json,
+            format!("mcp-{mode_name}.json"),
+        )
     })
 }
 
