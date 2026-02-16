@@ -16,7 +16,7 @@ import { tauriInvoke } from '@/lib/tauri/invoke'
 import { canQueryProjectLock, requiresRemoteConnection } from '@/lib/tauri/mobileGate'
 import { tauriSetWindowTitle } from '@/lib/tauri/window'
 import { type Page, pageRegistry } from '@/pages/pageRegistry'
-import type { BackendDiagnosticEvent, RemoteStatus } from '@/types/generated'
+import type { BackendDiagnosticEvent, RemoteSshStatus, RemoteStatus } from '@/types/generated'
 import './index.css'
 
 const isTauri = typeof window !== 'undefined' && '__TAURI__' in window
@@ -123,6 +123,11 @@ function App() {
     isLoading: isLoadingRemoteStatus,
     error: remoteStatusError
   } = useInvoke<RemoteStatus>('remote_status_get', undefined, { enabled: mobileNeedsRemoteConnection })
+  const {
+    data: remoteSshStatus,
+    isLoading: isLoadingRemoteSshStatus,
+    error: remoteSshStatusError
+  } = useInvoke<RemoteSshStatus>('remote_ssh_status_get', undefined, { enabled: mobileNeedsRemoteConnection })
 
   const canLoadProjectLock = canQueryProjectLock(isBackendMobile, remoteStatus)
 
@@ -181,10 +186,17 @@ function App() {
 
   const handleRemoteConnected = () => {
     void queryClient.invalidateQueries({ queryKey: ['app', 'remote_status_get'] })
+    void queryClient.invalidateQueries({ queryKey: ['app', 'remote_ssh_status_get'] })
     void queryClient.invalidateQueries({ queryKey: ['app', 'project_lock_get'] })
   }
 
-  if (isLoadingBackendMode || (mobileNeedsRemoteConnection && isLoadingRemoteStatus)) {
+  const handleRemoteDisconnected = () => {
+    void queryClient.invalidateQueries({ queryKey: ['app', 'remote_status_get'] })
+    void queryClient.invalidateQueries({ queryKey: ['app', 'remote_ssh_status_get'] })
+    void queryClient.invalidateQueries({ queryKey: ['app', 'project_lock_get'] })
+  }
+
+  if (isLoadingBackendMode || (mobileNeedsRemoteConnection && (isLoadingRemoteStatus || isLoadingRemoteSshStatus))) {
     return <LoadingScreen />
   }
 
@@ -192,8 +204,10 @@ function App() {
     return (
       <RemoteConnectionPanel
         status={remoteStatus}
-        statusError={remoteStatusError}
+        sshStatus={remoteSshStatus}
+        statusError={remoteStatusError ?? remoteSshStatusError}
         onConnected={handleRemoteConnected}
+        onDisconnected={handleRemoteDisconnected}
       />
     )
   }
