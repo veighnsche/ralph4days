@@ -1,42 +1,40 @@
-use super::remote_proxy::{remote_invoke_args, remote_invoke_no_args};
-use super::state::{AppState, CommandContext};
-use ralph_backend::project_scan;
+use super::executor::{dispatch_args, dispatch_no_args, PlatformArg, PlatformOut};
+use super::state::AppState;
 use ralph_contracts::project::{
     ProjectInfo, ProjectInitializeArgs, ProjectScanArgs, ProjectValidatePathArgs, RalphProject,
     RecentProject,
 };
 use ralph_contracts::session::ProjectLockSetArgs;
-use ralph_errors::{codes, ralph_err, RalphResult, RalphResultExt};
-use std::path::PathBuf;
-use tauri::{Manager, State};
+use ralph_errors::RalphResult;
+#[cfg(not(mobile))]
+use tauri::Manager;
+use tauri::State;
 
 #[tauri::command]
 #[tracing::instrument(skip(state))]
 pub async fn project_validate_path(
     state: State<'_, AppState>,
-    args: ProjectValidatePathArgs,
+    args: PlatformArg<ProjectValidatePathArgs>,
 ) -> RalphResult<()> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_args(&rpc, "project_validate_path", args).await;
-    }
-
-    let path = PathBuf::from(&args.path);
-    ralph_backend::project::validate_project_path(&path)
+    dispatch_args(state.inner(), "project_validate_path", args, |args| {
+        local::project_validate_path(&state, args)
+    })
+    .await
 }
 
 #[tauri::command]
 #[tracing::instrument(skip(state))]
 pub async fn project_initialize(
     state: State<'_, AppState>,
-    args: ProjectInitializeArgs,
+    args: PlatformArg<ProjectInitializeArgs>,
 ) -> RalphResult<()> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_args(&rpc, "project_initialize", args).await;
-    }
-
-    ralph_backend::project::project_initialize(args)
+    dispatch_args(state.inner(), "project_initialize", args, |args| {
+        local::project_initialize(&state, args)
+    })
+    .await
 }
 
+#[cfg(not(mobile))]
 pub fn project_lock_validated(state: &AppState, path: String) -> RalphResult<()> {
     let data_dir = state.xdg.ensure_data()?;
     let _canonical_path = ralph_backend::session::project_lock_set_and_record_recent(
@@ -52,110 +50,88 @@ pub fn project_lock_validated(state: &AppState, path: String) -> RalphResult<()>
 #[tauri::command]
 pub async fn project_lock_set(
     state: State<'_, AppState>,
-    args: ProjectLockSetArgs,
+    args: PlatformArg<ProjectLockSetArgs>,
 ) -> RalphResult<()> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_args(&rpc, "project_lock_set", args).await;
-    }
-
-    project_lock_validated(&state, args.path)
+    dispatch_args(state.inner(), "project_lock_set", args, |args| {
+        local::project_lock_set(&state, args)
+    })
+    .await
 }
 
 #[tauri::command]
-pub async fn project_lock_get(state: State<'_, AppState>) -> RalphResult<Option<String>> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_no_args(&rpc, "project_lock_get").await;
-    }
-
-    ralph_backend::session::project_lock_get(&state.locked_project)
+pub async fn project_lock_get(
+    state: State<'_, AppState>,
+) -> RalphResult<PlatformOut<Option<String>>> {
+    dispatch_no_args(state.inner(), "project_lock_get", || {
+        local::project_lock_get(&state)
+    })
+    .await
 }
 
 #[tauri::command]
-pub async fn project_recent_list(state: State<'_, AppState>) -> RalphResult<Vec<RecentProject>> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_no_args(&rpc, "project_recent_list").await;
-    }
-
-    let data_dir = state.inner().xdg.ensure_data()?;
-    project_scan::recents_load(data_dir)
+pub async fn project_recent_list(
+    state: State<'_, AppState>,
+) -> RalphResult<PlatformOut<Vec<RecentProject>>> {
+    dispatch_no_args(state.inner(), "project_recent_list", || {
+        local::project_recent_list(&state)
+    })
+    .await
 }
 
 #[tauri::command]
 pub async fn execution_start(state: State<'_, AppState>) -> RalphResult<()> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_no_args(&rpc, "execution_start").await;
-    }
-
-    ralph_err!(codes::LOOP_ENGINE, "Not implemented")
+    dispatch_no_args(state.inner(), "execution_start", local::execution_start).await
 }
 
 #[tauri::command]
 pub async fn execution_pause(state: State<'_, AppState>) -> RalphResult<()> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_no_args(&rpc, "execution_pause").await;
-    }
-
-    ralph_err!(codes::LOOP_ENGINE, "Not implemented")
+    dispatch_no_args(state.inner(), "execution_pause", local::execution_pause).await
 }
 
 #[tauri::command]
 pub async fn execution_resume(state: State<'_, AppState>) -> RalphResult<()> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_no_args(&rpc, "execution_resume").await;
-    }
-
-    ralph_err!(codes::LOOP_ENGINE, "Not implemented")
+    dispatch_no_args(state.inner(), "execution_resume", local::execution_resume).await
 }
 
 #[tauri::command]
 pub async fn execution_stop(state: State<'_, AppState>) -> RalphResult<()> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_no_args(&rpc, "execution_stop").await;
-    }
-
-    ralph_err!(codes::LOOP_ENGINE, "Not implemented")
+    dispatch_no_args(state.inner(), "execution_stop", local::execution_stop).await
 }
 
 #[tauri::command]
 pub async fn execution_state_get(state: State<'_, AppState>) -> RalphResult<()> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_no_args(&rpc, "execution_state_get").await;
-    }
-
-    ralph_err!(codes::LOOP_ENGINE, "Not implemented")
+    dispatch_no_args(
+        state.inner(),
+        "execution_state_get",
+        local::execution_state_get,
+    )
+    .await
 }
 
 #[tauri::command]
 pub async fn project_scan(
     state: State<'_, AppState>,
-    args: ProjectScanArgs,
-) -> RalphResult<Vec<RalphProject>> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_args(&rpc, "project_scan", args).await;
-    }
-
-    project_scan::project_scan(args)
+    args: PlatformArg<ProjectScanArgs>,
+) -> RalphResult<PlatformOut<Vec<RalphProject>>> {
+    dispatch_args(state.inner(), "project_scan", args, local::project_scan).await
 }
 
 #[tauri::command]
-pub async fn system_home_dir_get(state: State<'_, AppState>) -> RalphResult<String> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_no_args(&rpc, "system_home_dir_get").await;
-    }
-
-    let path = dirs::home_dir().ok_or_else(|| {
-        ralph_errors::err_string(codes::FILESYSTEM, "Failed to get home directory")
-    })?;
-    Ok(path.to_string_lossy().to_string())
+pub async fn system_home_dir_get(state: State<'_, AppState>) -> RalphResult<PlatformOut<String>> {
+    dispatch_no_args(
+        state.inner(),
+        "system_home_dir_get",
+        local::system_home_dir_get,
+    )
+    .await
 }
 
 #[tauri::command]
-pub async fn project_info_get(state: State<'_, AppState>) -> RalphResult<ProjectInfo> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_no_args(&rpc, "project_info_get").await;
-    }
-
-    CommandContext::from_tauri_state(&state).db(project_scan::project_info_get)
+pub async fn project_info_get(state: State<'_, AppState>) -> RalphResult<PlatformOut<ProjectInfo>> {
+    dispatch_no_args(state.inner(), "project_info_get", || {
+        local::project_info_get(&state)
+    })
+    .await
 }
 
 #[cfg(not(mobile))]
@@ -173,8 +149,8 @@ pub fn window_splash_close(app: tauri::AppHandle) {
 #[cfg(mobile)]
 pub fn window_splash_close(app: tauri::AppHandle) -> RalphResult<()> {
     let _ = app;
-    ralph_err!(
-        codes::INTERNAL,
+    ralph_errors::ralph_err!(
+        ralph_errors::codes::INTERNAL,
         "window_splash_close is unsupported on mobile"
     )
 }
@@ -182,6 +158,8 @@ pub fn window_splash_close(app: tauri::AppHandle) -> RalphResult<()> {
 #[cfg(not(mobile))]
 #[tauri::command]
 pub fn window_open_new() -> RalphResult<()> {
+    use ralph_errors::{codes, RalphResultExt};
+
     let exe = std::env::current_exe()
         .ralph_err(codes::INTERNAL, "Failed to get current executable path")?;
     std::process::Command::new(exe)
@@ -193,5 +171,220 @@ pub fn window_open_new() -> RalphResult<()> {
 #[cfg(mobile)]
 #[tauri::command]
 pub fn window_open_new() -> RalphResult<()> {
-    ralph_err!(codes::INTERNAL, "window_open_new is unsupported on mobile")
+    ralph_errors::ralph_err!(
+        ralph_errors::codes::INTERNAL,
+        "window_open_new is unsupported on mobile"
+    )
+}
+
+mod local {
+    use super::*;
+
+    pub(super) fn project_validate_path(
+        state: &State<'_, AppState>,
+        args: PlatformArg<ProjectValidatePathArgs>,
+    ) -> RalphResult<()> {
+        #[cfg(not(mobile))]
+        {
+            let _ = state;
+            let path = std::path::PathBuf::from(&args.path);
+            ralph_backend::project::validate_project_path(&path)
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            let _ = args;
+            unreachable_local("project_validate_path")
+        }
+    }
+
+    pub(super) fn project_initialize(
+        state: &State<'_, AppState>,
+        args: PlatformArg<ProjectInitializeArgs>,
+    ) -> RalphResult<()> {
+        #[cfg(not(mobile))]
+        {
+            let _ = state;
+            ralph_backend::project::project_initialize(args)
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            let _ = args;
+            unreachable_local("project_initialize")
+        }
+    }
+
+    pub(super) fn project_lock_set(
+        state: &State<'_, AppState>,
+        args: PlatformArg<ProjectLockSetArgs>,
+    ) -> RalphResult<()> {
+        #[cfg(not(mobile))]
+        {
+            super::project_lock_validated(state.inner(), args.path)
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            let _ = args;
+            unreachable_local("project_lock_set")
+        }
+    }
+
+    pub(super) fn project_lock_get(
+        state: &State<'_, AppState>,
+    ) -> RalphResult<PlatformOut<Option<String>>> {
+        #[cfg(not(mobile))]
+        {
+            ralph_backend::session::project_lock_get(&state.locked_project)
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            unreachable_local("project_lock_get")
+        }
+    }
+
+    pub(super) fn project_recent_list(
+        state: &State<'_, AppState>,
+    ) -> RalphResult<PlatformOut<Vec<RecentProject>>> {
+        #[cfg(not(mobile))]
+        {
+            use ralph_backend::project_scan;
+
+            let data_dir = state.inner().xdg.ensure_data()?;
+            project_scan::recents_load(data_dir)
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            unreachable_local("project_recent_list")
+        }
+    }
+
+    pub(super) fn execution_start() -> RalphResult<()> {
+        #[cfg(not(mobile))]
+        {
+            ralph_errors::ralph_err!(ralph_errors::codes::LOOP_ENGINE, "Not implemented")
+        }
+
+        #[cfg(mobile)]
+        {
+            unreachable_local("execution_start")
+        }
+    }
+
+    pub(super) fn execution_pause() -> RalphResult<()> {
+        #[cfg(not(mobile))]
+        {
+            ralph_errors::ralph_err!(ralph_errors::codes::LOOP_ENGINE, "Not implemented")
+        }
+
+        #[cfg(mobile)]
+        {
+            unreachable_local("execution_pause")
+        }
+    }
+
+    pub(super) fn execution_resume() -> RalphResult<()> {
+        #[cfg(not(mobile))]
+        {
+            ralph_errors::ralph_err!(ralph_errors::codes::LOOP_ENGINE, "Not implemented")
+        }
+
+        #[cfg(mobile)]
+        {
+            unreachable_local("execution_resume")
+        }
+    }
+
+    pub(super) fn execution_stop() -> RalphResult<()> {
+        #[cfg(not(mobile))]
+        {
+            ralph_errors::ralph_err!(ralph_errors::codes::LOOP_ENGINE, "Not implemented")
+        }
+
+        #[cfg(mobile)]
+        {
+            unreachable_local("execution_stop")
+        }
+    }
+
+    pub(super) fn execution_state_get() -> RalphResult<()> {
+        #[cfg(not(mobile))]
+        {
+            ralph_errors::ralph_err!(ralph_errors::codes::LOOP_ENGINE, "Not implemented")
+        }
+
+        #[cfg(mobile)]
+        {
+            unreachable_local("execution_state_get")
+        }
+    }
+
+    pub(super) fn project_scan(
+        args: PlatformArg<ProjectScanArgs>,
+    ) -> RalphResult<PlatformOut<Vec<RalphProject>>> {
+        #[cfg(not(mobile))]
+        {
+            ralph_backend::project_scan::project_scan(args)
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = args;
+            unreachable_local("project_scan")
+        }
+    }
+
+    pub(super) fn system_home_dir_get() -> RalphResult<PlatformOut<String>> {
+        #[cfg(not(mobile))]
+        {
+            let path = dirs::home_dir().ok_or_else(|| {
+                ralph_errors::err_string(
+                    ralph_errors::codes::FILESYSTEM,
+                    "Failed to get home directory",
+                )
+            })?;
+            Ok(path.to_string_lossy().to_string())
+        }
+
+        #[cfg(mobile)]
+        {
+            unreachable_local("system_home_dir_get")
+        }
+    }
+
+    pub(super) fn project_info_get(
+        state: &State<'_, AppState>,
+    ) -> RalphResult<PlatformOut<ProjectInfo>> {
+        #[cfg(not(mobile))]
+        {
+            use super::super::state::CommandContext;
+            use ralph_backend::project_scan;
+
+            CommandContext::from_tauri_state(state).db(project_scan::project_info_get)
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            unreachable_local("project_info_get")
+        }
+    }
+
+    #[cfg(mobile)]
+    fn unreachable_local<TResult>(command: &str) -> RalphResult<TResult> {
+        use ralph_errors::{codes, ralph_err};
+        ralph_err!(
+            codes::INTERNAL,
+            "Local execution path reached on mobile for '{}'",
+            command
+        )
+    }
 }

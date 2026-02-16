@@ -1,17 +1,12 @@
-#[cfg_attr(mobile, path = "agent_sessions_mobile.rs")]
 pub(crate) mod agent_sessions;
-#[cfg_attr(mobile, path = "project_mobile.rs")]
+mod executor;
 pub(crate) mod project;
-#[cfg_attr(mobile, path = "prompts_mobile.rs")]
 pub(crate) mod prompts;
 pub(crate) mod remote;
 mod remote_proxy;
 mod state;
-#[cfg_attr(mobile, path = "subsystems_mobile.rs")]
 pub(crate) mod subsystems;
-#[cfg_attr(mobile, path = "tasks_mobile.rs")]
 pub(crate) mod tasks;
-#[cfg_attr(mobile, path = "terminal_bridge_mobile.rs")]
 pub(crate) mod terminal_bridge;
 
 #[cfg(not(mobile))]

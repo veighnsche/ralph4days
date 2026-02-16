@@ -1,3 +1,4 @@
+use super::{remote_rpc_client_from_transport, remote_rpc_client_required, RemoteTransport};
 use prompt_builder::CodebaseSnapshot;
 use ralph_backend::terminal::PTYManager;
 use ralph_backend::xdg::XdgDirs;
@@ -12,7 +13,7 @@ pub struct AppState {
     pub db: Mutex<Option<SqliteDb>>,
     pub codebase_snapshot: Mutex<Option<CodebaseSnapshot>>,
     pub pty_manager: PTYManager,
-    pub remote: tokio::sync::Mutex<Option<crate::remote::RemoteWireFrameConnection>>,
+    pub remote: RemoteTransport,
     pub(crate) mcp_dir: PathBuf,
     pub xdg: XdgDirs,
     pub api_server_port: Mutex<Option<u16>>,
@@ -146,31 +147,12 @@ impl<'a> CommandContext<'a> {
 
 impl AppState {
     pub async fn remote_rpc_client(&self) -> RalphResult<Option<crate::remote::RemoteRpcClient>> {
-        let guard = self.remote.lock().await;
-
-        guard.as_ref().map_or(Ok(None), |conn| {
-            if conn.is_connected() {
-                Ok(Some(conn.rpc_client()))
-            } else {
-                Err(err_string(
-                    codes::INTERNAL,
-                    format!(
-                        "Remote transport disconnected (wsUrl='{}'). Reconnect.",
-                        conn.ws_url()
-                    ),
-                ))
-            }
-        })
+        remote_rpc_client_from_transport(&self.remote, false).await
     }
 
     #[allow(dead_code)]
     pub async fn remote_rpc_client_required(&self) -> RalphResult<crate::remote::RemoteRpcClient> {
-        self.remote_rpc_client().await?.ok_or_else(|| {
-            err_string(
-                codes::INTERNAL,
-                "Remote transport is not connected. Call remote_connect first.",
-            )
-        })
+        remote_rpc_client_required(self.remote_rpc_client().await?)
     }
 }
 

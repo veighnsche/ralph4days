@@ -1,5 +1,5 @@
-use super::remote_proxy::{remote_invoke_args, remote_invoke_no_args};
-use super::state::{AppState, CommandContext};
+use super::executor::{dispatch_args, dispatch_no_args, PlatformArg, PlatformOut};
+use super::state::AppState;
 use ralph_contracts::domain::{
     Task, TaskListItem, TaskSignalComment, TaskSignalCommentCreateInput, TaskSignalSummary,
 };
@@ -15,199 +15,508 @@ use tauri::State;
 #[tauri::command]
 pub async fn tasks_create(
     state: State<'_, AppState>,
-    args: TasksCreateArgs,
-) -> RalphResult<String> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_args(&rpc, "tasks_create", args).await;
-    }
-
-    CommandContext::from_tauri_state(&state).db(|db| ralph_backend::tasks::tasks_create(db, args))
+    args: PlatformArg<TasksCreateArgs>,
+) -> RalphResult<PlatformOut<String>> {
+    dispatch_args(state.inner(), "tasks_create", args, |args| {
+        local::tasks_create(&state, args)
+    })
+    .await
 }
 
 #[tauri::command]
-pub async fn tasks_update(state: State<'_, AppState>, args: TasksUpdateArgs) -> RalphResult<Task> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_args(&rpc, "tasks_update", args).await;
-    }
-
-    CommandContext::from_tauri_state(&state).db(|db| ralph_backend::tasks::tasks_update(db, args))
+pub async fn tasks_update(
+    state: State<'_, AppState>,
+    args: PlatformArg<TasksUpdateArgs>,
+) -> RalphResult<PlatformOut<Task>> {
+    dispatch_args(state.inner(), "tasks_update", args, |args| {
+        local::tasks_update(&state, args)
+    })
+    .await
 }
 
 #[tauri::command]
 pub async fn tasks_set_status(
     state: State<'_, AppState>,
-    args: TasksSetStatusArgs,
-) -> RalphResult<Task> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_args(&rpc, "tasks_set_status", args).await;
-    }
-
-    CommandContext::from_tauri_state(&state)
-        .db(|db| ralph_backend::tasks::tasks_set_status(db, args))
+    args: PlatformArg<TasksSetStatusArgs>,
+) -> RalphResult<PlatformOut<Task>> {
+    dispatch_args(state.inner(), "tasks_set_status", args, |args| {
+        local::tasks_set_status(&state, args)
+    })
+    .await
 }
 
 #[tauri::command]
-pub async fn tasks_delete(state: State<'_, AppState>, args: TasksDeleteArgs) -> RalphResult<()> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_args(&rpc, "tasks_delete", args).await;
-    }
-
-    CommandContext::from_tauri_state(&state).db(|db| ralph_backend::tasks::tasks_delete(db, args))
+pub async fn tasks_delete(
+    state: State<'_, AppState>,
+    args: PlatformArg<TasksDeleteArgs>,
+) -> RalphResult<()> {
+    dispatch_args(state.inner(), "tasks_delete", args, |args| {
+        local::tasks_delete(&state, args)
+    })
+    .await
 }
 
 #[tauri::command]
 pub async fn tasks_signal_add(
     state: State<'_, AppState>,
-    args: TasksSignalAddArgs,
-) -> RalphResult<Task> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_args(&rpc, "tasks_signal_add", args).await;
-    }
-
-    CommandContext::from_tauri_state(&state)
-        .db(|db| ralph_backend::tasks::tasks_signal_add(db, args))
+    args: PlatformArg<TasksSignalAddArgs>,
+) -> RalphResult<PlatformOut<Task>> {
+    dispatch_args(state.inner(), "tasks_signal_add", args, |args| {
+        local::tasks_signal_add(&state, args)
+    })
+    .await
 }
 
 #[tauri::command]
 pub async fn tasks_signal_update(
     state: State<'_, AppState>,
-    args: TasksSignalUpdateArgs,
-) -> RalphResult<Task> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_args(&rpc, "tasks_signal_update", args).await;
-    }
-
-    CommandContext::from_tauri_state(&state)
-        .db(|db| ralph_backend::tasks::tasks_signal_update(db, args))
+    args: PlatformArg<TasksSignalUpdateArgs>,
+) -> RalphResult<PlatformOut<Task>> {
+    dispatch_args(state.inner(), "tasks_signal_update", args, |args| {
+        local::tasks_signal_update(&state, args)
+    })
+    .await
 }
 
 #[tauri::command]
 pub async fn tasks_signal_delete(
     state: State<'_, AppState>,
-    args: TasksSignalDeleteArgs,
-) -> RalphResult<Task> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_args(&rpc, "tasks_signal_delete", args).await;
-    }
-
-    CommandContext::from_tauri_state(&state)
-        .db(|db| ralph_backend::tasks::tasks_signal_delete(db, args))
+    args: PlatformArg<TasksSignalDeleteArgs>,
+) -> RalphResult<PlatformOut<Task>> {
+    dispatch_args(state.inner(), "tasks_signal_delete", args, |args| {
+        local::tasks_signal_delete(&state, args)
+    })
+    .await
 }
 
 #[tauri::command]
-pub async fn tasks_list(state: State<'_, AppState>) -> RalphResult<Vec<Task>> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_no_args(&rpc, "tasks_list").await;
-    }
-
-    CommandContext::from_tauri_state(&state).db(ralph_backend::tasks::tasks_list)
+pub async fn tasks_list(state: State<'_, AppState>) -> RalphResult<PlatformOut<Vec<Task>>> {
+    dispatch_no_args(state.inner(), "tasks_list", || local::tasks_list(&state)).await
 }
 
 #[tauri::command]
-pub async fn tasks_get(state: State<'_, AppState>, args: TasksGetArgs) -> RalphResult<Task> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_args(&rpc, "tasks_get", args).await;
-    }
-
-    CommandContext::from_tauri_state(&state).db(|db| ralph_backend::tasks::tasks_get(db, args))
+pub async fn tasks_get(
+    state: State<'_, AppState>,
+    args: PlatformArg<TasksGetArgs>,
+) -> RalphResult<PlatformOut<Task>> {
+    dispatch_args(state.inner(), "tasks_get", args, |args| {
+        local::tasks_get(&state, args)
+    })
+    .await
 }
 
 #[tauri::command]
-pub async fn tasks_list_items(state: State<'_, AppState>) -> RalphResult<Vec<TaskListItem>> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_no_args(&rpc, "tasks_list_items").await;
-    }
-
-    CommandContext::from_tauri_state(&state).db(ralph_backend::tasks::tasks_list_items)
+pub async fn tasks_list_items(
+    state: State<'_, AppState>,
+) -> RalphResult<PlatformOut<Vec<TaskListItem>>> {
+    dispatch_no_args(state.inner(), "tasks_list_items", || {
+        local::tasks_list_items(&state)
+    })
+    .await
 }
 
 #[tauri::command]
 pub async fn tasks_signal_summaries_get(
     state: State<'_, AppState>,
-    args: TasksSignalSummariesGetArgs,
-) -> RalphResult<std::collections::HashMap<u32, TaskSignalSummary>> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_args(&rpc, "tasks_signal_summaries_get", args).await;
-    }
-
-    CommandContext::from_tauri_state(&state)
-        .db(|db| ralph_backend::tasks::tasks_signal_summaries_get(db, args))
+    args: PlatformArg<TasksSignalSummariesGetArgs>,
+) -> RalphResult<PlatformOut<std::collections::HashMap<u32, TaskSignalSummary>>> {
+    dispatch_args(state.inner(), "tasks_signal_summaries_get", args, |args| {
+        local::tasks_signal_summaries_get(&state, args)
+    })
+    .await
 }
 
 #[tauri::command]
 pub async fn tasks_ask_answer(
     state: State<'_, AppState>,
-    args: TasksAskAnswerArgs,
+    args: PlatformArg<TasksAskAnswerArgs>,
 ) -> RalphResult<()> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_args(&rpc, "tasks_ask_answer", args).await;
-    }
-
-    CommandContext::from_tauri_state(&state)
-        .db(|db| ralph_backend::tasks::tasks_ask_answer(db, args))
+    dispatch_args(state.inner(), "tasks_ask_answer", args, |args| {
+        local::tasks_ask_answer(&state, args)
+    })
+    .await
 }
 
 #[tauri::command]
 pub async fn tasks_comment_reply_add(
     state: State<'_, AppState>,
-    args: TasksCommentReplyAddArgs,
-) -> RalphResult<Task> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_args(&rpc, "tasks_comment_reply_add", args).await;
-    }
-
-    CommandContext::from_tauri_state(&state)
-        .db(|db| ralph_backend::tasks::tasks_comment_reply_add(db, args))
+    args: PlatformArg<TasksCommentReplyAddArgs>,
+) -> RalphResult<PlatformOut<Task>> {
+    dispatch_args(state.inner(), "tasks_comment_reply_add", args, |args| {
+        local::tasks_comment_reply_add(&state, args)
+    })
+    .await
 }
 
 #[tauri::command]
 pub async fn tasks_signal_comment_add(
     state: State<'_, AppState>,
-    args: TaskSignalCommentCreateInput,
-) -> RalphResult<u32> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_args(&rpc, "tasks_signal_comment_add", args).await;
-    }
-
-    CommandContext::from_tauri_state(&state)
-        .db(|db| ralph_backend::tasks::tasks_signal_comment_add(db, args))
+    args: PlatformArg<TaskSignalCommentCreateInput>,
+) -> RalphResult<PlatformOut<u32>> {
+    dispatch_args(state.inner(), "tasks_signal_comment_add", args, |args| {
+        local::tasks_signal_comment_add(&state, args)
+    })
+    .await
 }
 
 #[tauri::command]
 pub async fn tasks_signal_comment_update(
     state: State<'_, AppState>,
-    args: TasksSignalCommentUpdateArgs,
+    args: PlatformArg<TasksSignalCommentUpdateArgs>,
 ) -> RalphResult<()> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_args(&rpc, "tasks_signal_comment_update", args).await;
-    }
-
-    CommandContext::from_tauri_state(&state)
-        .db(|db| ralph_backend::tasks::tasks_signal_comment_update(db, args))
+    dispatch_args(state.inner(), "tasks_signal_comment_update", args, |args| {
+        local::tasks_signal_comment_update(&state, args)
+    })
+    .await
 }
 
 #[tauri::command]
 pub async fn tasks_signal_comment_delete(
     state: State<'_, AppState>,
-    args: TasksSignalCommentDeleteArgs,
+    args: PlatformArg<TasksSignalCommentDeleteArgs>,
 ) -> RalphResult<()> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_args(&rpc, "tasks_signal_comment_delete", args).await;
-    }
-
-    CommandContext::from_tauri_state(&state)
-        .db(|db| ralph_backend::tasks::tasks_signal_comment_delete(db, args))
+    dispatch_args(state.inner(), "tasks_signal_comment_delete", args, |args| {
+        local::tasks_signal_comment_delete(&state, args)
+    })
+    .await
 }
 
 #[tauri::command]
 pub async fn tasks_signal_comments_list(
     state: State<'_, AppState>,
-    args: TasksSignalCommentsListArgs,
-) -> RalphResult<Vec<TaskSignalComment>> {
-    if let Some(rpc) = state.inner().remote_rpc_client().await? {
-        return remote_invoke_args(&rpc, "tasks_signal_comments_list", args).await;
+    args: PlatformArg<TasksSignalCommentsListArgs>,
+) -> RalphResult<PlatformOut<Vec<TaskSignalComment>>> {
+    dispatch_args(state.inner(), "tasks_signal_comments_list", args, |args| {
+        local::tasks_signal_comments_list(&state, args)
+    })
+    .await
+}
+
+mod local {
+    use super::*;
+
+    pub(super) fn tasks_create(
+        state: &State<'_, AppState>,
+        args: PlatformArg<TasksCreateArgs>,
+    ) -> RalphResult<PlatformOut<String>> {
+        #[cfg(not(mobile))]
+        {
+            use super::super::state::CommandContext;
+            CommandContext::from_tauri_state(state)
+                .db(|db| ralph_backend::tasks::tasks_create(db, args))
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            let _ = args;
+            unreachable_local("tasks_create")
+        }
     }
 
-    CommandContext::from_tauri_state(&state)
-        .db(|db| ralph_backend::tasks::tasks_signal_comments_list(db, args))
+    pub(super) fn tasks_update(
+        state: &State<'_, AppState>,
+        args: PlatformArg<TasksUpdateArgs>,
+    ) -> RalphResult<PlatformOut<Task>> {
+        #[cfg(not(mobile))]
+        {
+            use super::super::state::CommandContext;
+            CommandContext::from_tauri_state(state)
+                .db(|db| ralph_backend::tasks::tasks_update(db, args))
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            let _ = args;
+            unreachable_local("tasks_update")
+        }
+    }
+
+    pub(super) fn tasks_set_status(
+        state: &State<'_, AppState>,
+        args: PlatformArg<TasksSetStatusArgs>,
+    ) -> RalphResult<PlatformOut<Task>> {
+        #[cfg(not(mobile))]
+        {
+            use super::super::state::CommandContext;
+            CommandContext::from_tauri_state(state)
+                .db(|db| ralph_backend::tasks::tasks_set_status(db, args))
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            let _ = args;
+            unreachable_local("tasks_set_status")
+        }
+    }
+
+    pub(super) fn tasks_delete(
+        state: &State<'_, AppState>,
+        args: PlatformArg<TasksDeleteArgs>,
+    ) -> RalphResult<()> {
+        #[cfg(not(mobile))]
+        {
+            use super::super::state::CommandContext;
+            CommandContext::from_tauri_state(state)
+                .db(|db| ralph_backend::tasks::tasks_delete(db, args))
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            let _ = args;
+            unreachable_local("tasks_delete")
+        }
+    }
+
+    pub(super) fn tasks_signal_add(
+        state: &State<'_, AppState>,
+        args: PlatformArg<TasksSignalAddArgs>,
+    ) -> RalphResult<PlatformOut<Task>> {
+        #[cfg(not(mobile))]
+        {
+            use super::super::state::CommandContext;
+            CommandContext::from_tauri_state(state)
+                .db(|db| ralph_backend::tasks::tasks_signal_add(db, args))
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            let _ = args;
+            unreachable_local("tasks_signal_add")
+        }
+    }
+
+    pub(super) fn tasks_signal_update(
+        state: &State<'_, AppState>,
+        args: PlatformArg<TasksSignalUpdateArgs>,
+    ) -> RalphResult<PlatformOut<Task>> {
+        #[cfg(not(mobile))]
+        {
+            use super::super::state::CommandContext;
+            CommandContext::from_tauri_state(state)
+                .db(|db| ralph_backend::tasks::tasks_signal_update(db, args))
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            let _ = args;
+            unreachable_local("tasks_signal_update")
+        }
+    }
+
+    pub(super) fn tasks_signal_delete(
+        state: &State<'_, AppState>,
+        args: PlatformArg<TasksSignalDeleteArgs>,
+    ) -> RalphResult<PlatformOut<Task>> {
+        #[cfg(not(mobile))]
+        {
+            use super::super::state::CommandContext;
+            CommandContext::from_tauri_state(state)
+                .db(|db| ralph_backend::tasks::tasks_signal_delete(db, args))
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            let _ = args;
+            unreachable_local("tasks_signal_delete")
+        }
+    }
+
+    pub(super) fn tasks_list(state: &State<'_, AppState>) -> RalphResult<PlatformOut<Vec<Task>>> {
+        #[cfg(not(mobile))]
+        {
+            use super::super::state::CommandContext;
+            CommandContext::from_tauri_state(state).db(ralph_backend::tasks::tasks_list)
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            unreachable_local("tasks_list")
+        }
+    }
+
+    pub(super) fn tasks_get(
+        state: &State<'_, AppState>,
+        args: PlatformArg<TasksGetArgs>,
+    ) -> RalphResult<PlatformOut<Task>> {
+        #[cfg(not(mobile))]
+        {
+            use super::super::state::CommandContext;
+            CommandContext::from_tauri_state(state)
+                .db(|db| ralph_backend::tasks::tasks_get(db, args))
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            let _ = args;
+            unreachable_local("tasks_get")
+        }
+    }
+
+    pub(super) fn tasks_list_items(
+        state: &State<'_, AppState>,
+    ) -> RalphResult<PlatformOut<Vec<TaskListItem>>> {
+        #[cfg(not(mobile))]
+        {
+            use super::super::state::CommandContext;
+            CommandContext::from_tauri_state(state).db(ralph_backend::tasks::tasks_list_items)
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            unreachable_local("tasks_list_items")
+        }
+    }
+
+    pub(super) fn tasks_signal_summaries_get(
+        state: &State<'_, AppState>,
+        args: PlatformArg<TasksSignalSummariesGetArgs>,
+    ) -> RalphResult<PlatformOut<std::collections::HashMap<u32, TaskSignalSummary>>> {
+        #[cfg(not(mobile))]
+        {
+            use super::super::state::CommandContext;
+            CommandContext::from_tauri_state(state)
+                .db(|db| ralph_backend::tasks::tasks_signal_summaries_get(db, args))
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            let _ = args;
+            unreachable_local("tasks_signal_summaries_get")
+        }
+    }
+
+    pub(super) fn tasks_ask_answer(
+        state: &State<'_, AppState>,
+        args: PlatformArg<TasksAskAnswerArgs>,
+    ) -> RalphResult<()> {
+        #[cfg(not(mobile))]
+        {
+            use super::super::state::CommandContext;
+            CommandContext::from_tauri_state(state)
+                .db(|db| ralph_backend::tasks::tasks_ask_answer(db, args))
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            let _ = args;
+            unreachable_local("tasks_ask_answer")
+        }
+    }
+
+    pub(super) fn tasks_comment_reply_add(
+        state: &State<'_, AppState>,
+        args: PlatformArg<TasksCommentReplyAddArgs>,
+    ) -> RalphResult<PlatformOut<Task>> {
+        #[cfg(not(mobile))]
+        {
+            use super::super::state::CommandContext;
+            CommandContext::from_tauri_state(state)
+                .db(|db| ralph_backend::tasks::tasks_comment_reply_add(db, args))
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            let _ = args;
+            unreachable_local("tasks_comment_reply_add")
+        }
+    }
+
+    pub(super) fn tasks_signal_comment_add(
+        state: &State<'_, AppState>,
+        args: PlatformArg<TaskSignalCommentCreateInput>,
+    ) -> RalphResult<PlatformOut<u32>> {
+        #[cfg(not(mobile))]
+        {
+            use super::super::state::CommandContext;
+            CommandContext::from_tauri_state(state)
+                .db(|db| ralph_backend::tasks::tasks_signal_comment_add(db, args))
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            let _ = args;
+            unreachable_local("tasks_signal_comment_add")
+        }
+    }
+
+    pub(super) fn tasks_signal_comment_update(
+        state: &State<'_, AppState>,
+        args: PlatformArg<TasksSignalCommentUpdateArgs>,
+    ) -> RalphResult<()> {
+        #[cfg(not(mobile))]
+        {
+            use super::super::state::CommandContext;
+            CommandContext::from_tauri_state(state)
+                .db(|db| ralph_backend::tasks::tasks_signal_comment_update(db, args))
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            let _ = args;
+            unreachable_local("tasks_signal_comment_update")
+        }
+    }
+
+    pub(super) fn tasks_signal_comment_delete(
+        state: &State<'_, AppState>,
+        args: PlatformArg<TasksSignalCommentDeleteArgs>,
+    ) -> RalphResult<()> {
+        #[cfg(not(mobile))]
+        {
+            use super::super::state::CommandContext;
+            CommandContext::from_tauri_state(state)
+                .db(|db| ralph_backend::tasks::tasks_signal_comment_delete(db, args))
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            let _ = args;
+            unreachable_local("tasks_signal_comment_delete")
+        }
+    }
+
+    pub(super) fn tasks_signal_comments_list(
+        state: &State<'_, AppState>,
+        args: PlatformArg<TasksSignalCommentsListArgs>,
+    ) -> RalphResult<PlatformOut<Vec<TaskSignalComment>>> {
+        #[cfg(not(mobile))]
+        {
+            use super::super::state::CommandContext;
+            CommandContext::from_tauri_state(state)
+                .db(|db| ralph_backend::tasks::tasks_signal_comments_list(db, args))
+        }
+
+        #[cfg(mobile)]
+        {
+            let _ = state;
+            let _ = args;
+            unreachable_local("tasks_signal_comments_list")
+        }
+    }
+
+    #[cfg(mobile)]
+    fn unreachable_local<TResult>(command: &str) -> RalphResult<TResult> {
+        use ralph_errors::{codes, ralph_err};
+        ralph_err!(
+            codes::INTERNAL,
+            "Local execution path reached on mobile for '{}'",
+            command
+        )
+    }
 }

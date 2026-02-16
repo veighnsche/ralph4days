@@ -1,7 +1,8 @@
-use ralph_errors::{codes, err_string, RalphResult};
+use super::{remote_rpc_client_from_transport, remote_rpc_client_required, RemoteTransport};
+use ralph_errors::RalphResult;
 
 pub struct AppState {
-    pub remote: tokio::sync::Mutex<Option<crate::remote::RemoteWireFrameConnection>>,
+    pub remote: RemoteTransport,
 }
 
 impl Default for AppState {
@@ -14,33 +15,10 @@ impl Default for AppState {
 
 impl AppState {
     pub async fn remote_rpc_client(&self) -> RalphResult<Option<crate::remote::RemoteRpcClient>> {
-        let guard = self.remote.lock().await;
-        let conn = guard.as_ref().ok_or_else(|| {
-            err_string(
-                codes::INTERNAL,
-                "Remote transport is required on mobile. Call remote_connect first.",
-            )
-        })?;
-
-        if conn.is_connected() {
-            Ok(Some(conn.rpc_client()))
-        } else {
-            Err(err_string(
-                codes::INTERNAL,
-                format!(
-                    "Remote transport disconnected (wsUrl='{}'). Reconnect.",
-                    conn.ws_url()
-                ),
-            ))
-        }
+        remote_rpc_client_from_transport(&self.remote, true).await
     }
 
     pub async fn remote_rpc_client_required(&self) -> RalphResult<crate::remote::RemoteRpcClient> {
-        self.remote_rpc_client().await?.ok_or_else(|| {
-            err_string(
-                codes::INTERNAL,
-                "Remote transport is not connected. Call remote_connect first.",
-            )
-        })
+        remote_rpc_client_required(self.remote_rpc_client().await?)
     }
 }
