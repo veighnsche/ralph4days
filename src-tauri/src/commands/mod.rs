@@ -24,3 +24,8 @@ use ralph_contracts::protocol::ProtocolVersionInfo;
 pub fn protocol_version_get() -> ProtocolVersionInfo {
     ProtocolVersionInfo::current()
 }
+
+#[tauri::command]
+pub fn mobile_mode_get() -> bool {
+    cfg!(mobile)
+}

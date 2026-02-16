@@ -242,6 +242,7 @@ pub fn run() {
             commands::prompts::prompt_builder_config_save,
             commands::prompts::prompt_builder_config_delete,
             commands::protocol_version_get,
+            commands::mobile_mode_get,
             commands::remote::remote_connect,
             commands::remote::remote_disconnect,
             commands::remote::remote_status_get,
