@@ -1,4 +1,4 @@
-pub use ralph_contracts::subsystems::{
+pub use core_contracts::subsystems::{
     SubsystemCommentData, SubsystemData, SubsystemsCommentAddArgs, SubsystemsCommentDeleteArgs,
     SubsystemsCommentUpdateArgs, SubsystemsCreateArgs, SubsystemsDeleteArgs, SubsystemsUpdateArgs,
 };

@@ -4,12 +4,13 @@ use crate::disciplines_contract::{
     DisciplinesImageDataGetArgs, DisciplinesUpdateArgs, McpServerConfigData,
 };
 use base64::{engine::general_purpose::STANDARD, Engine};
-use ralph_errors::{codes, err_string, RalphResult, RalphResultExt};
-use sqlite_db::SqliteDb;
+use service_runtime::diagnostics;
+use core_errors::{codes, err_string, RalphResult, RalphResultExt};
+use data_sqlite::SqliteDb;
 use std::io::Cursor;
 use std::path::Path;
 
-fn to_discipline_config(db: &SqliteDb, d: &sqlite_db::Discipline) -> RalphResult<DisciplineConfig> {
+fn to_discipline_config(db: &SqliteDb, d: &data_sqlite::Discipline) -> RalphResult<DisciplineConfig> {
     Ok(DisciplineConfig {
         id: d.id,
         name: d.name.clone(),
@@ -117,10 +118,10 @@ pub fn disciplines_create(
     let skills_json = serde_json::to_string(&args.skills)
         .ralph_err(codes::DISCIPLINE_OPS, "Failed to serialize skills")?;
 
-    let mcp_servers: Vec<sqlite_db::McpServerConfig> = args
+    let mcp_servers: Vec<data_sqlite::McpServerConfig> = args
         .mcp_servers
         .iter()
-        .map(|m| sqlite_db::McpServerConfig {
+        .map(|m| data_sqlite::McpServerConfig {
             name: m.name.clone(),
             command: m.command.clone(),
             args: m.args.clone(),
@@ -131,7 +132,7 @@ pub fn disciplines_create(
     let mcp_json = serde_json::to_string(&mcp_servers)
         .ralph_err(codes::DISCIPLINE_OPS, "Failed to serialize mcp_servers")?;
 
-    db.create_discipline(sqlite_db::DisciplineInput {
+    db.create_discipline(data_sqlite::DisciplineInput {
         name: normalized_name,
         display_name: args.display_name,
         acronym: args.acronym,
@@ -161,10 +162,10 @@ pub fn disciplines_update(
     let skills_json = serde_json::to_string(&args.skills)
         .ralph_err(codes::DISCIPLINE_OPS, "Failed to serialize skills")?;
 
-    let mcp_servers: Vec<sqlite_db::McpServerConfig> = args
+    let mcp_servers: Vec<data_sqlite::McpServerConfig> = args
         .mcp_servers
         .iter()
-        .map(|m| sqlite_db::McpServerConfig {
+        .map(|m| data_sqlite::McpServerConfig {
             name: m.name.clone(),
             command: m.command.clone(),
             args: m.args.clone(),
@@ -176,7 +177,7 @@ pub fn disciplines_update(
         .ralph_err(codes::DISCIPLINE_OPS, "Failed to serialize mcp_servers")?;
 
     let discipline_name = args.name.clone();
-    db.update_discipline(sqlite_db::DisciplineInput {
+    db.update_discipline(data_sqlite::DisciplineInput {
         name: args.name,
         display_name: args.display_name,
         acronym: args.acronym,
@@ -270,7 +271,7 @@ pub fn disciplines_cropped_image_get(
                 return Ok(Some(STANDARD.encode(&bytes)));
             }
             Err(error) => {
-                crate::diagnostics::emit_warning(
+                diagnostics::emit_warning(
                     "disciplines",
                     "crop-cache-read-failed",
                     &format!(
@@ -370,7 +371,7 @@ pub fn disciplines_cropped_image_get(
     let bytes = buf.into_inner();
 
     if let Err(error) = std::fs::create_dir_all(&cache_dir) {
-        crate::diagnostics::emit_warning(
+        diagnostics::emit_warning(
             "disciplines",
             "crop-cache-write-failed",
             &format!(
@@ -379,7 +380,7 @@ pub fn disciplines_cropped_image_get(
             ),
         );
     } else if let Err(error) = std::fs::write(&cache_path, &bytes) {
-        crate::diagnostics::emit_warning(
+        diagnostics::emit_warning(
             "disciplines",
             "crop-cache-write-failed",
             &format!(

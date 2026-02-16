@@ -1,4 +1,4 @@
-pub use ralph_contracts::disciplines::{
+pub use core_contracts::disciplines::{
     CropBoxData, DisciplineConfig, DisciplineCropsData, DisciplineImagePromptData,
     DisciplineTaskTemplateData, DisciplinesCreateArgs, DisciplinesCroppedImageGetArgs,
     DisciplinesDeleteArgs, DisciplinesImageDataGetArgs, DisciplinesUpdateArgs, McpServerConfigData,

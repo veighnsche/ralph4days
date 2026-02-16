@@ -1,0 +1,22 @@
+[package]
+name = "service-subsystems"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+base64 = "0.22"
+image = { version = "0.25.6", default-features = false, features = ["png", "jpeg"] }
+core-contracts = { workspace = true }
+core-errors = { workspace = true }
+ai-external = { path = "../ai-external" }
+service-runtime = { path = "../service-runtime" }
+serde_json = { workspace = true }
+data-sqlite = { path = "../data-sqlite" }
+
+[dev-dependencies]
+tempfile = "3"

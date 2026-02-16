@@ -2,8 +2,8 @@ use crate::subsystems_contract::{
     SubsystemCommentData, SubsystemData, SubsystemsCommentAddArgs, SubsystemsCommentDeleteArgs,
     SubsystemsCommentUpdateArgs, SubsystemsCreateArgs, SubsystemsDeleteArgs, SubsystemsUpdateArgs,
 };
-use ralph_errors::{codes, err_string, RalphResult};
-use sqlite_db::SqliteDb;
+use core_errors::{codes, err_string, RalphResult};
+use data_sqlite::SqliteDb;
 use std::path::{Path, PathBuf};
 
 pub struct SubsystemCommentEmbeddingWork {
@@ -12,9 +12,9 @@ pub struct SubsystemCommentEmbeddingWork {
 }
 
 fn build_embedding_config(
-    ext_config: &ralph_external::ExternalServicesConfig,
-) -> ralph_external::comment_embeddings::CommentEmbeddingConfig<'_> {
-    ralph_external::comment_embeddings::CommentEmbeddingConfig {
+    ext_config: &ai_external::ExternalServicesConfig,
+) -> ai_external::comment_embeddings::CommentEmbeddingConfig<'_> {
+    ai_external::comment_embeddings::CommentEmbeddingConfig {
         ollama: &ext_config.ollama,
         document_prefix: "search_document: ",
         query_prefix: "search_query: ",
@@ -27,7 +27,7 @@ fn comment_embeddings_db_path(project_path: &Path) -> PathBuf {
     project_path.join(".ralph").join("db").join("ralph.db")
 }
 
-fn to_comment_data(c: &sqlite_db::SubsystemComment) -> SubsystemCommentData {
+fn to_comment_data(c: &data_sqlite::SubsystemComment) -> SubsystemCommentData {
     SubsystemCommentData {
         id: c.id,
         category: c.category.clone(),
@@ -42,7 +42,7 @@ fn to_comment_data(c: &sqlite_db::SubsystemComment) -> SubsystemCommentData {
     }
 }
 
-fn to_subsystem_data(subsystem: &sqlite_db::Subsystem) -> SubsystemData {
+fn to_subsystem_data(subsystem: &data_sqlite::Subsystem) -> SubsystemData {
     SubsystemData {
         id: subsystem.id,
         name: subsystem.name.clone(),
@@ -70,7 +70,7 @@ pub fn subsystems_list(db: &SqliteDb) -> RalphResult<Vec<SubsystemData>> {
 
 pub fn subsystems_create(db: &SqliteDb, args: SubsystemsCreateArgs) -> RalphResult<SubsystemData> {
     let name = args.name.clone();
-    db.create_subsystem(sqlite_db::SubsystemInput {
+    db.create_subsystem(data_sqlite::SubsystemInput {
         name: args.name,
         display_name: args.display_name,
         acronym: args.acronym,
@@ -81,7 +81,7 @@ pub fn subsystems_create(db: &SqliteDb, args: SubsystemsCreateArgs) -> RalphResu
 
 pub fn subsystems_update(db: &SqliteDb, args: SubsystemsUpdateArgs) -> RalphResult<SubsystemData> {
     let name = args.name.clone();
-    db.update_subsystem(sqlite_db::SubsystemInput {
+    db.update_subsystem(data_sqlite::SubsystemInput {
         name: args.name,
         display_name: args.display_name,
         acronym: args.acronym,
@@ -101,7 +101,7 @@ pub fn subsystems_comment_add_prepare(
     let subsystem_name = args.subsystem_name.clone();
 
     db.with_transaction(|db| {
-        let comment_id = db.add_subsystem_comment(sqlite_db::AddSubsystemCommentInput {
+        let comment_id = db.add_subsystem_comment(data_sqlite::AddSubsystemCommentInput {
             subsystem_name: args.subsystem_name,
             category: args.category.clone(),
             discipline: args.discipline,
@@ -114,7 +114,7 @@ pub fn subsystems_comment_add_prepare(
 
         let subsystem = get_subsystem_data_or_error(db, &subsystem_name)?;
 
-        let embedding_text = ralph_external::comment_embeddings::build_embedding_text(
+        let embedding_text = ai_external::comment_embeddings::build_embedding_text(
             &args.category,
             &args.body,
             args.reason.as_deref(),
@@ -152,7 +152,7 @@ pub fn subsystems_comment_update_prepare(
             .map(|c| c.category.clone())
             .ok_or_else(|| err_string(codes::FEATURE_OPS, "Comment not found after update"))?;
 
-        let embedding_text = ralph_external::comment_embeddings::should_embed(
+        let embedding_text = ai_external::comment_embeddings::should_embed(
             db,
             comment_id,
             &category,
@@ -174,11 +174,11 @@ pub async fn subsystems_comment_apply_embedding(
     project_path: &Path,
     work: SubsystemCommentEmbeddingWork,
 ) -> RalphResult<()> {
-    let ext_config = ralph_external::ExternalServicesConfig::load()
+    let ext_config = ai_external::ExternalServicesConfig::load()
         .map_err(|e| err_string(codes::FEATURE_OPS, e))?;
     let embed_config = build_embedding_config(&ext_config);
     let result =
-        ralph_external::comment_embeddings::embed_text(&embed_config, &work.embedding_text)
+        ai_external::comment_embeddings::embed_text(&embed_config, &work.embedding_text)
             .await
             .map_err(|e| err_string(codes::FEATURE_OPS, e))?;
 
