@@ -1,5 +1,5 @@
 [package]
-name = "ralph-errors"
+name = "core-errors"
 version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
@@ -13,6 +13,6 @@ tracing = "0.1"
 serde = { workspace = true }
 serde_json = { workspace = true }
 ts-rs = { workspace = true }
-ralph-macros = { workspace = true }
+core-macros = { workspace = true }
 
 [dev-dependencies]
