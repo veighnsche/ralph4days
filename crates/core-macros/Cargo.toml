@@ -1,5 +1,5 @@
 [package]
-name = "ralph-macros"
+name = "core-macros"
 version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
