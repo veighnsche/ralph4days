@@ -47,6 +47,27 @@ dev-ios DEVICE:
         echo "❌ dev-ios requires macOS (Darwin). Current OS: $(uname -s)"
         exit 1
     fi
+    if [ -z "${TAURI_DEV_HOST:-}" ]; then
+        for iface in en0 en1; do
+            candidate="$(ipconfig getifaddr "$iface" 2>/dev/null || true)"
+            if [ -n "${candidate}" ]; then
+                TAURI_DEV_HOST="${candidate}"
+                break
+            fi
+        done
+        if [ -z "${TAURI_DEV_HOST:-}" ]; then
+            echo "❌ Failed to resolve TAURI_DEV_HOST from en0/en1. Set TAURI_DEV_HOST manually."
+            exit 1
+        fi
+    fi
+    export TAURI_DEV_HOST
+    echo "==> Using TAURI_DEV_HOST=${TAURI_DEV_HOST}"
+    simulator_udid="$(xcrun simctl list devices available | awk -F '[()]' '/{{DEVICE}} \(/ { print $2; exit }')"
+    if [ -n "${simulator_udid}" ]; then
+        echo "==> Ensuring simulator '{{DEVICE}}' is booted (${simulator_udid})"
+        xcrun simctl boot "${simulator_udid}" >/dev/null 2>&1 || true
+        xcrun simctl bootstatus "${simulator_udid}" -b
+    fi
     bun tauri ios dev "{{DEVICE}}"
 
 # Build iOS simulator debug bundle (fast validation gate for mobile runtime linkage)

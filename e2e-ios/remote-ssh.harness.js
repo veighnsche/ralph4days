@@ -88,12 +88,22 @@ export async function waitForProfileCount(expectedCount, timeout = 30000) {
   )
 }
 
+export async function openProfileActions(profileId) {
+  await clickByTestId(`ssh-profile-actions-${profileId}`)
+  await waitForTestId('ssh-profile-actions-dialog')
+}
+
+export async function deleteProfileById(profileId) {
+  await openProfileActions(profileId)
+  await clickByTestId(`ssh-profile-action-delete-${profileId}`)
+  await waitForTestId('ssh-delete-dialog')
+  await clickByTestId('ssh-delete-confirm-button')
+}
+
 export async function deleteAllProfiles() {
   const ids = await listProfileIds()
   for (const id of ids) {
-    await clickByTestId(`ssh-profile-delete-${id}`)
-    await waitForTestId('ssh-delete-dialog')
-    await clickByTestId('ssh-delete-confirm-button')
+    await deleteProfileById(id)
   }
   await waitForProfileCount(0)
 }

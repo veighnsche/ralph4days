@@ -2,17 +2,31 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { useRemoteSshPreferences } from '@/hooks/preferences/useRemoteSshPreferences'
 import { RalphIpcError } from '@/lib/tauri/invoke'
 import type { RemoteSshProfile, RemoteSshStatus, RemoteStatus } from '@/types/generated'
 import { RemoteConnectionPanel } from './RemoteConnectionPanel'
 
-const { useInvokeMock, tauriInvokeMock } = vi.hoisted(() => ({
+const { isMobileMock, useInvokeMock, tauriInvokeMock } = vi.hoisted(() => ({
+  isMobileMock: vi.fn(),
   useInvokeMock: vi.fn(),
   tauriInvokeMock: vi.fn()
 }))
 
 vi.mock('@/hooks/api', () => ({
   useInvoke: (...args: unknown[]) => useInvokeMock(...args)
+}))
+
+vi.mock('@/hooks/use-mobile', () => ({
+  useIsMobile: () => isMobileMock()
+}))
+
+vi.mock('@/components/ui/drawer', () => ({
+  Drawer: ({ open, children }: { open?: boolean; children: React.ReactNode }) => (open ? <div>{children}</div> : null),
+  DrawerContent: ({ children, ...props }: React.ComponentProps<'div'>) => <div {...props}>{children}</div>,
+  DrawerHeader: ({ children, ...props }: React.ComponentProps<'div'>) => <div {...props}>{children}</div>,
+  DrawerTitle: ({ children, ...props }: React.ComponentProps<'div'>) => <div {...props}>{children}</div>,
+  DrawerDescription: ({ children, ...props }: React.ComponentProps<'div'>) => <div {...props}>{children}</div>
 }))
 
 vi.mock('@/lib/tauri/invoke', async () => {
@@ -35,6 +49,7 @@ function makeProfile(overrides: Partial<RemoteSshProfile>): RemoteSshProfile {
     sshPort: 22,
     remotePort: 9944,
     authMode: 'key',
+    identityRef: 'keychain:test-profile',
     autoReconnectEnabled: false,
     ...overrides
   }
@@ -68,8 +83,24 @@ describe('RemoteConnectionPanel runtime harness', () => {
   beforeEach(() => {
     cleanup()
     localStorage.clear()
+    useRemoteSshPreferences.getState().setDefaultProfileId(null)
+    isMobileMock.mockReset()
+    isMobileMock.mockReturnValue(false)
     useInvokeMock.mockReset()
     tauriInvokeMock.mockReset()
+  })
+
+  it('renders SSH page in a dedicated scroll viewport', () => {
+    useInvokeMock.mockImplementation((command: string) => {
+      if (command !== 'remote_ssh_profile_list') {
+        throw new Error(`Unexpected useInvoke command: ${command}`)
+      }
+      return { data: [], error: null, isLoading: false }
+    })
+
+    renderPanel()
+
+    expect(screen.getByTestId('ssh-page-scroll-root')).toHaveClass('h-dvh', 'overflow-y-scroll', 'fixed', 'inset-0')
   })
 
   it('supports profile create/edit/connect/delete button flows', async () => {
@@ -184,5 +215,85 @@ describe('RemoteConnectionPanel runtime harness', () => {
         challengeId: 'challenge-1'
       })
     )
+  })
+
+  it('shows default indicator and allows switching default profile', async () => {
+    const user = userEvent.setup()
+    const profileA = makeProfile({ id: 'profile-a', name: 'Alpha' })
+    const profileB = makeProfile({ id: 'profile-b', name: 'Bravo' })
+
+    useInvokeMock.mockImplementation((command: string) => {
+      if (command !== 'remote_ssh_profile_list') {
+        throw new Error(`Unexpected useInvoke command: ${command}`)
+      }
+      return { data: [profileA, profileB], error: null, isLoading: false }
+    })
+
+    useRemoteSshPreferences.getState().setDefaultProfileId('profile-a')
+
+    renderPanel()
+
+    expect(screen.getByTestId('ssh-profile-default-indicator-profile-a')).toBeInTheDocument()
+    expect(screen.getByTestId('ssh-profile-set-default-profile-b')).toBeInTheDocument()
+
+    await user.click(screen.getByTestId('ssh-profile-set-default-profile-b'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('ssh-profile-default-indicator-profile-b')).toBeInTheDocument()
+    })
+  })
+
+  it('uses search toggle and profile actions dialog in mobile mode', async () => {
+    const user = userEvent.setup()
+    const profileA = makeProfile({ id: 'profile-a', name: 'Alpha' })
+    const profileB = makeProfile({ id: 'profile-b', name: 'Bravo' })
+
+    isMobileMock.mockReturnValue(true)
+    useInvokeMock.mockImplementation((command: string) => {
+      if (command !== 'remote_ssh_profile_list') {
+        throw new Error(`Unexpected useInvoke command: ${command}`)
+      }
+      return { data: [profileA, profileB], error: null, isLoading: false }
+    })
+
+    useRemoteSshPreferences.getState().setDefaultProfileId('profile-a')
+
+    renderPanel()
+
+    expect(screen.getByTestId('ssh-search-toggle')).toBeInTheDocument()
+    expect(screen.queryByTestId('ssh-search-input')).not.toBeInTheDocument()
+
+    await user.click(screen.getByTestId('ssh-search-toggle'))
+    expect(screen.getByTestId('ssh-search-input')).toBeInTheDocument()
+
+    await user.type(screen.getByTestId('ssh-search-input'), 'Bravo')
+    expect(screen.queryByTestId('ssh-profile-card-profile-a')).not.toBeInTheDocument()
+    expect(screen.getByTestId('ssh-profile-card-profile-b')).toBeInTheDocument()
+
+    await user.click(screen.getByTestId('ssh-search-clear'))
+    await user.click(screen.getByTestId('ssh-profile-actions-profile-b'))
+    expect(screen.getByTestId('ssh-profile-actions-dialog')).toBeInTheDocument()
+
+    await user.click(screen.getByTestId('ssh-profile-action-set-default-profile-b'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('ssh-profile-default-indicator-profile-b')).toBeInTheDocument()
+    })
+  })
+
+  it('replaces connect with edit when key auth has no installed key', async () => {
+    const profile = makeProfile({ id: 'profile-no-key', name: 'NoKey', identityRef: undefined, identityFile: undefined })
+
+    useInvokeMock.mockImplementation((command: string) => {
+      if (command !== 'remote_ssh_profile_list') {
+        throw new Error(`Unexpected useInvoke command: ${command}`)
+      }
+      return { data: [profile], error: null, isLoading: false }
+    })
+
+    renderPanel()
+
+    expect(screen.queryByTestId('ssh-profile-connect-profile-no-key')).not.toBeInTheDocument()
+    expect(screen.getByTestId('ssh-profile-edit-required-profile-no-key')).toBeInTheDocument()
   })
 })

@@ -9,6 +9,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { Toaster } from '@/components/ui/sonner'
 import { WorkspacePanel } from '@/components/workspace'
 import { useInvoke } from '@/hooks/api'
+import { useRemoteSshPreferences } from '@/hooks/preferences/useRemoteSshPreferences'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { tauriListen } from '@/lib/tauri/events'
 import { BACKEND_DIAGNOSTIC_EVENT } from '@/lib/tauri/eventsContract'
@@ -184,6 +185,10 @@ function App() {
   if (!isTauri) return <NoBackendError />
 
   const handleProjectSelected = async (project: string) => {
+    if (remoteSshStatus?.activeProfileId) {
+      useRemoteSshPreferences.getState().ensureDefaultProfileId(remoteSshStatus.activeProfileId)
+    }
+
     queryClient.setQueryData(['app', 'project_lock_get'], project)
     const projectName = project.split('/').pop() || 'Unknown'
     try {

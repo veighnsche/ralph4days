@@ -2,6 +2,7 @@ import {
   clickByTestId,
   deleteAllProfiles,
   listProfileIds,
+  openProfileActions,
   saveScreenshot,
   setInputByTestId,
   switchToWebViewContext,
@@ -40,7 +41,8 @@ describe('iOS remote SSH Appium harness', () => {
     await saveScreenshot('remote-ssh-03-connect-dialog')
     await clickByTestId('ssh-connect-cancel-button')
 
-    await clickByTestId(`ssh-profile-delete-${profileId}`)
+    await openProfileActions(profileId)
+    await clickByTestId(`ssh-profile-action-delete-${profileId}`)
     await waitForTestId('ssh-delete-dialog')
     await saveScreenshot('remote-ssh-04-delete-dialog')
     await clickByTestId('ssh-delete-confirm-button')

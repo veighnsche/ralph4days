@@ -96,6 +96,16 @@ Use `just` as the primary task runner (`just --list`).
 - `fixtures/04-desktop-dev/.undetect-ralph/db/ralph.db` is a known persistent diff artifact and can be ignored in change lists unless explicitly asked to handle it.
 - If a known artifact or drift is encountered during validation, report it directly rather than adding guardrails to avoid detection.
 
+## Data Reality & Migration Policy
+- The only data in this project is mock/test data; no production data is used.
+- Treat this repository as non-production for schema evolution decisions.
+- For SQLite schema changes, always edit `crates/data-sqlite/src/migrations/001_initial.sql` directly.
+- Do not add sequential SQL migration files (for example `002_*.sql`, `003_*.sql`) unless the user explicitly requests it in that task.
+
+## Storage Ownership Policy
+- Project-scoped canonical data is stored in project SQLite (`.ralph/db/ralph.db`).
+- Global, non-project preferences/state is stored in frontend Zustand + persist.
+
 ## Commit & Pull Request Guidelines
 - Follow Conventional Commit-style prefixes seen in history: `feat(...)`, `fix(...)`, `refactor(...)`, `chore(...)`, `docs(...)`.
 - Keep commits scoped and functional; avoid mixing unrelated frontend/backend changes when possible.

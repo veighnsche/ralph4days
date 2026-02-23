@@ -12,10 +12,16 @@ APPIUM_HOST="${RALPH_IOS_E2E_APPIUM_HOST:-127.0.0.1}"
 APPIUM_PORT="${RALPH_IOS_E2E_APPIUM_PORT:-4723}"
 APPIUM_LOG="${RALPH_IOS_E2E_APPIUM_LOG:-/tmp/ralph-ios-e2e-appium.log}"
 SPEC_PATH="${TAURI_E2E_SPEC:-e2e-ios/remote-ssh.ios.spec.js}"
+RESET_APP_STATE="${RALPH_IOS_E2E_RESET_APP_STATE:-0}"
 ARCHIVE_DIR="src-tauri/gen/apple/build/ralph4days_iOS.xcarchive"
 
 if [ "${RUNNER}" != "appium" ] && [ "${RUNNER}" != "xctest" ]; then
   echo "❌ Unsupported RALPH_IOS_E2E_RUNNER: ${RUNNER} (expected: appium or xctest)"
+  exit 1
+fi
+
+if [ "${RESET_APP_STATE}" != "0" ] && [ "${RESET_APP_STATE}" != "1" ]; then
+  echo "❌ Unsupported RALPH_IOS_E2E_RESET_APP_STATE: ${RESET_APP_STATE} (expected: 0 or 1)"
   exit 1
 fi
 
@@ -146,9 +152,17 @@ echo "==> Booting simulator ${DEVICE} (${SIMULATOR_UDID})"
 xcrun simctl boot "${SIMULATOR_UDID}" >/dev/null 2>&1 || true
 xcrun simctl bootstatus "${SIMULATOR_UDID}" -b
 
-echo "==> Resetting app install for deterministic Appium session"
-xcrun simctl uninstall "${SIMULATOR_UDID}" "${APP_BUNDLE_ID}" >/dev/null 2>&1 || true
-xcrun simctl install "${SIMULATOR_UDID}" "${APP_PATH}"
+if [ "${RESET_APP_STATE}" = "1" ]; then
+  echo "==> Resetting app install for deterministic Appium session"
+  xcrun simctl uninstall "${SIMULATOR_UDID}" "${APP_BUNDLE_ID}" >/dev/null 2>&1 || true
+  xcrun simctl install "${SIMULATOR_UDID}" "${APP_PATH}"
+else
+  echo "==> Keeping app state across runs"
+  if ! xcrun simctl get_app_container "${SIMULATOR_UDID}" "${APP_BUNDLE_ID}" app >/dev/null 2>&1; then
+    echo "==> App is not installed yet; installing once"
+    xcrun simctl install "${SIMULATOR_UDID}" "${APP_PATH}"
+  fi
+fi
 
 echo "==> Starting Appium on ${APPIUM_HOST}:${APPIUM_PORT}"
 rm -f "${APPIUM_LOG}"
@@ -164,6 +178,7 @@ RALPH_IOS_E2E_BUNDLE_ID="${APP_BUNDLE_ID}" \
 RALPH_IOS_E2E_APP_PATH="${APP_PATH}" \
 RALPH_IOS_E2E_APPIUM_HOST="${APPIUM_HOST}" \
 RALPH_IOS_E2E_APPIUM_PORT="${APPIUM_PORT}" \
+RALPH_IOS_E2E_RESET_APP_STATE="${RESET_APP_STATE}" \
 bun x wdio run wdio.ios.appium.conf.js --spec "${SPEC_PATH}"
 
 echo "==> Appium screenshots written to: ${SCREENSHOT_DIR}"

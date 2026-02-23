@@ -47,7 +47,7 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-x-0 bottom-0 z-50 grid w-full max-h-[calc(100svh-var(--mobile-sheet-edge))] gap-[var(--mobile-gap)] rounded-t-[var(--mobile-sheet-radius)] border p-[var(--mobile-sheet-padding)] pb-[calc(env(safe-area-inset-bottom)+var(--mobile-sheet-padding))] shadow-sm duration-150 outline-none data-[state=closed]:slide-out-to-bottom-4 data-[state=open]:slide-in-from-bottom-4 sm:inset-x-auto sm:top-[50%] sm:bottom-auto sm:left-[50%] sm:w-full sm:max-h-[calc(100svh-2rem)] sm:max-w-lg sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:p-4 sm:pb-4 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95',
+          'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-x-0 bottom-0 z-50 grid w-full max-h-[calc(100dvh-var(--mobile-sheet-edge))] gap-[var(--mobile-gap)] rounded-t-[var(--mobile-sheet-radius)] border p-[var(--mobile-sheet-padding)] pb-[calc(env(safe-area-inset-bottom)+var(--mobile-sheet-padding))] shadow-sm duration-150 outline-none data-[state=closed]:slide-out-to-bottom-4 data-[state=open]:slide-in-from-bottom-4 sm:inset-x-auto sm:top-[50%] sm:bottom-auto sm:left-[50%] sm:w-full sm:max-h-[calc(100dvh-2rem)] sm:max-w-lg sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:p-4 sm:pb-4 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95',
           className
         )}
         {...props}>

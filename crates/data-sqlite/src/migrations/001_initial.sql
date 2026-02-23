@@ -18,6 +18,7 @@ CREATE TABLE subsystems (
   name TEXT NOT NULL UNIQUE COLLATE NOCASE,
   display_name TEXT NOT NULL,
   acronym TEXT NOT NULL UNIQUE,
+  class_number INTEGER CHECK(class_number IN (1, 2, 3) OR class_number IS NULL),
   description TEXT,
   architecture TEXT,
   boundaries TEXT,

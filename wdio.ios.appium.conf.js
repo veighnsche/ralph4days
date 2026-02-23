@@ -9,6 +9,7 @@ const deviceName = process.env.RALPH_IOS_E2E_DEVICE?.trim() || 'iPhone 17 Pro'
 const bundleId = process.env.RALPH_IOS_E2E_BUNDLE_ID?.trim() || 'com.vince.ralph'
 const udid = process.env.RALPH_IOS_E2E_UDID?.trim()
 const appPathRaw = process.env.RALPH_IOS_E2E_APP_PATH?.trim()
+const resetAppState = process.env.RALPH_IOS_E2E_RESET_APP_STATE === '1'
 
 if (!Number.isInteger(appiumPort) || appiumPort < 1 || appiumPort > 65535) {
   throw new Error(`Invalid RALPH_IOS_E2E_APPIUM_PORT value '${appiumPortRaw}'`)
@@ -32,7 +33,7 @@ const capability = {
   'appium:platformVersion': process.env.RALPH_IOS_E2E_PLATFORM_VERSION?.trim(),
   'appium:bundleId': bundleId,
   'appium:app': appPath,
-  'appium:noReset': false,
+  'appium:noReset': !resetAppState,
   'appium:includeSafariInWebviews': true,
   'appium:webviewConnectRetries': 20,
   'appium:webviewConnectTimeout': 120000,

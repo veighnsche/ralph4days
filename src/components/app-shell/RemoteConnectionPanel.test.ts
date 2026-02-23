@@ -23,7 +23,7 @@ describe('orderProfilesForDisplay', () => {
       makeProfile({ id: 'a', name: 'Active', lastUsedAt: '2026-02-16T01:00:00.000Z' })
     ]
 
-    const ordered = orderProfilesForDisplay(profiles, 'a')
+    const ordered = orderProfilesForDisplay(profiles, 'a', null)
 
     expect(ordered[0]?.id).toBe('a')
     expect(ordered[1]?.id).toBe('b')
@@ -36,9 +36,21 @@ describe('orderProfilesForDisplay', () => {
       makeProfile({ id: 'b', name: 'Bravo', lastUsedAt: '2026-02-16T03:00:00.000Z' })
     ]
 
-    const ordered = orderProfilesForDisplay(profiles, undefined)
+    const ordered = orderProfilesForDisplay(profiles, undefined, null)
 
     expect(ordered.map(profile => profile.id)).toEqual(['a', 'b', 'c'])
+  })
+
+  it('prioritizes default profile when no active profile is present', () => {
+    const profiles: RemoteSshProfile[] = [
+      makeProfile({ id: 'a', name: 'Alpha', lastUsedAt: '2026-02-16T03:00:00.000Z' }),
+      makeProfile({ id: 'b', name: 'Bravo', lastUsedAt: '2026-02-16T01:00:00.000Z' }),
+      makeProfile({ id: 'c', name: 'Charlie', lastUsedAt: '2026-02-16T04:00:00.000Z' })
+    ]
+
+    const ordered = orderProfilesForDisplay(profiles, undefined, 'b')
+
+    expect(ordered.map(profile => profile.id)).toEqual(['b', 'c', 'a'])
   })
 })
 

@@ -556,6 +556,41 @@ fn test_create_subsystem() {
 }
 
 #[test]
+fn test_create_subsystem_class_number_roundtrip() {
+    let db = create_test_db();
+    db.create_subsystem(SubsystemInput {
+        name: "billing".into(),
+        display_name: "Billing".into(),
+        acronym: "BILL".into(),
+        class_number: Some(1),
+        description: None,
+    })
+    .unwrap();
+
+    let subsystems = db.get_subsystems().unwrap();
+    let subsystem = subsystems.iter().find(|f| f.name == "billing").unwrap();
+    assert_eq!(subsystem.class_number, Some(1));
+}
+
+#[test]
+fn test_create_subsystem_invalid_class_number_rejected() {
+    let db = create_test_db();
+    let result = db.create_subsystem(SubsystemInput {
+        name: "billing".into(),
+        display_name: "Billing".into(),
+        acronym: "BILL".into(),
+        class_number: Some(4),
+        description: None,
+    });
+
+    assert!(result.is_err());
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("class number must be 1, 2, or 3"));
+}
+
+#[test]
 fn test_create_duplicate_subsystem_rejected() {
     let db = create_test_db();
     db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
@@ -594,6 +629,26 @@ fn test_update_subsystem() {
     assert_eq!(f.display_name, "Authentication");
     assert_eq!(f.description, Some("Updated".into()));
     assert!(f.created.is_some()); // Preserved
+}
+
+#[test]
+fn test_update_subsystem_class_number() {
+    let db = create_test_db();
+    db.create_subsystem(subsystem("auth", "Auth", "AUTH"))
+        .unwrap();
+
+    db.update_subsystem(SubsystemInput {
+        name: "auth".into(),
+        display_name: "Auth".into(),
+        acronym: "AUTH".into(),
+        class_number: Some(2),
+        description: None,
+    })
+    .unwrap();
+
+    let subsystems = db.get_subsystems().unwrap();
+    let subsystem = subsystems.iter().find(|f| f.name == "auth").unwrap();
+    assert_eq!(subsystem.class_number, Some(2));
 }
 
 #[test]

@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Clock3, Plus, ShieldAlert, Trash2, Wifi } from 'lucide-react'
+import { Plus, ShieldAlert } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { InlineError } from '@/components/shared'
 import {
@@ -12,7 +12,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from '@/components/ui/alert-dialog'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -23,16 +22,19 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { DottedList, DottedListItem } from '@/components/ui/dotted-list'
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { MobileScrollPage } from '@/components/ui/mobile-scroll-page'
 import { Separator } from '@/components/ui/separator'
-import { Switch } from '@/components/ui/switch'
 import { useInvoke } from '@/hooks/api'
+import { useRemoteSshPreferences } from '@/hooks/preferences/useRemoteSshPreferences'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { RemoteSshProfileEditorDialog } from '@/components/app-shell/remote-ssh/ProfileEditorDialog'
+import { ConnectPromptState, ProfileDraft } from '@/components/app-shell/remote-ssh/types'
 import { RalphIpcError, tauriInvoke } from '@/lib/tauri/invoke'
-import { cn } from '@/lib/utils'
+import { RemoteSshProfileActionsDrawer, RemoteSshProfilesSection } from '@/components/app-shell/remote-ssh/ProfileListSection'
 import type {
-  RemoteSshAuthMode,
   RemoteSshConnectResult,
   RemoteSshHostKeyChallenge,
   RemoteSshProfile,
@@ -43,32 +45,6 @@ import type {
 const LEGACY_STORAGE_KEY = 'ralph.remote.sshProfile.v1'
 const DEFAULT_SSH_PORT = 22
 const DEFAULT_REMOTE_PORT = 9944
-
-type ProfileAuthMode = RemoteSshAuthMode
-
-interface ProfileDraft {
-  id?: string
-  name: string
-  host: string
-  username: string
-  sshPort: string
-  remotePort: string
-  authMode: ProfileAuthMode
-  identityFile: string
-  identityRef: string
-  knownHostsFile: string
-  autoReconnectEnabled: boolean
-  password: string
-  savePassword: boolean
-  keyPassphrase: string
-  saveKeyPassphrase: boolean
-}
-
-interface ConnectPromptState {
-  profile: RemoteSshProfile
-  password: string
-  keyPassphrase: string
-}
 
 interface LegacyStoredProfile {
   host: string
@@ -198,6 +174,25 @@ function extractHostKeyChallenge(error: unknown): RemoteSshHostKeyChallenge | nu
   return isHostKeyChallengeLike(item.value) ? item.value : null
 }
 
+function normalizePanelError(error: unknown): Error | string {
+  if (error instanceof Error) return error
+  if (typeof error === 'string') return error
+
+  if (error && typeof error === 'object') {
+    const message = (error as { message?: unknown }).message
+    if (typeof message === 'string' && message.trim().length > 0) {
+      return message
+    }
+    try {
+      return JSON.stringify(error)
+    } catch {
+      return 'Unserializable error object'
+    }
+  }
+
+  return String(error)
+}
+
 async function fileToBase64(file: File): Promise<string> {
   const bytes = new Uint8Array(await file.arrayBuffer())
   let binary = ''
@@ -237,12 +232,17 @@ export function formatLastUsed(lastUsedAt: string | undefined): string | null {
 
 export function orderProfilesForDisplay(
   profiles: RemoteSshProfile[],
-  activeProfileId: string | undefined
+  activeProfileId: string | undefined,
+  defaultProfileId: string | null
 ): RemoteSshProfile[] {
   return profiles.slice().sort((a, b) => {
     const aIsActive = activeProfileId === a.id ? 1 : 0
     const bIsActive = activeProfileId === b.id ? 1 : 0
     if (aIsActive !== bIsActive) return bIsActive - aIsActive
+
+    const aIsDefault = defaultProfileId === a.id ? 1 : 0
+    const bIsDefault = defaultProfileId === b.id ? 1 : 0
+    if (aIsDefault !== bIsDefault) return bIsDefault - aIsDefault
 
     const aLastUsed = a.lastUsedAt ? Date.parse(a.lastUsedAt) : 0
     const bLastUsed = b.lastUsedAt ? Date.parse(b.lastUsedAt) : 0
@@ -260,7 +260,10 @@ export function RemoteConnectionPanel({
   onConnected,
   onDisconnected
 }: RemoteConnectionPanelProps) {
+  const isMobile = useIsMobile()
   const queryClient = useQueryClient()
+  const defaultProfileId = useRemoteSshPreferences(s => s.defaultProfileId)
+  const setDefaultProfileId = useRemoteSshPreferences(s => s.setDefaultProfileId)
   const {
     data: profiles,
     error: profilesError,
@@ -268,6 +271,7 @@ export function RemoteConnectionPanel({
   } = useInvoke<RemoteSshProfile[]>('remote_ssh_profile_list')
 
   const [search, setSearch] = useState('')
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [panelError, setPanelError] = useState<Error | string | null>(null)
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [draft, setDraft] = useState<ProfileDraft>(defaultDraft())
@@ -282,9 +286,12 @@ export function RemoteConnectionPanel({
   const [isDisconnecting, setIsDisconnecting] = useState(false)
   const [hostKeyChallenge, setHostKeyChallenge] = useState<RemoteSshHostKeyChallenge | null>(null)
   const [isApprovingHostKey, setIsApprovingHostKey] = useState(false)
+  const [profileActionsProfileId, setProfileActionsProfileId] = useState<string | null>(null)
   const pendingConnectRef = useRef<ConnectPromptState | null>(null)
   const didMigrateLegacyRef = useRef(false)
   const didAutoReconnectRef = useRef(false)
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
+  const searchToggleRef = useRef<HTMLButtonElement | null>(null)
 
   useEffect(() => {
     if (!statusError) return
@@ -329,7 +336,7 @@ export function RemoteConnectionPanel({
         void queryClient.invalidateQueries({ queryKey: ['app', 'remote_ssh_profile_list'] })
         onDisconnected()
       } catch (error) {
-        setPanelError(error instanceof Error ? error : String(error))
+        setPanelError(normalizePanelError(error))
       }
     })()
   }, [profiles, onDisconnected, queryClient])
@@ -376,7 +383,7 @@ export function RemoteConnectionPanel({
           pendingConnectRef.current = { profile: target, password: '', keyPassphrase: '' }
           setHostKeyChallenge(challenge)
         } else {
-          setPanelError(error instanceof Error ? error : String(error))
+          setPanelError(normalizePanelError(error))
         }
       } finally {
         setIsConnecting(false)
@@ -394,12 +401,40 @@ export function RemoteConnectionPanel({
     )
   })
 
-  const orderedProfiles = orderProfilesForDisplay(filteredProfiles, sshStatus?.activeProfileId)
+  const orderedProfiles = orderProfilesForDisplay(filteredProfiles, sshStatus?.activeProfileId, defaultProfileId)
 
-  const activeProfile = (profiles ?? []).find(profile => profile.id === sshStatus?.activeProfileId) ?? null
   const hasProfiles = (profiles ?? []).length > 0
   const quickConnectProfile =
     orderedProfiles.find(profile => profile.id === sshStatus?.activeProfileId) ?? orderedProfiles[0] ?? null
+  const profileActionsProfile =
+    orderedProfiles.find(profile => profile.id === profileActionsProfileId) ??
+    (profiles ?? []).find(profile => profile.id === profileActionsProfileId) ??
+    null
+
+  useEffect(() => {
+    if (!isSearchOpen) return
+    searchInputRef.current?.focus()
+  }, [isSearchOpen])
+
+  useEffect(() => {
+    if (isMobile) return
+    setIsSearchOpen(false)
+  }, [isMobile])
+
+  const toggleSearch = () => {
+    setIsSearchOpen(prev => {
+      const next = !prev
+      if (!next) {
+        searchToggleRef.current?.focus()
+      }
+      return next
+    })
+  }
+
+  const closeSearch = () => {
+    setIsSearchOpen(false)
+    searchToggleRef.current?.focus()
+  }
 
   const openNewProfile = () => {
     setDraft(defaultDraft())
@@ -466,7 +501,7 @@ export function RemoteConnectionPanel({
       void queryClient.invalidateQueries({ queryKey: ['app', 'remote_ssh_profile_list'] })
       onDisconnected()
     } catch (error) {
-      setPanelError(error instanceof Error ? error : String(error))
+      setPanelError(normalizePanelError(error))
     } finally {
       setIsSavingProfile(false)
     }
@@ -477,11 +512,14 @@ export function RemoteConnectionPanel({
     setIsDeletingProfile(true)
     try {
       await tauriInvoke('remote_ssh_profile_delete', { profileId })
+      if (defaultProfileId === profileId) {
+        setDefaultProfileId(null)
+      }
       setProfileIdToDelete(null)
       void queryClient.invalidateQueries({ queryKey: ['app', 'remote_ssh_profile_list'] })
       onDisconnected()
     } catch (error) {
-      setPanelError(error instanceof Error ? error : String(error))
+      setPanelError(normalizePanelError(error))
     } finally {
       setIsDeletingProfile(false)
     }
@@ -507,7 +545,7 @@ export function RemoteConnectionPanel({
         pendingConnectRef.current = prompt
         setHostKeyChallenge(challenge)
       } else {
-        setPanelError(error instanceof Error ? error : String(error))
+        setPanelError(normalizePanelError(error))
       }
     } finally {
       setIsConnecting(false)
@@ -528,7 +566,7 @@ export function RemoteConnectionPanel({
         await connectProfile(pending)
       }
     } catch (error) {
-      setPanelError(error instanceof Error ? error : String(error))
+      setPanelError(normalizePanelError(error))
     } finally {
       setIsApprovingHostKey(false)
     }
@@ -542,7 +580,7 @@ export function RemoteConnectionPanel({
         challengeId: hostKeyChallenge.challengeId
       })
     } catch (error) {
-      setPanelError(error instanceof Error ? error : String(error))
+      setPanelError(normalizePanelError(error))
     } finally {
       pendingConnectRef.current = null
       setHostKeyChallenge(null)
@@ -561,59 +599,71 @@ export function RemoteConnectionPanel({
       await tauriInvoke('remote_ssh_disconnect')
       onDisconnected()
     } catch (error) {
-      setPanelError(error instanceof Error ? error : String(error))
+      setPanelError(normalizePanelError(error))
     } finally {
       setIsDisconnecting(false)
     }
   }
 
+  const openProfileActions = (profileId: string) => {
+    setProfileActionsProfileId(profileId)
+  }
+
+  const closeProfileActions = () => {
+    setProfileActionsProfileId(null)
+  }
+
+  const editProfileFromActions = () => {
+    if (!profileActionsProfile) {
+      throw new Error('Profile actions dialog opened without a selected profile')
+    }
+    setProfileActionsProfileId(null)
+    openEditProfile(profileActionsProfile)
+  }
+
+  const deleteProfileFromActions = () => {
+    if (!profileActionsProfile) {
+      throw new Error('Delete profile action requested without a selected profile')
+    }
+    setProfileActionsProfileId(null)
+    setProfileIdToDelete(profileActionsProfile.id)
+  }
+
+  const setDefaultFromActions = () => {
+    if (!profileActionsProfile) {
+      throw new Error('Set default action requested without a selected profile')
+    }
+    if (defaultProfileId === profileActionsProfile.id) return
+    setDefaultProfileId(profileActionsProfile.id)
+    setProfileActionsProfileId(null)
+  }
+
   return (
-    <div className="min-h-svh bg-background">
+    <MobileScrollPage className="fixed inset-0" includeBounceSentinel={false} data-testid="ssh-page-scroll-root">
       <div className="mx-auto w-full max-w-md px-[var(--mobile-card-padding-inline)] pb-[calc(env(safe-area-inset-bottom)+var(--mobile-gap-loose))] pt-[calc(env(safe-area-inset-top)+var(--mobile-gap))]">
         <Card className="border-border/70 bg-card/95 shadow-md backdrop-blur-sm" data-testid="ssh-connections-panel">
           <CardHeader className="gap-2 pb-1">
-            <CardTitle className="text-xl tracking-tight">SSH Connections</CardTitle>
+            <CardTitle className="text-xl tracking-tight">Connect to Ralph</CardTitle>
             <CardDescription>
-              Mobile connects to ralphd through embedded SSH. Save multiple connections and connect without typing WS
-              endpoints.
+              <DottedList>
+                <DottedListItem>Securely reach your remote Ralph server.</DottedListItem>
+                <DottedListItem>Use one profile across Linux, Windows, and macOS.</DottedListItem>
+                <DottedListItem>Approve host fingerprints before any SSH trust.</DottedListItem>
+              </DottedList>
             </CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-[var(--mobile-gap-loose)]">
             <InlineError error={panelError ?? profilesError ?? null} onDismiss={() => setPanelError(null)} />
 
-            <div
-              data-testid="ssh-tunnel-status"
-              className={cn(
-                'rounded-[var(--mobile-surface-radius)] border px-3.5 py-3.5 transition-[border-color,background-color,box-shadow] duration-200',
-                sshStatus?.active
-                  ? 'border-emerald-500/40 bg-emerald-500/10 shadow-[0_0_0_1px_rgba(16,185,129,0.22)]'
-                  : 'border-border bg-muted/20'
-              )}>
-              <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                <span
-                  className={cn(
-                    'size-2 rounded-full',
-                    sshStatus?.active
-                      ? 'bg-emerald-400 shadow-[0_0_0_4px_rgba(16,185,129,0.18)] animate-pulse'
-                      : 'bg-muted-foreground/60'
-                  )}
-                />
-                Tunnel status
+            <div className="rounded-[var(--mobile-surface-radius)] border border-amber-500/40 bg-amber-500/10 px-3 py-3">
+              <p className="flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-300">
+                <ShieldAlert className="h-3.5 w-3.5" />
+                Host key verification required
               </p>
-              <p className="mt-1 text-base leading-tight font-semibold">
-                {sshStatus?.active
-                  ? `${sshStatus.username ?? activeProfile?.username ?? 'unknown'}@${sshStatus.host ?? activeProfile?.host ?? 'unknown'}`
-                  : 'Disconnected'}
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Unknown host keys are never auto-trusted. You must explicitly approve fingerprints.
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {sshStatus?.active
-                  ? `SSH ${sshStatus.sshPort ?? activeProfile?.sshPort ?? DEFAULT_SSH_PORT} -> ralphd:${sshStatus.remotePort ?? activeProfile?.remotePort ?? DEFAULT_REMOTE_PORT}`
-                  : 'Select a profile below to start a secure tunnel.'}
-              </p>
-              {sshStatus?.active ? (
-                <p className="mt-2 text-[11px] text-muted-foreground">Session {sshStatus.sshSessionId ?? 'unknown'}</p>
-              ) : null}
             </div>
 
             <div className="space-y-[var(--mobile-gap)]">
@@ -626,18 +676,20 @@ export function RemoteConnectionPanel({
                 <Plus className="h-4 w-4" /> New Profile
               </Button>
 
-              <Field className="gap-1.5">
-                <FieldLabel className="text-[11px] uppercase tracking-wide text-muted-foreground">Search</FieldLabel>
-                <Input
-                  data-testid="ssh-search-input"
-                  value={search}
-                  onChange={event => setSearch(event.target.value)}
-                  placeholder="Search profiles"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  spellCheck={false}
-                />
-              </Field>
+              {!isMobile ? (
+                <Field className="gap-1.5">
+                  <FieldLabel className="text-[11px] uppercase tracking-wide text-muted-foreground">Search</FieldLabel>
+                  <Input
+                    data-testid="ssh-search-input"
+                    value={search}
+                    onChange={event => setSearch(event.target.value)}
+                    placeholder="Search profiles"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                  />
+                </Field>
+              ) : null}
             </div>
 
             {status?.connected ? (
@@ -652,378 +704,62 @@ export function RemoteConnectionPanel({
 
             <Separator />
 
-            <div className="space-y-[var(--mobile-gap-tight)]">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold">Saved Profiles</p>
-                <p className="text-xs text-muted-foreground">
-                  {orderedProfiles.length}
-                  {search.trim().length > 0 ? ' matching' : ' total'}
-                </p>
-              </div>
-
-              {isLoadingProfiles ? (
-                <div className="text-sm text-muted-foreground">Loading profiles...</div>
-              ) : orderedProfiles.length === 0 ? (
-                <div className="rounded-lg border border-dashed px-3 py-4 text-sm text-muted-foreground">
-                  {hasProfiles ? `No profiles match "${search.trim()}".` : 'No SSH profiles saved yet.'}
-                </div>
-              ) : (
-                // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Profile rows intentionally include status, trust, and action controls in one mobile-first block.
-                orderedProfiles.map(profile => {
-                  const isActive = sshStatus?.activeProfileId === profile.id
-                  const lastUsed = formatLastUsed(profile.lastUsedAt)
-                  return (
-                    <div
-                      key={profile.id}
-                      data-testid={`ssh-profile-card-${profile.id}`}
-                      className={cn(
-                        'group/profile rounded-[var(--mobile-surface-radius)] border px-3.5 py-3.5 transition-[transform,border-color,background-color,box-shadow] duration-200 ease-out active:scale-[0.995]',
-                        isActive
-                          ? 'border-primary/70 bg-primary/5 ring-1 ring-primary/30 shadow-sm'
-                          : 'border-border/80 sm:hover:border-primary/30'
-                      )}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate text-base leading-tight font-semibold">{profile.name}</p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {profile.username}@{profile.host}:{profile.sshPort}
-                          </p>
-                          <p className="text-xs text-muted-foreground">ralphd:{profile.remotePort}</p>
-                        </div>
-                        <div className="flex shrink-0 flex-col items-end gap-1.5">
-                          <Badge variant="outline">{profile.authMode}</Badge>
-                          {profile.autoReconnectEnabled ? <Badge variant="secondary">Auto Reconnect</Badge> : null}
-                          {isActive ? (
-                            <Badge className="gap-1.5">
-                              <span className="relative flex size-2">
-                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-60" />
-                                <span className="relative inline-flex size-2 rounded-full bg-current" />
-                              </span>
-                              Active
-                            </Badge>
-                          ) : null}
-                        </div>
-                      </div>
-
-                      {lastUsed ? (
-                        <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
-                          <Clock3 className="h-3 w-3" />
-                          Last used {lastUsed}
-                        </p>
-                      ) : null}
-
-                      <div className="mt-3 space-y-2">
-                        <Button
-                          onClick={() => setConnectPrompt({ profile, password: '', keyPassphrase: '' })}
-                          disabled={isConnecting || isDisconnecting}
-                          data-testid={`ssh-profile-connect-${profile.id}`}
-                          className="w-full">
-                          <Wifi className="h-4 w-4" />
-                          Connect
-                        </Button>
-                        <div className="grid grid-cols-2 gap-[var(--mobile-gap-tight)]">
-                          <Button
-                            variant="outline"
-                            onClick={() => openEditProfile(profile)}
-                            disabled={isSavingProfile}
-                            data-testid={`ssh-profile-edit-${profile.id}`}>
-                            Edit
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={() => setProfileIdToDelete(profile.id)}
-                            disabled={isDeletingProfile}
-                            data-testid={`ssh-profile-delete-${profile.id}`}>
-                            <Trash2 className="h-4 w-4" />
-                            Delete
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })
-              )}
-            </div>
-
-            {!status?.connected && quickConnectProfile ? (
-              <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+var(--mobile-gap-tight))] z-10 rounded-[var(--mobile-surface-radius)] border border-primary/40 bg-background/85 p-[var(--mobile-gap-tight)] shadow-lg backdrop-blur-md">
-                <p className="px-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                  Quick connect
-                </p>
-                <Button
-                  onClick={() => setConnectPrompt({ profile: quickConnectProfile, password: '', keyPassphrase: '' })}
-                  disabled={isConnecting || isDisconnecting}
-                  data-testid="ssh-quick-connect-button"
-                  className="mt-1 w-full justify-between">
-                  <span className="truncate">Connect {quickConnectProfile.name}</span>
-                  <Wifi className="h-4 w-4 shrink-0" />
-                </Button>
-              </div>
-            ) : null}
-
-            <div className="rounded-[var(--mobile-surface-radius)] border border-amber-500/40 bg-amber-500/10 px-3 py-3">
-              <p className="flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-300">
-                <ShieldAlert className="h-3.5 w-3.5" />
-                Host key verification required
-              </p>
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                Unknown host keys are never auto-trusted. You must explicitly approve fingerprints.
-              </p>
-            </div>
+            <RemoteSshProfilesSection
+              isMobile={isMobile}
+              search={search}
+              isSearchOpen={isSearchOpen}
+              setSearch={setSearch}
+              toggleSearch={toggleSearch}
+              closeSearch={closeSearch}
+              searchInputRef={searchInputRef}
+              searchToggleRef={searchToggleRef}
+              isLoadingProfiles={isLoadingProfiles}
+              orderedProfiles={orderedProfiles}
+              hasProfiles={hasProfiles}
+              activeProfileId={sshStatus?.activeProfileId}
+              defaultProfileId={defaultProfileId}
+              isConnecting={isConnecting}
+              isDisconnecting={isDisconnecting}
+              isSavingProfile={isSavingProfile}
+              isDeletingProfile={isDeletingProfile}
+              statusConnected={status?.connected === true}
+              quickConnectProfile={quickConnectProfile}
+              formatLastUsed={formatLastUsed}
+              onConnectProfile={profile => setConnectPrompt({ profile, password: '', keyPassphrase: '' })}
+              onOpenProfileActions={openProfileActions}
+              onOpenEditProfile={openEditProfile}
+              onDeleteProfile={profileId => setProfileIdToDelete(profileId)}
+              onSetDefaultProfile={setDefaultProfileId}
+            />
           </CardContent>
         </Card>
       </div>
 
-      <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>
-        <DialogContent
-          className="max-h-[calc(100svh-0.75rem)] overflow-y-auto sm:max-h-[90svh]"
-          data-testid="ssh-profile-editor">
-          <DialogHeader>
-            <DialogTitle>{draft.id ? 'Edit SSH Profile' : 'New SSH Profile'}</DialogTitle>
-            <DialogDescription>
-              Profile metadata is stored by backend ownership. Secrets are optional and keychain-backed.
-            </DialogDescription>
-          </DialogHeader>
+      <RemoteSshProfileActionsDrawer
+        profile={profileActionsProfile}
+        defaultProfileId={defaultProfileId}
+        isSavingProfile={isSavingProfile}
+        isDeletingProfile={isDeletingProfile}
+        onOpenChange={open => (open ? null : closeProfileActions())}
+        onEdit={editProfileFromActions}
+        onDelete={deleteProfileFromActions}
+        onSetDefault={setDefaultFromActions}
+      />
 
-          <FieldGroup className="space-y-4">
-            <Field>
-              <FieldLabel>Profile Name</FieldLabel>
-              <Input
-                data-testid="ssh-profile-name-input"
-                value={draft.name}
-                onChange={event => setDraft(prev => ({ ...prev, name: event.target.value }))}
-                placeholder="Work Mac"
-                autoCapitalize="words"
-                autoCorrect="off"
-                spellCheck={false}
-              />
-            </Field>
-
-            <Field>
-              <FieldLabel>SSH Host</FieldLabel>
-              <Input
-                data-testid="ssh-host-input"
-                value={draft.host}
-                onChange={event => setDraft(prev => ({ ...prev, host: event.target.value }))}
-                placeholder="dev.example.com"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-              />
-            </Field>
-
-            <Field>
-              <FieldLabel>SSH Username</FieldLabel>
-              <Input
-                data-testid="ssh-username-input"
-                value={draft.username}
-                onChange={event => setDraft(prev => ({ ...prev, username: event.target.value }))}
-                placeholder="vince"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-              />
-            </Field>
-
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <Field>
-                <FieldLabel>SSH Port</FieldLabel>
-                <Input
-                  data-testid="ssh-port-input"
-                  value={draft.sshPort}
-                  onChange={event => setDraft(prev => ({ ...prev, sshPort: event.target.value }))}
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                />
-              </Field>
-
-              <Field>
-                <FieldLabel>Ralphd Port</FieldLabel>
-                <Input
-                  data-testid="ralphd-port-input"
-                  value={draft.remotePort}
-                  onChange={event => setDraft(prev => ({ ...prev, remotePort: event.target.value }))}
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                />
-              </Field>
-            </div>
-
-            <Field>
-              <FieldLabel>Auth Mode</FieldLabel>
-              <Select
-                value={draft.authMode}
-                onValueChange={value =>
-                  setDraft(prev =>
-                    value === 'password'
-                      ? {
-                          ...prev,
-                          authMode: value as ProfileAuthMode,
-                          identityFile: '',
-                          identityRef: '',
-                          keyPassphrase: '',
-                          saveKeyPassphrase: false
-                        }
-                      : {
-                          ...prev,
-                          authMode: value as ProfileAuthMode,
-                          password: '',
-                          savePassword: false
-                        }
-                  )
-                }>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="key">Key</SelectItem>
-                  <SelectItem value="password">Password</SelectItem>
-                </SelectContent>
-              </Select>
-              <FieldDescription>Choose how this profile authenticates over SSH.</FieldDescription>
-            </Field>
-
-            <details className="rounded-lg border px-3 py-2">
-              <summary className="cursor-pointer text-sm font-medium">Advanced Paths (Optional)</summary>
-              <div className="mt-3 space-y-3">
-                <Field>
-                  <FieldLabel>Known Hosts File</FieldLabel>
-                  <Input
-                    value={draft.knownHostsFile}
-                    onChange={event => setDraft(prev => ({ ...prev, knownHostsFile: event.target.value }))}
-                    placeholder="/Users/vince/.ssh/known_hosts"
-                    autoCapitalize="none"
-                    autoCorrect="off"
-                    spellCheck={false}
-                  />
-                </Field>
-
-                {draft.authMode === 'key' ? (
-                  <Field>
-                    <FieldLabel>Identity File Path</FieldLabel>
-                    <Input
-                      value={draft.identityFile}
-                      onChange={event => setDraft(prev => ({ ...prev, identityFile: event.target.value }))}
-                      placeholder="/Users/vince/.ssh/id_ed25519"
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                      spellCheck={false}
-                    />
-                    <FieldDescription>Leave blank to use default SSH key discovery.</FieldDescription>
-                  </Field>
-                ) : null}
-              </div>
-            </details>
-
-            {draft.authMode === 'key' ? (
-              <>
-                <Field>
-                  <FieldLabel>Import Private Key (Optional)</FieldLabel>
-                  <Input
-                    type="file"
-                    onChange={event => setImportKeyFile(event.target.files?.[0] ?? null)}
-                    accept=".pem,.key,.ppk,.txt,*/*"
-                  />
-                  <FieldDescription>
-                    Imported key material is stored as secret and bound to this profile.
-                  </FieldDescription>
-                </Field>
-
-                {importKeyFile ? (
-                  <>
-                    <Field>
-                      <FieldLabel>Import Key Passphrase (Optional)</FieldLabel>
-                      <Input
-                        type="password"
-                        value={importKeyPassphrase}
-                        onChange={event => setImportKeyPassphrase(event.target.value)}
-                      />
-                    </Field>
-                    <Field className="flex items-center justify-between rounded-lg border px-3 py-2">
-                      <div>
-                        <FieldLabel>Save Import Passphrase</FieldLabel>
-                        <FieldDescription>Store passphrase in keychain for reconnects.</FieldDescription>
-                      </div>
-                      <Switch checked={saveImportKeyPassphrase} onCheckedChange={setSaveImportKeyPassphrase} />
-                    </Field>
-                  </>
-                ) : null}
-
-                <Field>
-                  <FieldLabel>Key Passphrase (Optional)</FieldLabel>
-                  <Input
-                    type="password"
-                    value={draft.keyPassphrase}
-                    onChange={event => setDraft(prev => ({ ...prev, keyPassphrase: event.target.value }))}
-                  />
-                </Field>
-
-                <Field className="flex items-center justify-between rounded-lg border px-3 py-2">
-                  <div>
-                    <FieldLabel>Save Key Passphrase</FieldLabel>
-                    <FieldDescription>Persist passphrase in keychain for this profile.</FieldDescription>
-                  </div>
-                  <Switch
-                    checked={draft.saveKeyPassphrase}
-                    onCheckedChange={checked => setDraft(prev => ({ ...prev, saveKeyPassphrase: checked }))}
-                  />
-                </Field>
-              </>
-            ) : (
-              <>
-                <Field>
-                  <FieldLabel>Password</FieldLabel>
-                  <Input
-                    type="password"
-                    value={draft.password}
-                    onChange={event => setDraft(prev => ({ ...prev, password: event.target.value }))}
-                  />
-                </Field>
-
-                <Field className="flex items-center justify-between rounded-lg border px-3 py-2">
-                  <div>
-                    <FieldLabel>Save Password</FieldLabel>
-                    <FieldDescription>Persist password in keychain for this profile.</FieldDescription>
-                  </div>
-                  <Switch
-                    checked={draft.savePassword}
-                    onCheckedChange={checked => setDraft(prev => ({ ...prev, savePassword: checked }))}
-                  />
-                </Field>
-              </>
-            )}
-
-            <Field className="flex items-center justify-between rounded-lg border px-3 py-2">
-              <div>
-                <FieldLabel>Auto Reconnect</FieldLabel>
-                <FieldDescription>Attempt one reconnect at app launch.</FieldDescription>
-              </div>
-              <Switch
-                checked={draft.autoReconnectEnabled}
-                onCheckedChange={checked => setDraft(prev => ({ ...prev, autoReconnectEnabled: checked }))}
-              />
-            </Field>
-          </FieldGroup>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsEditorOpen(false)}
-              disabled={isSavingProfile}
-              data-testid="ssh-profile-cancel-button"
-              className="w-full sm:w-auto">
-              Cancel
-            </Button>
-            <Button
-              onClick={saveProfile}
-              disabled={isSavingProfile}
-              data-testid="ssh-profile-save-button"
-              className="w-full sm:w-auto">
-              {isSavingProfile ? 'Saving...' : 'Save Profile'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <RemoteSshProfileEditorDialog
+        isOpen={isEditorOpen}
+        onOpenChange={setIsEditorOpen}
+        draft={draft}
+        setDraft={setDraft}
+        importKeyFile={importKeyFile}
+        setImportKeyFile={setImportKeyFile}
+        importKeyPassphrase={importKeyPassphrase}
+        setImportKeyPassphrase={setImportKeyPassphrase}
+        saveImportKeyPassphrase={saveImportKeyPassphrase}
+        setSaveImportKeyPassphrase={setSaveImportKeyPassphrase}
+        isSavingProfile={isSavingProfile}
+        onSaveProfile={saveProfile}
+      />
 
       <Dialog open={connectPrompt !== null} onOpenChange={open => (open ? null : setConnectPrompt(null))}>
         <DialogContent data-testid="ssh-connect-dialog">
@@ -1155,6 +891,6 @@ export function RemoteConnectionPanel({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </MobileScrollPage>
   )
 }
